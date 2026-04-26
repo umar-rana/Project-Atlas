@@ -17,6 +17,9 @@ out/
 build
 dist
 
+# storybook build artifacts
+storybook-static/
+
 # misc
 .DS_Store
 *.pem
