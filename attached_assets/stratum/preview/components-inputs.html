@@ -1,0 +1,55 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Inputs</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .lab { font: 500 11px var(--font-ui); color: var(--text-secondary); }
+  .input { background: var(--surface-sunken); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 6px 10px; font: 400 13px var(--font-ui); color: var(--text-primary); height: 30px; outline: none; }
+  .input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-primary-muted); }
+  .err { border-color: var(--border-error); }
+  .err-msg { font: 400 11px var(--font-ui); color: var(--accent-danger); }
+  .hint { font: 400 11px var(--font-ui); color: var(--text-tertiary); }
+  .with-icon { position: relative; }
+  .with-icon .ic { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); }
+  .with-icon .input { padding-left: 28px; }
+  .kbd { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 500 10px var(--font-mono); color: var(--text-tertiary); border: 1px solid var(--border-default); padding: 1px 5px; border-radius: 3px; }
+  .check { display: flex; align-items: center; gap: 8px; font: 400 13px var(--font-ui); color: var(--text-primary); }
+  .check input { accent-color: var(--accent-primary); }
+  .toggle { width: 28px; height: 16px; background: var(--accent-primary); border-radius: var(--radius-full); position: relative; }
+  .toggle::after { content: ""; width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Form inputs</div>
+  <div class="grid">
+    <div class="field">
+      <label class="lab">Project name</label>
+      <input class="input" value="Q4 Launch — Internal" />
+      <div class="hint">Visible to your team only.</div>
+    </div>
+    <div class="field">
+      <label class="lab">Search</label>
+      <div class="with-icon">
+        <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="input" placeholder="Search anything…" style="width:100%;"/>
+        <span class="kbd">⌘K</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lab">Email</label>
+      <input class="input err" value="not-an-email"/>
+      <div class="err-msg">Enter a valid address.</div>
+    </div>
+    <div class="field">
+      <label class="lab">Options</label>
+      <label class="check"><input type="checkbox" checked/> Remind me 30 minutes before</label>
+      <label class="check"><input type="radio" name="r" checked/> Default · weekly</label>
+      <label class="check"><span class="toggle"></span> Auto-archive complete</label>
+    </div>
+  </div>
+</div>
+</body></html>

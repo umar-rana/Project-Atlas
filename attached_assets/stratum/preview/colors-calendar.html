@@ -1,0 +1,44 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Calendar palette</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; }
+  .col { display: flex; flex-direction: column; gap: 4px; }
+  .blk { height: 22px; border-radius: var(--radius-sm); }
+  .num { font: 500 10px var(--font-mono); color: var(--text-tertiary); margin-top: 4px; text-align: center; }
+  .stack { margin-top: 14px; position: relative; height: 80px; background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 6px; }
+  .ev { position: absolute; height: 26px; border-radius: var(--radius-sm); padding: 5px 8px; font: 500 11px var(--font-ui); display: flex; align-items: center; }
+  .lab { display:flex; gap:14px; margin-top:8px; font: 500 10px var(--font-mono); color: var(--text-tertiary); }
+  .sw { display:inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Calendar &amp; time-block palette · 12 hues</div>
+  <div class="grid">
+    <div class="col"><div class="blk" style="background:var(--cal-1-fill)"></div><div class="blk" style="background:var(--cal-1-soft); border:1px solid var(--cal-1-border);"></div><div class="num">01</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-2-fill)"></div><div class="blk" style="background:var(--cal-2-soft); border:1px solid var(--cal-2-border);"></div><div class="num">02</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-3-fill)"></div><div class="blk" style="background:var(--cal-3-soft); border:1px solid var(--cal-3-border);"></div><div class="num">03</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-4-fill)"></div><div class="blk" style="background:var(--cal-4-soft); border:1px solid var(--cal-4-border);"></div><div class="num">04</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-5-fill)"></div><div class="blk" style="background:var(--cal-5-soft); border:1px solid var(--cal-5-border);"></div><div class="num">05</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-6-fill)"></div><div class="blk" style="background:var(--cal-6-soft); border:1px solid var(--cal-6-border);"></div><div class="num">06</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-7-fill)"></div><div class="blk" style="background:var(--cal-7-soft); border:1px solid var(--cal-7-border);"></div><div class="num">07</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-8-fill)"></div><div class="blk" style="background:var(--cal-8-soft); border:1px solid var(--cal-8-border);"></div><div class="num">08</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-9-fill)"></div><div class="blk" style="background:var(--cal-9-soft); border:1px solid var(--cal-9-border);"></div><div class="num">09</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-10-fill)"></div><div class="blk" style="background:var(--cal-10-soft); border:1px solid var(--cal-10-border);"></div><div class="num">10</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-11-fill)"></div><div class="blk" style="background:var(--cal-11-soft); border:1px solid var(--cal-11-border);"></div><div class="num">11</div></div>
+    <div class="col"><div class="blk" style="background:var(--cal-12-fill)"></div><div class="blk" style="background:var(--cal-12-soft); border:1px solid var(--cal-12-border);"></div><div class="num">12</div></div>
+  </div>
+  <div class="stack">
+    <div class="ev" style="left:6px; top:6px; width: 32%; background: var(--cal-1-soft); color: var(--cal-1-border); border-left: 2px solid var(--cal-1-border);">9:00 — Standup</div>
+    <div class="ev" style="left:32%; top:6px; width: 26%; background: var(--cal-2-soft); color: var(--cal-2-border); border-left: 2px solid var(--cal-2-border);">Roadmap review</div>
+    <div class="ev" style="left:60%; top:6px; width: 38%; background: var(--cal-3-fill); color: white;">Deep work — Planning</div>
+    <div class="ev" style="left:6px; top:40px; width: 22%; background: var(--cal-5-soft); color: var(--cal-5-border); border-left: 2px solid var(--cal-5-border);">1:1 · Sam</div>
+    <div class="ev" style="left:30%; top:40px; width: 30%; background: var(--cal-7-fill); color: white;">Customer call — Acme</div>
+    <div class="ev" style="left:62%; top:40px; width: 36%; background: var(--cal-9-soft); color: var(--cal-9-border); border-left: 2px solid var(--cal-9-border);">Writing block</div>
+  </div>
+  <div class="lab"><span><i class="sw" style="background:var(--cal-1-fill)"></i>filled</span><span><i class="sw" style="background:var(--cal-1-soft); border:1px solid var(--cal-1-border)"></i>soft</span><span>border-only also available</span></div>
+</div>
+</body></html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Accent — primary</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .sw { display: flex; flex-direction: column; gap: 6px; }
+  .sw .swatch { height: 64px; border-radius: var(--radius-md); }
+  .sw .name { font: 500 11px var(--font-mono); color: var(--text-secondary); }
+  .sw .var { font: 400 10px var(--font-mono); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Accent · primary (interactive)</div>
+  <div class="row">
+    <div class="sw"><div class="swatch" style="background:var(--accent-primary)"></div><div class="name">primary</div><div class="var">--accent-primary</div></div>
+    <div class="sw"><div class="swatch" style="background:var(--accent-primary-hover)"></div><div class="name">hover</div><div class="var">+ hover</div></div>
+    <div class="sw"><div class="swatch" style="background:var(--accent-primary-active)"></div><div class="name">active</div><div class="var">+ active</div></div>
+    <div class="sw"><div class="swatch" style="background:var(--accent-primary-muted); border:1px solid var(--border-subtle);"></div><div class="name">muted</div><div class="var">tinted bg</div></div>
+    <div class="sw"><div class="swatch" style="background:var(--accent-primary-subtle); border:1px solid var(--border-subtle);"></div><div class="name">subtle</div><div class="var">selected bg</div></div>
+  </div>
+</div>
+</body></html>

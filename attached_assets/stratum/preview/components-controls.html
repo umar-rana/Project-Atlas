@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Form controls</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.2 · vol. 2</p>
+    <h1 class="sh-title">Form controls</h1>
+    <p class="sh-sub">Checkbox, radio, switch, slider, number input. Two sizes. All states. Inline edit.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Checkbox & radio</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:32px; align-items:flex-start;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Checkbox · sm/md</span>
+          <div class="sh-row"><input class="s-check" type="checkbox" /> <input class="s-check" type="checkbox" checked /> <input class="s-check is-md" type="checkbox" /> <input class="s-check is-md" type="checkbox" checked /></div>
+          <div class="sh-row"><input class="s-check" type="checkbox" disabled /> <input class="s-check" type="checkbox" disabled checked /> <span class="sh-spec">disabled</span></div>
+        </div>
+        <div class="sh-col">
+          <span class="sh-frame__label">Radio · sm/md</span>
+          <div class="sh-row"><input class="s-radio" type="radio" name="r1" /> <input class="s-radio" type="radio" name="r1" checked /> <input class="s-radio is-md" type="radio" name="r2" /> <input class="s-radio is-md" type="radio" name="r2" checked /></div>
+        </div>
+        <div class="sh-col">
+          <span class="sh-frame__label">Indeterminate</span>
+          <div class="sh-row"><input class="s-check" type="checkbox" id="ind1" /></div>
+          <script>document.getElementById('ind1').indeterminate = true;</script>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">With label & description</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:14px; max-width:480px;">
+        <label class="s-checkbox-row">
+          <input class="s-check is-md" type="checkbox" checked />
+          <span>
+            <span class="s-checkbox-row__title">Send daily digest</span>
+            <span class="s-checkbox-row__desc">Tomorrow's tasks and overdue items, delivered at 7:00 AM in your local timezone.</span>
+          </span>
+        </label>
+        <label class="s-checkbox-row">
+          <input class="s-check is-md" type="checkbox" />
+          <span>
+            <span class="s-checkbox-row__title">Show completed in Today</span>
+            <span class="s-checkbox-row__desc">Keeps the day's accomplishments visible until midnight.</span>
+          </span>
+        </label>
+        <label class="s-checkbox-row">
+          <input class="s-radio is-md" type="radio" name="theme" checked />
+          <span>
+            <span class="s-checkbox-row__title">System</span>
+            <span class="s-checkbox-row__desc">Match the operating system theme.</span>
+          </span>
+        </label>
+        <label class="s-checkbox-row">
+          <input class="s-radio is-md" type="radio" name="theme" />
+          <span>
+            <span class="s-checkbox-row__title">Always dark</span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Switch</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px;">
+        <label class="sh-cell"><input class="s-switch" type="checkbox" /><span class="sh-cell__label">sm · off</span></label>
+        <label class="sh-cell"><input class="s-switch" type="checkbox" checked /><span class="sh-cell__label">sm · on</span></label>
+        <label class="sh-cell"><input class="s-switch is-md" type="checkbox" /><span class="sh-cell__label">md · off</span></label>
+        <label class="sh-cell"><input class="s-switch is-md" type="checkbox" checked /><span class="sh-cell__label">md · on</span></label>
+        <label class="sh-cell"><input class="s-switch is-md" type="checkbox" disabled /><span class="sh-cell__label">disabled</span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Slider</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="max-width:420px; gap:14px;">
+        <div class="s-field">
+          <div style="display:flex; justify-content:space-between;"><span class="s-field__label">Density</span><span class="t-mono t-num" style="font-size:11px; color:var(--text-tertiary);">2 of 3</span></div>
+          <input class="s-slider" type="range" min="1" max="3" value="2" step="1" />
+          <div style="display:flex; justify-content:space-between; font:500 10px var(--font-mono); color:var(--text-tertiary); font-variant-numeric:tabular-nums;"><span>Compact</span><span>Default</span><span>Comfortable</span></div>
+        </div>
+        <div class="s-field">
+          <div style="display:flex; justify-content:space-between;"><span class="s-field__label">Sync interval</span><span class="t-mono t-num" style="font-size:11px; color:var(--text-tertiary);">15 min</span></div>
+          <input class="s-slider" type="range" min="1" max="60" value="15" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Number input</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:16px; align-items:flex-end;">
+        <div class="s-field" style="width:140px;">
+          <label class="s-field__label">Default</label>
+          <span class="s-input-wrap">
+            <input class="s-input t-num" value="14" type="text" inputmode="numeric" style="text-align:right;" />
+            <span class="s-stepper">
+              <button aria-label="Increment">▴</button>
+              <button aria-label="Decrement">▾</button>
+            </span>
+          </span>
+        </div>
+        <div class="s-field" style="width:200px;">
+          <label class="s-field__label">With unit</label>
+          <span class="s-input-wrap">
+            <input class="s-input t-num" value="25" type="text" inputmode="numeric" style="text-align:right;" />
+            <span class="s-input-wrap__suffix">min</span>
+            <span class="s-stepper">
+              <button aria-label="Increment">▴</button>
+              <button aria-label="Decrement">▾</button>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Inline edit</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:8px; max-width:480px;">
+        <span class="sh-frame__label">Hover to reveal · click to edit · ↵ to save · ⎋ to cancel</span>
+        <div class="sh-row" style="gap:24px;">
+          <span class="s-inline-edit t-md" tabindex="0">Q4 launch plan</span>
+          <span class="s-inline-edit t-md is-editing" tabindex="0" contenteditable="true">Pricing rewrite — draft</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Text tokens</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 28px; }
+  .item { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border-subtle); }
+  .item .tok { font: 500 11px var(--font-mono); color: var(--text-tertiary); letter-spacing: 0.04em; text-transform: uppercase; }
+  .accent-bg { background: var(--accent-primary); padding: 4px 10px; border-radius: var(--radius-sm); color: var(--text-on-accent); font: 500 13px var(--font-ui); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Text tokens</div>
+  <div class="grid">
+    <div class="item"><span style="font:500 14px var(--font-ui); color:var(--text-primary);">Primary heading text</span><span class="tok">primary</span></div>
+    <div class="item"><span style="font:400 14px var(--font-ui); color:var(--text-secondary);">Secondary supporting copy</span><span class="tok">secondary</span></div>
+    <div class="item"><span style="font:400 14px var(--font-ui); color:var(--text-tertiary);">Tertiary · timestamps · hints</span><span class="tok">tertiary</span></div>
+    <div class="item"><span style="font:400 14px var(--font-ui); color:var(--text-disabled);">Disabled state</span><span class="tok">disabled</span></div>
+    <div class="item"><span class="accent-bg">On accent</span><span class="tok">on-accent</span></div>
+    <div class="item"><a href="#" style="font:400 14px var(--font-ui); color:var(--text-link); text-decoration: underline; text-underline-offset: 3px;">Hyperlink — calm.app</a><span class="tok">link</span></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Buttons</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.1</p>
+    <h1 class="sh-title">Buttons & actions</h1>
+    <p class="sh-sub">Four variants × three sizes. Loading and disabled states for every variant. Icon button, split button, segmented control, FAB. Every interactive button has a focus ring; every primary action has a keyboard shortcut.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Variants × sizes</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Primary</span>
+          <div class="sh-row">
+            <button class="s-btn s-btn--primary is-sm">Save<span class="s-kbd">⌘S</span></button>
+            <button class="s-btn s-btn--primary is-md">Save changes<span class="s-kbd">⌘S</span></button>
+            <button class="s-btn s-btn--primary is-lg">Save changes<span class="s-kbd">⌘S</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="sh-row" style="gap:24px;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Secondary</span>
+          <div class="sh-row">
+            <button class="s-btn s-btn--secondary is-sm">Cancel</button>
+            <button class="s-btn s-btn--secondary is-md">Cancel</button>
+            <button class="s-btn s-btn--secondary is-lg">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="sh-row" style="gap:24px;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Ghost</span>
+          <div class="sh-row">
+            <button class="s-btn s-btn--ghost is-sm">Skip</button>
+            <button class="s-btn s-btn--ghost is-md">Skip</button>
+            <button class="s-btn s-btn--ghost is-lg">Skip for now</button>
+          </div>
+        </div>
+      </div>
+      <div class="sh-row" style="gap:24px;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Destructive</span>
+          <div class="sh-row">
+            <button class="s-btn s-btn--destructive is-sm">Delete</button>
+            <button class="s-btn s-btn--destructive is-md">Delete project</button>
+            <button class="s-btn s-btn--destructive-ghost is-md">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">States</h2>
+    <div class="sh-frame">
+      <div class="sh-row">
+        <div class="sh-cell">
+          <span class="sh-cell__label">Default</span>
+          <button class="s-btn s-btn--primary">Primary</button>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Hover (sim.)</span>
+          <button class="s-btn s-btn--primary" style="background:var(--accent-primary-hover);">Primary</button>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Active (sim.)</span>
+          <button class="s-btn s-btn--primary" style="background:var(--accent-primary-active);">Primary</button>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Focus (sim.)</span>
+          <button class="s-btn s-btn--primary" style="box-shadow:var(--ring-focus);">Primary</button>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Disabled</span>
+          <button class="s-btn s-btn--primary" disabled>Primary</button>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Loading</span>
+          <button class="s-btn s-btn--primary is-loading">Primary</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Icon buttons</h2>
+    <div class="sh-frame">
+      <div class="sh-row">
+        <div class="sh-cell">
+          <span class="sh-cell__label">Ghost · sm/md/lg</span>
+          <div class="sh-row" style="gap:8px;">
+            <button class="s-icon-btn is-sm" aria-label="Settings">⚙</button>
+            <button class="s-icon-btn" aria-label="Settings">⚙</button>
+            <button class="s-icon-btn is-lg" aria-label="Settings">⚙</button>
+          </div>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Solid</span>
+          <div class="sh-row" style="gap:8px;">
+            <button class="s-icon-btn s-icon-btn--solid" aria-label="Filter">≡</button>
+            <button class="s-icon-btn s-icon-btn--solid is-lg" aria-label="Filter">≡</button>
+          </div>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Active / toggled</span>
+          <button class="s-icon-btn is-active" aria-label="Pin" aria-pressed="true">★</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Split & segmented</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:32px;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Split button</span>
+          <div class="s-split">
+            <button class="s-btn s-btn--primary">Save<span class="s-kbd">⌘S</span></button>
+            <button class="s-btn s-btn--primary" aria-label="Save options">▾</button>
+          </div>
+        </div>
+        <div class="sh-col">
+          <span class="sh-frame__label">Segmented (single-select)</span>
+          <div class="s-seg" role="radiogroup">
+            <button class="s-seg__item is-selected" role="radio" aria-checked="true">Day</button>
+            <button class="s-seg__item" role="radio" aria-checked="false">Week</button>
+            <button class="s-seg__item" role="radio" aria-checked="false">Month</button>
+          </div>
+        </div>
+        <div class="sh-col">
+          <span class="sh-frame__label">View switch</span>
+          <div class="s-seg">
+            <button class="s-seg__item is-selected">List</button>
+            <button class="s-seg__item">Board</button>
+            <button class="s-seg__item">Calendar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Floating action</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px;">
+        <div class="sh-cell">
+          <span class="sh-cell__label">Compact</span>
+          <button class="s-fab" aria-label="New task">＋</button>
+        </div>
+        <div class="sh-cell">
+          <span class="sh-cell__label">Extended</span>
+          <button class="s-fab is-extended">＋ New task</button>
+        </div>
+        <div class="sh-cell" style="flex:1;">
+          <span class="sh-cell__label">Usage</span>
+          <p class="sh-spec" style="max-width:48ch; margin:0;">Reserved for the single most-used capture action: New task, New note, Quick add. Lives in the bottom-right of the active workspace, above the toast stack.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Specification</h2>
+    <div class="sh-frame">
+      <pre class="sh-spec" style="margin:0;">
+height          22 (sm) · 28 (md) · 36 (lg)
+padding-x       8 · 10 · 16
+font            500 · 11 / 12 / 13 px · Inter
+radius          4 · 6 · 6
+border          1px (secondary only)
+focus           2px outset · oklch(72% 0.140 250)
+motion          120ms · cubic-bezier(0.16, 1, 0.3, 1)
+</pre>
+    </div>
+  </section>
+</main>
+</body>
+</html>

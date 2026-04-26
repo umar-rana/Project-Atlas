@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Productivity primitives</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.7</p>
+    <h1 class="sh-title">Productivity primitives</h1>
+    <p class="sh-sub">Task row · quick-add · note row · contact row · event block · entity chips · backlinks · properties panel. The pieces the product is built from.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Task row</h2>
+    <div class="sh-frame" style="padding: 8px 12px;">
+      <ul class="s-task-list">
+        <li class="s-task-row">
+          <input class="s-check is-md" type="checkbox" />
+          <span class="s-task-row__title">Finalize pricing tier copy</span>
+          <span class="s-tag s-tag--filled is-c1">Q4 Launch</span>
+          <span class="s-tag s-tag--outlined is-c3"># roadmap</span>
+          <span class="s-task-row__date is-overdue t-num">Today, 10:30</span>
+          <span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span>
+        </li>
+        <li class="s-task-row is-priority">
+          <input class="s-check is-md" type="checkbox" />
+          <span class="s-task-row__title">Review PR #482 — calendar conflict resolver</span>
+          <span class="s-tag s-tag--filled is-c5">Engineering</span>
+          <span class="s-task-row__date t-num">Tomorrow</span>
+          <span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span>
+        </li>
+        <li class="s-task-row is-completed">
+          <input class="s-check is-md" type="checkbox" checked />
+          <span class="s-task-row__title">Send Q4 OKR memo to leadership</span>
+          <span class="s-tag s-tag--filled is-c2">Ops</span>
+          <span class="s-task-row__date t-num">Mon</span>
+        </li>
+        <li class="s-task-row">
+          <input class="s-check is-md" type="checkbox" />
+          <span class="s-task-row__title">Onboarding flow — final QA pass</span>
+          <span class="s-task-row__subtle">3 subtasks · 1 done</span>
+          <span class="s-task-row__date t-num">Fri</span>
+        </li>
+      </ul>
+    </div>
+    <pre class="sh-spec" style="margin:0;">height 32 · padding 6/12 · gap 8 · checkbox 16 · title 13/1.5 · meta 11 mono · hover bg surface-hover · dragging ring 1.5 dashed accent</pre>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Quick add</h2>
+    <div class="sh-frame">
+      <div class="s-quickadd">
+        <input class="s-quickadd__input" value="Finalize pricing tier copy tomorrow at 10:30 #roadmap @dana" />
+        <span class="s-quickadd__chip">📅 Tue Oct 16, 10:30</span>
+        <span class="s-quickadd__chip"># roadmap</span>
+        <span class="s-quickadd__chip">@ Dana K.</span>
+        <button class="s-btn s-btn--primary is-sm">Add<span class="s-kbd">↵</span></button>
+      </div>
+      <p class="sh-spec" style="margin: 4px 0 0;">Live-parsed natural language: dates, # tags, @ assignees, !priority. Chips appear inline as the parser recognizes tokens.</p>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Project · contact · note rows</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:18px;">
+        <div>
+          <span class="sh-frame__label">Projects</span>
+          <ul class="s-task-list" style="margin-top:6px;">
+            <li class="s-row-card"><span class="s-color-dot" style="background:var(--cal-1-fill);"></span><span class="s-row-card__title">Q4 Launch</span><span class="s-status-pill is-in-progress"><i></i>On track</span><span class="s-row-card__meta">8 open · 2 overdue</span><div class="s-avatar-stack"><span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span><span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span></div></li>
+            <li class="s-row-card"><span class="s-color-dot" style="background:var(--cal-3-fill);"></span><span class="s-row-card__title">Pricing rewrite</span><span class="s-status-pill is-blocked"><i></i>Blocked</span><span class="s-row-card__meta">5 open</span></li>
+            <li class="s-row-card"><span class="s-color-dot" style="background:var(--cal-5-fill);"></span><span class="s-row-card__title">Hiring · IC4</span><span class="s-status-pill is-todo"><i></i>Planning</span><span class="s-row-card__meta">12 open</span></li>
+          </ul>
+        </div>
+
+        <div>
+          <span class="sh-frame__label">Contacts</span>
+          <ul class="s-task-list" style="margin-top:6px;">
+            <li class="s-row-card"><span class="s-avatar is-sm" style="background:var(--cal-3-fill); color:white;">DK</span><span class="s-row-card__title">Dana Kowalczyk</span><span class="s-row-card__sub">Design · @dana</span><span class="s-row-card__meta">3 shared projects</span></li>
+            <li class="s-row-card"><span class="s-avatar is-sm" style="background:var(--cal-5-fill); color:white;">JM</span><span class="s-row-card__title">Jamal Morrison</span><span class="s-row-card__sub">Engineering · @jamal</span></li>
+          </ul>
+        </div>
+
+        <div>
+          <span class="sh-frame__label">Notes</span>
+          <ul class="s-task-list" style="margin-top:6px;">
+            <li class="s-row-card"><span class="s-row-card__icon">▤</span><span class="s-row-card__title">Pricing alternatives — memo</span><span class="s-row-card__sub">Three tiers, with grandfather clause for existing…</span><span class="s-row-card__meta t-num">17 Sep</span></li>
+            <li class="s-row-card"><span class="s-row-card__icon">▤</span><span class="s-row-card__title">Q4 OKR draft</span><span class="s-row-card__sub">Owner: Sara · Reviewed by Dana, Jamal…</span><span class="s-row-card__meta t-num">12 Sep</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Event / time block</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:16px; flex-wrap:wrap;">
+        <div class="s-event is-c1" style="width:220px; height:64px;"><div class="s-event__time">10:30 – 11:00</div><div class="s-event__title">Pricing review</div><div class="s-event__sub">w/ Dana, Jamal · 3rd flr</div></div>
+        <div class="s-event is-c5" style="width:220px; height:48px;"><div class="s-event__time">14:00 – 14:30</div><div class="s-event__title">Calendar sync · 1:1</div></div>
+        <div class="s-event is-c3" style="width:220px; height:96px;"><div class="s-event__time">15:00 – 16:30</div><div class="s-event__title">Focus block · Pricing copy</div><div class="s-event__sub">Do not disturb</div></div>
+        <div class="s-event is-c7 is-tentative" style="width:220px; height:48px;"><div class="s-event__time">17:00 – 17:15</div><div class="s-event__title">Tentative · standup</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Mention · tag · entity chips</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:14px;">
+        <div class="sh-row">
+          <span class="s-mention">@ Sara R.</span>
+          <span class="s-mention">@ Dana K.</span>
+          <span class="s-mention is-self">@ you</span>
+        </div>
+        <div class="sh-row">
+          <span class="s-tag s-tag--outlined is-c1"># roadmap</span>
+          <span class="s-tag s-tag--outlined is-c3"># ops</span>
+          <span class="s-tag s-tag--outlined is-c5"># research</span>
+          <span class="s-tag s-tag--outlined is-c7"># personal</span>
+        </div>
+        <div class="sh-row">
+          <span class="s-ref-chip"><span class="s-ref-chip__icon">▤</span>Pricing memo</span>
+          <span class="s-ref-chip"><span class="s-ref-chip__icon">▦</span>Tue · Pricing review</span>
+          <span class="s-ref-chip"><span class="s-ref-chip__icon">☰</span>Q4 Launch</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Properties panel · backlinks</h2>
+    <div class="sh-row" style="gap:16px; align-items:flex-start;">
+      <div class="s-prop-list" style="flex:1; max-width:380px; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding: 14px 16px;">
+        <div class="s-prop"><span class="s-prop__key">Status</span><span class="s-prop__val"><span class="s-status-pill is-in-progress"><i></i>In progress</span></span></div>
+        <div class="s-prop"><span class="s-prop__key">Priority</span><span class="s-prop__val"><span class="s-priority is-high">▲ High</span></span></div>
+        <div class="s-prop"><span class="s-prop__key">Due</span><span class="s-prop__val t-num">Tue Oct 16, 10:30</span></div>
+        <div class="s-prop"><span class="s-prop__key">Project</span><span class="s-prop__val"><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch</span></div>
+        <div class="s-prop"><span class="s-prop__key">Assignee</span><span class="s-prop__val"><span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span> Dana K.</span></div>
+        <div class="s-prop"><span class="s-prop__key">Tags</span><span class="s-prop__val"><span class="s-tag s-tag--outlined is-c3"># roadmap</span></span></div>
+        <div class="s-prop"><span class="s-prop__key">Estimate</span><span class="s-prop__val t-num">2h</span></div>
+      </div>
+
+      <div style="flex:1; max-width:380px; background:var(--surface-raised); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding: 14px 16px;">
+        <div class="sh-frame__label" style="margin-bottom:8px;">Backlinks · 3</div>
+        <ul class="s-backlinks">
+          <li class="s-backlink"><span class="s-backlink__icon">▤</span><div><div class="s-backlink__title">Pricing alternatives — memo</div><div class="s-backlink__excerpt">"…blocking <mark>Finalize pricing tier copy</mark>; decision by Friday review…"</div></div></li>
+          <li class="s-backlink"><span class="s-backlink__icon">▦</span><div><div class="s-backlink__title">Tue · Pricing review</div><div class="s-backlink__excerpt">"agenda · <mark>tier copy</mark> · grandfather clause · launch comms"</div></div></li>
+          <li class="s-backlink"><span class="s-backlink__icon">☰</span><div><div class="s-backlink__title">Q4 Launch</div><div class="s-backlink__excerpt">"open tasks · <mark>Finalize pricing tier copy</mark> (Dana)"</div></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

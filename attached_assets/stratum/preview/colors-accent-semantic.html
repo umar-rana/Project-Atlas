@@ -1,0 +1,47 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Semantic accents</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .sw { display:flex; flex-direction:column; gap:6px; }
+  .sw .swatch { height: 56px; border-radius: var(--radius-md); display:flex; align-items:flex-end; padding: 6px 8px; }
+  .sw .swatch .pill { font: 500 10px var(--font-mono); color: var(--text-on-accent); background: rgba(0,0,0,.2); padding: 2px 6px; border-radius: var(--radius-xs); }
+  .sw .muted { height: 28px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display:flex; align-items:center; padding: 0 8px; font: 500 11px var(--font-ui); }
+  .sw .name { font: 500 11px var(--font-mono); color: var(--text-secondary); }
+  .sw .var { font: 400 10px var(--font-mono); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Accent · semantic (success / warning / danger / info / neutral)</div>
+  <div class="grid">
+    <div class="sw">
+      <div class="swatch" style="background:var(--accent-success)"><span class="pill">solid</span></div>
+      <div class="muted" style="background:var(--accent-success-muted); color:var(--accent-success);">muted · pill</div>
+      <div class="name">success</div><div class="var">complete · positive</div>
+    </div>
+    <div class="sw">
+      <div class="swatch" style="background:var(--accent-warning)"><span class="pill">solid</span></div>
+      <div class="muted" style="background:var(--accent-warning-muted); color:var(--accent-warning);">muted · pill</div>
+      <div class="name">warning</div><div class="var">due-soon · attention</div>
+    </div>
+    <div class="sw">
+      <div class="swatch" style="background:var(--accent-danger)"><span class="pill">solid</span></div>
+      <div class="muted" style="background:var(--accent-danger-muted); color:var(--accent-danger);">muted · pill</div>
+      <div class="name">danger</div><div class="var">overdue · errors</div>
+    </div>
+    <div class="sw">
+      <div class="swatch" style="background:var(--accent-info)"><span class="pill">solid</span></div>
+      <div class="muted" style="background:var(--accent-info-muted); color:var(--accent-info);">muted · pill</div>
+      <div class="name">info</div><div class="var">neutral notice</div>
+    </div>
+    <div class="sw">
+      <div class="swatch" style="background:var(--accent-neutral)"><span class="pill" style="color:var(--surface-base);">solid</span></div>
+      <div class="muted" style="background:var(--accent-neutral-muted); color:var(--text-secondary);">muted · pill</div>
+      <div class="name">neutral</div><div class="var">generic tags</div>
+    </div>
+  </div>
+</div>
+</body></html>

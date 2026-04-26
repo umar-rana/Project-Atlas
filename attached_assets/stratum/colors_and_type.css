@@ -1,0 +1,371 @@
+/* =============================================================
+   STRATUM — Design tokens
+   Dense productivity application design system
+   All colors defined in OKLCH; tokens are semantic.
+   Components reference tokens, never raw values.
+   ============================================================= */
+
+/* ---- FONTS ----------------------------------------------- */
+@import url("https://rsms.me/inter/inter.css");
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+
+/* =============================================================
+   1. DARK THEME (default)
+   ============================================================= */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ---- 1.1 Surface tokens -------------------------------- */
+  --surface-base:            oklch(18.5% 0.008 265);   /* deep ink, not pure black */
+  --surface-raised:          oklch(21.5% 0.008 265);   /* one step up: cards, panels */
+  --surface-overlay:         oklch(24.5% 0.008 265);   /* modals, dropdowns */
+  --surface-sunken:          oklch(15.5% 0.008 265);   /* inputs, inset wells */
+  --surface-hover:           oklch(26.5% 0.009 265);   /* hover */
+  --surface-active:          oklch(30%   0.010 265);   /* pressed */
+  --surface-selected:        oklch(28%   0.045 255);   /* selected row, accent-tinted */
+  --surface-selected-hover:  oklch(32%   0.050 255);
+
+  /* ---- 1.2 Border tokens --------------------------------- */
+  --border-subtle:   oklch(26% 0.008 265 / 0.6);
+  --border-default:  oklch(32% 0.009 265);
+  --border-strong:   oklch(42% 0.010 265);
+  --border-focus:    oklch(72% 0.140 250);
+  --border-error:    oklch(65% 0.180 25);
+
+  /* ---- 1.3 Text tokens ----------------------------------- */
+  --text-primary:    oklch(96% 0.005 265);
+  --text-secondary:  oklch(74% 0.008 265);
+  --text-tertiary:   oklch(58% 0.008 265);
+  --text-disabled:   oklch(42% 0.008 265);
+  --text-on-accent:  oklch(98% 0.005 265);
+  --text-on-emphasis:oklch(98% 0.005 265);
+  --text-link:       oklch(78% 0.130 250);
+  --text-link-hover: oklch(85% 0.140 250);
+
+  /* ---- 1.4 Accent tokens --------------------------------- */
+  --accent-primary:         oklch(66% 0.170 250);   /* indigo-blue, glows in dark */
+  --accent-primary-hover:   oklch(72% 0.170 250);
+  --accent-primary-active:  oklch(60% 0.170 250);
+  --accent-primary-muted:   oklch(40% 0.090 250 / 0.32);
+  --accent-primary-subtle:  oklch(35% 0.060 250 / 0.20);
+
+  --accent-success:         oklch(72% 0.150 155);
+  --accent-success-muted:   oklch(45% 0.080 155 / 0.28);
+
+  --accent-warning:         oklch(78% 0.140 75);
+  --accent-warning-muted:   oklch(55% 0.080 75 / 0.28);
+
+  --accent-danger:          oklch(68% 0.180 25);
+  --accent-danger-muted:    oklch(45% 0.110 25 / 0.30);
+
+  --accent-info:            oklch(75% 0.110 220);
+  --accent-info-muted:      oklch(45% 0.070 220 / 0.28);
+
+  --accent-neutral:         oklch(70% 0.010 265);
+  --accent-neutral-muted:   oklch(35% 0.008 265 / 0.50);
+
+  /* ---- 1.5 Data viz palette (8 hues × 3 shades) --------- */
+  --viz-1-light:   oklch(78% 0.130 250); /* blue */
+  --viz-1:         oklch(66% 0.170 250);
+  --viz-1-strong:  oklch(56% 0.190 250);
+
+  --viz-2-light:   oklch(80% 0.140 155); /* green */
+  --viz-2:         oklch(70% 0.160 155);
+  --viz-2-strong:  oklch(58% 0.170 155);
+
+  --viz-3-light:   oklch(82% 0.140 75);  /* amber */
+  --viz-3:         oklch(74% 0.150 75);
+  --viz-3-strong:  oklch(62% 0.160 75);
+
+  --viz-4-light:   oklch(78% 0.150 25);  /* red */
+  --viz-4:         oklch(68% 0.180 25);
+  --viz-4-strong:  oklch(56% 0.190 25);
+
+  --viz-5-light:   oklch(78% 0.130 305); /* purple */
+  --viz-5:         oklch(68% 0.160 305);
+  --viz-5-strong:  oklch(56% 0.180 305);
+
+  --viz-6-light:   oklch(80% 0.110 200); /* teal */
+  --viz-6:         oklch(70% 0.130 200);
+  --viz-6-strong:  oklch(58% 0.140 200);
+
+  --viz-7-light:   oklch(80% 0.130 350); /* pink */
+  --viz-7:         oklch(70% 0.160 350);
+  --viz-7-strong:  oklch(58% 0.180 350);
+
+  --viz-8-light:   oklch(78% 0.080 110); /* olive */
+  --viz-8:         oklch(68% 0.100 110);
+  --viz-8-strong:  oklch(56% 0.110 110);
+
+  /* ---- 1.7 Calendar palette (12 hues, filled/soft/border) */
+  --cal-1-fill:    oklch(60% 0.170 250); --cal-1-soft: oklch(60% 0.170 250 / 0.22); --cal-1-border: oklch(72% 0.150 250);
+  --cal-2-fill:    oklch(62% 0.160 155); --cal-2-soft: oklch(62% 0.160 155 / 0.22); --cal-2-border: oklch(74% 0.140 155);
+  --cal-3-fill:    oklch(68% 0.150 75);  --cal-3-soft: oklch(68% 0.150 75 / 0.22);  --cal-3-border: oklch(78% 0.140 75);
+  --cal-4-fill:    oklch(60% 0.180 25);  --cal-4-soft: oklch(60% 0.180 25 / 0.22);  --cal-4-border: oklch(72% 0.160 25);
+  --cal-5-fill:    oklch(60% 0.170 305); --cal-5-soft: oklch(60% 0.170 305 / 0.22); --cal-5-border: oklch(72% 0.150 305);
+  --cal-6-fill:    oklch(62% 0.130 200); --cal-6-soft: oklch(62% 0.130 200 / 0.22); --cal-6-border: oklch(74% 0.120 200);
+  --cal-7-fill:    oklch(62% 0.170 350); --cal-7-soft: oklch(62% 0.170 350 / 0.22); --cal-7-border: oklch(74% 0.150 350);
+  --cal-8-fill:    oklch(60% 0.110 110); --cal-8-soft: oklch(60% 0.110 110 / 0.22); --cal-8-border: oklch(72% 0.100 110);
+  --cal-9-fill:    oklch(60% 0.140 175); --cal-9-soft: oklch(60% 0.140 175 / 0.22); --cal-9-border: oklch(72% 0.130 175);
+  --cal-10-fill:   oklch(58% 0.150 280); --cal-10-soft: oklch(58% 0.150 280 / 0.22); --cal-10-border: oklch(70% 0.140 280);
+  --cal-11-fill:   oklch(64% 0.140 50);  --cal-11-soft: oklch(64% 0.140 50 / 0.22);  --cal-11-border: oklch(76% 0.130 50);
+  --cal-12-fill:   oklch(56% 0.020 265); --cal-12-soft: oklch(56% 0.020 265 / 0.22); --cal-12-border: oklch(68% 0.015 265);
+
+  /* ---- Shadows (subtle in dark) -------------------------- */
+  --shadow-1: 0 1px 0 0 rgba(0,0,0,0.30), 0 1px 2px 0 rgba(0,0,0,0.20);
+  --shadow-2: 0 4px 10px -2px rgba(0,0,0,0.40), 0 2px 4px -2px rgba(0,0,0,0.30);
+  --shadow-3: 0 12px 28px -6px rgba(0,0,0,0.55), 0 4px 8px -2px rgba(0,0,0,0.30);
+  --shadow-4: 0 20px 48px -12px rgba(0,0,0,0.65), 0 8px 16px -4px rgba(0,0,0,0.40);
+  --shadow-5: 0 24px 60px -8px rgba(0,0,0,0.70), 0 4px 12px -2px rgba(0,0,0,0.35);
+
+  /* Focus ring */
+  --ring-focus: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+}
+
+/* =============================================================
+   1. LIGHT THEME
+   ============================================================= */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-base:            oklch(98.5% 0.002 265);
+  --surface-raised:          oklch(100%  0      0);   /* pure white cards atop near-white */
+  --surface-overlay:         oklch(100%  0      0);
+  --surface-sunken:          oklch(96%   0.003 265);
+  --surface-hover:           oklch(95%   0.004 265);
+  --surface-active:          oklch(92%   0.005 265);
+  --surface-selected:        oklch(94%   0.030 250);
+  --surface-selected-hover:  oklch(91%   0.035 250);
+
+  --border-subtle:   oklch(92% 0.004 265);
+  --border-default:  oklch(86% 0.005 265);
+  --border-strong:   oklch(72% 0.006 265);
+  --border-focus:    oklch(55% 0.180 250);
+  --border-error:    oklch(55% 0.190 25);
+
+  --text-primary:    oklch(20% 0.010 265);
+  --text-secondary:  oklch(42% 0.010 265);
+  --text-tertiary:   oklch(58% 0.008 265);
+  --text-disabled:   oklch(72% 0.008 265);
+  --text-on-accent:  oklch(99% 0.002 265);
+  --text-on-emphasis:oklch(99% 0.002 265);
+  --text-link:       oklch(48% 0.180 250);
+  --text-link-hover: oklch(40% 0.190 250);
+
+  --accent-primary:         oklch(54% 0.190 250);
+  --accent-primary-hover:   oklch(48% 0.200 250);
+  --accent-primary-active:  oklch(44% 0.200 250);
+  --accent-primary-muted:   oklch(70% 0.120 250 / 0.18);
+  --accent-primary-subtle:  oklch(80% 0.080 250 / 0.18);
+
+  --accent-success:         oklch(50% 0.150 155);
+  --accent-success-muted:   oklch(72% 0.110 155 / 0.22);
+
+  --accent-warning:         oklch(58% 0.160 75);
+  --accent-warning-muted:   oklch(78% 0.130 75 / 0.28);
+
+  --accent-danger:          oklch(54% 0.200 25);
+  --accent-danger-muted:    oklch(72% 0.140 25 / 0.20);
+
+  --accent-info:            oklch(56% 0.130 220);
+  --accent-info-muted:      oklch(78% 0.090 220 / 0.22);
+
+  --accent-neutral:         oklch(48% 0.010 265);
+  --accent-neutral-muted:   oklch(85% 0.005 265 / 0.85);
+
+  --viz-1-light:   oklch(78% 0.110 250); --viz-1: oklch(58% 0.180 250); --viz-1-strong: oklch(44% 0.200 250);
+  --viz-2-light:   oklch(80% 0.130 155); --viz-2: oklch(58% 0.160 155); --viz-2-strong: oklch(44% 0.170 155);
+  --viz-3-light:   oklch(84% 0.130 75);  --viz-3: oklch(66% 0.160 75);  --viz-3-strong: oklch(52% 0.170 75);
+  --viz-4-light:   oklch(80% 0.130 25);  --viz-4: oklch(58% 0.190 25);  --viz-4-strong: oklch(46% 0.200 25);
+  --viz-5-light:   oklch(80% 0.110 305); --viz-5: oklch(56% 0.180 305); --viz-5-strong: oklch(42% 0.190 305);
+  --viz-6-light:   oklch(82% 0.090 200); --viz-6: oklch(58% 0.130 200); --viz-6-strong: oklch(44% 0.140 200);
+  --viz-7-light:   oklch(82% 0.110 350); --viz-7: oklch(60% 0.170 350); --viz-7-strong: oklch(46% 0.180 350);
+  --viz-8-light:   oklch(78% 0.070 110); --viz-8: oklch(56% 0.100 110); --viz-8-strong: oklch(42% 0.110 110);
+
+  --cal-1-fill:    oklch(54% 0.180 250); --cal-1-soft: oklch(54% 0.180 250 / 0.14); --cal-1-border: oklch(64% 0.180 250);
+  --cal-2-fill:    oklch(54% 0.160 155); --cal-2-soft: oklch(54% 0.160 155 / 0.14); --cal-2-border: oklch(64% 0.150 155);
+  --cal-3-fill:    oklch(60% 0.150 75);  --cal-3-soft: oklch(60% 0.150 75 / 0.14);  --cal-3-border: oklch(70% 0.140 75);
+  --cal-4-fill:    oklch(54% 0.190 25);  --cal-4-soft: oklch(54% 0.190 25 / 0.14);  --cal-4-border: oklch(64% 0.180 25);
+  --cal-5-fill:    oklch(54% 0.180 305); --cal-5-soft: oklch(54% 0.180 305 / 0.14); --cal-5-border: oklch(64% 0.170 305);
+  --cal-6-fill:    oklch(54% 0.130 200); --cal-6-soft: oklch(54% 0.130 200 / 0.14); --cal-6-border: oklch(64% 0.120 200);
+  --cal-7-fill:    oklch(56% 0.170 350); --cal-7-soft: oklch(56% 0.170 350 / 0.14); --cal-7-border: oklch(66% 0.160 350);
+  --cal-8-fill:    oklch(54% 0.110 110); --cal-8-soft: oklch(54% 0.110 110 / 0.14); --cal-8-border: oklch(64% 0.100 110);
+  --cal-9-fill:    oklch(52% 0.140 175); --cal-9-soft: oklch(52% 0.140 175 / 0.14); --cal-9-border: oklch(62% 0.130 175);
+  --cal-10-fill:   oklch(50% 0.160 280); --cal-10-soft: oklch(50% 0.160 280 / 0.14); --cal-10-border: oklch(60% 0.150 280);
+  --cal-11-fill:   oklch(58% 0.140 50);  --cal-11-soft: oklch(58% 0.140 50 / 0.14);  --cal-11-border: oklch(68% 0.130 50);
+  --cal-12-fill:   oklch(48% 0.020 265); --cal-12-soft: oklch(48% 0.020 265 / 0.14); --cal-12-border: oklch(58% 0.015 265);
+
+  --shadow-1: 0 1px 0 0 rgba(15,23,42,0.04), 0 1px 2px 0 rgba(15,23,42,0.06);
+  --shadow-2: 0 4px 10px -2px rgba(15,23,42,0.08), 0 2px 4px -2px rgba(15,23,42,0.05);
+  --shadow-3: 0 12px 28px -6px rgba(15,23,42,0.12), 0 4px 8px -2px rgba(15,23,42,0.06);
+  --shadow-4: 0 20px 48px -12px rgba(15,23,42,0.18), 0 8px 16px -4px rgba(15,23,42,0.08);
+  --shadow-5: 0 24px 60px -8px rgba(15,23,42,0.22), 0 4px 12px -2px rgba(15,23,42,0.08);
+
+  --ring-focus: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+}
+
+/* =============================================================
+   2. STATUS color tokens (theme-agnostic mappings)
+   ============================================================= */
+:root {
+  --status-active:    var(--accent-info);
+  --status-pending:   var(--accent-warning);
+  --status-on-hold:   var(--accent-neutral);
+  --status-blocked:   var(--accent-danger);
+  --status-complete:  var(--accent-success);
+  --status-cancelled: var(--text-tertiary);
+  --status-archived:  var(--text-disabled);
+}
+
+/* =============================================================
+   3. TYPOGRAPHY
+   ============================================================= */
+:root {
+  --font-ui:      "Inter var", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-reading: "Source Serif 4", "Source Serif Pro", Charter, Georgia, "Times New Roman", serif;
+  --font-mono:    "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* UI scale */
+  --text-2xs:  11px;
+  --text-xs:   12px;
+  --text-sm:   13px; /* DEFAULT BODY */
+  --text-base: 14px;
+  --text-md:   15px;
+  --text-lg:   17px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  32px;
+  --text-4xl:  40px;
+
+  /* Line-heights — tight for UI */
+  --lh-2xs:  1.36;
+  --lh-xs:   1.4;
+  --lh-sm:   1.45;
+  --lh-base: 1.5;
+  --lh-md:   1.5;
+  --lh-lg:   1.4;
+  --lh-xl:   1.35;
+  --lh-2xl:  1.25;
+  --lh-3xl:  1.15;
+  --lh-4xl:  1.08;
+
+  /* Letter spacing */
+  --tracking-tight:  -0.014em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;
+  --tracking-caps:   0.06em; /* small-caps eyebrow labels */
+
+  /* Reading scale */
+  --reading-body:  16px;
+  --reading-h1:    28px;
+  --reading-h2:    22px;
+  --reading-h3:    18px;
+  --reading-quote: 16px;
+  --reading-code-inline: 14px;
+  --reading-code-block:  13px;
+  --reading-max-width:   65ch;
+
+  /* Weights */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* =========================================================
+     4. SPACING — 8pt grid + half-steps
+     ========================================================= */
+  --space-0:    0;
+  --space-px:   1px;
+  --space-0_5:  2px;
+  --space-1:    4px;
+  --space-1_5:  6px;
+  --space-2:    8px;
+  --space-2_5:  10px;
+  --space-3:    12px;
+  --space-4:    16px;
+  --space-5:    20px;
+  --space-6:    24px;
+  --space-8:    32px;
+  --space-10:   40px;
+  --space-12:   48px;
+  --space-16:   64px;
+  --space-20:   80px;
+  --space-24:   96px;
+
+  /* =========================================================
+     5. RADIUS
+     ========================================================= */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;  /* DEFAULT */
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 9999px;
+
+  /* =========================================================
+     6. MOTION
+     ========================================================= */
+  --motion-instant:    80ms;
+  --motion-fast:       120ms;
+  --motion-medium:     180ms;
+  --motion-slow:       280ms;
+  --motion-deliberate: 400ms;
+
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:      cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-in:       cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant:    1ms;
+    --motion-fast:       1ms;
+    --motion-medium:     1ms;
+    --motion-slow:       1ms;
+    --motion-deliberate: 1ms;
+  }
+}
+
+/* =============================================================
+   7. SEMANTIC TYPE CLASSES
+   ============================================================= */
+.t-2xs { font: var(--weight-regular) var(--text-2xs)/var(--lh-2xs) var(--font-ui); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-tertiary); }
+.t-xs  { font: var(--weight-regular) var(--text-xs)/var(--lh-xs)  var(--font-ui); }
+.t-sm  { font: var(--weight-regular) var(--text-sm)/var(--lh-sm)  var(--font-ui); }
+.t-base{ font: var(--weight-regular) var(--text-base)/var(--lh-base) var(--font-ui); }
+.t-md  { font: var(--weight-medium)  var(--text-md)/var(--lh-md) var(--font-ui); }
+.t-lg  { font: var(--weight-semibold) var(--text-lg)/var(--lh-lg) var(--font-ui); letter-spacing: var(--tracking-tight); }
+.t-xl  { font: var(--weight-semibold) var(--text-xl)/var(--lh-xl) var(--font-ui); letter-spacing: var(--tracking-tight); }
+.t-2xl { font: var(--weight-semibold) var(--text-2xl)/var(--lh-2xl) var(--font-ui); letter-spacing: var(--tracking-tight); }
+.t-3xl { font: var(--weight-semibold) var(--text-3xl)/var(--lh-3xl) var(--font-ui); letter-spacing: var(--tracking-tight); }
+.t-4xl { font: var(--weight-bold)     var(--text-4xl)/var(--lh-4xl) var(--font-ui); letter-spacing: -0.02em; }
+
+.t-num   { font-feature-settings: "tnum", "ss01"; font-variant-numeric: tabular-nums; }
+.t-mono  { font-family: var(--font-mono); }
+.t-read  { font-family: var(--font-reading); }
+
+/* =============================================================
+   8. BASE
+   ============================================================= */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font: var(--weight-regular) var(--text-sm)/var(--lh-sm) var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+::selection { background: var(--accent-primary-muted); color: var(--text-primary); }
+
+:focus-visible { outline: none; box-shadow: var(--ring-focus); border-radius: var(--radius-sm); }

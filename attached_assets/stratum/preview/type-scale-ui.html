@@ -1,0 +1,30 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>UI Type Scale</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .scale { display: grid; grid-template-columns: 64px 1fr 80px; row-gap: 6px; column-gap: 16px; align-items: baseline; }
+  .scale .tok { font: 500 10px/1 var(--font-mono); color: var(--text-tertiary); letter-spacing: 0.04em; text-transform: uppercase; }
+  .scale .meta { font: 400 10px/1 var(--font-mono); color: var(--text-tertiary); text-align: right; }
+  .specimen { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Type scale · UI · Inter</div>
+  <div class="scale">
+    <div class="tok">2xs</div><div class="specimen" style="font:400 11px/1.36 var(--font-ui); letter-spacing:.06em; text-transform:uppercase; color:var(--text-tertiary);">Metadata Eyebrow</div><div class="meta">11 / 16</div>
+    <div class="tok">xs</div> <div class="specimen" style="font:400 12px/1.4 var(--font-ui);">Dense table content, secondary metadata</div><div class="meta">12 / 17</div>
+    <div class="tok">sm</div> <div class="specimen" style="font:400 13px/1.45 var(--font-ui);">Default body — the workhorse size</div><div class="meta">13 / 19</div>
+    <div class="tok">base</div><div class="specimen" style="font:400 14px/1.5 var(--font-ui);">Standard interactive elements, comfortable body</div><div class="meta">14 / 21</div>
+    <div class="tok">md</div> <div class="specimen" style="font:500 15px/1.5 var(--font-ui);">Emphasized body, item titles in lists</div><div class="meta">15 / 22</div>
+    <div class="tok">lg</div> <div class="specimen" style="font:600 17px/1.4 var(--font-ui); letter-spacing:-.014em;">Section headings</div><div class="meta">17 / 24</div>
+    <div class="tok">xl</div> <div class="specimen" style="font:600 20px/1.35 var(--font-ui); letter-spacing:-.014em;">Subsection &amp; card titles</div><div class="meta">20 / 27</div>
+    <div class="tok">2xl</div><div class="specimen" style="font:600 24px/1.25 var(--font-ui); letter-spacing:-.014em;">Page subtitles</div><div class="meta">24 / 30</div>
+    <div class="tok">3xl</div><div class="specimen" style="font:600 32px/1.15 var(--font-ui); letter-spacing:-.014em;">Page titles, today.</div><div class="meta">32 / 37</div>
+    <div class="tok">4xl</div><div class="specimen" style="font:700 40px/1.08 var(--font-ui); letter-spacing:-.02em;">Hero display</div><div class="meta">40 / 43</div>
+  </div>
+</div>
+</body></html>

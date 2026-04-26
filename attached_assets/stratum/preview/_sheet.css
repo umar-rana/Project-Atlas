@@ -1,0 +1,53 @@
+/* Shared preview-card chrome.
+   For pages that demonstrate components, not raw tokens. */
+@import url("../components.css");
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font: var(--weight-regular) var(--text-sm)/var(--lh-sm) var(--font-ui);
+}
+
+.sheet {
+  padding: 24px 28px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex; flex-direction: column;
+  gap: var(--space-5);
+}
+
+.sh-head { margin-bottom: var(--space-2); }
+.sh-eyebrow {
+  font: var(--weight-medium) 10px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 0 var(--space-1);
+}
+.sh-title { font: var(--weight-semibold) var(--text-xl)/1.2 var(--font-ui); letter-spacing: var(--tracking-tight); margin: 0; }
+.sh-sub   { font: var(--weight-regular) var(--text-xs)/1.5 var(--font-ui); color: var(--text-tertiary); margin: 4px 0 0; max-width: 60ch; }
+
+.sh-section { display: flex; flex-direction: column; gap: var(--space-3); }
+.sh-h2 { font: var(--weight-semibold) 11px/1 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin: 0; padding-bottom: var(--space-1_5); border-bottom: 1px solid var(--border-subtle); }
+
+.sh-grid { display: grid; gap: var(--space-3); }
+.sh-grid--cols { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.sh-row  { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.sh-col  { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.sh-frame {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.sh-frame--inset { background: var(--surface-sunken); }
+.sh-frame__label { font: var(--weight-medium) 10px/1 var(--font-mono); color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.sh-cell { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1_5); padding: var(--space-2_5); background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+.sh-cell__label { font: var(--weight-medium) 10px/1 var(--font-mono); color: var(--text-tertiary); }
+
+.sh-spec { font: var(--weight-regular) 11px/1.5 var(--font-mono); color: var(--text-tertiary); }

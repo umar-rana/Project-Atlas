@@ -1,0 +1,38 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>List rows</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .list { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; }
+  .row { display: grid; grid-template-columns: 18px 1fr 80px 80px 90px; gap: 10px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--border-subtle); height: 30px; }
+  .row:last-child { border-bottom: 0; }
+  .row:hover { background: var(--surface-hover); }
+  .row.sel { background: var(--surface-selected); }
+  .row.sel:hover { background: var(--surface-selected-hover); }
+  .check { width: 14px; height: 14px; border: 1.5px solid var(--border-strong); border-radius: 3px; display: inline-block; }
+  .check.done { background: var(--accent-success); border-color: var(--accent-success); position: relative; }
+  .check.done::after { content: ""; position: absolute; top: 2px; left: 4px; width: 4px; height: 7px; border: solid var(--surface-base); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+  .title { font: 500 13px var(--font-ui); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .title.done { color: var(--text-tertiary); text-decoration: line-through; text-decoration-color: var(--text-tertiary); }
+  .meta { font: 400 12px var(--font-mono); color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+  .pill { font: 500 11px var(--font-ui); padding: 1px 7px; border-radius: var(--radius-xs); }
+  .p-h { background: var(--accent-danger-muted); color: var(--accent-danger); }
+  .p-m { background: var(--accent-warning-muted); color: var(--accent-warning); }
+  .p-l { background: var(--accent-neutral-muted); color: var(--text-secondary); }
+  .tag { font: 500 11px var(--font-ui); padding: 1px 7px; border-radius: var(--radius-full); background: var(--viz-1-light); color: var(--viz-1-strong); }
+  .tag.b { background: var(--viz-5-light); color: var(--viz-5-strong); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">List rows · default / hover / selected / completed</div>
+  <div class="list">
+    <div class="row"><span class="check"></span><span class="title">Draft Q4 OKR memo for leadership review</span><span class="pill p-h">Urgent</span><span class="tag">#roadmap</span><span class="meta">Today</span></div>
+    <div class="row sel"><span class="check"></span><span class="title">Decide on positioning headline — three options</span><span class="pill p-m">High</span><span class="tag b">#writing</span><span class="meta">Tue 15</span></div>
+    <div class="row"><span class="check"></span><span class="title">Sync with Sam on calendar integration scope</span><span class="pill p-l">Med</span><span class="tag">#followup</span><span class="meta">Wed 16</span></div>
+    <div class="row"><span class="check done"></span><span class="title done">Send invoices for Sept retainers</span><span class="pill p-l">Done</span><span class="tag b">#ops</span><span class="meta">Mon 14</span></div>
+    <div class="row"><span class="check"></span><span class="title">Read “Rest” notes — apply to Q4 cadence</span><span class="pill p-l">Low</span><span class="tag">#reading</span><span class="meta">Sat 19</span></div>
+  </div>
+</div>
+</body></html>

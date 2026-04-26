@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Inputs</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.2 · vol. 1</p>
+    <h1 class="sh-title">Text inputs</h1>
+    <p class="sh-sub">Text, search, with prefix/suffix/icon/action. Textarea (manual + auto-grow). Select, combobox, multi-select with chips, tag input. Every input has empty / focused / filled / error / success / disabled / read-only states.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Sizes</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:32px; align-items:flex-end;">
+        <div class="s-field" style="width:220px;">
+          <label class="s-field__label">Small (sm)</label>
+          <span class="s-input-wrap is-sm"><input class="s-input" placeholder="Search…" /></span>
+        </div>
+        <div class="s-field" style="width:240px;">
+          <label class="s-field__label">Medium · default</label>
+          <span class="s-input-wrap"><input class="s-input" placeholder="Project name" /></span>
+        </div>
+        <div class="s-field" style="width:280px;">
+          <label class="s-field__label">Large (lg)</label>
+          <span class="s-input-wrap is-lg"><input class="s-input" placeholder="Note title" /></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Affordances</h2>
+    <div class="sh-frame">
+      <div class="sh-grid sh-grid--cols">
+        <div class="s-field">
+          <label class="s-field__label">Left icon</label>
+          <span class="s-input-wrap">
+            <span class="s-input-wrap__icon">⌕</span>
+            <input class="s-input" placeholder="Search anything" />
+            <span class="s-kbd">⌘K</span>
+          </span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Prefix · suffix</label>
+          <span class="s-input-wrap">
+            <span class="s-input-wrap__prefix">stratum.app/</span>
+            <input class="s-input" value="sara-reza" />
+            <span class="s-input-wrap__suffix">.md</span>
+          </span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Right action</label>
+          <span class="s-input-wrap">
+            <input class="s-input" type="password" value="••••••••••" />
+            <button class="s-input-wrap__action" aria-label="Show password">👁</button>
+          </span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Clear-on-typed</label>
+          <span class="s-input-wrap">
+            <span class="s-input-wrap__icon">⌕</span>
+            <input class="s-input" value="calendar sync" />
+            <button class="s-input-wrap__action" aria-label="Clear">×</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">States</h2>
+    <div class="sh-frame">
+      <div class="sh-grid sh-grid--cols">
+        <div class="s-field">
+          <label class="s-field__label">Empty</label>
+          <span class="s-input-wrap"><input class="s-input" placeholder="Type a project name" /></span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Focused (sim.)</label>
+          <span class="s-input-wrap" style="border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-primary-subtle); background:var(--surface-base);"><input class="s-input" value="Q4 launch plan" /></span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Filled</label>
+          <span class="s-input-wrap"><input class="s-input" value="Q4 launch plan" /></span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Read-only</label>
+          <span class="s-input-wrap is-readonly"><input class="s-input" value="created · 17 Sep" readonly /></span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Disabled</label>
+          <span class="s-input-wrap is-disabled" aria-disabled="true"><input class="s-input" value="Imported" disabled /></span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Error</label>
+          <span class="s-input-wrap is-error"><input class="s-input" value="sara@" /></span>
+          <span class="s-field__error">▲ Enter a valid email address.</span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">Success</label>
+          <span class="s-input-wrap is-success"><input class="s-input" value="sara@stratum.app" /></span>
+          <span class="s-field__success">✓ Available</span>
+        </div>
+        <div class="s-field">
+          <label class="s-field__label">With hint</label>
+          <span class="s-input-wrap"><input class="s-input" placeholder="Slug" /></span>
+          <span class="s-field__hint">Letters, numbers, hyphens. Lowercase only.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Textarea</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="align-items:flex-start; gap:24px;">
+        <div class="s-field" style="flex:1; max-width:340px;">
+          <label class="s-field__label">Manual resize</label>
+          <textarea class="s-textarea" placeholder="Write a description…">A weekly review of every project's status, blockers, and next-week priorities. Shared with the leadership channel by Friday EOD.</textarea>
+        </div>
+        <div class="s-field" style="flex:1; max-width:340px;">
+          <label class="s-field__label">Auto-grow</label>
+          <textarea class="s-textarea is-autogrow" placeholder="Type — grows with content"></textarea>
+          <span class="s-field__hint">Sized to content; never scrolls inside the field.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Select · combobox · multi-select · tag input</h2>
+    <div class="sh-frame">
+      <div class="sh-grid sh-grid--cols" style="grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));">
+
+        <div class="s-field">
+          <label class="s-field__label">Select (single)</label>
+          <span class="s-input-wrap" role="combobox">
+            <input class="s-input" value="Q4 Launch" readonly />
+            <span class="s-input-wrap__suffix">▾</span>
+          </span>
+        </div>
+
+        <div class="s-field">
+          <label class="s-field__label">Combobox (typeahead)</label>
+          <span class="s-input-wrap">
+            <input class="s-input" value="cal" />
+            <span class="s-input-wrap__suffix">▾</span>
+          </span>
+          <div class="s-menu" style="position:relative; box-shadow:none; margin-top:4px;">
+            <button class="s-menu__item is-active"><span class="s-menu__icon">▣</span>Calendar sync<span class="s-menu__shortcut">↵</span></button>
+            <button class="s-menu__item"><span class="s-menu__icon">▣</span>Calendar conflicts</button>
+            <button class="s-menu__item"><span class="s-menu__icon">▣</span>Calendar permissions</button>
+          </div>
+        </div>
+
+        <div class="s-field">
+          <label class="s-field__label">Multi-select (chips)</label>
+          <span class="s-input-wrap" style="height:auto; min-height:30px; padding:4px 8px; flex-wrap:wrap; gap:4px;">
+            <span class="s-tag s-tag--filled is-c1">design <button class="s-tag__remove" aria-label="Remove">×</button></span>
+            <span class="s-tag s-tag--filled is-c2">research <button class="s-tag__remove" aria-label="Remove">×</button></span>
+            <input class="s-input" style="flex:1; min-width:80px;" placeholder="Add filter…" />
+          </span>
+        </div>
+
+        <div class="s-field">
+          <label class="s-field__label">Tag input</label>
+          <span class="s-input-wrap" style="height:auto; min-height:30px; padding:4px 8px; flex-wrap:wrap; gap:4px;">
+            <span class="s-tag s-tag--outlined is-c3"># roadmap <button class="s-tag__remove" aria-label="Remove">×</button></span>
+            <span class="s-tag s-tag--outlined is-c1"># ops <button class="s-tag__remove" aria-label="Remove">×</button></span>
+            <input class="s-input" style="flex:1; min-width:80px;" placeholder="Type # to add tag" />
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

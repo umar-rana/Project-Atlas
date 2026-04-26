@@ -1,0 +1,12 @@
+// Atlas — Wave 0 placeholder schema.
+// Wave 1 introduces the real models (User, Account, Session, Project, Task, ...).
+// Keep this file as a stub so `prisma generate` can run from the start.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

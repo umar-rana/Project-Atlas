@@ -1,0 +1,27 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Elevation</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--surface-base); }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; padding-top: 8px; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .card-s { width: 86px; height: 56px; background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); }
+  .name { font: 500 10px var(--font-mono); color: var(--text-secondary); }
+  .px { font: 400 10px var(--font-mono); color: var(--text-tertiary); text-align: center; max-width: 88px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Elevation · shadow stack (dark)</div>
+  <div class="grid">
+    <div class="item"><div class="card-s" style="box-shadow:none"></div><div class="name">e-0</div><div class="px">flat · border</div></div>
+    <div class="item"><div class="card-s" style="box-shadow:var(--shadow-1)"></div><div class="name">e-1</div><div class="px">raised cards</div></div>
+    <div class="item"><div class="card-s" style="box-shadow:var(--shadow-2)"></div><div class="name">e-2</div><div class="px">popovers, dropdowns</div></div>
+    <div class="item"><div class="card-s" style="box-shadow:var(--shadow-3)"></div><div class="name">e-3</div><div class="px">modals</div></div>
+    <div class="item"><div class="card-s" style="box-shadow:var(--shadow-4)"></div><div class="name">e-4</div><div class="px">command palette</div></div>
+    <div class="item"><div class="card-s" style="box-shadow:var(--shadow-5)"></div><div class="name">e-5</div><div class="px">toasts</div></div>
+  </div>
+</div>
+</body></html>

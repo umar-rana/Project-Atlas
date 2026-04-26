@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Navigation</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.5</p>
+    <h1 class="sh-title">Navigation</h1>
+    <p class="sh-sub">Module rail, sidebar nav, tabs, breadcrumbs, pagination, page header.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Module rail (vertical)</h2>
+    <div class="sh-frame">
+      <div class="s-rail" style="height:340px;">
+        <div class="s-rail__brand" title="Stratum"><span style="display:block; width:18px; height:18px; background:var(--accent-primary); border-radius:5px;"></span></div>
+        <button class="s-rail__item is-active" aria-current="page" title="Today (T)"><span class="s-rail__icon">▤</span></button>
+        <button class="s-rail__item" title="Tasks (G)"><span class="s-rail__icon">☰</span></button>
+        <button class="s-rail__item" title="Notes (N)"><span class="s-rail__icon">▤</span></button>
+        <button class="s-rail__item" title="Calendar (C)"><span class="s-rail__icon">▦</span></button>
+        <button class="s-rail__item" title="People (P)"><span class="s-rail__icon">◉</span></button>
+        <div style="flex:1;"></div>
+        <button class="s-rail__item" title="Settings (,)"><span class="s-rail__icon">⚙</span></button>
+        <button class="s-rail__item" title="Profile"><span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Sidebar nav</h2>
+    <div class="sh-frame">
+      <nav class="s-sidenav" style="width:240px;">
+        <div class="s-sidenav__section-label">Workspace</div>
+        <button class="s-sidenav__item is-active"><span class="s-sidenav__icon">▤</span>Today<span class="s-sidenav__count">12</span></button>
+        <button class="s-sidenav__item"><span class="s-sidenav__icon">⊞</span>Inbox<span class="s-sidenav__count">3</span></button>
+        <button class="s-sidenav__item"><span class="s-sidenav__icon">★</span>Important</button>
+        <button class="s-sidenav__item"><span class="s-sidenav__icon">⌖</span>Scheduled</button>
+
+        <div class="s-sidenav__section-label" style="margin-top:14px;">Projects</div>
+        <button class="s-sidenav__item"><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch<span class="s-sidenav__count">8</span></button>
+        <button class="s-sidenav__item"><span class="s-color-dot" style="background:var(--cal-3-fill);"></span>Pricing rewrite<span class="s-sidenav__count">5</span></button>
+        <button class="s-sidenav__item"><span class="s-color-dot" style="background:var(--cal-5-fill);"></span>Hiring · IC4</button>
+        <button class="s-sidenav__item"><span class="s-color-dot" style="background:var(--cal-7-fill);"></span>Personal</button>
+        <button class="s-sidenav__item is-add"><span class="s-sidenav__icon">＋</span>New project</button>
+      </nav>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Tabs · breadcrumbs · pagination</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:18px;">
+        <div>
+          <span class="sh-frame__label">Tabs (underline)</span>
+          <div class="s-tabs" style="margin-top:6px;">
+            <button class="s-tab is-active">Overview</button>
+            <button class="s-tab">Tasks <span class="s-badge">12</span></button>
+            <button class="s-tab">Notes <span class="s-badge">3</span></button>
+            <button class="s-tab">Files</button>
+            <button class="s-tab">Activity</button>
+          </div>
+        </div>
+
+        <div>
+          <span class="sh-frame__label">Tabs (pill)</span>
+          <div class="s-tabs s-tabs--pill" style="margin-top:6px;">
+            <button class="s-tab is-active">All</button>
+            <button class="s-tab">Open</button>
+            <button class="s-tab">In progress</button>
+            <button class="s-tab">Done</button>
+          </div>
+        </div>
+
+        <div>
+          <span class="sh-frame__label">Breadcrumbs</span>
+          <nav class="s-breadcrumbs" style="margin-top:6px;">
+            <a class="s-breadcrumbs__item">Workspace</a>
+            <span class="s-breadcrumbs__sep">/</span>
+            <a class="s-breadcrumbs__item">Q4 Launch</a>
+            <span class="s-breadcrumbs__sep">/</span>
+            <a class="s-breadcrumbs__item">Pricing</a>
+            <span class="s-breadcrumbs__sep">/</span>
+            <span class="s-breadcrumbs__item is-current" aria-current="page">Tier copy</span>
+          </nav>
+        </div>
+
+        <div>
+          <span class="sh-frame__label">Pagination</span>
+          <div class="s-pager" style="margin-top:6px;">
+            <button class="s-icon-btn is-sm" aria-label="Previous">‹</button>
+            <button class="s-pager__page">1</button>
+            <button class="s-pager__page is-active">2</button>
+            <button class="s-pager__page">3</button>
+            <span class="s-pager__ellipsis">…</span>
+            <button class="s-pager__page">12</button>
+            <button class="s-icon-btn is-sm" aria-label="Next">›</button>
+            <span class="sh-spec" style="margin-left:auto;">Showing 26–50 of 287</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Page header</h2>
+    <div class="sh-frame">
+      <header class="s-pageheader">
+        <div class="s-pageheader__top">
+          <nav class="s-breadcrumbs">
+            <a class="s-breadcrumbs__item">Projects</a>
+            <span class="s-breadcrumbs__sep">/</span>
+            <span class="s-breadcrumbs__item is-current">Q4 Launch</span>
+          </nav>
+          <div style="flex:1;"></div>
+          <button class="s-btn s-btn--ghost is-sm">Share</button>
+          <button class="s-btn s-btn--secondary is-sm">＋ Task</button>
+          <button class="s-icon-btn is-sm" aria-label="More">⋯</button>
+        </div>
+        <div class="s-pageheader__row">
+          <div class="s-color-dot" style="background:var(--cal-1-fill); width:14px; height:14px;"></div>
+          <h1 class="s-pageheader__title">Q4 Launch</h1>
+          <span class="s-status-pill is-in-progress"><i></i>On track</span>
+          <div style="flex:1;"></div>
+          <div class="s-avatar-stack">
+            <span class="s-avatar is-sm" style="background:var(--cal-1-fill); color:white;">SR</span>
+            <span class="s-avatar is-sm" style="background:var(--cal-3-fill); color:white;">DK</span>
+            <span class="s-avatar is-sm" style="background:var(--cal-5-fill); color:white;">JM</span>
+          </div>
+        </div>
+        <p class="s-pageheader__sub">Marketing, pricing, and onboarding workstreams for the Q4 product launch. Owner: Sara R. · Target: Nov 4.</p>
+      </header>
+    </div>
+  </section>
+</main>
+</body>
+</html>

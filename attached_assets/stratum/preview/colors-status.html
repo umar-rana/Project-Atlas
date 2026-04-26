@@ -1,0 +1,38 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Status pills</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border-radius: var(--radius-full); font: 500 11px var(--font-ui); border: 1px solid transparent; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .active   { background: var(--accent-info-muted);    color: var(--accent-info);    border-color: var(--accent-info-muted); }
+  .pending  { background: var(--accent-warning-muted); color: var(--accent-warning); }
+  .onhold   { background: var(--accent-neutral-muted); color: var(--text-secondary); }
+  .blocked  { background: var(--accent-danger-muted);  color: var(--accent-danger); }
+  .complete { background: var(--accent-success-muted); color: var(--accent-success); }
+  .cancel   { background: transparent; color: var(--text-tertiary); border-color: var(--border-default); text-decoration: line-through; text-decoration-color: var(--text-tertiary); }
+  .archived { background: transparent; color: var(--text-disabled); border-color: var(--border-subtle); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Status pills · semantic states</div>
+  <div class="row" style="margin-bottom: 12px;">
+    <span class="pill active"><i class="dot" style="background:var(--accent-info)"></i>Active</span>
+    <span class="pill pending"><i class="dot" style="background:var(--accent-warning)"></i>Pending</span>
+    <span class="pill onhold"><i class="dot" style="background:var(--accent-neutral)"></i>On hold</span>
+    <span class="pill blocked"><i class="dot" style="background:var(--accent-danger)"></i>Blocked</span>
+    <span class="pill complete"><i class="dot" style="background:var(--accent-success)"></i>Complete</span>
+    <span class="pill cancel">Cancelled</span>
+    <span class="pill archived">Archived</span>
+  </div>
+  <div class="row" style="font: 500 11px var(--font-mono); color: var(--text-tertiary); gap: 24px;">
+    <span>status-active → info</span>
+    <span>status-pending → warning</span>
+    <span>status-blocked → danger</span>
+    <span>status-complete → success</span>
+  </div>
+</div>
+</body></html>

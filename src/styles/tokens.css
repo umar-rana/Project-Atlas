@@ -1,0 +1,393 @@
+/* =============================================================
+   ATLAS — Design tokens (ported from Stratum colors_and_type.css)
+   Modifications from source:
+     - Removed three @import url(...) font lines (fonts wired via next/font).
+     - Removed --font-ui / --font-reading / --font-mono var defs (set in
+       app/layout.tsx by next/font with the same names).
+     - Added --shadow-0: none for full 0–5 elevation parity.
+   Components reference tokens, never raw values.
+   ============================================================= */
+
+/* =============================================================
+   1. DARK THEME (default)
+   ============================================================= */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ---- 1.1 Surface tokens -------------------------------- */
+  --surface-base:            oklch(18.5% 0.008 265);
+  --surface-raised:          oklch(21.5% 0.008 265);
+  --surface-overlay:         oklch(24.5% 0.008 265);
+  --surface-sunken:          oklch(15.5% 0.008 265);
+  --surface-hover:           oklch(26.5% 0.009 265);
+  --surface-active:          oklch(30%   0.010 265);
+  --surface-selected:        oklch(28%   0.045 255);
+  --surface-selected-hover:  oklch(32%   0.050 255);
+
+  /* ---- 1.2 Border tokens --------------------------------- */
+  --border-subtle:   oklch(26% 0.008 265 / 0.6);
+  --border-default:  oklch(32% 0.009 265);
+  --border-strong:   oklch(42% 0.010 265);
+  --border-focus:    oklch(72% 0.140 250);
+  --border-error:    oklch(65% 0.180 25);
+
+  /* ---- 1.3 Text tokens ----------------------------------- */
+  --text-primary:    oklch(96% 0.005 265);
+  --text-secondary:  oklch(74% 0.008 265);
+  --text-tertiary:   oklch(58% 0.008 265);
+  --text-disabled:   oklch(42% 0.008 265);
+  --text-on-accent:  oklch(98% 0.005 265);
+  --text-on-emphasis:oklch(98% 0.005 265);
+  --text-link:       oklch(78% 0.130 250);
+  --text-link-hover: oklch(85% 0.140 250);
+
+  /* ---- 1.4 Accent tokens --------------------------------- */
+  --accent-primary:         oklch(66% 0.170 250);
+  --accent-primary-hover:   oklch(72% 0.170 250);
+  --accent-primary-active:  oklch(60% 0.170 250);
+  --accent-primary-muted:   oklch(40% 0.090 250 / 0.32);
+  --accent-primary-subtle:  oklch(35% 0.060 250 / 0.20);
+
+  --accent-success:         oklch(72% 0.150 155);
+  --accent-success-muted:   oklch(45% 0.080 155 / 0.28);
+
+  --accent-warning:         oklch(78% 0.140 75);
+  --accent-warning-muted:   oklch(55% 0.080 75 / 0.28);
+
+  --accent-danger:          oklch(68% 0.180 25);
+  --accent-danger-muted:    oklch(45% 0.110 25 / 0.30);
+
+  --accent-info:            oklch(75% 0.110 220);
+  --accent-info-muted:      oklch(45% 0.070 220 / 0.28);
+
+  --accent-neutral:         oklch(70% 0.010 265);
+  --accent-neutral-muted:   oklch(35% 0.008 265 / 0.50);
+
+  /* ---- 1.5 Data viz palette (8 hues × 3 shades) --------- */
+  --viz-1-light:   oklch(78% 0.130 250); --viz-1: oklch(66% 0.170 250); --viz-1-strong: oklch(56% 0.190 250);
+  --viz-2-light:   oklch(80% 0.140 155); --viz-2: oklch(70% 0.160 155); --viz-2-strong: oklch(58% 0.170 155);
+  --viz-3-light:   oklch(82% 0.140 75);  --viz-3: oklch(74% 0.150 75);  --viz-3-strong: oklch(62% 0.160 75);
+  --viz-4-light:   oklch(78% 0.150 25);  --viz-4: oklch(68% 0.180 25);  --viz-4-strong: oklch(56% 0.190 25);
+  --viz-5-light:   oklch(78% 0.130 305); --viz-5: oklch(68% 0.160 305); --viz-5-strong: oklch(56% 0.180 305);
+  --viz-6-light:   oklch(80% 0.110 200); --viz-6: oklch(70% 0.130 200); --viz-6-strong: oklch(58% 0.140 200);
+  --viz-7-light:   oklch(80% 0.130 350); --viz-7: oklch(70% 0.160 350); --viz-7-strong: oklch(58% 0.180 350);
+  --viz-8-light:   oklch(78% 0.080 110); --viz-8: oklch(68% 0.100 110); --viz-8-strong: oklch(56% 0.110 110);
+
+  /* ---- 1.7 Calendar palette (12 hues, filled/soft/border) */
+  --cal-1-fill:    oklch(60% 0.170 250); --cal-1-soft: oklch(60% 0.170 250 / 0.22); --cal-1-border: oklch(72% 0.150 250);
+  --cal-2-fill:    oklch(62% 0.160 155); --cal-2-soft: oklch(62% 0.160 155 / 0.22); --cal-2-border: oklch(74% 0.140 155);
+  --cal-3-fill:    oklch(68% 0.150 75);  --cal-3-soft: oklch(68% 0.150 75 / 0.22);  --cal-3-border: oklch(78% 0.140 75);
+  --cal-4-fill:    oklch(60% 0.180 25);  --cal-4-soft: oklch(60% 0.180 25 / 0.22);  --cal-4-border: oklch(72% 0.160 25);
+  --cal-5-fill:    oklch(60% 0.170 305); --cal-5-soft: oklch(60% 0.170 305 / 0.22); --cal-5-border: oklch(72% 0.150 305);
+  --cal-6-fill:    oklch(62% 0.130 200); --cal-6-soft: oklch(62% 0.130 200 / 0.22); --cal-6-border: oklch(74% 0.120 200);
+  --cal-7-fill:    oklch(62% 0.170 350); --cal-7-soft: oklch(62% 0.170 350 / 0.22); --cal-7-border: oklch(74% 0.150 350);
+  --cal-8-fill:    oklch(60% 0.110 110); --cal-8-soft: oklch(60% 0.110 110 / 0.22); --cal-8-border: oklch(72% 0.100 110);
+  --cal-9-fill:    oklch(60% 0.140 175); --cal-9-soft: oklch(60% 0.140 175 / 0.22); --cal-9-border: oklch(72% 0.130 175);
+  --cal-10-fill:   oklch(58% 0.150 280); --cal-10-soft: oklch(58% 0.150 280 / 0.22); --cal-10-border: oklch(70% 0.140 280);
+  --cal-11-fill:   oklch(64% 0.140 50);  --cal-11-soft: oklch(64% 0.140 50 / 0.22);  --cal-11-border: oklch(76% 0.130 50);
+  --cal-12-fill:   oklch(56% 0.020 265); --cal-12-soft: oklch(56% 0.020 265 / 0.22); --cal-12-border: oklch(68% 0.015 265);
+
+  /* ---- Shadows (subtle in dark) -------------------------- */
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 0 rgba(0,0,0,0.30), 0 1px 2px 0 rgba(0,0,0,0.20);
+  --shadow-2: 0 4px 10px -2px rgba(0,0,0,0.40), 0 2px 4px -2px rgba(0,0,0,0.30);
+  --shadow-3: 0 12px 28px -6px rgba(0,0,0,0.55), 0 4px 8px -2px rgba(0,0,0,0.30);
+  --shadow-4: 0 20px 48px -12px rgba(0,0,0,0.65), 0 8px 16px -4px rgba(0,0,0,0.40);
+  --shadow-5: 0 24px 60px -8px rgba(0,0,0,0.70), 0 4px 12px -2px rgba(0,0,0,0.35);
+
+  /* Focus ring */
+  --ring-focus: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+}
+
+/* =============================================================
+   1. LIGHT THEME
+   ============================================================= */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-base:            oklch(98.5% 0.002 265);
+  --surface-raised:          oklch(100%  0      0);
+  --surface-overlay:         oklch(100%  0      0);
+  --surface-sunken:          oklch(96%   0.003 265);
+  --surface-hover:           oklch(95%   0.004 265);
+  --surface-active:          oklch(92%   0.005 265);
+  --surface-selected:        oklch(94%   0.030 250);
+  --surface-selected-hover:  oklch(91%   0.035 250);
+
+  --border-subtle:   oklch(92% 0.004 265);
+  --border-default:  oklch(86% 0.005 265);
+  --border-strong:   oklch(72% 0.006 265);
+  --border-focus:    oklch(55% 0.180 250);
+  --border-error:    oklch(55% 0.190 25);
+
+  --text-primary:    oklch(20% 0.010 265);
+  --text-secondary:  oklch(42% 0.010 265);
+  --text-tertiary:   oklch(58% 0.008 265);
+  --text-disabled:   oklch(72% 0.008 265);
+  --text-on-accent:  oklch(99% 0.002 265);
+  --text-on-emphasis:oklch(99% 0.002 265);
+  --text-link:       oklch(48% 0.180 250);
+  --text-link-hover: oklch(40% 0.190 250);
+
+  --accent-primary:         oklch(54% 0.190 250);
+  --accent-primary-hover:   oklch(48% 0.200 250);
+  --accent-primary-active:  oklch(44% 0.200 250);
+  --accent-primary-muted:   oklch(70% 0.120 250 / 0.18);
+  --accent-primary-subtle:  oklch(80% 0.080 250 / 0.18);
+
+  --accent-success:         oklch(50% 0.150 155);
+  --accent-success-muted:   oklch(72% 0.110 155 / 0.22);
+
+  --accent-warning:         oklch(58% 0.160 75);
+  --accent-warning-muted:   oklch(78% 0.130 75 / 0.28);
+
+  --accent-danger:          oklch(54% 0.200 25);
+  --accent-danger-muted:    oklch(72% 0.140 25 / 0.20);
+
+  --accent-info:            oklch(56% 0.130 220);
+  --accent-info-muted:      oklch(78% 0.090 220 / 0.22);
+
+  --accent-neutral:         oklch(48% 0.010 265);
+  --accent-neutral-muted:   oklch(85% 0.005 265 / 0.85);
+
+  --viz-1-light:   oklch(78% 0.110 250); --viz-1: oklch(58% 0.180 250); --viz-1-strong: oklch(44% 0.200 250);
+  --viz-2-light:   oklch(80% 0.130 155); --viz-2: oklch(58% 0.160 155); --viz-2-strong: oklch(44% 0.170 155);
+  --viz-3-light:   oklch(84% 0.130 75);  --viz-3: oklch(66% 0.160 75);  --viz-3-strong: oklch(52% 0.170 75);
+  --viz-4-light:   oklch(80% 0.130 25);  --viz-4: oklch(58% 0.190 25);  --viz-4-strong: oklch(46% 0.200 25);
+  --viz-5-light:   oklch(80% 0.110 305); --viz-5: oklch(56% 0.180 305); --viz-5-strong: oklch(42% 0.190 305);
+  --viz-6-light:   oklch(82% 0.090 200); --viz-6: oklch(58% 0.130 200); --viz-6-strong: oklch(44% 0.140 200);
+  --viz-7-light:   oklch(82% 0.110 350); --viz-7: oklch(60% 0.170 350); --viz-7-strong: oklch(46% 0.180 350);
+  --viz-8-light:   oklch(78% 0.070 110); --viz-8: oklch(56% 0.100 110); --viz-8-strong: oklch(42% 0.110 110);
+
+  --cal-1-fill:    oklch(54% 0.180 250); --cal-1-soft: oklch(54% 0.180 250 / 0.14); --cal-1-border: oklch(64% 0.180 250);
+  --cal-2-fill:    oklch(54% 0.160 155); --cal-2-soft: oklch(54% 0.160 155 / 0.14); --cal-2-border: oklch(64% 0.150 155);
+  --cal-3-fill:    oklch(60% 0.150 75);  --cal-3-soft: oklch(60% 0.150 75 / 0.14);  --cal-3-border: oklch(70% 0.140 75);
+  --cal-4-fill:    oklch(54% 0.190 25);  --cal-4-soft: oklch(54% 0.190 25 / 0.14);  --cal-4-border: oklch(64% 0.180 25);
+  --cal-5-fill:    oklch(54% 0.180 305); --cal-5-soft: oklch(54% 0.180 305 / 0.14); --cal-5-border: oklch(64% 0.170 305);
+  --cal-6-fill:    oklch(54% 0.130 200); --cal-6-soft: oklch(54% 0.130 200 / 0.14); --cal-6-border: oklch(64% 0.120 200);
+  --cal-7-fill:    oklch(56% 0.170 350); --cal-7-soft: oklch(56% 0.170 350 / 0.14); --cal-7-border: oklch(66% 0.160 350);
+  --cal-8-fill:    oklch(54% 0.110 110); --cal-8-soft: oklch(54% 0.110 110 / 0.14); --cal-8-border: oklch(64% 0.100 110);
+  --cal-9-fill:    oklch(52% 0.140 175); --cal-9-soft: oklch(52% 0.140 175 / 0.14); --cal-9-border: oklch(62% 0.130 175);
+  --cal-10-fill:   oklch(50% 0.160 280); --cal-10-soft: oklch(50% 0.160 280 / 0.14); --cal-10-border: oklch(60% 0.150 280);
+  --cal-11-fill:   oklch(58% 0.140 50);  --cal-11-soft: oklch(58% 0.140 50 / 0.14);  --cal-11-border: oklch(68% 0.130 50);
+  --cal-12-fill:   oklch(48% 0.020 265); --cal-12-soft: oklch(48% 0.020 265 / 0.14); --cal-12-border: oklch(58% 0.015 265);
+
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 0 rgba(15,23,42,0.04), 0 1px 2px 0 rgba(15,23,42,0.06);
+  --shadow-2: 0 4px 10px -2px rgba(15,23,42,0.08), 0 2px 4px -2px rgba(15,23,42,0.05);
+  --shadow-3: 0 12px 28px -6px rgba(15,23,42,0.12), 0 4px 8px -2px rgba(15,23,42,0.06);
+  --shadow-4: 0 20px 48px -12px rgba(15,23,42,0.18), 0 8px 16px -4px rgba(15,23,42,0.08);
+  --shadow-5: 0 24px 60px -8px rgba(15,23,42,0.22), 0 4px 12px -2px rgba(15,23,42,0.08);
+
+  --ring-focus: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+}
+
+/* =============================================================
+   2. STATUS color tokens (theme-agnostic mappings)
+   ============================================================= */
+:root {
+  --status-active:    var(--accent-info);
+  --status-pending:   var(--accent-warning);
+  --status-on-hold:   var(--accent-neutral);
+  --status-blocked:   var(--accent-danger);
+  --status-complete:  var(--accent-success);
+  --status-cancelled: var(--text-tertiary);
+  --status-archived:  var(--text-disabled);
+}
+
+/* =============================================================
+   3. TYPOGRAPHY (font families wired by next/font in layout.tsx)
+   ============================================================= */
+:root {
+  /* UI scale */
+  --text-4xs:  9px;   /* avatar xs caption, notification badge */
+  --text-3xs:  10px;  /* badge label, status pill, kbd glyph, group heading */
+  --text-2xs:  11px;
+  --text-xs:   12px;
+  --text-sm:   13px;
+  --text-base: 14px;
+  --text-md:   15px;
+  --text-lg:   17px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  32px;
+  --text-4xl:  40px;
+
+  /* Line-heights — tight for UI */
+  --lh-2xs:  1.36;
+  --lh-xs:   1.4;
+  --lh-sm:   1.45;
+  --lh-base: 1.5;
+  --lh-md:   1.5;
+  --lh-lg:   1.4;
+  --lh-xl:   1.35;
+  --lh-2xl:  1.25;
+  --lh-3xl:  1.15;
+  --lh-4xl:  1.08;
+
+  /* Letter spacing */
+  --tracking-tight:  -0.014em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;
+  --tracking-caps:   0.06em;
+
+  /* Reading scale (Stratum extensions) */
+  --reading-body:        16px;
+  --reading-h1:          28px;
+  --reading-h2:          22px;
+  --reading-h3:          18px;
+  --reading-quote:       16px;
+  --reading-code-inline: 14px;
+  --reading-code-block:  13px;
+  --reading-max-width:   65ch;
+
+  /* Weights */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* =========================================================
+     4. SPACING — 8pt grid + half-steps (Stratum extensions: px, 0_5)
+     ========================================================= */
+  --space-0:    0;
+  --space-px:   1px;
+  --space-0_5:  2px;
+  --space-1:    4px;
+  --space-1_25: 5px;   /* avatar-stack overlap, mention-pill x-padding */
+  --space-1_5:  6px;
+  --space-2:    8px;
+  --space-2_5:  10px;
+  --space-3:    12px;
+  --space-3_5:  14px;  /* checkbox / switch thumb / spinner */
+  --space-4:    16px;
+  --space-5:    20px;
+  --space-6:    24px;
+  --space-8:    32px;
+  --space-10:   40px;
+  --space-12:   48px;
+  --space-16:   64px;
+  --space-20:   80px;
+  --space-24:   96px;
+
+  /* Pixel-precise component heights from Stratum's components.css.
+     These are intentionally non-multiples of the 8pt grid because they
+     correspond to fixed control heights (button, input, rail, pill, kbd). */
+  --size-control-pill:    18px;  /* tag, mention, status, switch track */
+  --size-control-sm:      22px;  /* button sm, icon-button sm */
+  --size-control-input:   24px;  /* input sm */
+  --size-control-md:      28px;  /* button md, icon-button md */
+  --size-control-input-md:30px;  /* input md, select trigger */
+  --size-control-lg:      36px;  /* button lg, icon-button lg */
+  --size-control-xl:      38px;  /* primary CTA */
+
+  /* =========================================================
+     5. RADIUS
+     ========================================================= */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-2xs:  3px;  /* checkbox container, kbd key (between xs and sm) */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 9999px;
+
+  /* =========================================================
+     6. MOTION
+     ========================================================= */
+  --motion-instant:    80ms;
+  --motion-fast:       120ms;
+  --motion-medium:     180ms;
+  --motion-slow:       280ms;
+  --motion-deliberate: 400ms;
+
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:      cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease-in:       cubic-bezier(0.4, 0.0, 1, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* =========================================================
+     7. BREAKPOINTS (also exposed in tailwind.config.ts)
+     ========================================================= */
+  --bp-mobile:  600px;
+  --bp-tablet:  900px;
+  --bp-laptop:  1200px;
+  --bp-desktop: 1440px;
+
+  /* =========================================================
+     8. LAYERING (z-index) — single source of truth
+     ========================================================= */
+  --z-base:            0;
+  --z-rail:            10;   /* module-switcher rail */
+  --z-top-bar:         20;   /* top bar, sticky page chrome */
+  --z-overlay:         80;   /* popover, dropdown, context, select */
+  --z-drawer-backdrop: 84;   /* drawer backdrop */
+  --z-drawer:          85;   /* drawer surface */
+  --z-modal-backdrop:  90;   /* dialog backdrop */
+  --z-modal-content:   91;   /* dialog/cmd-palette content */
+  --z-toast:           95;   /* toaster */
+  --z-tooltip:         100;  /* tooltips, always-on-top */
+
+  /* =========================================================
+     9. MODAL + MENU + TEXTAREA SIZING
+     ========================================================= */
+  --modal-inset-top:        12vh;  /* dialog, alert-dialog */
+  --modal-inset-top-cmd:    14vh;  /* command palette */
+  --modal-margin-x:         16px;  /* viewport gutter on each side */
+  --modal-w-base:           calc(100vw - (var(--modal-margin-x) * 2));
+  --modal-w-sm:             380px;
+  --modal-w-md:             480px;
+  --modal-w-lg:             640px;
+  --modal-w-xl:             900px;
+  --modal-w-alert:          420px;
+  --modal-w-cmd:            560px;
+
+  --menu-min-w:             200px;  /* dropdown, context, popover */
+  --menu-min-w-select:      8rem;   /* select menu */
+  --menu-max-h-cmd:         340px;  /* command palette list */
+
+  --textarea-min-h:         72px;
+  --progress-indet-w:       30%;
+
+  /* =========================================================
+     10. SCRIMS, BLURS, FOCUS RINGS, MISC PAGE WIDTHS
+     ========================================================= */
+  --scrim-modal:            rgb(0 0 0 / 0.45);
+  --scrim-drawer:           rgb(0 0 0 / 0.30);
+  --backdrop-blur-overlay:  2px;
+  --ring-input:             0 0 0 3px var(--accent-primary-subtle);
+  --ring-input-error:       0 0 0 3px var(--accent-danger-muted);
+  --ring-card-selected:     0 0 0 1px var(--accent-primary);
+  --reading-paragraph-max:  64ch;   /* page-header description */
+  --empty-state-max:        360px;
+
+  /* =========================================================
+     11. COMPONENT-SPECIFIC SIZING
+     ========================================================= */
+  --switch-track-w-sm:      28px;   /* switch sm track */
+  --switch-track-w-md:      32px;   /* switch md track */
+  --skeleton-block-h:       56px;   /* skeleton variant=block */
+  --skeleton-shimmer-min:   0.40;   /* low alpha of shimmer pulse */
+  --skeleton-shimmer-max:   0.70;   /* high alpha of shimmer pulse */
+  --autocomplete-w:         288px;  /* reference autocomplete popover */
+  --autocomplete-max-h:     256px;  /* reference autocomplete list */
+  --top-bar-search-max-w:   28rem;  /* top-bar search trigger */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant:    1ms;
+    --motion-fast:       1ms;
+    --motion-medium:     1ms;
+    --motion-slow:       1ms;
+    --motion-deliberate: 1ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

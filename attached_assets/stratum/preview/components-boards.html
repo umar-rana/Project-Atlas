@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Boards</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.9</p>
+    <h1 class="sh-title">Boards · calendar · timeline</h1>
+    <p class="sh-sub">Kanban with WIP limits. Week calendar grid with overlapping events. Project timeline / gantt.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Kanban board</h2>
+    <div class="sh-frame" style="padding: 8px;">
+      <div class="s-kanban">
+        <div class="s-kanban__col">
+          <div class="s-kanban__head"><span class="s-status-pill is-todo"><i></i>To do</span><span class="s-kanban__count t-num">7</span><div style="flex:1;"></div><button class="s-icon-btn is-sm">＋</button></div>
+          <div class="s-kanban__card"><div class="s-kanban__card-title">Define Q4 OKRs</div><div class="s-kanban__card-meta"><span class="s-tag s-tag--filled is-c1">Q4</span><span class="t-num" style="margin-left:auto;">Mon</span></div></div>
+          <div class="s-kanban__card"><div class="s-kanban__card-title">Pricing alts memo · review</div><div class="s-kanban__card-meta"><span class="s-tag s-tag--filled is-c3">Pricing</span><span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white; margin-left:auto;">DK</span></div></div>
+          <div class="s-kanban__card"><div class="s-kanban__card-title">Onboarding copy v2</div><div class="s-kanban__card-meta"><span class="s-tag s-tag--filled is-c5">Onboarding</span></div></div>
+        </div>
+
+        <div class="s-kanban__col">
+          <div class="s-kanban__head"><span class="s-status-pill is-in-progress"><i></i>In progress</span><span class="s-kanban__count t-num">3 / 5</span><div style="flex:1;"></div><button class="s-icon-btn is-sm">＋</button></div>
+          <div class="s-kanban__card is-priority"><div class="s-kanban__card-title">Finalize pricing tier copy</div><div class="s-kanban__card-meta"><span class="s-tag s-tag--filled is-c1">Q4</span><span class="t-num" style="color:var(--accent-danger); margin-left:auto;">Today 10:30</span></div></div>
+          <div class="s-kanban__card"><div class="s-kanban__card-title">PR #482 — calendar conflict resolver</div><div class="s-kanban__card-meta"><span class="s-tag s-tag--filled is-c5">Eng</span><span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white; margin-left:auto;">SR</span></div></div>
+        </div>
+
+        <div class="s-kanban__col">
+          <div class="s-kanban__head"><span class="s-status-pill is-blocked"><i></i>Blocked</span><span class="s-kanban__count t-num">1</span></div>
+          <div class="s-kanban__card"><div class="s-kanban__card-title">Launch comms plan</div><div class="s-kanban__card-meta"><span class="s-tag s-tag--filled is-c2">Marketing</span><span class="s-validation s-validation--warning" style="margin-left:auto; padding:0;">⚠ waiting on legal</span></div></div>
+        </div>
+
+        <div class="s-kanban__col">
+          <div class="s-kanban__head"><span class="s-status-pill is-done"><i></i>Done</span><span class="s-kanban__count t-num">12</span></div>
+          <div class="s-kanban__card is-done"><div class="s-kanban__card-title">Q4 OKR memo to leadership</div><div class="s-kanban__card-meta"><span class="t-num" style="margin-left:auto;">Mon</span></div></div>
+          <div class="s-kanban__card is-done"><div class="s-kanban__card-title">Onboarding flow — QA pass</div><div class="s-kanban__card-meta"><span class="t-num" style="margin-left:auto;">Fri</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Week calendar grid</h2>
+    <div class="sh-frame" style="padding:0;">
+      <div class="s-cal">
+        <div class="s-cal__head">
+          <div class="s-cal__corner"></div>
+          <div class="s-cal__day"><span class="s-cal__dow">MON</span><span class="s-cal__date t-num">13</span></div>
+          <div class="s-cal__day"><span class="s-cal__dow">TUE</span><span class="s-cal__date t-num is-today">14</span></div>
+          <div class="s-cal__day"><span class="s-cal__dow">WED</span><span class="s-cal__date t-num">15</span></div>
+          <div class="s-cal__day"><span class="s-cal__dow">THU</span><span class="s-cal__date t-num">16</span></div>
+          <div class="s-cal__day"><span class="s-cal__dow">FRI</span><span class="s-cal__date t-num">17</span></div>
+        </div>
+        <div class="s-cal__body">
+          <div class="s-cal__hours">
+            <span class="t-num">09</span><span class="t-num">10</span><span class="t-num">11</span><span class="t-num">12</span><span class="t-num">13</span><span class="t-num">14</span><span class="t-num">15</span><span class="t-num">16</span><span class="t-num">17</span>
+          </div>
+          <div class="s-cal__col">
+            <div class="s-cal__now" style="top:18%;"><span></span></div>
+            <div class="s-event is-c1" style="top:0%; height:14%;"><div class="s-event__time">09:00</div><div class="s-event__title">Standup</div></div>
+            <div class="s-event is-c3" style="top:44%; height:18%;"><div class="s-event__time">13:00</div><div class="s-event__title">Design crit</div></div>
+          </div>
+          <div class="s-cal__col">
+            <div class="s-event is-c1" style="top:14%; height:8%;"><div class="s-event__time">10:30</div><div class="s-event__title">Pricing review</div></div>
+            <div class="s-event is-c5" style="top:50%; height:8%; left: 4%; width: 92%;"><div class="s-event__time">14:00</div><div class="s-event__title">1:1 · Dana</div></div>
+          </div>
+          <div class="s-cal__col">
+            <div class="s-event is-c3" style="top:10%; height:30%;"><div class="s-event__time">10:00</div><div class="s-event__title">Focus · Pricing copy</div><div class="s-event__sub">DND</div></div>
+          </div>
+          <div class="s-cal__col">
+            <div class="s-event is-c1" style="top:14%; height:6%;"><div class="s-event__time">10:30</div><div class="s-event__title">Pricing approval</div></div>
+            <div class="s-event is-c7 is-tentative" style="top:60%; height:8%;"><div class="s-event__time">15:00</div><div class="s-event__title">Tentative · sync</div></div>
+          </div>
+          <div class="s-cal__col">
+            <div class="s-event is-c5" style="top:0%; height:14%;"><div class="s-event__time">09:00</div><div class="s-event__title">Weekly review</div></div>
+            <div class="s-event is-c3" style="top:30%; height:24%;"><div class="s-event__time">11:30</div><div class="s-event__title">Focus · Memo</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Timeline / gantt</h2>
+    <div class="sh-frame" style="padding:0;">
+      <div class="s-gantt">
+        <div class="s-gantt__head">
+          <div class="s-gantt__corner">Project</div>
+          <div class="s-gantt__weeks">
+            <span class="t-num">W37</span><span class="t-num">W38</span><span class="t-num">W39</span><span class="t-num">W40</span><span class="t-num">W41</span><span class="t-num">W42</span><span class="t-num">W43</span><span class="t-num">W44</span>
+          </div>
+        </div>
+        <div class="s-gantt__row">
+          <div class="s-gantt__label"><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch</div>
+          <div class="s-gantt__track">
+            <div class="s-gantt__bar is-c1" style="left:0%; width:75%;"><span>Pricing & marketing</span></div>
+            <div class="s-gantt__milestone" style="left:75%;" title="Launch · Nov 4">◆</div>
+          </div>
+        </div>
+        <div class="s-gantt__row">
+          <div class="s-gantt__label"><span class="s-color-dot" style="background:var(--cal-3-fill);"></span>Pricing rewrite</div>
+          <div class="s-gantt__track">
+            <div class="s-gantt__bar is-c3" style="left:12%; width:38%;"><span>Memo + tier copy</span></div>
+            <div class="s-gantt__bar is-c3 is-pending" style="left:50%; width:18%;"><span>Review</span></div>
+          </div>
+        </div>
+        <div class="s-gantt__row">
+          <div class="s-gantt__label"><span class="s-color-dot" style="background:var(--cal-5-fill);"></span>Hiring · IC4</div>
+          <div class="s-gantt__track">
+            <div class="s-gantt__bar is-c5" style="left:25%; width:50%;"><span>Sourcing → onsites</span></div>
+          </div>
+        </div>
+        <div class="s-gantt__row">
+          <div class="s-gantt__label"><span class="s-color-dot" style="background:var(--cal-7-fill);"></span>Calendar engine</div>
+          <div class="s-gantt__track">
+            <div class="s-gantt__bar is-c7" style="left:0%; width:62%;"><span>v2 conflict resolver</span></div>
+            <div class="s-gantt__bar is-c7 is-pending" style="left:62%; width:30%;"><span>QA · ramp</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Display</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.3</p>
+    <h1 class="sh-title">Display & feedback</h1>
+    <p class="sh-sub">Avatar, badge, divider, progress, spinner, skeleton, stepper, empty state.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Avatar</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px;">
+        <div class="sh-col"><span class="sh-frame__label">Sizes</span><div class="sh-row">
+          <span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span>
+          <span class="s-avatar is-sm" style="background:var(--cal-3-fill); color:white;">DK</span>
+          <span class="s-avatar" style="background:var(--cal-5-fill); color:white;">JM</span>
+          <span class="s-avatar is-lg" style="background:var(--cal-7-fill); color:white;">AP</span>
+          <span class="s-avatar is-xl" style="background:var(--cal-9-fill); color:white;">RW</span>
+        </div></div>
+        <div class="sh-col"><span class="sh-frame__label">Stack</span>
+          <div class="s-avatar-stack">
+            <span class="s-avatar is-sm" style="background:var(--cal-1-fill); color:white;">SR</span>
+            <span class="s-avatar is-sm" style="background:var(--cal-3-fill); color:white;">DK</span>
+            <span class="s-avatar is-sm" style="background:var(--cal-5-fill); color:white;">JM</span>
+            <span class="s-avatar is-sm" style="background:var(--surface-overlay); color:var(--text-secondary);">+4</span>
+          </div>
+        </div>
+        <div class="sh-col"><span class="sh-frame__label">With status</span>
+          <div class="sh-row">
+            <span class="s-avatar" style="background:var(--cal-1-fill); color:white; position:relative;">SR<i class="s-avatar__dot is-online"></i></span>
+            <span class="s-avatar" style="background:var(--cal-3-fill); color:white; position:relative;">DK<i class="s-avatar__dot is-away"></i></span>
+            <span class="s-avatar" style="background:var(--cal-5-fill); color:white; position:relative;">JM<i class="s-avatar__dot is-offline"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Badge</h2>
+    <div class="sh-frame">
+      <div class="sh-row">
+        <span class="s-badge">Default</span>
+        <span class="s-badge is-info">Info</span>
+        <span class="s-badge is-success">Success</span>
+        <span class="s-badge is-warning">Warning</span>
+        <span class="s-badge is-danger">Danger</span>
+        <span class="s-badge is-dot">●  3 active</span>
+        <span class="s-badge is-count">12</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Progress · spinner · skeleton</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px; align-items:flex-start;">
+        <div class="sh-col" style="width:240px;">
+          <span class="sh-frame__label">Linear</span>
+          <div class="s-progress"><span class="s-progress__bar" style="width:30%;"></span></div>
+          <div class="s-progress"><span class="s-progress__bar" style="width:72%;"></span></div>
+          <div class="s-progress is-indeterminate"><span class="s-progress__bar"></span></div>
+        </div>
+        <div class="sh-col">
+          <span class="sh-frame__label">Spinner</span>
+          <div class="sh-row"><span class="s-spinner is-sm"></span><span class="s-spinner"></span><span class="s-spinner is-lg"></span></div>
+        </div>
+        <div class="sh-col" style="flex:1; max-width:320px;">
+          <span class="sh-frame__label">Skeleton</span>
+          <div class="s-skel" style="height:14px; width:60%;"></div>
+          <div class="s-skel" style="height:10px; width:90%;"></div>
+          <div class="s-skel" style="height:10px; width:75%;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Stepper</h2>
+    <div class="sh-frame">
+      <ol class="s-stepper">
+        <li class="s-stepper__step is-done"><span class="s-stepper__num">✓</span><span class="s-stepper__label">Account</span></li>
+        <li class="s-stepper__step is-done"><span class="s-stepper__num">✓</span><span class="s-stepper__label">Workspace</span></li>
+        <li class="s-stepper__step is-active"><span class="s-stepper__num">3</span><span class="s-stepper__label">Import</span></li>
+        <li class="s-stepper__step"><span class="s-stepper__num">4</span><span class="s-stepper__label">Invite</span></li>
+        <li class="s-stepper__step"><span class="s-stepper__num">5</span><span class="s-stepper__label">Done</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Empty state</h2>
+    <div class="sh-frame">
+      <div class="s-empty">
+        <div class="s-empty__icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        </div>
+        <p class="s-empty__title">No events this week</p>
+        <p class="s-empty__sub">Connect a calendar to bring meetings in alongside your tasks. Stratum will keep them read-only.</p>
+        <div class="sh-row"><button class="s-btn s-btn--primary">Connect Google</button><button class="s-btn s-btn--secondary">Connect iCloud</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Validation</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:6px; max-width:480px;">
+        <div class="s-validation s-validation--error">▲ Project name is required.</div>
+        <div class="s-validation s-validation--warning">⚠ This date is in the past.</div>
+        <div class="s-validation s-validation--success">✓ Saved 2 seconds ago.</div>
+        <div class="s-validation s-validation--info">ℹ Drafts are auto-saved every 5 seconds.</div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

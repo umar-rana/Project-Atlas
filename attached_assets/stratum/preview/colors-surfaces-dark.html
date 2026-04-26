@@ -1,0 +1,38 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Surfaces — dark</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--surface-base); }
+  .stack { position: relative; height: 220px; }
+  .layer { position: absolute; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 10px 14px; font: 500 11px var(--font-mono); color: var(--text-secondary); box-shadow: var(--shadow-2); }
+  .l1 { inset: 0; background: var(--surface-base); }
+  .l2 { inset: 16px 16px 16px 16px; background: var(--surface-raised); }
+  .l3 { inset: 36px 36px 36px 36px; background: var(--surface-overlay); }
+  .l4 { inset: 56px 56px 56px 56px; background: var(--surface-sunken); border-style: dashed; }
+  .key { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; font: 500 11px var(--font-mono); color: var(--text-tertiary); }
+  .key span { display:flex; align-items:center; gap:6px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; border: 1px solid var(--border-subtle); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Surface elevation · dark</div>
+  <div class="stack">
+    <div class="layer l1">surface-base</div>
+    <div class="layer l2">surface-raised</div>
+    <div class="layer l3">surface-overlay</div>
+    <div class="layer l4">surface-sunken (inset)</div>
+  </div>
+  <div class="key">
+    <span><i class="dot" style="background:var(--surface-base)"></i>base</span>
+    <span><i class="dot" style="background:var(--surface-raised)"></i>raised</span>
+    <span><i class="dot" style="background:var(--surface-overlay)"></i>overlay</span>
+    <span><i class="dot" style="background:var(--surface-sunken)"></i>sunken</span>
+    <span><i class="dot" style="background:var(--surface-hover)"></i>hover</span>
+    <span><i class="dot" style="background:var(--surface-active)"></i>active</span>
+    <span><i class="dot" style="background:var(--surface-selected)"></i>selected</span>
+  </div>
+</div>
+</body></html>

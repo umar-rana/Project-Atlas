@@ -1,0 +1,40 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Data viz</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+  .col { display: flex; flex-direction: column; gap: 4px; }
+  .row { display: grid; grid-template-rows: repeat(3, 28px); gap: 4px; }
+  .row .b { border-radius: var(--radius-xs); }
+  .name { font: 500 10px var(--font-mono); color: var(--text-tertiary); margin-top: 4px; }
+  .chart { margin-top: 14px; height: 60px; display:flex; align-items:flex-end; gap: 4px; padding: 0 2px; border-bottom: 1px solid var(--border-subtle); }
+  .chart .bar { flex:1; border-radius: var(--radius-xs) var(--radius-xs) 0 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Data viz palette · 8 hues × 3 shades</div>
+  <div class="grid">
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-1-light)"></div><div class="b" style="background:var(--viz-1)"></div><div class="b" style="background:var(--viz-1-strong)"></div></div><div class="name">01 blue</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-2-light)"></div><div class="b" style="background:var(--viz-2)"></div><div class="b" style="background:var(--viz-2-strong)"></div></div><div class="name">02 green</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-3-light)"></div><div class="b" style="background:var(--viz-3)"></div><div class="b" style="background:var(--viz-3-strong)"></div></div><div class="name">03 amber</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-4-light)"></div><div class="b" style="background:var(--viz-4)"></div><div class="b" style="background:var(--viz-4-strong)"></div></div><div class="name">04 red</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-5-light)"></div><div class="b" style="background:var(--viz-5)"></div><div class="b" style="background:var(--viz-5-strong)"></div></div><div class="name">05 purple</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-6-light)"></div><div class="b" style="background:var(--viz-6)"></div><div class="b" style="background:var(--viz-6-strong)"></div></div><div class="name">06 teal</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-7-light)"></div><div class="b" style="background:var(--viz-7)"></div><div class="b" style="background:var(--viz-7-strong)"></div></div><div class="name">07 pink</div></div>
+    <div class="col"><div class="row"><div class="b" style="background:var(--viz-8-light)"></div><div class="b" style="background:var(--viz-8)"></div><div class="b" style="background:var(--viz-8-strong)"></div></div><div class="name">08 olive</div></div>
+  </div>
+  <div class="chart">
+    <div class="bar" style="background:var(--viz-1); height:80%"></div>
+    <div class="bar" style="background:var(--viz-2); height:55%"></div>
+    <div class="bar" style="background:var(--viz-3); height:72%"></div>
+    <div class="bar" style="background:var(--viz-4); height:38%"></div>
+    <div class="bar" style="background:var(--viz-5); height:90%"></div>
+    <div class="bar" style="background:var(--viz-6); height:48%"></div>
+    <div class="bar" style="background:var(--viz-7); height:62%"></div>
+    <div class="bar" style="background:var(--viz-8); height:30%"></div>
+  </div>
+</div>
+</body></html>

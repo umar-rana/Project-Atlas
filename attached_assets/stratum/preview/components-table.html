@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Table</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.10</p>
+    <h1 class="sh-title">Data table</h1>
+    <p class="sh-sub">Sortable headers, resize handles, pinned column, row selection, hover actions, inline edit, bulk-action bar.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Table — default</h2>
+    <div class="sh-frame" style="padding: 0;">
+      <div class="s-table-toolbar">
+        <span class="s-input-wrap is-sm" style="width:220px;"><span class="s-input-wrap__icon">⌕</span><input class="s-input" placeholder="Filter rows" /></span>
+        <button class="s-btn s-btn--ghost is-sm">＋ Filter</button>
+        <button class="s-btn s-btn--ghost is-sm">Group: Project</button>
+        <div style="flex:1;"></div>
+        <span class="sh-spec">287 rows · 12 selected</span>
+        <button class="s-btn s-btn--secondary is-sm">Columns ▾</button>
+      </div>
+
+      <div class="s-bulk-bar">
+        <input class="s-check is-md" type="checkbox" checked />
+        <span class="s-bulk-bar__count">12 selected</span>
+        <div style="flex:1;"></div>
+        <button class="s-btn s-btn--ghost is-sm">Reschedule</button>
+        <button class="s-btn s-btn--ghost is-sm">Move to project</button>
+        <button class="s-btn s-btn--ghost is-sm">Tag</button>
+        <button class="s-btn s-btn--ghost is-sm" style="color:var(--accent-danger);">Delete</button>
+        <button class="s-icon-btn is-sm" aria-label="Clear">×</button>
+      </div>
+
+      <table class="s-table">
+        <thead>
+          <tr>
+            <th style="width:32px;"><input class="s-check is-md" type="checkbox" /></th>
+            <th class="is-sortable is-sorted-asc" style="position:sticky; left:32px; background:inherit;">Title <span class="s-sort">▲</span></th>
+            <th class="is-sortable">Project <span class="s-sort">▾</span></th>
+            <th class="is-sortable">Status</th>
+            <th class="is-sortable">Due <span class="s-sort">▾</span></th>
+            <th>Assignee</th>
+            <th class="is-num">Estimate</th>
+            <th style="width:32px;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="is-selected">
+            <td><input class="s-check is-md" type="checkbox" checked /></td>
+            <td class="s-table__title">Finalize pricing tier copy</td>
+            <td><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch</td>
+            <td><span class="s-status-pill is-in-progress"><i></i>In progress</span></td>
+            <td class="t-num" style="color:var(--accent-danger);">Today, 10:30</td>
+            <td><span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span> Dana K.</td>
+            <td class="is-num t-num">2h</td>
+            <td><button class="s-icon-btn is-sm">⋯</button></td>
+          </tr>
+          <tr>
+            <td><input class="s-check is-md" type="checkbox" /></td>
+            <td class="s-table__title">Review PR #482 — calendar conflict resolver</td>
+            <td><span class="s-color-dot" style="background:var(--cal-5-fill);"></span>Engineering</td>
+            <td><span class="s-status-pill is-todo"><i></i>To do</span></td>
+            <td class="t-num">Tomorrow</td>
+            <td><span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span> Sara R.</td>
+            <td class="is-num t-num">45m</td>
+            <td><button class="s-icon-btn is-sm">⋯</button></td>
+          </tr>
+          <tr class="is-selected">
+            <td><input class="s-check is-md" type="checkbox" checked /></td>
+            <td class="s-table__title">Onboarding flow — final QA pass</td>
+            <td><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch</td>
+            <td><span class="s-status-pill is-in-progress"><i></i>In progress</span></td>
+            <td class="t-num">Fri</td>
+            <td><span class="s-avatar is-xs" style="background:var(--cal-5-fill); color:white;">JM</span> Jamal M.</td>
+            <td class="is-num t-num">3h</td>
+            <td><button class="s-icon-btn is-sm">⋯</button></td>
+          </tr>
+          <tr>
+            <td><input class="s-check is-md" type="checkbox" /></td>
+            <td class="s-table__title is-editing"><span class="s-input-wrap is-sm"><input class="s-input" value="Pricing alternatives — memo (draft)" autofocus /></span></td>
+            <td><span class="s-color-dot" style="background:var(--cal-3-fill);"></span>Pricing rewrite</td>
+            <td><span class="s-status-pill is-blocked"><i></i>Blocked</span></td>
+            <td class="t-num">Oct 18</td>
+            <td><span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span> Dana K.</td>
+            <td class="is-num t-num">—</td>
+            <td><button class="s-icon-btn is-sm">⋯</button></td>
+          </tr>
+          <tr class="is-completed">
+            <td><input class="s-check is-md" type="checkbox" checked /></td>
+            <td class="s-table__title">Send Q4 OKR memo</td>
+            <td><span class="s-color-dot" style="background:var(--cal-2-fill);"></span>Ops</td>
+            <td><span class="s-status-pill is-done"><i></i>Done</span></td>
+            <td class="t-num" style="color:var(--text-tertiary);">Mon</td>
+            <td><span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span> Sara R.</td>
+            <td class="is-num t-num">1h</td>
+            <td><button class="s-icon-btn is-sm">⋯</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Specification</h2>
+    <div class="sh-frame">
+      <pre class="sh-spec" style="margin:0;">row height        32 (default) · 28 (compact) · 40 (comfortable)
+header height     32 · uppercase 11/1 mono tertiary · sticky top
+sort indicator    ▲ ▾ tertiary · accent when active
+resize handle     4px hit · 1px visual at hover
+pin               left:0 sticky · 1px right border + shadow
+hover             surface-hover · row actions fade in 120ms
+selection         primary-subtle bg + 2px primary inset border-left
+inline edit       ↵ commit · ⎋ cancel · ⌘↵ commit and create new
+bulk bar          slides in from top · 36px · primary-subtle</pre>
+    </div>
+  </section>
+</main>
+</body>
+</html>

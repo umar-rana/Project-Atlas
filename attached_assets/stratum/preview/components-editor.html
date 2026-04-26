@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Editor</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.11</p>
+    <h1 class="sh-title">Editor primitives</h1>
+    <p class="sh-sub">Markdown surface for notes, slash menu, code block, inline mentions, ref chips, callouts.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Markdown surface</h2>
+    <div class="sh-frame" style="background:var(--surface-base);">
+      <article class="s-doc">
+        <h1 class="s-doc__h1">Pricing alternatives — memo</h1>
+        <p class="s-doc__meta"><span class="t-num">17 Sep 2025</span> · Sara R. · <span class="s-tag s-tag--filled is-c1">Q4 Launch</span></p>
+
+        <p>Three options for the Q4 launch pricing tier. The recommendation is <strong>Option B</strong>, with the grandfather clause for existing customers held for 6 months.</p>
+
+        <h2 class="s-doc__h2">Context</h2>
+        <p>The current Pro tier captures most of our paid usage but offers no headroom for the team-collaboration features <span class="s-mention">@ Dana K.</span> is shipping in Q4. Three approaches were evaluated against retention risk, perceived fairness, and revenue uplift.</p>
+
+        <div class="s-callout is-info"><span class="s-callout__icon">ℹ</span><div><strong>Decision needed by Friday.</strong> Marketing site copy is blocked on this; design has held a placeholder for two weeks.</div></div>
+
+        <h2 class="s-doc__h2">Options</h2>
+        <ol class="s-doc__list">
+          <li><strong>Option A — Single tier increase.</strong> Raise Pro by 20%. Simplest; highest perceived-fairness risk for existing customers.</li>
+          <li><strong>Option B — Add Team tier.</strong> New $24/seat tier; Pro stays. Grandfather existing seats at current price for 6 months. Recommended.</li>
+          <li><strong>Option C — Usage-based.</strong> Per-task / per-event metering. High implementation cost; uncertain user reaction.</li>
+        </ol>
+
+        <h2 class="s-doc__h2">Implementation note</h2>
+        <p>The pricing endpoint accepts a <code class="s-doc__code">tier</code> parameter and resolves grandfathered seats on the server. See:</p>
+        <pre class="s-doc__pre"><code>POST /v2/billing/quote
+{
+  "workspace_id": "ws_3fA2",
+  "tier": "team",
+  "seats": 14,
+  "grandfathered_until": "2026-04-17"
+}</code></pre>
+
+        <div class="s-callout is-warning"><span class="s-callout__icon">⚠</span><div><strong>Open question:</strong> grandfather behavior when a workspace adds new seats during the 6-month window. <span class="s-mention">@ Jamal M.</span> to confirm with billing.</div></div>
+
+        <h2 class="s-doc__h2">References</h2>
+        <ul class="s-doc__list">
+          <li><span class="s-ref-chip"><span class="s-ref-chip__icon">▤</span>Q4 OKR memo</span></li>
+          <li><span class="s-ref-chip"><span class="s-ref-chip__icon">▦</span>Tue · Pricing review</span></li>
+          <li><span class="s-ref-chip"><span class="s-ref-chip__icon">☰</span>Q4 Launch</span></li>
+        </ul>
+
+        <blockquote class="s-doc__quote">"Grandfather is the right call. Six months matches our renewal cycle and gives us a clean reset." <cite>— Dana K., 17 Sep</cite></blockquote>
+      </article>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Slash menu</h2>
+    <div class="sh-frame">
+      <div class="s-cmdk" style="width:300px;">
+        <div class="s-cmdk__input">
+          <span class="s-input-wrap__prefix">/</span>
+          <input class="s-input" value="head" />
+        </div>
+        <div class="s-cmdk__group-label">Blocks</div>
+        <button class="s-menu__item is-active"><span class="s-menu__icon">H1</span>Heading 1<span class="s-menu__shortcut">#</span></button>
+        <button class="s-menu__item"><span class="s-menu__icon">H2</span>Heading 2<span class="s-menu__shortcut">##</span></button>
+        <button class="s-menu__item"><span class="s-menu__icon">H3</span>Heading 3<span class="s-menu__shortcut">###</span></button>
+        <button class="s-menu__item"><span class="s-menu__icon">"</span>Quote</button>
+        <div class="s-cmdk__group-label">References</div>
+        <button class="s-menu__item"><span class="s-menu__icon">@</span>Mention person</button>
+        <button class="s-menu__item"><span class="s-menu__icon">#</span>Add tag</button>
+        <button class="s-menu__item"><span class="s-menu__icon">[[</span>Link to note</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Toolbar (selection)</h2>
+    <div class="sh-frame">
+      <div class="s-formatbar">
+        <button class="s-formatbar__btn"><strong>B</strong></button>
+        <button class="s-formatbar__btn"><em>I</em></button>
+        <button class="s-formatbar__btn" style="text-decoration:underline;">U</button>
+        <button class="s-formatbar__btn" style="text-decoration:line-through;">S</button>
+        <span class="s-formatbar__sep"></span>
+        <button class="s-formatbar__btn">H1</button>
+        <button class="s-formatbar__btn">H2</button>
+        <button class="s-formatbar__btn">"</button>
+        <button class="s-formatbar__btn">{ }</button>
+        <span class="s-formatbar__sep"></span>
+        <button class="s-formatbar__btn">↗ link</button>
+        <button class="s-formatbar__btn">@ mention</button>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

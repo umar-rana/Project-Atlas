@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Status</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.12</p>
+    <h1 class="sh-title">Status & feedback</h1>
+    <p class="sh-sub">Sync indicator, connection status, save state, kbd hints, help popover, drag-drop indicators, focus mode chrome.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Sync · save · connection</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px; flex-wrap:wrap;">
+        <span class="s-status-strip"><i class="s-status-dot is-online"></i> Synced · 2s ago</span>
+        <span class="s-status-strip"><span class="s-spinner is-sm"></span> Syncing…</span>
+        <span class="s-status-strip is-warning"><i class="s-status-dot is-away"></i> Offline · changes queued</span>
+        <span class="s-status-strip is-error"><i class="s-status-dot is-offline"></i> Disconnected · retry</span>
+        <span class="s-status-strip"><span class="s-pulse"></span> Live</span>
+        <span class="s-status-strip">✎ Editing · auto-saving</span>
+        <span class="s-status-strip">✓ Saved</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Keyboard hints</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:14px; max-width:520px;">
+        <div class="sh-row" style="gap:18px;">
+          <span class="s-kbd-row"><span class="s-kbd">⌘</span><span class="s-kbd">K</span> Open command palette</span>
+          <span class="s-kbd-row"><span class="s-kbd">⌘</span><span class="s-kbd">↵</span> Add task to Today</span>
+        </div>
+        <div class="sh-row" style="gap:18px;">
+          <span class="s-kbd-row"><span class="s-kbd">G</span><span class="s-kbd">T</span> Go to Today</span>
+          <span class="s-kbd-row"><span class="s-kbd">G</span><span class="s-kbd">N</span> Go to Notes</span>
+          <span class="s-kbd-row"><span class="s-kbd">/</span> Filter rows</span>
+        </div>
+        <div class="sh-row" style="gap:18px;">
+          <span class="s-kbd-row"><span class="s-kbd">↑</span><span class="s-kbd">↓</span> Navigate</span>
+          <span class="s-kbd-row"><span class="s-kbd">↵</span> Open</span>
+          <span class="s-kbd-row"><span class="s-kbd">space</span> Toggle done</span>
+          <span class="s-kbd-row"><span class="s-kbd">esc</span> Cancel</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Help popover</h2>
+    <div class="sh-frame">
+      <div class="s-popover" style="width:340px;">
+        <div class="s-popover__title">Quick add — natural language</div>
+        <div class="s-popover__body">
+          <p style="margin: 0 0 8px;">Stratum parses dates, tags, and people from your text:</p>
+          <ul class="s-doc__list" style="margin: 0; padding-left: 18px; font-size: 12px;">
+            <li><code class="s-doc__code">tomorrow at 10:30</code> → due date</li>
+            <li><code class="s-doc__code">#roadmap</code> → tag</li>
+            <li><code class="s-doc__code">@dana</code> → assignee</li>
+            <li><code class="s-doc__code">!high</code> → priority</li>
+          </ul>
+        </div>
+        <div class="s-popover__actions">
+          <a class="s-link" style="margin-right:auto;">See all shortcuts ↗</a>
+          <button class="s-btn s-btn--ghost is-sm">Got it</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Drag-drop indicators</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap: 8px; max-width: 380px;">
+        <div class="s-task-row">
+          <input class="s-check is-md" type="checkbox" />
+          <span class="s-task-row__title">Above the drop indicator</span>
+        </div>
+        <div class="s-drop-indicator"></div>
+        <div class="s-task-row is-dragging">
+          <input class="s-check is-md" type="checkbox" />
+          <span class="s-task-row__title">Dragging — ghost preview</span>
+          <span class="s-tag s-tag--filled is-c1">Q4 Launch</span>
+        </div>
+        <div class="s-task-row">
+          <input class="s-check is-md" type="checkbox" />
+          <span class="s-task-row__title">Below the drop indicator</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Focus mode chrome</h2>
+    <div class="sh-frame">
+      <div class="s-focus-chrome">
+        <div class="s-focus-chrome__pill">
+          <span class="s-pulse"></span>
+          <span>Focus · Pricing copy</span>
+          <span class="s-focus-chrome__time t-num">14:23</span>
+          <span class="s-focus-chrome__sep"></span>
+          <button class="s-btn s-btn--ghost is-sm" style="padding:0 8px; height:20px;">Pause</button>
+          <button class="s-btn s-btn--ghost is-sm" style="padding:0 8px; height:20px; color:var(--accent-danger);">End</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

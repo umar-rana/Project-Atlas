@@ -1,0 +1,51 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .row:last-child { margin-bottom: 0; }
+  .label { font: 500 10px var(--font-mono); color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; width: 90px; flex: 0 0 90px; }
+  button { font: 500 13px var(--font-ui); border: 1px solid transparent; border-radius: var(--radius-md); padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 28px; transition: background var(--motion-fast) var(--ease-standard); }
+  .primary { background: var(--accent-primary); color: var(--text-on-accent); }
+  .primary:hover { background: var(--accent-primary-hover); }
+  .secondary { background: var(--surface-raised); color: var(--text-primary); border-color: var(--border-default); }
+  .secondary:hover { background: var(--surface-hover); }
+  .ghost { background: transparent; color: var(--text-secondary); }
+  .ghost:hover { background: var(--surface-hover); color: var(--text-primary); }
+  .danger { background: var(--accent-danger); color: white; }
+  .danger:hover { filter: brightness(1.06); }
+  .disabled { opacity: 0.45; pointer-events: none; }
+  .sm { height: 22px; padding: 2px 8px; font-size: 12px; }
+  .lg { height: 34px; padding: 6px 14px; font-size: 14px; }
+  .kbd { font: 500 11px var(--font-mono); padding: 1px 5px; border: 1px solid currentColor; border-radius: 3px; opacity: .6; margin-left: 4px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Buttons · variants &amp; sizes</div>
+  <div class="row"><span class="label">Primary</span>
+    <button class="primary">Save</button>
+    <button class="primary">Save changes <span class="kbd">⌘S</span></button>
+    <button class="primary sm">Add</button>
+    <button class="primary lg">Continue</button>
+    <button class="primary disabled">Saving…</button>
+  </div>
+  <div class="row"><span class="label">Secondary</span>
+    <button class="secondary">Cancel</button>
+    <button class="secondary">Filter <span class="kbd">F</span></button>
+    <button class="secondary sm">+ Subtask</button>
+    <button class="secondary disabled">Disabled</button>
+  </div>
+  <div class="row"><span class="label">Ghost</span>
+    <button class="ghost">Dismiss</button>
+    <button class="ghost">More options</button>
+    <button class="ghost sm">…</button>
+  </div>
+  <div class="row"><span class="label">Destructive</span>
+    <button class="danger">Delete project</button>
+    <button class="danger sm">Remove</button>
+  </div>
+</div>
+</body></html>

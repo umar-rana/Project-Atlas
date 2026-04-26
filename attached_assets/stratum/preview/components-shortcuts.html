@@ -1,0 +1,31 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Keyboard shortcuts</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 32px; }
+  .row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--border-subtle); }
+  .row:last-child { border: none; }
+  .lab { font: 400 12px var(--font-ui); color: var(--text-secondary); }
+  .keys { display: inline-flex; gap: 3px; }
+  kbd { font: 500 11px/1 var(--font-mono); padding: 2px 5px; min-width: 18px; text-align: center; background: var(--surface-sunken); border: 1px solid var(--border-default); border-bottom-width: 2px; border-radius: 3px; color: var(--text-primary); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Keyboard shortcuts · cheat sheet</div>
+  <div class="grid">
+    <div class="row"><span class="lab">Command palette</span><span class="keys"><kbd>⌘</kbd><kbd>K</kbd></span></div>
+    <div class="row"><span class="lab">New task</span><span class="keys"><kbd>N</kbd></span></div>
+    <div class="row"><span class="lab">Quick add (anywhere)</span><span class="keys"><kbd>⌘</kbd><kbd>⏎</kbd></span></div>
+    <div class="row"><span class="lab">Schedule</span><span class="keys"><kbd>S</kbd></span></div>
+    <div class="row"><span class="lab">Move list ↑ / ↓</span><span class="keys"><kbd>⌥</kbd><kbd>↑</kbd></span></div>
+    <div class="row"><span class="lab">Search anything</span><span class="keys"><kbd>/</kbd></span></div>
+    <div class="row"><span class="lab">Mark complete</span><span class="keys"><kbd>X</kbd></span></div>
+    <div class="row"><span class="lab">Toggle theme</span><span class="keys"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>L</kbd></span></div>
+    <div class="row"><span class="lab">Reading mode</span><span class="keys"><kbd>R</kbd></span></div>
+    <div class="row"><span class="lab">Focus mode</span><span class="keys"><kbd>F</kbd></span></div>
+  </div>
+</div>
+</body></html>

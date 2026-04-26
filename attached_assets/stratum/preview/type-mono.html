@@ -1,0 +1,38 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Mono &amp; tabular</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .block { background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; }
+  pre { margin: 0; font: 400 13px/1.55 var(--font-mono); color: var(--text-primary); }
+  pre .k { color: var(--accent-primary); }
+  pre .s { color: var(--accent-success); }
+  pre .c { color: var(--text-tertiary); font-style: italic; }
+  table { width: 100%; border-collapse: collapse; }
+  td { font: 500 13px/1.4 var(--font-ui); padding: 4px 0; border-bottom: 1px dashed var(--border-subtle); }
+  td.num { text-align: right; font-feature-settings:"tnum"; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+  td.num.bad { color: var(--accent-danger); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Mono · JetBrains Mono · & tabular figures</div>
+  <div class="grid2">
+    <div class="block">
+      <pre><span class="c">// task.ts</span>
+<span class="k">const</span> due = <span class="s">"2026-09-17"</span>;
+<span class="k">if</span> (overdue(due)) flag();</pre>
+    </div>
+    <div class="block">
+      <table>
+        <tr><td>Quarterly review</td><td class="num">$ 12,480.00</td></tr>
+        <tr><td>Stripe payout</td><td class="num">$&nbsp;&nbsp;3,201.50</td></tr>
+        <tr><td>Refund · order #82</td><td class="num bad">−$&nbsp;&nbsp;&nbsp;&nbsp;48.20</td></tr>
+        <tr><td>Subtotal</td><td class="num">$ 15,633.30</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+</body></html>

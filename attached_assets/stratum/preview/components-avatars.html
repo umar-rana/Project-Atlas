@@ -1,0 +1,49 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Avatars & dots</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+  .row:last-child { margin-bottom: 0; }
+  .av { width: var(--s); height: var(--s); border-radius: 50%; background: var(--c); display: inline-flex; align-items: center; justify-content: center; color: white; font: 600 calc(var(--s) * .42)/1 var(--font-ui); border: 2px solid var(--surface-base); }
+  .stack { display: flex; }
+  .stack .av:not(:first-child) { margin-left: -8px; }
+  .lab { font: 500 10px var(--font-mono); color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; width: 64px; flex: 0 0 64px; }
+  .pres { display: inline-flex; align-items: center; gap: 6px; font: 400 13px var(--font-ui); color: var(--text-primary); }
+  .pres .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .online { background: var(--accent-success); box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent-success), transparent 70%); }
+  .away { background: var(--accent-warning); }
+  .busy { background: var(--accent-danger); }
+  .offline { background: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Avatars · presence · counters</div>
+  <div class="row">
+    <span class="lab">Sizes</span>
+    <span class="av" style="--s:18px; --c:var(--viz-1)">M</span>
+    <span class="av" style="--s:22px; --c:var(--viz-2)">A</span>
+    <span class="av" style="--s:28px; --c:var(--viz-5)">J</span>
+    <span class="av" style="--s:36px; --c:var(--viz-7)">SR</span>
+    <span class="av" style="--s:48px; --c:var(--viz-3)">DK</span>
+  </div>
+  <div class="row">
+    <span class="lab">Stack</span>
+    <span class="stack">
+      <span class="av" style="--s:24px; --c:var(--viz-1)">M</span>
+      <span class="av" style="--s:24px; --c:var(--viz-2)">A</span>
+      <span class="av" style="--s:24px; --c:var(--viz-5)">J</span>
+      <span class="av" style="--s:24px; --c:var(--surface-overlay); color: var(--text-secondary); font-size: 9px;">+4</span>
+    </span>
+  </div>
+  <div class="row">
+    <span class="lab">Presence</span>
+    <span class="pres"><i class="dot online"></i>Online</span>
+    <span class="pres"><i class="dot away"></i>Away</span>
+    <span class="pres"><i class="dot busy"></i>Focus</span>
+    <span class="pres"><i class="dot offline"></i>Offline</span>
+  </div>
+</div>
+</body></html>

@@ -1,101 +1,39 @@
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Rocket, Sparkles, Zap } from "lucide-react";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
-export default function Home() {
+export default function HomePage(): React.ReactElement {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8">
-      <div className="max-w-3xl w-full space-y-8">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-muted px-4 py-1.5 text-sm">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Ready to build</span>
+    <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-6 py-12">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Atlas</h1>
+        <ThemeSwitcher />
+      </header>
+
+      <section className="flex flex-col gap-3 rounded-lg border border-border-subtle bg-surface-raised p-4 shadow-1">
+        <p className="text-md font-medium text-text-primary">Wave 0 bootstrap is live.</p>
+        <p className="text-sm text-text-secondary">
+          The Stratum design tokens, theme system, and primitive component library are loaded. Run{" "}
+          <code className="rounded-xs bg-surface-sunken px-1 font-mono text-xs text-text-primary">
+            npm run storybook
+          </code>{" "}
+          to browse every primitive, composed, and layout component in both themes.
+        </p>
+      </section>
+
+      <section aria-label="Token palette" className="grid grid-cols-2 gap-3 tablet:grid-cols-4">
+        {[
+          { name: "Surface base", token: "bg-surface-base border border-border-default" },
+          { name: "Surface raised", token: "bg-surface-raised border border-border-subtle" },
+          { name: "Accent primary", token: "bg-accent-primary text-text-on-accent" },
+          { name: "Accent success", token: "bg-accent-success text-text-on-accent" },
+        ].map((s) => (
+          <div
+            key={s.name}
+            className={`flex h-16 items-end justify-start rounded-md p-2 text-2xs font-medium ${s.token}`}
+          >
+            {s.name}
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            Next.js Template
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            A clean starter built with Next.js 15, Tailwind CSS, and shadcn/ui.
-            Edit{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono">
-              src/app/page.tsx
-            </code>{" "}
-            to get started.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <Zap className="h-6 w-6 mb-2" />
-              <CardTitle>Next.js 15</CardTitle>
-              <CardDescription>
-                App Router with React 19 and TypeScript ready out of the box.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Sparkles className="h-6 w-6 mb-2" />
-              <CardTitle>Tailwind CSS</CardTitle>
-              <CardDescription>
-                Utility-first styling with theme variables and dark mode
-                support.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Rocket className="h-6 w-6 mb-2" />
-              <CardTitle>shadcn/ui</CardTitle>
-              <CardDescription>
-                Beautifully designed components you copy and own.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Add a new component</CardTitle>
-            <CardDescription>
-              Use the shadcn CLI to add new UI components to your project.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="bg-muted rounded-md px-4 py-3 text-sm font-mono overflow-x-auto">
-              npx shadcn@latest add dialog
-            </pre>
-          </CardContent>
-          <CardFooter className="gap-3">
-            <Button asChild>
-              <a
-                href="https://ui.shadcn.com/docs/components"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Browse Components
-              </a>
-            </Button>
-            <Button variant="outline" asChild>
-              <a
-                href="https://nextjs.org/docs"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Next.js Docs
-              </a>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+        ))}
+      </section>
     </main>
   );
 }

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Overlays</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.4</p>
+    <h1 class="sh-title">Overlays</h1>
+    <p class="sh-sub">Tooltip, popover, dropdown menu, command palette, modal, confirm, drawer, toast, banner. All flat to the page so you can read shape, padding, and motion at once.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Tooltip · popover</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:32px; align-items:flex-start;">
+        <div class="sh-col">
+          <span class="sh-frame__label">Tooltip</span>
+          <div class="s-tooltip">⌘K to search</div>
+          <div class="s-tooltip"><span>Save</span><span class="s-kbd" style="border-color:rgba(255,255,255,0.18); color:rgba(255,255,255,0.78);">⌘S</span></div>
+        </div>
+        <div class="sh-col">
+          <span class="sh-frame__label">Popover (informational)</span>
+          <div class="s-popover" style="width:280px;">
+            <div class="s-popover__title">Sync conflict</div>
+            <div class="s-popover__body">This task was edited on another device 12 seconds ago. Choose which version to keep.</div>
+            <div class="s-popover__actions">
+              <button class="s-btn s-btn--secondary is-sm">Keep local</button>
+              <button class="s-btn s-btn--primary is-sm">Use remote</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Menu (dropdown / context)</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:32px; align-items:flex-start;">
+        <div class="s-menu" style="width:240px;">
+          <div class="s-menu__group-label">Task actions</div>
+          <button class="s-menu__item"><span class="s-menu__icon">✎</span>Edit<span class="s-menu__shortcut">↵</span></button>
+          <button class="s-menu__item"><span class="s-menu__icon">⤵</span>Reschedule<span class="s-menu__shortcut">R</span></button>
+          <button class="s-menu__item is-active"><span class="s-menu__icon">★</span>Mark important<span class="s-menu__shortcut">⌘⇧S</span></button>
+          <button class="s-menu__item"><span class="s-menu__icon">⧉</span>Duplicate<span class="s-menu__shortcut">⌘D</span></button>
+          <div class="s-menu__sep"></div>
+          <button class="s-menu__item is-danger"><span class="s-menu__icon">⌫</span>Delete<span class="s-menu__shortcut">⌫</span></button>
+        </div>
+
+        <div class="s-menu" style="width:280px;">
+          <div class="s-menu__group-label">Move to project</div>
+          <button class="s-menu__item"><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch<span class="s-menu__shortcut">1</span></button>
+          <button class="s-menu__item"><span class="s-color-dot" style="background:var(--cal-3-fill);"></span>Pricing rewrite<span class="s-menu__shortcut">2</span></button>
+          <button class="s-menu__item"><span class="s-color-dot" style="background:var(--cal-5-fill);"></span>Hiring · IC4<span class="s-menu__shortcut">3</span></button>
+          <button class="s-menu__item"><span class="s-color-dot" style="background:var(--cal-7-fill);"></span>Personal<span class="s-menu__shortcut">4</span></button>
+          <div class="s-menu__sep"></div>
+          <button class="s-menu__item"><span class="s-menu__icon">＋</span>New project…</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Command palette</h2>
+    <div class="sh-frame">
+      <div class="s-cmdk">
+        <div class="s-cmdk__input">
+          <span class="s-input-wrap__icon">⌕</span>
+          <input class="s-input" value="add tas" />
+          <span class="s-kbd">esc</span>
+        </div>
+        <div class="s-cmdk__group-label">Actions</div>
+        <button class="s-menu__item is-active"><span class="s-menu__icon">＋</span>Add task to Today<span class="s-menu__shortcut">↵</span></button>
+        <button class="s-menu__item"><span class="s-menu__icon">＋</span>Add task to Inbox<span class="s-menu__shortcut">⇧↵</span></button>
+        <div class="s-cmdk__group-label">Recent</div>
+        <button class="s-menu__item"><span class="s-menu__icon">▤</span>Q4 launch plan</button>
+        <button class="s-menu__item"><span class="s-menu__icon">▤</span>Pricing rewrite — draft</button>
+        <div class="s-cmdk__footer">
+          <span><span class="s-kbd">↑</span><span class="s-kbd">↓</span> Navigate</span>
+          <span><span class="s-kbd">↵</span> Select</span>
+          <span><span class="s-kbd">⌘P</span> Switch mode</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Modal · confirm</h2>
+    <div class="sh-frame">
+      <div class="sh-row" style="gap:24px; align-items:flex-start;">
+        <div class="s-modal" style="width:480px;">
+          <div class="s-modal__head">
+            <h3 class="s-modal__title">Move to "Pricing rewrite"?</h3>
+            <button class="s-icon-btn is-sm" aria-label="Close">×</button>
+          </div>
+          <div class="s-modal__body">
+            <p class="t-md" style="margin:0;">3 tasks will move to a new project. Their due dates and assignees stay the same; tags carry over. You can undo for the next 30 seconds.</p>
+            <div class="s-validation s-validation--info" style="margin-top:12px;">ℹ Subtasks (12) move with their parents.</div>
+          </div>
+          <div class="s-modal__foot">
+            <button class="s-btn s-btn--ghost">Cancel<span class="s-kbd">esc</span></button>
+            <button class="s-btn s-btn--primary">Move tasks<span class="s-kbd">↵</span></button>
+          </div>
+        </div>
+
+        <div class="s-modal" style="width:380px;">
+          <div class="s-modal__body" style="padding-top:18px;">
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+              <div style="width:32px; height:32px; border-radius:8px; background:var(--accent-danger-subtle); color:var(--accent-danger); display:grid; place-items:center; flex:0 0 auto;">▲</div>
+              <div>
+                <h3 class="s-modal__title" style="margin-bottom:4px;">Delete this project?</h3>
+                <p class="t-sm" style="color:var(--text-secondary); margin:0;">"Hiring · IC4" and its 47 tasks will be archived. You can restore from Trash for 30 days.</p>
+              </div>
+            </div>
+          </div>
+          <div class="s-modal__foot">
+            <button class="s-btn s-btn--ghost">Cancel</button>
+            <button class="s-btn s-btn--destructive">Delete project</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Drawer (right-hand details)</h2>
+    <div class="sh-frame">
+      <div class="s-drawer" style="width:380px;">
+        <div class="s-drawer__head">
+          <span class="s-tag s-tag--filled is-c1">Q4 Launch</span>
+          <div style="flex:1;"></div>
+          <button class="s-icon-btn is-sm" aria-label="More">⋯</button>
+          <button class="s-icon-btn is-sm" aria-label="Close">×</button>
+        </div>
+        <div class="s-drawer__body">
+          <h2 class="t-lg" style="margin:0 0 8px; font-weight:var(--weight-semibold);">Finalize pricing tier copy</h2>
+          <div class="s-prop-list">
+            <div class="s-prop"><span class="s-prop__key">Status</span><span class="s-prop__val"><span class="s-status-pill is-in-progress"><i></i>In progress</span></span></div>
+            <div class="s-prop"><span class="s-prop__key">Due</span><span class="s-prop__val t-num">Oct 16, 10:30</span></div>
+            <div class="s-prop"><span class="s-prop__key">Assignee</span><span class="s-prop__val"><span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span> Dana K.</span></div>
+            <div class="s-prop"><span class="s-prop__key">Project</span><span class="s-prop__val"><span class="s-color-dot" style="background:var(--cal-1-fill);"></span>Q4 Launch</span></div>
+            <div class="s-prop"><span class="s-prop__key">Tags</span><span class="s-prop__val"><span class="s-tag s-tag--outlined is-c3"># roadmap</span></span></div>
+          </div>
+          <div class="s-divider"></div>
+          <p class="t-sm" style="color:var(--text-secondary);">Three pricing alternatives are in the linked memo. Decision needed by Friday review so design can lock the marketing site.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Toast</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:8px; max-width:380px;">
+        <div class="s-toast">
+          <span class="s-toast__icon" style="background:var(--accent-success); color:white;">✓</span>
+          <div style="flex:1;"><div class="s-toast__title">3 tasks moved to Pricing rewrite</div></div>
+          <button class="s-btn s-btn--ghost is-sm">Undo</button>
+        </div>
+        <div class="s-toast">
+          <span class="s-toast__icon" style="background:var(--accent-warning); color:white;">!</span>
+          <div style="flex:1;">
+            <div class="s-toast__title">Calendar disconnected</div>
+            <div class="s-toast__sub">Re-authorize to keep events synced.</div>
+          </div>
+          <button class="s-btn s-btn--ghost is-sm">Reconnect</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Banner</h2>
+    <div class="sh-frame">
+      <div class="sh-col" style="gap:8px;">
+        <div class="s-banner is-info">
+          <span class="s-banner__icon">ℹ</span>
+          <div style="flex:1;">Workspace was upgraded to <strong>Pro</strong>. New collaborators can be invited from Settings → Members.</div>
+          <button class="s-btn s-btn--ghost is-sm">Manage</button>
+          <button class="s-icon-btn is-sm" aria-label="Dismiss">×</button>
+        </div>
+        <div class="s-banner is-warning">
+          <span class="s-banner__icon">⚠</span>
+          <div style="flex:1;">2 calendar sources have permissions errors. Some events may be missing from this week.</div>
+          <button class="s-btn s-btn--ghost is-sm">Fix sources</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

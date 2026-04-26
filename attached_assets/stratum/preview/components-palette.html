@@ -1,0 +1,41 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Command palette</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--surface-base); display: flex; align-items: center; justify-content: center; }
+  .palette { width: 460px; background: var(--surface-overlay); border: 1px solid var(--border-default); border-radius: var(--radius-xl); box-shadow: var(--shadow-4); overflow: hidden; }
+  .search { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); }
+  .search input { flex: 1; background: transparent; border: none; outline: none; font: 400 14px var(--font-ui); color: var(--text-primary); }
+  .search .esc { font: 500 11px var(--font-mono); color: var(--text-tertiary); border: 1px solid var(--border-default); padding: 1px 6px; border-radius: 3px; }
+  .group { padding: 6px 6px 8px; }
+  .group .h { font: 500 10px/1 var(--font-ui); color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 10px; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm); font: 400 13px var(--font-ui); color: var(--text-primary); }
+  .item.sel { background: var(--accent-primary-subtle); }
+  .item .ic { color: var(--text-secondary); }
+  .item .kbd { margin-left: auto; font: 500 11px var(--font-mono); color: var(--text-tertiary); }
+  .item .ctx { font: 400 12px var(--font-ui); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="card" style="padding: 20px;">
+  <div class="palette">
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input value="schedule" />
+      <span class="esc">esc</span>
+    </div>
+    <div class="group">
+      <div class="h">Actions</div>
+      <div class="item sel"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Schedule selected task <span class="ctx">— set due date</span> <span class="kbd">S</span></div>
+      <div class="item"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Open weekly schedule <span class="kbd">⌘⇧S</span></div>
+    </div>
+    <div class="group" style="border-top: 1px solid var(--border-subtle);">
+      <div class="h">Recent</div>
+      <div class="item"><span class="ic" style="font-family: var(--font-mono); font-size: 12px; color: var(--viz-1);">#</span> roadmap · Q4 planning <span class="ctx">— in Projects</span></div>
+      <div class="item"><span class="ic" style="font-family: var(--font-mono); font-size: 12px; color: var(--viz-3);">#</span> writing · positioning draft <span class="ctx">— in Notes</span></div>
+    </div>
+  </div>
+</div>
+</body></html>

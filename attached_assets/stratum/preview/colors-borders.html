@@ -1,0 +1,23 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Borders</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .b { height: 64px; border-radius: var(--radius-md); background: var(--surface-raised); display: flex; align-items: center; justify-content: center; font: 500 11px var(--font-mono); color: var(--text-secondary); }
+  .name { margin-top: 6px; font: 500 10px var(--font-mono); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Border tokens</div>
+  <div class="grid">
+    <div><div class="b" style="border:1px solid var(--border-subtle);">subtle</div><div class="name">--border-subtle</div></div>
+    <div><div class="b" style="border:1px solid var(--border-default);">default</div><div class="name">--border-default</div></div>
+    <div><div class="b" style="border:1px solid var(--border-strong);">strong</div><div class="name">--border-strong</div></div>
+    <div><div class="b" style="border:1px solid var(--border-default); box-shadow: 0 0 0 2px var(--border-focus);">focus ring</div><div class="name">--border-focus</div></div>
+    <div><div class="b" style="border:1px solid var(--border-error); color: var(--accent-danger);">error</div><div class="name">--border-error</div></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,28 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Radius</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+  .item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .b { width: 60px; height: 60px; background: var(--accent-primary-muted); border: 1px solid var(--accent-primary); }
+  .name { font: 500 10px var(--font-mono); color: var(--text-secondary); }
+  .px { font: 400 10px var(--font-mono); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Radius scale</div>
+  <div class="grid">
+    <div class="item"><div class="b" style="border-radius:var(--radius-none)"></div><div class="name">none</div><div class="px">0</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-xs)"></div><div class="name">xs</div><div class="px">2</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-sm)"></div><div class="name">sm</div><div class="px">4</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-md)"></div><div class="name">md ·default</div><div class="px">6</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-lg)"></div><div class="name">lg</div><div class="px">8</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-xl)"></div><div class="name">xl</div><div class="px">12</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-2xl)"></div><div class="name">2xl</div><div class="px">16</div></div>
+    <div class="item"><div class="b" style="border-radius:var(--radius-full)"></div><div class="name">full</div><div class="px">∞</div></div>
+  </div>
+</div>
+</body></html>

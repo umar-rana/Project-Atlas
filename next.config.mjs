@@ -19,10 +19,8 @@ const nextConfig = {
     if (isProd) return [];
     return [
       {
-        source: '/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
-        ],
+        source: "/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
     ];
   },

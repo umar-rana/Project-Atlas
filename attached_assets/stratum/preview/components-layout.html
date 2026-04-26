@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Layout</title>
+<link rel="stylesheet" href="_sheet.css" />
+<style>
+  .ly-frame { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); overflow: hidden; height: 320px; display:flex; }
+  .ly-stub { background: var(--surface-sunken); border-right: 1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color: var(--text-tertiary); font: 500 10px/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+  .ly-stub:last-child { border-right: 0; }
+  .ly-stub--accent { background: var(--surface-base); }
+  .ly-stack { display:flex; flex-direction:column; height: 100%; }
+  .ly-band { border-bottom: 1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color: var(--text-tertiary); font: 500 10px/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; background: var(--surface-sunken); }
+  .ly-band:last-child { border-bottom: 0; }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.6</p>
+    <h1 class="sh-title">Layout primitives</h1>
+    <p class="sh-sub">App shell, three-pane, two-pane, split, dashboard, stacked. The grids the product is composed from.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">App shell · three-pane</h2>
+    <div class="ly-frame">
+      <div class="ly-stub" style="width:48px;">RAIL</div>
+      <div class="ly-stub" style="width:240px;">SIDEBAR</div>
+      <div class="ly-stub ly-stub--accent" style="flex:1;">CONTENT · primary</div>
+      <div class="ly-stub" style="width:340px;">DETAILS</div>
+    </div>
+    <pre class="sh-spec" style="margin:0;">grid-template-columns: 48px 240px 1fr 340px · gap 0 · all panes scroll independently</pre>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Two-pane (list + detail)</h2>
+    <div class="ly-frame">
+      <div class="ly-stub" style="width:48px;">RAIL</div>
+      <div class="ly-stub" style="width:380px;">LIST</div>
+      <div class="ly-stub ly-stub--accent" style="flex:1;">DETAIL</div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Split (50/50, draggable)</h2>
+    <div class="ly-frame">
+      <div class="ly-stub ly-stub--accent" style="flex:1;">EDITOR</div>
+      <div style="width:1px; background:var(--border-default); cursor:col-resize;"></div>
+      <div class="ly-stub" style="flex:1;">PREVIEW</div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Dashboard grid (12-col)</h2>
+    <div class="ly-frame" style="height:auto; padding: 12px; display:grid; grid-template-columns: repeat(12, 1fr); gap: 8px;">
+      <div class="ly-stub ly-stub--accent" style="grid-column: span 8; height: 88px; border-radius: var(--radius-md);">HERO · 8 col</div>
+      <div class="ly-stub" style="grid-column: span 4; height: 88px; border-radius: var(--radius-md);">KPI</div>
+      <div class="ly-stub" style="grid-column: span 4; height: 120px; border-radius: var(--radius-md);">CARD</div>
+      <div class="ly-stub" style="grid-column: span 4; height: 120px; border-radius: var(--radius-md);">CARD</div>
+      <div class="ly-stub" style="grid-column: span 4; height: 120px; border-radius: var(--radius-md);">CARD</div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Stacked page (reading width)</h2>
+    <div class="ly-frame" style="height:auto;">
+      <div class="ly-stack" style="flex:1;">
+        <div class="ly-band" style="height:48px;">HEADER · full bleed</div>
+        <div class="ly-band ly-stub--accent" style="height:auto; padding: 16px 0;">
+          <div style="max-width: 640px; width: 100%; padding: 8px 24px; color: var(--text-tertiary); font: 500 10px/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; text-align:left;">CONTENT · max-width 640px</div>
+        </div>
+        <div class="ly-band" style="height:48px;">FOOTER</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Responsive collapse rules</h2>
+    <div class="sh-frame">
+      <pre class="sh-spec" style="margin:0;">≥1280  rail · sidebar · content · details      (full)
+≥1024  rail · sidebar · content                  (details → drawer)
+≥ 768  rail · content                            (sidebar → modal sheet)
+< 768  content                                   (rail → bottom tab bar; back/overlay nav)
+all    floating panels (Tweaks, command palette) center and constrain to viewport</pre>
+    </div>
+  </section>
+</main>
+</body>
+</html>

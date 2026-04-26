@@ -1,0 +1,68 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Tag families</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  section { margin-bottom: 14px; }
+  section:last-child { margin-bottom: 0; }
+  .heading { font: 500 10px/1 var(--font-mono); color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* Family A — outlined */
+  .a { display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px; border-radius: var(--radius-xs); font: 500 11px var(--font-ui); background: transparent; border: 1px solid; }
+  .a-1 { color: var(--viz-1); border-color: var(--viz-1-strong); }
+  .a-2 { color: var(--viz-2); border-color: var(--viz-2-strong); }
+  .a-3 { color: var(--viz-3); border-color: var(--viz-3-strong); }
+  .a-4 { color: var(--viz-5); border-color: var(--viz-5-strong); }
+
+  /* Family B — filled */
+  .b { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: var(--radius-xs); font: 500 11px var(--font-ui); color: white; }
+  .b-1 { background: var(--viz-4); }
+  .b-2 { background: var(--viz-7); }
+  .b-3 { background: var(--viz-6); }
+  .b-4 { background: var(--viz-8); }
+
+  /* Family C — soft-fill */
+  .c { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: var(--radius-full); font: 500 11px var(--font-ui); }
+  .c .h { font-weight: 600; opacity: .7; margin-right: 1px; }
+  .c-1 { background: var(--viz-1-light); color: var(--viz-1-strong); }
+  .c-2 { background: var(--viz-2-light); color: var(--viz-2-strong); }
+  .c-3 { background: var(--viz-3-light); color: var(--viz-3-strong); }
+  .c-4 { background: var(--viz-5-light); color: var(--viz-5-strong); }
+  .c-5 { background: var(--viz-6-light); color: var(--viz-6-strong); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">Tag families · three visual treatments</div>
+  <section>
+    <div class="heading">Family A — outlined · type / format</div>
+    <div class="row">
+      <span class="a a-1">Doc</span>
+      <span class="a a-2">Task</span>
+      <span class="a a-3">Note</span>
+      <span class="a a-4">Project</span>
+    </div>
+  </section>
+  <section>
+    <div class="heading">Family B — filled · purpose / priority</div>
+    <div class="row">
+      <span class="b b-1">P0 · Urgent</span>
+      <span class="b b-2">Customer</span>
+      <span class="b b-3">Research</span>
+      <span class="b b-4">Internal</span>
+    </div>
+  </section>
+  <section>
+    <div class="heading">Family C — soft pill · user tags (free-form)</div>
+    <div class="row">
+      <span class="c c-1"><span class="h">#</span>roadmap</span>
+      <span class="c c-2"><span class="h">#</span>q4-launch</span>
+      <span class="c c-3"><span class="h">#</span>followup</span>
+      <span class="c c-4"><span class="h">#</span>writing</span>
+      <span class="c c-5"><span class="h">#</span>idea</span>
+    </div>
+  </section>
+</div>
+</body></html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html data-theme="dark">
+<head>
+<meta charset="utf-8"><title>Menu</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100%; }
+  .stage { padding: 30px; display: flex; gap: 24px; align-items: flex-start; }
+  .menu { width: 240px; background: var(--surface-overlay); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 4px; box-shadow: var(--shadow-3); }
+  .item { display: flex; align-items: center; gap: 10px; padding: 5px 10px; border-radius: var(--radius-sm); font: 400 13px var(--font-ui); color: var(--text-primary); cursor: pointer; }
+  .item:hover { background: var(--surface-hover); }
+  .item.sel { background: var(--accent-primary-subtle); }
+  .item .ic { color: var(--text-secondary); }
+  .item .kbd { margin-left: auto; font: 500 11px var(--font-mono); color: var(--text-tertiary); }
+  .sep { height: 1px; background: var(--border-subtle); margin: 4px 6px; }
+  .label { font: 500 10px var(--font-ui); color: var(--text-tertiary); letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 10px 2px; }
+
+  .tooltip { position: relative; padding: 6px 10px; background: var(--surface-overlay); border: 1px solid var(--border-default); border-radius: var(--radius-md); font: 500 12px var(--font-ui); color: var(--text-primary); box-shadow: var(--shadow-2); }
+  .tooltip::before { content: ""; position: absolute; left: -5px; top: 50%; transform: translateY(-50%) rotate(45deg); width: 8px; height: 8px; background: var(--surface-overlay); border-left: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); }
+  .tooltip .kbd { font-family: var(--font-mono); color: var(--text-tertiary); margin-left: 8px; }
+</style>
+</head>
+<body>
+<div class="card stage">
+  <div class="menu">
+    <div class="label">Quick actions</div>
+    <div class="item"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg> New task <span class="kbd">N</span></div>
+    <div class="item sel"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M3 12h18M3 18h12"/></svg> New list <span class="kbd">⇧L</span></div>
+    <div class="item"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Schedule <span class="kbd">S</span></div>
+    <div class="sep"></div>
+    <div class="item"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg> Archive <span class="kbd">E</span></div>
+    <div class="item" style="color: var(--accent-danger);"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Delete <span class="kbd">⌫</span></div>
+  </div>
+  <div class="tooltip">Schedule task <span class="kbd">S</span></div>
+</div>
+</body></html>

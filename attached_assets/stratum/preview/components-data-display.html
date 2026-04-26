@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>Stratum — Data display</title>
+<link rel="stylesheet" href="_sheet.css" />
+</head>
+<body>
+<main class="sheet">
+  <header class="sh-head">
+    <p class="sh-eyebrow">Components · §8.8</p>
+    <h1 class="sh-title">Data display</h1>
+    <p class="sh-sub">Stat card, KPI, sparkline, bar/line/area/donut/heatmap, activity feed.</p>
+  </header>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Stat / KPI cards</h2>
+    <div class="sh-frame">
+      <div class="sh-grid sh-grid--cols" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="s-stat">
+          <div class="s-stat__label">Tasks completed</div>
+          <div class="s-stat__value t-num">142</div>
+          <div class="s-stat__delta is-positive">▲ 12 vs last week</div>
+        </div>
+        <div class="s-stat">
+          <div class="s-stat__label">Open · overdue</div>
+          <div class="s-stat__value t-num">38 <span style="color:var(--accent-danger); font-size:14px;">/ 5</span></div>
+          <div class="s-stat__delta is-negative">▼ 5 overdue from Tuesday</div>
+        </div>
+        <div class="s-stat">
+          <div class="s-stat__label">Focus time</div>
+          <div class="s-stat__value t-num">14h 22m</div>
+          <div class="s-stat__delta is-neutral">— flat vs 4-week avg</div>
+        </div>
+        <div class="s-stat">
+          <div class="s-stat__label">Streak</div>
+          <div class="s-stat__value t-num">12 days</div>
+          <svg class="s-spark" viewBox="0 0 120 32" width="120" height="32" preserveAspectRatio="none">
+            <polyline fill="none" stroke="var(--accent-primary)" stroke-width="1.5" points="0,24 12,18 24,22 36,14 48,16 60,10 72,12 84,6 96,8 108,4 120,6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Bar · line · area · donut · heatmap</h2>
+    <div class="sh-frame">
+      <div class="sh-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+
+        <div class="s-chart">
+          <div class="s-chart__title">Tasks by day</div>
+          <svg viewBox="0 0 220 110" width="100%" height="110" preserveAspectRatio="none">
+            <g fill="var(--accent-primary)">
+              <rect x="6"   y="60" width="22" height="46" rx="2"/>
+              <rect x="34"  y="40" width="22" height="66" rx="2"/>
+              <rect x="62"  y="20" width="22" height="86" rx="2"/>
+              <rect x="90"  y="50" width="22" height="56" rx="2"/>
+              <rect x="118" y="32" width="22" height="74" rx="2"/>
+              <rect x="146" y="74" width="22" height="32" rx="2" fill="var(--accent-primary-subtle)"/>
+              <rect x="174" y="86" width="22" height="20" rx="2" fill="var(--accent-primary-subtle)"/>
+            </g>
+          </svg>
+          <div class="s-chart__axis"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+        </div>
+
+        <div class="s-chart">
+          <div class="s-chart__title">Active users · 30d</div>
+          <svg viewBox="0 0 220 110" width="100%" height="110" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="ar1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="oklch(72% 0.140 250)" stop-opacity="0.32"/>
+                <stop offset="100%" stop-color="oklch(72% 0.140 250)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,80 L20,72 L40,76 L60,60 L80,64 L100,48 L120,52 L140,40 L160,44 L180,28 L200,32 L220,18 L220,110 L0,110 Z" fill="url(#ar1)"/>
+            <path d="M0,80 L20,72 L40,76 L60,60 L80,64 L100,48 L120,52 L140,40 L160,44 L180,28 L200,32 L220,18" fill="none" stroke="var(--accent-primary)" stroke-width="1.5"/>
+          </svg>
+        </div>
+
+        <div class="s-chart" style="display:flex; gap:14px; align-items:center;">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="var(--surface-overlay)" stroke-width="10"/>
+            <circle cx="40" cy="40" r="32" fill="none" stroke="var(--cal-1-fill)" stroke-width="10" stroke-dasharray="100 201" transform="rotate(-90 40 40)"/>
+            <circle cx="40" cy="40" r="32" fill="none" stroke="var(--cal-3-fill)" stroke-width="10" stroke-dasharray="56 201" stroke-dashoffset="-100" transform="rotate(-90 40 40)"/>
+            <circle cx="40" cy="40" r="32" fill="none" stroke="var(--cal-5-fill)" stroke-width="10" stroke-dasharray="32 201" stroke-dashoffset="-156" transform="rotate(-90 40 40)"/>
+          </svg>
+          <div class="sh-col" style="gap:6px;">
+            <div class="s-chart__title" style="margin:0;">Time by project</div>
+            <div class="s-legend"><span class="s-legend__dot" style="background:var(--cal-1-fill);"></span>Q4 Launch <span class="t-num" style="margin-left:auto;">52%</span></div>
+            <div class="s-legend"><span class="s-legend__dot" style="background:var(--cal-3-fill);"></span>Pricing <span class="t-num" style="margin-left:auto;">28%</span></div>
+            <div class="s-legend"><span class="s-legend__dot" style="background:var(--cal-5-fill);"></span>Hiring <span class="t-num" style="margin-left:auto;">16%</span></div>
+            <div class="s-legend"><span class="s-legend__dot" style="background:var(--surface-overlay);"></span>Other <span class="t-num" style="margin-left:auto;">4%</span></div>
+          </div>
+        </div>
+
+        <div class="s-chart">
+          <div class="s-chart__title">Activity heatmap · 7×12</div>
+          <div class="s-heatmap">
+            <!-- 7 rows × 12 cols -->
+            <!-- generated densities -->
+          </div>
+          <script>
+            (function(){
+              var hm = document.currentScript.previousElementSibling;
+              var values = [0,1,2,1,3,4,2,1,0,2,3,1,1,0,2,3,4,2,1,0,1,2,3,4,2,3,4,3,2,1,2,3,4,3,2,1,0,1,2,3,4,3,2,1,0,1,2,3,1,2,3,4,3,2,1,0,1,2,3,4,2,1,0,1,2,3,4,3,2,1,2,3,4,3,2,1,0,1,2,3,4,3,2,1];
+              for (var i = 0; i < 84; i++) {
+                var v = values[i % values.length];
+                var d = document.createElement('div');
+                d.className = 's-heatmap__cell s-heatmap__cell--' + v;
+                hm.appendChild(d);
+              }
+            })();
+          </script>
+          <div class="s-chart__axis"><span>Mon</span><span style="margin-left:auto;">Sun</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="sh-section">
+    <h2 class="sh-h2">Activity feed</h2>
+    <div class="sh-frame">
+      <ul class="s-activity">
+        <li class="s-activity__item">
+          <span class="s-avatar is-xs" style="background:var(--cal-3-fill); color:white;">DK</span>
+          <div class="s-activity__body">
+            <div><strong>Dana K.</strong> commented on <a class="s-link">Finalize pricing tier copy</a></div>
+            <div class="s-activity__excerpt">"Tier 2 grandfathered for 6 months — confirmed with finance."</div>
+          </div>
+          <span class="s-activity__time t-num">2m</span>
+        </li>
+        <li class="s-activity__item">
+          <span class="s-avatar is-xs" style="background:var(--cal-1-fill); color:white;">SR</span>
+          <div class="s-activity__body">
+            <div><strong>Sara R.</strong> moved 3 tasks to <a class="s-link">Pricing rewrite</a></div>
+          </div>
+          <span class="s-activity__time t-num">12m</span>
+        </li>
+        <li class="s-activity__item">
+          <span class="s-activity__icon" style="background:var(--accent-success-subtle); color:var(--accent-success);">✓</span>
+          <div class="s-activity__body">
+            <div>Calendar sync completed · 14 events imported</div>
+          </div>
+          <span class="s-activity__time t-num">1h</span>
+        </li>
+        <li class="s-activity__item">
+          <span class="s-avatar is-xs" style="background:var(--cal-5-fill); color:white;">JM</span>
+          <div class="s-activity__body">
+            <div><strong>Jamal M.</strong> closed <a class="s-link">Onboarding flow — final QA pass</a></div>
+          </div>
+          <span class="s-activity__time t-num">3h</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+</body>
+</html>
