@@ -70,3 +70,8 @@ must reuse the Wave 0 primitives — no new ad‑hoc components in product code.
 ## Recent Changes
 - 2026‑04‑26: Bootstrapped Wave 0 — token port, Tailwind config, theme
   provider/switcher, Storybook, all 41 components, design‑system docs.
+- 2026‑04‑26: Storybook dark + light theme pass for all 41 components / 69
+  stories. Fixed toast theme bug (`src/components/ui/toast.tsx` no longer
+  uses Sonner `theme="system"`; reads Atlas `data-theme` instead). Added
+  `scripts/storybook-theme-sweep.mjs` + `scripts/storybook-overlay-sweep.mjs`
+  and `docs/wave0-theme-pass.md` summarizing the pass.

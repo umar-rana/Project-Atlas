@@ -13,7 +13,9 @@
     "storybook": "storybook dev -p 6006 -h 0.0.0.0",
     "build-storybook": "storybook build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "storybook:sweep": "node scripts/storybook-theme-sweep.mjs",
+    "storybook:sweep:overlays": "node scripts/storybook-overlay-sweep.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -82,6 +84,7 @@
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-storybook": "^9.1.20",
     "jsdom": "^25.0.1",
+    "playwright-core": "^1.59.1",
     "postcss": "^8.5.10",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.6.14",

@@ -1,0 +1,170 @@
+[
+  {
+    "id": "primitives-dialog--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-dialog--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-dialog--sizes",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-dialog--sizes",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-drawer--right-side",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-drawer--right-side",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-drawer--left-side",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-drawer--left-side",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-popover--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-popover--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-dropdownmenu--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-dropdownmenu--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-tooltip--basic",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-tooltip--basic",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-tooltip--with-shortcut",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-tooltip--with-shortcut",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-toast--variants",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-toast--variants",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-alertdialog--destructive-left",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-alertdialog--destructive-left",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-select--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-select--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "composed-commandpalette--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "composed-commandpalette--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "composed-referenceautocomplete--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "composed-referenceautocomplete--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-contextmenu--default",
+    "theme": "dark",
+    "ok": true,
+    "issues": []
+  },
+  {
+    "id": "primitives-contextmenu--default",
+    "theme": "light",
+    "ok": true,
+    "issues": []
+  }
+]
