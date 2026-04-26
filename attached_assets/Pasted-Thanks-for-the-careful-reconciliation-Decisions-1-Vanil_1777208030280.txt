@@ -1,0 +1,12 @@
+Thanks for the careful reconciliation. Decisions:
+1. Vanilla CSS vs shadcn/Tailwind: Option A. Rebuild every component as shadcn/ui + Tailwind React primitives that visually match Stratum's preview cards. colors_and_type.css becomes the token source. components.css is reference only and does not ship in production code.
+2. Theme attribute: Use data-theme="dark|light" as Stratum specifies. Configure next-themes with attribute="data-theme".
+3. Fonts: Use next/font for self-hosted Inter, Source Serif 4, JetBrains Mono. Strip Stratum's @import lines from the imported token file. Wire loaded font CSS variables into Tailwind as --font-ui, --font-reading, --font-mono.
+4. Elevation: Add --shadow-0: none for parity with the 0-5 levels in the prompt.
+5. Tag families: Confirm Format→outlined, Purpose→filled, FreeFormTag→soft. Use semantic names (Format / Purpose / FreeFormTag) as the public component API; visual treatments are implementation.
+6. Letter-spacing: Keep per-size tracking values in Tailwind's text utilities. Stratum's --tracking-* tokens can coexist as semantic aliases.
+7. Stratum extensions: Keep all extensions (--text-4xl, --reading-quote, --reading-code-inline, --reading-code-block, --reading-max-width, --space-px, --space-0_5). Label them as "extensions" in the documentation.
+8. Stratum defaults: Yes, encode all of them in component defaults — 13px body, tight density, token-based focus ring, no CSS-in-JS, Unicode glyphs for shortcuts (⌘K), hair-space kbd separator, sentence-case copy throughout. These override shadcn defaults wherever they conflict.
+9. Out-of-scope guardrail: Confirmed. Do not build React versions of kanban, data tables, calendar events, task/project/contact/note rows, AI surfaces, editor primitives, bulk-action bar, or drop indicators in Wave 0. The CSS reference is fine; no React component ships.
+10. Patterns and accessibility as contract: Yes. Incorporate Stratum's PATTERNS.md and ACCESSIBILITY.md into /docs/design-system.md (either inline or by reference). Treat the accessibility rules — focus-visible always, color-never-the-only-signal, ≥24px hit targets, role/aria semantics per component — as enforceable build requirements, not documentation suggestions.
+Proceed with section 6, step 1 of the Wave 0 prompt.
