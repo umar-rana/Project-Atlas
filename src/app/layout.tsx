@@ -28,6 +28,11 @@ const fontMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Atlas",
   description: "Personal productivity command center.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({
