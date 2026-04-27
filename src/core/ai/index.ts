@@ -10,6 +10,7 @@ type ModelId = "claude-haiku-4-5" | "claude-sonnet-4-6" | "claude-opus-4-7";
 const TASK_MODEL_MAP: Record<string, ModelId> = {
   test: "claude-haiku-4-5",
   capture_parse: "claude-haiku-4-5",
+  capture_parse_v2: "claude-haiku-4-5",
   default: "claude-haiku-4-5",
 };
 
@@ -39,6 +40,7 @@ export interface CompleteOptions {
   options?: {
     maxTokens?: number;
     systemPrompt?: string;
+    model?: ModelId;
   };
 }
 
@@ -52,7 +54,7 @@ export interface CompleteResult {
 }
 
 export async function complete(opts: CompleteOptions): Promise<CompleteResult> {
-  const model: ModelId = (TASK_MODEL_MAP[opts.task] ?? TASK_MODEL_MAP["default"]) as ModelId;
+  const model: ModelId = opts.options?.model ?? (TASK_MODEL_MAP[opts.task] ?? TASK_MODEL_MAP["default"]) as ModelId;
   const maxTokens = opts.options?.maxTokens ?? 1024;
   const start = Date.now();
 

@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-import { parseQuickAdd } from "@/lib/tasks/parse-quick-add";
 import { useTasksStore } from "@/lib/tasks/store";
 import { toast } from "@/lib/toast";
 
@@ -25,11 +24,9 @@ export function TaskQuickAdd({
   const utils = trpc.useUtils();
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
 
-  const tags = trpc.tags.list.useQuery({ limit: 500 });
-  const contexts = trpc.contexts.list.useQuery();
-  const tagCreate = trpc.tags.create.useMutation();
-  const contextCreate = trpc.contexts.create.useMutation();
-  const create = trpc.tasks.create.useMutation({
+  const tags = trpc.tags.list.useQuery({ limit: 500 }, { enabled: !!defaultTagName });
+
+  const parseAndCreate = trpc.capture.parseAndCreate.useMutation({
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
@@ -41,79 +38,28 @@ export function TaskQuickAdd({
   async function submit(openInspector: boolean) {
     const txt = value.trim();
     if (!txt) return;
-    const parsed = parseQuickAdd(txt);
-    if (!parsed.title) {
-      toast.error("Task needs a title");
-      return;
-    }
 
-    const knownTags = tags.data ?? [];
-    const knownContexts = contexts.data ?? [];
+    const contextIdOverrides: string[] = defaultContextId ? [defaultContextId] : [];
+    const tagIdOverrides: string[] = [];
 
-    const tagIds: string[] = [];
-    const contextIds: string[] = [];
-    if (defaultTagName) {
-      const t = knownTags.find((x) => x.name === defaultTagName.toLowerCase());
-      if (t) tagIds.push(t.id);
+    if (defaultTagName && tags.data) {
+      const t = tags.data.find((x) => x.name === defaultTagName.toLowerCase());
+      if (t) tagIdOverrides.push(t.id);
     }
-    if (defaultContextId) contextIds.push(defaultContextId);
 
     try {
-      for (const t of parsed.tags) {
-        const existing = knownTags.find((x) => x.name === t);
-        if (existing) tagIds.push(existing.id);
-        else {
-          const created = await tagCreate.mutateAsync({ name: t });
-          tagIds.push(created.id);
-        }
-      }
-      for (const c of parsed.contexts) {
-        const existing = knownContexts.find((x) => x.name.toLowerCase() === c.toLowerCase());
-        if (existing) {
-          contextIds.push(existing.id);
-          continue;
-        }
-        try {
-          const created = await contextCreate.mutateAsync({ name: c });
-          contextIds.push(created.id);
-        } catch (err) {
-          // Race: another tab/request created the same context first.
-          // Re-fetch and reuse it instead of failing the capture.
-          const code =
-            err && typeof err === "object" && "data" in err
-              ? (err as { data?: { code?: string } }).data?.code
-              : undefined;
-          if (code === "CONFLICT") {
-            const refreshed = await utils.contexts.list.fetch();
-            const found = refreshed.find((x) => x.name.toLowerCase() === c.toLowerCase());
-            if (found) {
-              contextIds.push(found.id);
-              continue;
-            }
-          }
-          throw err;
-        }
-      }
-
-      // If the user typed a `>>project` token but we already have a
-      // default scope (e.g. inside a project view), the explicit
-      // project_id wins. Otherwise the server resolves project_title.
-      const hasReferenceTokens = /(^|\s)(@\w|\[\[)/.test(txt);
-      const created = await create.mutateAsync({
-        title: parsed.title,
-        notes: hasReferenceTokens ? txt : undefined,
-        project_id: defaultProjectId ?? undefined,
-        project_title: defaultProjectId ? undefined : parsed.project_title,
-        due_date: parsed.due_date ?? null,
-        tag_ids: tagIds,
-        context_ids: contextIds,
+      const result = await parseAndCreate.mutateAsync({
+        raw_text: txt,
+        source: "quick_add",
+        project_id_override: defaultProjectId ?? undefined,
+        context_id_overrides: contextIdOverrides.length > 0 ? contextIdOverrides : undefined,
+        tag_id_overrides: tagIdOverrides.length > 0 ? tagIdOverrides : undefined,
       });
 
       setValue("");
       if (openInspector) {
-        setSelectedTaskId(created.id);
+        setSelectedTaskId(result.taskId);
       }
-      // Stay focused for rapid capture.
       inputRef.current?.focus();
     } catch (err) {
       toast.error((err as { message?: string })?.message ?? "Could not add task");
@@ -123,7 +69,7 @@ export function TaskQuickAdd({
   function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      submit(e.metaKey || e.ctrlKey);
+      void submit(e.metaKey || e.ctrlKey);
     }
   }
 

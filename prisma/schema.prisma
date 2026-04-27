@@ -13,34 +13,37 @@ datasource db {
 // ─── User ────────────────────────────────────────────────────────────────────
 
 model User {
-  id              String    @id @db.Uuid
-  email           String    @unique
-  name            String?
-  image           String?
-  timezone        String    @default("UTC")
-  date_format     String    @default("DD/MM/YYYY")
-  time_format     String    @default("24h")
-  week_start      String    @default("monday")
-  theme           String    @default("dark")
-  tasks_prefs     Json?
-  created_at      DateTime  @default(now()) @db.Timestamptz
-  updated_at      DateTime  @updatedAt @db.Timestamptz
-  deleted_at      DateTime? @db.Timestamptz
+  id                      String    @id @db.Uuid
+  email                   String    @unique
+  name                    String?
+  image                   String?
+  timezone                String    @default("UTC")
+  date_format             String    @default("DD/MM/YYYY")
+  time_format             String    @default("24h")
+  week_start              String    @default("monday")
+  theme                   String    @default("dark")
+  tasks_prefs             Json?
+  ai_confidence_threshold Float     @default(0.70)
+  created_at              DateTime  @default(now()) @db.Timestamptz
+  updated_at              DateTime  @updatedAt @db.Timestamptz
+  deleted_at              DateTime? @db.Timestamptz
 
-  sessions        Session[]
-  audit_logs      AuditLog[]
+  sessions           Session[]
+  audit_logs         AuditLog[]
   integration_tokens IntegrationToken[]
-  sync_states     SyncState[]
-  ai_call_logs    AICallLog[]
-  attachments     Attachment[]
-  drive_config    DriveConfig?
-  captures        Capture[]
-  tasks           Task[]
-  projects        Project[]
-  project_folders ProjectFolder[]
-  contexts        Context[]
-  tags            Tag[]
-  people          Person[]
+  sync_states        SyncState[]
+  ai_call_logs       AICallLog[]
+  attachments        Attachment[]
+  drive_config       DriveConfig?
+  captures           Capture[]
+  email_captures     EmailCapture[]
+  capture_parse_logs CaptureParseLog[]
+  tasks              Task[]
+  projects           Project[]
+  project_folders    ProjectFolder[]
+  contexts           Context[]
+  tags               Tag[]
+  people             Person[]
 
   @@index([email])
   @@index([deleted_at])
@@ -383,6 +386,63 @@ model TagOnTask {
 
   @@id([task_id, tag_id])
   @@index([tag_id])
+}
+
+// ─── EmailCapture ─────────────────────────────────────────────────────────────
+
+model EmailCapture {
+  id           String    @id @db.Uuid
+  user_id      String    @db.Uuid
+  from_address String
+  to_address   String
+  subject      String?
+  body_text    String?
+  body_html    String?
+  message_id   String?   @unique
+  received_at  DateTime  @db.Timestamptz
+  status       String    @default("pending") // pending | processing | done | failed
+  task_id      String?   @db.Uuid
+  error        String?
+  created_at   DateTime  @default(now()) @db.Timestamptz
+  updated_at   DateTime  @updatedAt @db.Timestamptz
+
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([user_id, status])
+  @@index([received_at])
+}
+
+// ─── CaptureParseLog ──────────────────────────────────────────────────────────
+
+model CaptureParseLog {
+  id               String    @id @db.Uuid
+  user_id          String    @db.Uuid
+  task_id          String?   @db.Uuid
+  raw_text         String
+  parse_tier       String    // local_only | local_plus_ai | fallback_only
+  local_confidence Float
+  ai_used          Boolean   @default(false)
+  ai_model         String?
+  ai_input_tokens  Int?
+  ai_output_tokens Int?
+  ai_cost_usd      Float?
+  parse_duration_ms Int
+  title            String?
+  due_date         DateTime? @db.Timestamptz
+  tags             String[]  @default([])
+  contexts         String[]  @default([])
+  project_hint     String?
+  ai_error         String?
+  source           String    @default("modal") // modal | quick_add | email | api
+  created_at       DateTime  @default(now()) @db.Timestamptz
+
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([user_id, parse_tier])
+  @@index([user_id, created_at])
+  @@index([created_at])
 }
 
 // ─── DriveConfig ─────────────────────────────────────────────────────────────

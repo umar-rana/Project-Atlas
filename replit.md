@@ -1,10 +1,12 @@
-# Atlas — Wave 3b GTD Tasks Module
+# Atlas — Wave 3c Capture Intelligence
 
 ## Overview
-Atlas is a desktop-first personal productivity command center. **Wave 3b** adds
-advanced GTD features to the Tasks module: Forecast view, Review mode, Completed
-perspective, Project Folders with hierarchy, sequential project filtering,
-updated sidebar, command palette shortcuts, settings additions, and audit log entries.
+Atlas is a desktop-first personal productivity command center. **Wave 3c Part 1** adds
+the hybrid parsing pipeline: a local-first capture intelligence system where chrono-node,
+regex, and compromise.js parse the majority of captures at zero AI cost, with Claude Haiku
+called only as a fallback for ambiguous input (~20-30%). The full captures tRPC router
+(parseAndCreate, preview, recentLogs, updateThreshold, strategyStats, qualityStats,
+thresholdImpact, exportStats) is wired up. The capture modal is updated to use the new service.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router) + React 19
