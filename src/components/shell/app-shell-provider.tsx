@@ -94,12 +94,13 @@ function GlobalShortcuts(): null {
 }
 
 function InspectorSlot(): React.ReactElement | null {
+  const hydrated = useShellStore((s) => s._shellHydrated);
   const inspectorOpen = useShellStore((s) => s.inspectorOpen);
   const inspectorPinned = useShellStore((s) => s.inspectorPinned);
   const setInspectorOpen = useShellStore((s) => s.setInspectorOpen);
   const setInspectorPinned = useShellStore((s) => s.setInspectorPinned);
 
-  if (!inspectorOpen) return null;
+  if (!hydrated || !inspectorOpen) return null;
 
   return (
     <div className="w-72 border-l border-border-subtle bg-surface-overlay max-tablet:hidden">
@@ -126,9 +127,17 @@ function InspectorSlot(): React.ReactElement | null {
   );
 }
 
+function ShellHydration(): null {
+  React.useEffect(() => {
+    useShellStore.persist.rehydrate();
+  }, []);
+  return null;
+}
+
 function ShellInner({ user, children }: AppShellProviderProps): React.ReactElement {
   return (
     <>
+      <ShellHydration />
       <WelcomeEffect />
       <GlobalShortcuts />
       <AppShell
