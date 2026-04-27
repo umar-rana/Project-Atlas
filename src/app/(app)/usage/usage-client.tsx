@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 
 function formatCost(usd: number): string {
@@ -57,16 +56,10 @@ export function UsageClient() {
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
           AI Usage
         </h1>
-        <Link
-          href="/"
-          className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-        >
-          ← Back
-        </Link>
       </div>
 
       {isLoading && (

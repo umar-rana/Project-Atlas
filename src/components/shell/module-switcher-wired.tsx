@@ -37,6 +37,7 @@ function getModuleId(pathname: string): string {
   if (pathname.startsWith("/journal")) return "journal";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/admin")) return "health";
+  if (pathname.startsWith("/usage")) return "health";
   return "tasks";
 }
 
