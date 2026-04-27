@@ -1,7 +1,6 @@
-// Atlas — Wave 0 tRPC client placeholder.
-// Wave 2 wires the real client + React Query provider.
+"use client";
 
 import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "./server";
+import type { AppRouter } from "@/server/routers/_app";
 
 export const trpc = createTRPCReact<AppRouter>();

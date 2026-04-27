@@ -1,77 +1,111 @@
-# Atlas — Wave 0
+# Atlas — Wave 1 Foundation Layer
 
 ## Overview
-Atlas is a desktop‑first personal productivity command center. **Wave 0** ships
-only the foundation: design tokens, theming, Storybook, and 41 design‑system
-components. No product features yet (no tasks, projects, calendar, AI, editor).
-
-The design language is **Stratum**, sourced from `colors_and_type.css` and
-locked in `.local/tasks/task-1.md`. See `docs/design-system.md` for the full
-build contract (tokens, components, patterns, accessibility, how‑to‑add).
+Atlas is a desktop-first personal productivity command center. **Wave 1** ships
+the complete backend infrastructure layer on top of the Wave 0 design system.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router) + React 19
-- **Language**: TypeScript (strict)
+- **Language**: TypeScript (strict, zero errors)
 - **Styling**: Tailwind CSS 3.4 driven by Stratum tokens
 - **UI primitives**: Radix UI, cmdk, vaul, sonner
 - **Theming**: next-themes (`attribute="data-theme"`, default dark)
-- **Storybook**: 8 (`@storybook/nextjs`) on port 6006
-- **Forms / state**: react-hook-form + zod, @tanstack/react-query, zustand
-- **Backend stubs (placeholders only)**: tRPC, Prisma, NextAuth v5 beta, pino
+- **Storybook**: 9 on port 6000
+- **Auth**: Replit OIDC (openid-client v6) — no Auth.js/next-auth
+- **Database**: PostgreSQL via Prisma (Wave 1 schema migrated)
+- **Sessions**: DB-backed sessions + iron-session cookie (`atlas_sess`)
+- **API**: tRPC v11 (health, user, drive routers)
+- **AI**: Anthropic Claude via Replit integration
+- **Storage**: Replit Object Storage (`@replit/object-storage`)
+- **Logging**: Pino + pino-pretty
+- **Crypto**: Node.js built-in AES-256-GCM (for Drive token encryption)
+- **Drive**: Google Drive API via `googleapis`
+- **Queue**: Priority-aware in-memory dispatch queue with DB-backed rate limiting (`src/core/queue/`)
+- **Dates**: date-fns-tz utilities with per-user prefs (14 passing unit tests)
+
+## Key Environment Variables
+- `SESSION_SECRET` — iron-session encryption key (set as Replit secret)
+- `DATABASE_URL` — PostgreSQL connection string (Replit DB)
+- `TOKEN_ENCRYPTION_KEY` — 64-char hex, 32-byte AES key for Drive tokens
+- `LOG_LEVEL` — pino log level (default: `info`)
+- `REPL_ID` — Replit app ID (auto-provided by Replit)
+- `REPLIT_DEV_DOMAIN` — auto-provided by Replit
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` — needed for Drive OAuth (not yet configured)
+- `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` — Anthropic credentials (Replit blueprint)
 
 ## Project Structure
 ```
 src/
 ├── app/
-│   ├── globals.css           Tailwind base + tokens.css import + .tabular-nums
-│   ├── layout.tsx            next/font wiring + ThemeProvider + Toaster
-│   └── page.tsx              Wave 0 placeholder home
-├── components/
-│   ├── theme/                ThemeProvider + ThemeSwitcher
-│   ├── ui/                   28 primitives + stories
-│   ├── composed/             7 composed components + stories
-│   └── layout/               6 layout primitives + stories
-├── styles/
-│   └── tokens.css            Stratum tokens (single source of truth)
-└── lib/                      utils.ts, plus empty stubs (auth, db, trpc, logger)
-.storybook/                   main.ts + preview.tsx with theme toolbar
-docs/design-system.md         Token + component + pattern reference
-prisma/schema.prisma          Empty placeholder for later waves
+│   ├── api/auth/           login, callback, logout routes (Replit OIDC)
+│   ├── api/drive/connect/  Drive OAuth initiator (generates+signs nonce cookie, redirects to Google)
+│   ├── api/drive/oauth-callback/  Drive OAuth callback (validates nonce HMAC, exchanges code)
+│   ├── api/trpc/           tRPC handler
+│   ├── admin/health/       System health dashboard
+│   ├── settings/           Settings page + Drive wizard + settings client
+│   ├── sign-in/            Sign-in page
+│   ├── globals.css
+│   ├── layout.tsx          TRPCProvider + ThemeProvider + Toaster
+│   └── page.tsx            Home (auth-gated)
+├── components/             Wave 0 design system (41 components)
+├── core/
+│   ├── ai/                 Anthropic abstraction (complete + queue)
+│   ├── audit/              Audit logging (AuditLog table)
+│   ├── auth/               replit-oidc.ts, session.ts
+│   ├── dates/              Timezone-aware date utils (14 unit tests)
+│   ├── db/                 Prisma client singleton
+│   ├── drive/              Google Drive client, primitives, linking, encrypt
+│   ├── logging/            Pino logger factory
+│   ├── queue/              Rate-limit in-memory queue
+│   └── storage/            Replit Object Storage wrapper
+├── lib/
+│   ├── auth.ts             Re-exports getServerSession
+│   ├── db.ts               Re-exports Prisma client
+│   ├── logger.ts           Re-exports createLogger
+│   └── trpc/               client.ts + server.ts re-exports
+├── middleware.ts            Auth middleware + structured HTTP request logging (requestId, method, path, ms)
+└── server/
+    ├── trpc.ts             tRPC init + context (auth context)
+    └── routers/            _app.ts, health.ts, user.ts, drive.ts
+prisma/
+├── schema.prisma           Wave 1 full schema (migrated: 20260427043022_wave1_foundation)
+└── migrations/
 ```
 
+## Prisma Models (Wave 1)
+User, Session, AuditLog, IntegrationToken, SyncState, RateLimitTracker, AICallLog, Attachment, DriveConfig
+
 ## Configuration Files
-- `tailwind.config.ts` — exposes every Stratum token (surfaces, borders, text,
-  accents, viz/cal palettes, status, spacing incl. half‑steps and pixel‑precise
-  component heights, radius, type scale + tracking, motion durations + easings,
-  shadows, fontFamily from next/font CSS vars).
-- `next.config.mjs` — `allowedDevOrigins: ['*']` for Replit iframe preview;
-  cache headers disabled in dev only.
-- `tsconfig.json` — strict mode, expanded path aliases (`@/components`,
-  `@/lib`, `@/styles`, etc.).
-- `.eslintrc.json` — `next/core-web-vitals` + `prettier` +
-  `plugin:storybook/recommended` with `@typescript-eslint` parser/plugin.
+- `tailwind.config.ts` — Stratum tokens + animations
+- `next.config.mjs` — `allowedDevOrigins: ['*']`, dev cache disabled
+- `tsconfig.json` — strict mode, `noUncheckedIndexedAccess`, path aliases
+- `prisma/schema.prisma` — Wave 1 full schema
+
+## Auth Flow
+1. `/sign-in` → user clicks → `/api/auth/login` → Replit OIDC → `/api/auth/callback`
+2. Callback: upsert User, create Session row, set `atlas_sess` cookie (7-day)
+3. Middleware checks cookie on all protected routes, redirects to `/sign-in?from=...`
+4. `/api/auth/logout` deletes session row + clears cookie
 
 ## Development
-- Dev server: port 5000 bound to 0.0.0.0 (Replit iframe).
-- Workflow: `Start application` runs `npm run dev`.
-- Storybook: `npm run storybook` (port 6006).
-- Verification: `npm run type-check`, `npm run lint`, `npm run build` — all
-  required to be clean before review.
+- Dev server: port 5000 bound to `0.0.0.0` (Replit iframe)
+- `Start application` workflow: `npm run dev`
+- Storybook workflow: `npm run storybook` (port 6000)
+- Type check: `npx tsc --noEmit` (zero errors)
+- Unit tests: `npx vitest run` (14 date utility tests pass)
 
 ## Replit-Specific Setup
-- Server binds to `0.0.0.0:5000` for proxy iframe compatibility.
-- `allowedDevOrigins: ['*']` in `next.config.mjs` allows the proxied preview.
-
-## Out of Scope for Wave 0
-Kanban boards, data tables, calendar grids, task/project rows, AI surfaces,
-rich‑text editor primitives, bulk‑action bars. These land in later waves and
-must reuse the Wave 0 primitives — no new ad‑hoc components in product code.
+- Binds to `0.0.0.0:5000` for proxy iframe compatibility
+- `allowedDevOrigins: ['*']` in `next.config.mjs`
+- Object Storage bucket configured via `DEFAULT_OBJECT_STORAGE_BUCKET_ID` secret
+- Replit Auth uses `REPL_ID` for OIDC client ID
 
 ## Recent Changes
-- 2026‑04‑26: Bootstrapped Wave 0 — token port, Tailwind config, theme
-  provider/switcher, Storybook, all 41 components, design‑system docs.
-- 2026‑04‑26: Storybook dark + light theme pass for all 41 components / 69
-  stories. Fixed toast theme bug (`src/components/ui/toast.tsx` no longer
-  uses Sonner `theme="system"`; reads Atlas `data-theme` instead). Added
-  `scripts/storybook-theme-sweep.mjs` + `scripts/storybook-overlay-sweep.mjs`
-  and `docs/wave0-theme-pass.md` summarizing the pass.
+- 2026-04-27: Wave 1 Foundation Layer complete:
+  - Removed next-auth; implemented Replit OIDC auth
+  - Prisma Wave 1 schema (9 models) migrated to PostgreSQL
+  - Core modules: logging, dates (14 tests), db, audit, storage, queue, ai, drive
+  - tRPC routers: health, user, drive
+  - Pages: /, /sign-in, /settings, /admin/health
+  - Drive linking wizard (4-step UI)
+  - All TypeScript errors resolved (zero TS errors)

@@ -1,6 +1,7 @@
 modules = ["nodejs-20"]
 [agent]
 expertMode = true
+integrations = ["javascript_log_in_with_replit:2.0.0", "javascript_object_storage:2.0.0"]
 
 [nix]
 channel = "stable-25_05"
@@ -67,3 +68,8 @@ defaultBucketID = "replit-objstore-0ec8f073-2ac5-491c-ada7-f8e45d7919c9"
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 120000
+
+[userenv]
+
+[userenv.shared]
+LOG_LEVEL = "debug"

@@ -1,6 +1,5 @@
-// Atlas — Wave 0 placeholder schema.
-// Wave 1 introduces the real models (User, Account, Session, Project, Task, ...).
-// Keep this file as a stub so `prisma generate` can run from the start.
+// Atlas — Wave 1 schema.
+// All PKs are UUIDv7. All timestamps are TIMESTAMPTZ.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,4 +8,181 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @db.Uuid
+  email           String    @unique
+  name            String?
+  image           String?
+  timezone        String    @default("UTC")
+  date_format     String    @default("DD/MM/YYYY")
+  time_format     String    @default("24h")
+  week_start      String    @default("monday")
+  theme           String    @default("dark")
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+
+  sessions        Session[]
+  audit_logs      AuditLog[]
+  integration_tokens IntegrationToken[]
+  sync_states     SyncState[]
+  ai_call_logs    AICallLog[]
+  attachments     Attachment[]
+  drive_config    DriveConfig?
+
+  @@index([email])
+  @@index([deleted_at])
+}
+
+// ─── Session ─────────────────────────────────────────────────────────────────
+
+model Session {
+  id          String   @id @db.Uuid
+  user_id     String   @db.Uuid
+  token       String   @unique
+  expires_at  DateTime @db.Timestamptz
+  created_at  DateTime @default(now()) @db.Timestamptz
+  last_seen   DateTime @default(now()) @db.Timestamptz
+  user_agent  String?
+  ip_address  String?
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([user_id])
+  @@index([expires_at])
+}
+
+// ─── AuditLog ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @db.Uuid
+  user_id     String?  @db.Uuid
+  entity_type String
+  entity_id   String
+  action      String
+  diff        Json?
+  meta        Json?
+  created_at  DateTime @default(now()) @db.Timestamptz
+
+  user        User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([entity_type, entity_id])
+  @@index([created_at])
+}
+
+// ─── IntegrationToken ────────────────────────────────────────────────────────
+
+model IntegrationToken {
+  id            String   @id @db.Uuid
+  user_id       String   @db.Uuid
+  provider      String
+  encrypted_data String
+  scopes        String[]
+  expires_at    DateTime? @db.Timestamptz
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @updatedAt @db.Timestamptz
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, provider])
+  @@index([user_id])
+}
+
+// ─── SyncState ───────────────────────────────────────────────────────────────
+
+model SyncState {
+  id            String   @id @db.Uuid
+  user_id       String   @db.Uuid
+  provider      String
+  resource_type String
+  cursor        String?
+  last_synced   DateTime? @db.Timestamptz
+  meta          Json?
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @updatedAt @db.Timestamptz
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, provider, resource_type])
+  @@index([user_id])
+}
+
+// ─── RateLimitTracker ────────────────────────────────────────────────────────
+
+model RateLimitTracker {
+  id          String   @id @db.Uuid
+  user_id     String   @db.Uuid
+  provider    String
+  window_start DateTime @db.Timestamptz
+  request_count Int    @default(0)
+  daily_count Int      @default(0)
+  updated_at  DateTime @updatedAt @db.Timestamptz
+
+  @@unique([user_id, provider, window_start])
+  @@index([user_id, provider])
+}
+
+// ─── AICallLog ───────────────────────────────────────────────────────────────
+
+model AICallLog {
+  id            String   @id @db.Uuid
+  user_id       String?  @db.Uuid
+  task          String
+  model         String
+  input_tokens  Int?
+  output_tokens Int?
+  cost_usd      Float?
+  duration_ms   Int?
+  success       Boolean  @default(true)
+  error         String?
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  user          User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([created_at])
+}
+
+// ─── Attachment ──────────────────────────────────────────────────────────────
+
+model Attachment {
+  id            String   @id @db.Uuid
+  user_id       String   @db.Uuid
+  file_id       String   @unique
+  filename      String
+  content_type  String
+  size_bytes    Int
+  storage_path  String
+  deleted_at    DateTime? @db.Timestamptz
+  created_at    DateTime @default(now()) @db.Timestamptz
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([deleted_at])
+}
+
+// ─── DriveConfig ─────────────────────────────────────────────────────────────
+
+model DriveConfig {
+  id              String   @id @db.Uuid
+  user_id         String   @unique @db.Uuid
+  drive_type      String
+  shared_drive_id String?
+  root_folder_id  String
+  root_folder_name String
+  atlas_folder_id String?
+  verified        Boolean  @default(false)
+  created_at      DateTime @default(now()) @db.Timestamptz
+  updated_at      DateTime @updatedAt @db.Timestamptz
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
 }
