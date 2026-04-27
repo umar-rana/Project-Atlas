@@ -24,15 +24,19 @@ export async function getOidcConfig(): Promise<openidClient.Configuration> {
  *
  * Returns only the host portion (no protocol).
  */
+function isInternalHost(h: string): boolean {
+  return h.startsWith("0.0.0.0") || h.startsWith("127.0.0.1") || h.startsWith("localhost");
+}
+
 export function resolvePublicHost(headers: Headers): string {
   const forwardedHost = headers.get("x-forwarded-host");
   if (forwardedHost) {
-    const first = forwardedHost.split(",")[0];
-    if (first) return first.trim();
+    const first = forwardedHost.split(",")[0]?.trim();
+    if (first && !isInternalHost(first)) return first;
   }
 
   const host = headers.get("host");
-  if (host && !host.startsWith("0.0.0.0") && !host.startsWith("127.0.0.1") && !host.startsWith("localhost")) {
+  if (host && !isInternalHost(host)) {
     return host;
   }
 
