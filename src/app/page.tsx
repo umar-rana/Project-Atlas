@@ -11,10 +11,13 @@ export default function HomePage(): React.ReactElement {
       <section className="flex flex-col gap-3 rounded-lg border border-border-subtle bg-surface-raised p-4 shadow-1">
         <p className="text-md font-medium text-text-primary">Wave 0 bootstrap is live.</p>
         <p className="text-sm text-text-secondary">
-          The Stratum design tokens, theme system, and primitive component library are loaded. Run{" "}
-          <code className="rounded-xs bg-surface-sunken px-1 font-mono text-xs text-text-primary">
-            npm run storybook
-          </code>{" "}
+          The Stratum design tokens, theme system, and primitive component library are loaded.{" "}
+          <a
+            href="/storybook/index.html"
+            className="font-medium text-accent-primary underline underline-offset-2"
+          >
+            Open Storybook
+          </a>{" "}
           to browse every primitive, composed, and layout component in both themes.
         </p>
       </section>
