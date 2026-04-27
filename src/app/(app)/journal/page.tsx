@@ -8,7 +8,7 @@ export default function JournalPage() {
   return (
     <div className="flex h-full items-center justify-center">
       <EmptyState
-        icon={BookOpen}
+        icon={<BookOpen size={28} aria-hidden />}
         title="Journal — Coming in Wave 5"
         body="Your daily journal, reflections, and habits will live here. Coming in Wave 5."
         action={<InspectorAffordance />}

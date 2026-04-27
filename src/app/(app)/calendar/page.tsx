@@ -8,7 +8,7 @@ export default function CalendarPage() {
   return (
     <div className="flex h-full items-center justify-center">
       <EmptyState
-        icon={Calendar}
+        icon={<Calendar size={28} aria-hidden />}
         title="Calendar — Coming in Wave 4"
         body="Your calendar, events, and time-blocking features will live here. Coming in Wave 4."
         action={<InspectorAffordance />}
