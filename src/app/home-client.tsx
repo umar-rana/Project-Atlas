@@ -51,6 +51,7 @@ export function HomeClient({ user }: { user: User }) {
       <section className="grid grid-cols-2 gap-4 tablet:grid-cols-3">
         {[
           { href: "/settings", label: "Settings", desc: "Preferences, theme, Drive" },
+          { href: "/usage", label: "AI Usage", desc: "Token counts and cost by task" },
           { href: "/admin/health", label: "System Health", desc: "Check all foundation services" },
           { href: "/storybook/index.html", label: "Storybook", desc: "Design system components" },
         ].map((item) => (
