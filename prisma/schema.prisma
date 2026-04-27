@@ -171,18 +171,22 @@ model Attachment {
 // ─── DriveConfig ─────────────────────────────────────────────────────────────
 
 model DriveConfig {
-  id              String   @id @db.Uuid
-  user_id         String   @unique @db.Uuid
-  drive_type      String
-  shared_drive_id String?
-  root_folder_id  String
-  root_folder_name String
-  atlas_folder_id String?
-  verified        Boolean  @default(false)
-  created_at      DateTime @default(now()) @db.Timestamptz
-  updated_at      DateTime @updatedAt @db.Timestamptz
+  id                      String   @id @db.Uuid
+  user_id                 String   @unique @db.Uuid
+  drive_type              String
+  shared_drive_id         String?
+  root_folder_id          String
+  root_folder_name        String
+  atlas_folder_id         String?
+  folder_database_backups String?
+  folder_notes            String?
+  folder_journal          String?
+  folder_attachments      String?
+  verified                Boolean  @default(false)
+  created_at              DateTime @default(now()) @db.Timestamptz
+  updated_at              DateTime @updatedAt @db.Timestamptz
 
-  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
 }

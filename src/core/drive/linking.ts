@@ -28,18 +28,25 @@ export const ATLAS_FOLDER_TREE: FolderNode[] = [
   { name: "general" },
 ];
 
+type FolderIndex = Record<string, string>;
+
 async function createFolderTree(
   userId: string,
   nodes: FolderNode[],
   parentId: string,
   driveId?: string,
-): Promise<void> {
+  index: FolderIndex = {},
+): Promise<FolderIndex> {
   for (const node of nodes) {
     const folder = await createFolder(userId, node.name, parentId, driveId);
-    if (folder.id && node.children?.length) {
-      await createFolderTree(userId, node.children, folder.id, driveId);
+    if (folder.id) {
+      index[node.name] = folder.id;
+      if (node.children?.length) {
+        await createFolderTree(userId, node.children, folder.id, driveId, index);
+      }
     }
   }
+  return index;
 }
 
 export async function linkDrive(params: {
@@ -60,31 +67,40 @@ export async function linkDrive(params: {
     throw new Error("Failed to create Atlas folder in Drive");
   }
 
-  await createFolderTree(params.userId, ATLAS_FOLDER_TREE, atlasFolder.id, params.sharedDriveId);
+  const folderIndex = await createFolderTree(
+    params.userId,
+    ATLAS_FOLDER_TREE,
+    atlasFolder.id,
+    params.sharedDriveId,
+  );
+
+  const configData = {
+    drive_type: params.driveType,
+    shared_drive_id: params.sharedDriveId ?? null,
+    root_folder_id: params.rootFolderId,
+    root_folder_name: params.rootFolderName,
+    atlas_folder_id: atlasFolder.id,
+    folder_database_backups: folderIndex["database-backups"] ?? null,
+    folder_notes: folderIndex["notes"] ?? null,
+    folder_journal: folderIndex["journal"] ?? null,
+    folder_attachments: folderIndex["attachments"] ?? null,
+    verified: true,
+  };
 
   await db.driveConfig.upsert({
     where: { user_id: params.userId },
     create: {
       id: newId(),
       user_id: params.userId,
-      drive_type: params.driveType,
-      shared_drive_id: params.sharedDriveId ?? null,
-      root_folder_id: params.rootFolderId,
-      root_folder_name: params.rootFolderName,
-      atlas_folder_id: atlasFolder.id,
-      verified: true,
+      ...configData,
     },
-    update: {
-      drive_type: params.driveType,
-      shared_drive_id: params.sharedDriveId ?? null,
-      root_folder_id: params.rootFolderId,
-      root_folder_name: params.rootFolderName,
-      atlas_folder_id: atlasFolder.id,
-      verified: true,
-    },
+    update: configData,
   });
 
-  log.info({ userId: params.userId, atlasFolder: atlasFolder.id }, "Drive linked");
+  log.info(
+    { userId: params.userId, atlasFolder: atlasFolder.id, folderIndex },
+    "Drive linked with subfolder IDs persisted",
+  );
 }
 
 export async function unlinkDrive(userId: string): Promise<void> {
