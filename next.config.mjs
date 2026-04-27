@@ -18,14 +18,6 @@ const nextConfig = {
   serverExternalPackages: ['pino', 'pino-pretty'],
   devIndicators: false,
   ...(devOrigins ? { allowedDevOrigins: devOrigins } : {}),
-  async redirects() {
-    return [
-      { source: '/crm', destination: '/people', permanent: true },
-      { source: '/crm/:path*', destination: '/people/:path*', permanent: true },
-      { source: '/journal', destination: '/journals', permanent: true },
-      { source: '/journal/:path*', destination: '/journals/:path*', permanent: true },
-    ];
-  },
   async headers() {
     if (isProd) return [];
     return [
