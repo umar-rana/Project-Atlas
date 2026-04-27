@@ -11,16 +11,10 @@ import {
   BookOpen,
   FolderArchive,
   Trash2,
-  Activity,
-  Sun,
-  Moon,
-  Monitor,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { toast } from "@/lib/toast";
 
 const MODULES = [
   { id: "tasks",     label: "Tasks",     icon: CheckSquare,   href: "/tasks",     shortcut: ["⌘", "1"] },
