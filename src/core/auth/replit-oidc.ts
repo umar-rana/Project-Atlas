@@ -14,6 +14,54 @@ export async function getOidcConfig(): Promise<openidClient.Configuration> {
   return _config;
 }
 
+/**
+ * Resolves the public-facing host from request headers.
+ *
+ * Priority order:
+ *  1. `x-forwarded-host` — set by the reverse proxy on the deployed / custom-domain app
+ *  2. `host` header — the raw Host sent by the client
+ *  3. `APP_URL` env variable — optional hardcoded fallback (e.g. https://atlas.insightive.io)
+ *
+ * Returns only the host portion (no protocol).
+ */
+export function resolvePublicHost(headers: Headers): string {
+  const forwardedHost = headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const first = forwardedHost.split(",")[0];
+    if (first) return first.trim();
+  }
+
+  const host = headers.get("host");
+  if (host) return host;
+
+  const appUrl = process.env.APP_URL;
+  if (appUrl) {
+    try {
+      return new URL(appUrl).host;
+    } catch {
+    }
+  }
+
+  return "localhost:3000";
+}
+
+/**
+ * Resolves the full public-facing base URL (protocol + host) from request headers.
+ *
+ * Follows the same priority as resolvePublicHost, then determines the protocol
+ * from the environment / host patterns.
+ */
+export function resolvePublicBaseUrl(headers: Headers): string {
+  const host = resolvePublicHost(headers);
+  const isSecure =
+    process.env.NODE_ENV === "production" ||
+    !!process.env.REPLIT_DEV_DOMAIN ||
+    host.endsWith(".replit.dev") ||
+    host.endsWith(".repl.co");
+  const proto = isSecure ? "https" : "http";
+  return `${proto}://${host}`;
+}
+
 export function getCallbackUrl(host: string): string {
   const isSecure =
     process.env.NODE_ENV === "production" ||

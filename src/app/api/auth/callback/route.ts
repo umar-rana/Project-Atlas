@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleCallback } from "@/core/auth/replit-oidc";
+import { handleCallback, resolvePublicHost, resolvePublicBaseUrl } from "@/core/auth/replit-oidc";
 import { createSession, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from "@/core/auth/session";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
@@ -9,19 +9,23 @@ import { createLogger } from "@/core/logging";
 const log = createLogger({ module: "auth/callback" });
 
 export async function GET(req: NextRequest) {
+  const baseUrl = resolvePublicBaseUrl(req.headers);
+
   try {
     const cookieStore = await cookies();
     const expectedState = cookieStore.get("atlas_oidc_state")?.value;
 
     if (!expectedState) {
-      return NextResponse.redirect(new URL("/sign-in?error=state_missing", req.url));
+      return NextResponse.redirect(new URL("/sign-in?error=state_missing", baseUrl));
     }
 
-    const host = req.headers.get("host") ?? req.nextUrl.host;
-    const claims = await handleCallback(host, req.nextUrl, expectedState);
+    const host = resolvePublicHost(req.headers);
+
+    const currentUrl = new URL(req.nextUrl.pathname + req.nextUrl.search, baseUrl);
+    const claims = await handleCallback(host, currentUrl, expectedState);
 
     if (!claims.email) {
-      return NextResponse.redirect(new URL("/sign-in?error=no_email", req.url));
+      return NextResponse.redirect(new URL("/sign-in?error=no_email", baseUrl));
     }
 
     const existingUser = await db.user.findUnique({
@@ -66,7 +70,7 @@ export async function GET(req: NextRequest) {
       ipAddress: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? undefined,
     });
 
-    const response = NextResponse.redirect(new URL("/tasks?welcome=1", req.url));
+    const response = NextResponse.redirect(new URL("/tasks?welcome=1", baseUrl));
     response.cookies.set(SESSION_COOKIE_NAME(), token, {
       httpOnly: true,
       secure: true,
@@ -80,6 +84,6 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (err) {
     log.error({ err }, "Auth callback failed");
-    return NextResponse.redirect(new URL("/sign-in?error=callback_failed", req.url));
+    return NextResponse.redirect(new URL("/sign-in?error=callback_failed", baseUrl));
   }
 }
