@@ -32,6 +32,7 @@ the complete backend infrastructure layer on top of the Wave 0 design system.
 - `REPLIT_DEV_DOMAIN` — auto-provided by Replit
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` — needed for Drive OAuth (not yet configured)
 - `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` — Anthropic credentials (Replit blueprint)
+- `CRON_SECRET` — Bearer secret for `POST /api/cron/cleanup-sessions`; **required in production** (endpoint returns 503 if unset outside dev)
 
 ## Project Structure
 ```
@@ -66,7 +67,7 @@ src/
 ├── middleware.ts            Auth middleware + structured HTTP request logging (requestId, method, path, ms)
 └── server/
     ├── trpc.ts             tRPC init + context (auth context)
-    └── routers/            _app.ts, health.ts, user.ts, drive.ts
+    └── routers/            _app.ts, health.ts, user.ts, drive.ts, session.ts
 prisma/
 ├── schema.prisma           Wave 1 full schema (migrated: 20260427043022_wave1_foundation)
 └── migrations/
@@ -100,7 +101,18 @@ User, Session, AuditLog, IntegrationToken, SyncState, RateLimitTracker, AICallLo
 - Object Storage bucket configured via `DEFAULT_OBJECT_STORAGE_BUCKET_ID` secret
 - Replit Auth uses `REPL_ID` for OIDC client ID
 
+## Session Cleanup
+Expired sessions are purged in two ways:
+1. **Opportunistic (automatic)**: ~5% of session validations trigger a background `purgeExpiredSessions()` call (non-blocking, fire-and-forget).
+2. **Explicit (cron)**: `POST /api/cron/cleanup-sessions` deletes all expired rows and returns `{ ok: true, purged: N }`. Requires `Authorization: Bearer $CRON_SECRET`. Set up a daily external scheduler (e.g. GitHub Actions, Render cron, or Replit deployments schedule) pointing at this endpoint. In production the endpoint returns `503` if `CRON_SECRET` is not configured.
+
 ## Recent Changes
+- 2026-04-27: Session cleanup + active sessions UI (Task #8):
+  - `purgeExpiredSessions()` in `src/core/auth/session.ts`; shared `resolveSession()` internal helper
+  - `POST /api/cron/cleanup-sessions` cleanup endpoint (CRON_SECRET-protected in production)
+  - tRPC `session` router: `list`, `revoke`, `revokeAll`
+  - Settings page "Active Sessions" section with per-session revoke and "Revoke all others"
+  - `TRPCContext` extended with `sessionId`
 - 2026-04-27: Wave 1 Foundation Layer complete:
   - Removed next-auth; implemented Replit OIDC auth
   - Prisma Wave 1 schema (9 models) migrated to PostgreSQL

@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/api/drive/oauth-callback",
   "/api/health",
   "/api/trpc/health.ping",
+  "/api/cron/cleanup-sessions",
   "/_next",
   "/favicon.ico",
   "/storybook",

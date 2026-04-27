@@ -4,6 +4,7 @@ import { userRouter } from "./user";
 import { driveRouter } from "./drive";
 import { aiRouter } from "./ai";
 import { captureRouter } from "./capture";
+import { sessionRouter } from "./session";
 
 export const appRouter = router({
   health: healthRouter,
@@ -11,6 +12,7 @@ export const appRouter = router({
   drive: driveRouter,
   ai: aiRouter,
   capture: captureRouter,
+  session: sessionRouter,
 });
 
 export type AppRouter = typeof appRouter;

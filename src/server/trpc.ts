@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { getServerSession } from "@/core/auth/session";
+import { getServerSessionInfo } from "@/core/auth/session";
 import { createLogger } from "@/core/logging";
 import { ZodError } from "zod";
 import type { User } from "@prisma/client";
@@ -8,11 +8,12 @@ const log = createLogger({ module: "trpc" });
 
 export interface TRPCContext {
   user: User | null;
+  sessionId: string | null;
 }
 
 export async function createTRPCContext(): Promise<TRPCContext> {
-  const user = await getServerSession();
-  return { user };
+  const info = await getServerSessionInfo();
+  return { user: info?.user ?? null, sessionId: info?.sessionId ?? null };
 }
 
 const t = initTRPC.context<TRPCContext>().create({

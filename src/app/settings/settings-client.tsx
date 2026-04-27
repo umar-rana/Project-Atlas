@@ -34,6 +34,28 @@ const TIMEZONES = [
 
 const DATE_FORMATS = ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "D MMM YYYY"];
 
+function formatRelativeTime(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const diffMs = Date.now() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60_000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
+function parseUserAgent(ua: string | null): string {
+  if (!ua) return "Unknown device";
+  if (/iPhone|iPad|iPod/.test(ua)) return "iOS device";
+  if (/Android/.test(ua)) return "Android device";
+  if (/Windows/.test(ua)) return "Windows";
+  if (/Macintosh|Mac OS X/.test(ua)) return "macOS";
+  if (/Linux/.test(ua)) return "Linux";
+  return "Unknown device";
+}
+
 export function SettingsClient({
   user: initialUser,
   autoOpenWizard = false,
@@ -47,6 +69,7 @@ export function SettingsClient({
 }) {
   const [saved, setSaved] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(autoOpenWizard);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [driveBanner, setDriveBanner] = useState<{ type: "success" | "error"; message: string } | null>(() => {
     if (driveLinked) return { type: "success", message: "Google Drive connected successfully." };
     if (driveError) {
@@ -83,9 +106,25 @@ export function SettingsClient({
     onSuccess: () => utils.drive.linkStatus.invalidate(),
   });
 
+  const { data: sessions, isLoading: sessionsLoading } = trpc.session.list.useQuery();
+  const revokeMutation = trpc.session.revoke.useMutation({
+    onSuccess: () => utils.session.list.invalidate(),
+    onSettled: () => setRevokingId(null),
+  });
+  const revokeAllMutation = trpc.session.revokeAll.useMutation({
+    onSuccess: () => utils.session.list.invalidate(),
+  });
+
   function handleBlur(field: string, value: string) {
     updateMutation.mutate({ [field]: value } as Parameters<typeof updateMutation.mutate>[0]);
   }
+
+  function handleRevoke(sessionId: string) {
+    setRevokingId(sessionId);
+    revokeMutation.mutate({ sessionId });
+  }
+
+  const otherSessions = sessions?.filter((s) => !s.isCurrent) ?? [];
 
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
@@ -251,6 +290,75 @@ export function SettingsClient({
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Active Sessions */}
+      <section className="mb-8 rounded-xl border border-border-default bg-surface-raised p-6 shadow-1">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-text-primary">Active Sessions</h2>
+            <p className="mt-0.5 text-xs text-text-secondary">
+              Sessions expire 7 days after signing in.
+            </p>
+          </div>
+          {otherSessions.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm("Sign out of all other sessions?")) {
+                  revokeAllMutation.mutate();
+                }
+              }}
+              disabled={revokeAllMutation.isPending}
+              className="rounded-md border border-accent-danger px-3 py-1.5 text-xs font-medium text-accent-danger hover:bg-accent-danger-muted disabled:opacity-50"
+            >
+              Revoke all others
+            </button>
+          )}
+        </div>
+
+        {sessionsLoading ? (
+          <p className="text-sm text-text-tertiary">Loading sessions…</p>
+        ) : !sessions || sessions.length === 0 ? (
+          <p className="text-sm text-text-tertiary">No active sessions found.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {sessions.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between rounded-lg border border-border-default bg-surface-overlay px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-text-primary">
+                      {parseUserAgent(s.user_agent)}
+                    </span>
+                    {s.isCurrent && (
+                      <span className="shrink-0 rounded-full bg-accent-success-muted px-2 py-0.5 text-xs font-medium text-accent-success">
+                        current
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-text-tertiary">
+                    {s.ip_address && <span>{s.ip_address}</span>}
+                    {s.ip_address && <span>·</span>}
+                    <span>Last seen {formatRelativeTime(s.last_seen)}</span>
+                    <span>·</span>
+                    <span>Signed in {formatRelativeTime(s.created_at)}</span>
+                  </div>
+                </div>
+                {!s.isCurrent && (
+                  <button
+                    onClick={() => handleRevoke(s.id)}
+                    disabled={revokingId === s.id}
+                    className="ml-4 shrink-0 rounded-md border border-border-default px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-accent-danger hover:text-accent-danger disabled:opacity-50"
+                  >
+                    {revokingId === s.id ? "Revoking…" : "Revoke"}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* Drive Integration */}

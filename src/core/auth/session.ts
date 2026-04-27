@@ -6,6 +6,7 @@ import { randomBytes, createHmac } from "crypto";
 const log = createLogger({ module: "auth/session" });
 const SESSION_COOKIE = "atlas_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const CLEANUP_PROBABILITY = 0.05;
 
 function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
@@ -34,6 +35,16 @@ export function verifySessionToken(signedToken: string): string | null {
   return rawToken;
 }
 
+export async function purgeExpiredSessions(): Promise<number> {
+  const result = await db.session.deleteMany({
+    where: { expires_at: { lt: new Date() } },
+  });
+  if (result.count > 0) {
+    log.info({ count: result.count }, "Purged expired sessions");
+  }
+  return result.count;
+}
+
 export async function createSession(
   userId: string,
   meta?: { userAgent?: string; ipAddress?: string },
@@ -56,10 +67,12 @@ export async function createSession(
   return signSessionToken(rawToken, expiresAt);
 }
 
-export async function getSessionUser(signedToken: string) {
+async function resolveSession(signedToken: string, warnOnHmacFailure = false) {
   const rawToken = verifySessionToken(signedToken);
   if (!rawToken) {
-    log.warn("Session token HMAC verification failed — rejecting");
+    if (warnOnHmacFailure) {
+      log.warn("Session token HMAC verification failed — rejecting");
+    }
     return null;
   }
 
@@ -69,6 +82,7 @@ export async function getSessionUser(signedToken: string) {
   });
 
   if (!session) return null;
+
   if (session.expires_at < new Date()) {
     await db.session.delete({ where: { token: rawToken } });
     return null;
@@ -79,7 +93,24 @@ export async function getSessionUser(signedToken: string) {
     data: { last_seen: new Date() },
   });
 
-  return session.user;
+  if (Math.random() < CLEANUP_PROBABILITY) {
+    purgeExpiredSessions().catch((err) =>
+      log.warn({ err }, "Background session purge failed"),
+    );
+  }
+
+  return session;
+}
+
+export async function getSessionUser(signedToken: string) {
+  const session = await resolveSession(signedToken, true);
+  return session?.user ?? null;
+}
+
+export async function getSessionInfo(signedToken: string) {
+  const session = await resolveSession(signedToken, false);
+  if (!session) return null;
+  return { user: session.user, sessionId: session.id };
 }
 
 export async function deleteSession(signedToken: string): Promise<void> {
@@ -93,6 +124,13 @@ export async function getServerSession() {
   const signedToken = cookieStore.get(SESSION_COOKIE)?.value;
   if (!signedToken) return null;
   return getSessionUser(signedToken);
+}
+
+export async function getServerSessionInfo() {
+  const cookieStore = await cookies();
+  const signedToken = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!signedToken) return null;
+  return getSessionInfo(signedToken);
 }
 
 export function SESSION_COOKIE_NAME() {
