@@ -175,8 +175,33 @@ function DayColumn({
 
 export function ForecastView(): React.ReactElement {
   const utils = trpc.useUtils();
-  const [days, setDays] = React.useState(7);
+  const { data: meData } = trpc.user.me.useQuery(undefined, { staleTime: 5 * 60_000 });
+
+  function extractForecastDays(raw: unknown): 7 | 14 {
+    const prefs = (typeof raw === "object" && raw !== null && "tasks_prefs" in raw)
+      ? (raw as { tasks_prefs: unknown }).tasks_prefs
+      : null;
+    const val = (typeof prefs === "object" && prefs !== null && "default_forecast_days" in prefs)
+      ? (prefs as { default_forecast_days: unknown }).default_forecast_days
+      : undefined;
+    return typeof val === "number" && val === 14 ? 14 : 7;
+  }
+
+  const [days, setDays] = React.useState<7 | 14>(() => extractForecastDays(utils.user.me.getData()));
+  const [daysInitialized, setDaysInitialized] = React.useState(() => utils.user.me.getData() !== undefined);
   const [startDate, setStartDate] = React.useState(() => startOfDay(new Date()));
+
+  React.useEffect(() => {
+    if (!daysInitialized && meData !== undefined) {
+      setDays(extractForecastDays(meData));
+      setDaysInitialized(true);
+    }
+  }, [meData, daysInitialized]);
+
+  function handleSetDays(n: 7 | 14) {
+    setDaysInitialized(true);
+    setDays(n);
+  }
 
   const query = trpc.forecast.week.useQuery(
     { start_date: startDate, days },
@@ -236,7 +261,7 @@ export function ForecastView(): React.ReactElement {
           <div className="flex items-center rounded-sm border border-border-subtle">
             <button
               type="button"
-              onClick={() => setDays(7)}
+              onClick={() => handleSetDays(7)}
               className={cn(
                 "px-2 py-1 font-ui text-2xs",
                 days === 7 ? "bg-accent-primary-muted text-accent-primary" : "text-text-secondary hover:bg-surface-hover",
@@ -246,7 +271,7 @@ export function ForecastView(): React.ReactElement {
             </button>
             <button
               type="button"
-              onClick={() => setDays(14)}
+              onClick={() => handleSetDays(14)}
               className={cn(
                 "border-l border-border-subtle px-2 py-1 font-ui text-2xs",
                 days === 14 ? "bg-accent-primary-muted text-accent-primary" : "text-text-secondary hover:bg-surface-hover",
