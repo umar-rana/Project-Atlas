@@ -161,6 +161,65 @@ export const tasksRouter = router({
         include: TASK_INCLUDE,
         take: input.limit,
       });
+
+      // ── Sequential project filtering ──────────────────────────────────────
+      // Only applies to: "project" (annotate), "today", "flagged" (exclude blocked).
+      // "all", "context", "tag" are unaffected intentionally.
+      const SEQUENTIAL_PERSPECTIVES = new Set(["project", "today", "flagged", "forecast"]);
+      if (!SEQUENTIAL_PERSPECTIVES.has(input.perspective)) {
+        return items;
+      }
+
+      const projectIds = [
+        ...new Set(items.map((t) => t.project_id).filter(Boolean) as string[]),
+      ];
+
+      if (projectIds.length > 0) {
+        const sequentialProjects = await db.project.findMany({
+          where: { id: { in: projectIds }, sequential: true },
+          select: { id: true },
+        });
+        const sequentialProjectIds = new Set(sequentialProjects.map((p) => p.id));
+
+        if (sequentialProjectIds.size > 0) {
+          // For each sequential project, find the first active task id by position
+          const firstAvailableByProject = new Map<string, string>();
+          for (const pid of sequentialProjectIds) {
+            const first = await db.task.findFirst({
+              where: { project_id: pid, status: "active", parent_id: null, deleted_at: null },
+              orderBy: [{ position: "asc" }, { created_at: "asc" }],
+              select: { id: true },
+            });
+            if (first) {
+              firstAvailableByProject.set(pid, first.id);
+            }
+          }
+
+          if (input.perspective === "project") {
+            // Annotate each task with is_blocked
+            return items.map((task) => {
+              if (!task.project_id || !sequentialProjectIds.has(task.project_id)) {
+                return { ...task, is_blocked: false };
+              }
+              const firstId = firstAvailableByProject.get(task.project_id);
+              // Flagged tasks are always available regardless of sequential order
+              const isBlocked = task.status === "active" && task.id !== firstId && !task.flagged;
+              return { ...task, is_blocked: isBlocked };
+            });
+          } else {
+            // For today/flagged: exclude blocked tasks,
+            // but flagged tasks appear even if blocked (flagged overrides sequential blocking).
+            return items.filter((task) => {
+              if (!task.project_id || !sequentialProjectIds.has(task.project_id)) return true;
+              if (task.status !== "active") return true;
+              if (task.flagged) return true; // flagged override
+              const firstId = firstAvailableByProject.get(task.project_id);
+              return task.id === firstId;
+            });
+          }
+        }
+      }
+
       return items;
     }),
 
@@ -806,6 +865,44 @@ export const tasksRouter = router({
       return { ok: true, count: result.count };
     }),
 
+  bulkPermanentDelete: protectedProcedure
+    .input(z.object({ ids: z.array(z.string().uuid()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+      const ownedTasks = await db.task.findMany({
+        where: {
+          id: { in: input.ids },
+          user_id: userId,
+          status: "completed",
+          deleted_at: null,
+        },
+        select: { id: true, referenced_tag_ids: true },
+      });
+      if (ownedTasks.length === 0) return { ok: true, count: 0 };
+
+      await db.$transaction(async (tx) => {
+        const tagIds = [...new Set(ownedTasks.flatMap((t) => t.referenced_tag_ids))];
+        if (tagIds.length) {
+          await releaseTagReferences({ tagIds, tx });
+        }
+        const taskIds = ownedTasks.map((t) => t.id);
+        await tx.tagOnTask.deleteMany({ where: { task_id: { in: taskIds } } });
+        for (const tid of taskIds) {
+          await tx.$executeRaw`DELETE FROM "Task" WHERE id = ${tid}::uuid AND user_id = ${userId}::uuid`;
+        }
+      });
+
+      await logActivity({
+        user_id: userId,
+        entity_type: "Task",
+        entity_id: "bulk",
+        action: "bulk_permanent_delete",
+        meta: { count: ownedTasks.length },
+      });
+
+      return { ok: true, count: ownedTasks.length };
+    }),
+
   bulkMoveToProject: protectedProcedure
     .input(
       z.object({
@@ -915,4 +1012,122 @@ export const tasksRouter = router({
       });
       return events;
     }),
+
+  // ── Completed perspective ─────────────────────────────────────────────
+  completed: protectedProcedure
+    .input(
+      z.object({
+        date_range: z.enum(["today", "week", "month", "year", "all", "custom"]).default("week"),
+        from_date: z.coerce.date().optional(),
+        to_date: z.coerce.date().optional(),
+        project_id: z.string().uuid().nullable().optional(),
+        sort: z.enum(["completed_at", "title", "due_date"]).default("completed_at"),
+        limit: z.number().int().min(1).max(500).default(200),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+      const now = new Date();
+
+      let since: Date | null = null;
+      let until: Date | null = null;
+      if (input.date_range === "today") {
+        since = new Date(now);
+        since.setHours(0, 0, 0, 0);
+      } else if (input.date_range === "week") {
+        since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (input.date_range === "month") {
+        since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      } else if (input.date_range === "year") {
+        since = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      } else if (input.date_range === "custom") {
+        since = input.from_date ?? null;
+        if (input.to_date) {
+          until = new Date(input.to_date);
+          until.setHours(23, 59, 59, 999);
+        }
+      }
+
+      const where: Prisma.TaskWhereInput = {
+        user_id: userId,
+        status: "completed",
+        deleted_at: null,
+        completed_at: { not: null },
+      };
+
+      if (since && until) {
+        where.completed_at = { gte: since, lte: until };
+      } else if (since) {
+        where.completed_at = { gte: since };
+      } else if (until) {
+        where.completed_at = { lte: until };
+      }
+
+      if (input.project_id !== undefined) {
+        where.project_id = input.project_id;
+      }
+
+      const orderBy: Prisma.TaskOrderByWithRelationInput[] = [];
+      if (input.sort === "completed_at") {
+        orderBy.push({ completed_at: "desc" });
+      } else if (input.sort === "title") {
+        orderBy.push({ title: "asc" });
+      } else if (input.sort === "due_date") {
+        orderBy.push({ due_date: { sort: "asc", nulls: "last" } });
+      }
+
+      const tasks = await db.task.findMany({
+        where,
+        orderBy,
+        include: TASK_INCLUDE,
+        take: input.limit,
+      });
+
+      return tasks;
+    }),
+
+  bulkUncomplete: protectedProcedure
+    .input(z.object({ ids: z.array(z.string().uuid()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await db.task.updateMany({
+        where: {
+          id: { in: input.ids },
+          user_id: ctx.user.id,
+          status: "completed",
+        },
+        data: { status: "active", completed_at: null },
+      });
+      return { ok: true, count: result.count };
+    }),
+
+  completionStats: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user.id;
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const [total, lastWeek, lastMonth] = await Promise.all([
+      db.task.count({
+        where: { user_id: userId, status: "completed", deleted_at: null },
+      }),
+      db.task.count({
+        where: {
+          user_id: userId,
+          status: "completed",
+          deleted_at: null,
+          completed_at: { gte: weekAgo },
+        },
+      }),
+      db.task.count({
+        where: {
+          user_id: userId,
+          status: "completed",
+          deleted_at: null,
+          completed_at: { gte: monthAgo },
+        },
+      }),
+    ]);
+
+    return { total, last_week: lastWeek, last_month: lastMonth };
+  }),
 });

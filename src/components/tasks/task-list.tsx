@@ -24,6 +24,7 @@ export interface TaskRow {
   tags: { tag: { id: string; name: string } }[];
   project: { id: string; title: string; color: string | null } | null;
   subtasks?: { id: string; status: string; title: string }[];
+  is_blocked?: boolean;
 }
 
 interface TaskListProps {

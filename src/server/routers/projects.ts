@@ -13,15 +13,29 @@ export const projectsRouter = router({
       z
         .object({
           status: PROJECT_STATUS.optional(),
+          folder_id: z.string().uuid().nullable().optional(),
+          include_all_statuses: z.boolean().optional(),
         })
         .default({}),
     )
     .query(async ({ ctx, input }) => {
+      const where: Prisma.ProjectWhereInput = {
+        user_id: ctx.user.id,
+        deleted_at: null,
+      };
+
+      if (!input.include_all_statuses) {
+        if (input.status) {
+          where.status = input.status;
+        }
+      }
+
+      if (input.folder_id !== undefined) {
+        where.folder_id = input.folder_id;
+      }
+
       const projects = await db.project.findMany({
-        where: {
-          user_id: ctx.user.id,
-          ...(input.status ? { status: input.status } : {}),
-        },
+        where,
         orderBy: [{ position: "asc" }, { created_at: "asc" }],
       });
 
@@ -32,6 +46,7 @@ export const projectsRouter = router({
           user_id: ctx.user.id,
           status: "active",
           project_id: { in: projects.map((p) => p.id) },
+          deleted_at: null,
         },
         _count: { _all: true },
       });
@@ -64,15 +79,37 @@ export const projectsRouter = router({
         color: z.string().max(40).optional(),
         sequential: z.boolean().optional(),
         status: PROJECT_STATUS.optional(),
+        folder_id: z.string().uuid().nullable().optional(),
+        review_interval_days: z.number().int().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const max = await db.project.aggregate({
-        _max: { position: true },
-        where: { user_id: ctx.user.id },
-      });
-      const position = (max._max.position
-        ? new Prisma.Decimal(max._max.position).plus(1024)
+      if (input.folder_id) {
+        const folder = await db.projectFolder.findFirst({
+          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+        });
+        if (!folder) throw new TRPCError({ code: "FORBIDDEN", message: "Folder not found" });
+      }
+
+      const [maxAgg, userRow] = await Promise.all([
+        db.project.aggregate({
+          _max: { position: true },
+          where: { user_id: ctx.user.id },
+        }),
+        db.user.findUnique({
+          where: { id: ctx.user.id },
+          select: { tasks_prefs: true },
+        }),
+      ]);
+
+      const prefs = (userRow?.tasks_prefs ?? {}) as Record<string, unknown>;
+      const defaultSequential = typeof prefs.default_sequential === "boolean" ? prefs.default_sequential : false;
+      const defaultReviewInterval = typeof prefs.default_review_interval_days === "number"
+        ? prefs.default_review_interval_days
+        : null;
+
+      const position = (maxAgg._max.position
+        ? new Prisma.Decimal(maxAgg._max.position).plus(1024)
         : new Prisma.Decimal(1024)
       ).toString();
 
@@ -83,9 +120,11 @@ export const projectsRouter = router({
           title: input.title,
           notes: input.notes ?? null,
           color: input.color ?? null,
-          sequential: input.sequential ?? false,
+          sequential: input.sequential ?? defaultSequential,
           status: input.status ?? "active",
           position: new Prisma.Decimal(position),
+          folder_id: input.folder_id ?? null,
+          review_interval_days: input.review_interval_days ?? defaultReviewInterval,
         },
       });
 
@@ -108,6 +147,8 @@ export const projectsRouter = router({
         color: z.string().max(40).nullable().optional(),
         sequential: z.boolean().optional(),
         status: PROJECT_STATUS.optional(),
+        folder_id: z.string().uuid().nullable().optional(),
+        review_interval_days: z.number().int().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -121,6 +162,18 @@ export const projectsRouter = router({
       if (input.notes !== undefined) data.notes = input.notes;
       if (input.color !== undefined) data.color = input.color;
       if (input.sequential !== undefined) data.sequential = input.sequential;
+      if (input.folder_id !== undefined) {
+        if (input.folder_id) {
+          const folder = await db.projectFolder.findFirst({
+            where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          });
+          if (!folder) throw new TRPCError({ code: "FORBIDDEN", message: "Folder not found" });
+        }
+        data.folder = input.folder_id ? { connect: { id: input.folder_id } } : { disconnect: true };
+      }
+      if (input.review_interval_days !== undefined) {
+        data.review_interval_days = input.review_interval_days;
+      }
       if (input.status !== undefined) {
         data.status = input.status;
         data.completed_at =

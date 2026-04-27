@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Flag, GripVertical, MessageSquare } from "lucide-react";
+import { Flag, GripVertical, MessageSquare, Unlock } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -143,6 +143,7 @@ export function TaskListItem({
         selected && "bg-accent-primary-subtle",
         isMultiSelected && "bg-accent-primary-subtle",
         isFocused && "ring-1 ring-inset ring-border-focus",
+        task.is_blocked && "opacity-50",
       )}
     >
       <span className="cursor-grab text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
@@ -207,6 +208,12 @@ export function TaskListItem({
           </button>
         )}
         <div className="mt-0.5 flex items-center gap-1.5 font-ui text-2xs text-text-tertiary">
+          {task.is_blocked && !task.flagged && (
+            <span className="inline-flex items-center gap-0.5 rounded-sm bg-surface-raised px-1 py-px font-ui text-2xs text-text-disabled">
+              <Unlock size={9} />
+              Waiting for earlier task
+            </span>
+          )}
           {task.project ? (
             <span className="inline-flex items-center gap-1 truncate rounded-sm bg-surface-raised px-1 py-px">
               {task.project.title}
@@ -230,6 +237,20 @@ export function TaskListItem({
           ) : null}
         </div>
       </div>
+      {task.is_blocked && !task.flagged && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            update.mutate({ id: task.id, flagged: true });
+          }}
+          title="Make this task available now (bypasses sequential order)"
+          aria-label="Make this task available now"
+          className="shrink-0 rounded-sm p-0.5 text-text-disabled opacity-0 transition-opacity hover:text-accent-info group-hover:opacity-100"
+        >
+          <Unlock size={12} />
+        </button>
+      )}
       {due ? (
         <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
           {dueLabel(due)}
@@ -266,6 +287,19 @@ export function TaskListItem({
           >
             {task.flagged ? "Unflag" : "Flag"}
           </button>
+          {task.is_blocked && !task.flagged ? (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                update.mutate({ id: task.id, flagged: true });
+                setMenu(null);
+              }}
+              className="block w-full px-3 py-1 text-left hover:bg-surface-hover"
+            >
+              Make this task available now
+            </button>
+          ) : null}
           {task.project_id ? (
             <button
               type="button"

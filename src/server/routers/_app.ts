@@ -10,6 +10,9 @@ import { projectsRouter } from "./projects";
 import { contextsRouter } from "./contexts";
 import { tagsRouter } from "./tags";
 import { searchRouter } from "./search";
+import { foldersRouter } from "./folders";
+import { reviewRouter } from "./review";
+import { forecastRouter } from "./forecast";
 
 export const appRouter = router({
   health: healthRouter,
@@ -23,6 +26,9 @@ export const appRouter = router({
   contexts: contextsRouter,
   tags: tagsRouter,
   search: searchRouter,
+  folders: foldersRouter,
+  review: reviewRouter,
+  forecast: forecastRouter,
 });
 
 export type AppRouter = typeof appRouter;

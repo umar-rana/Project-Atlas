@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Inbox,
   CalendarDays,
   Flag,
   Folder,
+  FolderOpen,
   Hash,
   Tag as TagIcon,
   Trash2,
@@ -15,7 +16,7 @@ import {
   ChevronRight,
   ChevronDown,
   CheckCircle2,
-  Search,
+  CalendarRange,
   RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc/client";
 import { ProjectAddForm } from "./project-add-form";
 import { ContextAddForm } from "./context-add-form";
+import { toast } from "@/lib/toast";
 
 interface NavRowProps {
   href: string;
@@ -30,24 +32,9 @@ interface NavRowProps {
   icon: React.ReactNode;
   label: string;
   badge?: number;
-  disabled?: boolean;
 }
 
-function NavRow({ href, active, icon, label, badge, disabled }: NavRowProps) {
-  if (disabled) {
-    return (
-      <span
-        className={cn(
-          "flex items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm",
-          "cursor-not-allowed text-text-disabled",
-        )}
-        title="Coming in Wave 3b"
-      >
-        <span className="shrink-0 text-text-tertiary">{icon}</span>
-        <span className="flex-1 truncate">{label}</span>
-      </span>
-    );
-  }
+function NavRow({ href, active, icon, label, badge }: NavRowProps) {
   return (
     <Link
       href={href}
@@ -118,14 +105,252 @@ function colorDotClass(color?: string | null): string {
   return PROJECT_COLOR_DOTS[color] ?? "bg-text-disabled";
 }
 
+type FolderNode = {
+  id: string;
+  name: string;
+  collapsed: boolean;
+  children: FolderNode[];
+  project_count: number;
+};
+
+type DragItem =
+  | { type: "folder"; id: string; name: string }
+  | { type: "project"; id: string; title: string; currentFolderId: string | null };
+
+function FolderTreeNode({
+  folder,
+  depth,
+  pathname,
+  projectsByFolder,
+  onToggle,
+  dragItem,
+  onDragStart,
+  onDropOnFolder,
+}: {
+  folder: FolderNode;
+  depth: number;
+  pathname: string;
+  projectsByFolder: Map<string, { id: string; title: string; color: string | null; task_count: number }[]>;
+  onToggle: (id: string, collapsed: boolean) => void;
+  dragItem: DragItem | null;
+  onDragStart: (item: DragItem) => void;
+  onDropOnFolder: (targetFolderId: string) => void;
+}) {
+  const active = pathname === `/tasks/folders/${folder.id}`;
+  const projects = projectsByFolder.get(folder.id) ?? [];
+  const [isDragOver, setIsDragOver] = React.useState(false);
+  const expandTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!dragItem) return;
+    if (dragItem.type === "folder" && dragItem.id === folder.id) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+    // Auto-expand collapsed folders after 800ms hover
+    if (folder.collapsed && !expandTimerRef.current) {
+      expandTimerRef.current = setTimeout(() => {
+        onToggle(folder.id, false);
+        expandTimerRef.current = null;
+      }, 800);
+    }
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+      if (expandTimerRef.current) {
+        clearTimeout(expandTimerRef.current);
+        expandTimerRef.current = null;
+      }
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (expandTimerRef.current) {
+      clearTimeout(expandTimerRef.current);
+      expandTimerRef.current = null;
+    }
+    if (!dragItem) return;
+    if (dragItem.type === "folder" && dragItem.id === folder.id) return;
+    onDropOnFolder(folder.id);
+  }
+
+  return (
+    <div style={{ paddingLeft: depth > 0 ? 12 : 0 }}>
+      <div
+        className={cn(
+          "flex items-center gap-1 rounded-sm transition-colors",
+          isDragOver && "bg-accent-primary-subtle/60 ring-1 ring-accent-primary",
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <button
+          type="button"
+          onClick={() => onToggle(folder.id, !folder.collapsed)}
+          className="shrink-0 p-0.5 text-text-disabled hover:text-text-tertiary"
+          aria-label={folder.collapsed ? "Expand folder" : "Collapse folder"}
+        >
+          {folder.collapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+        </button>
+        <Link
+          href={`/tasks/folders/${folder.id}`}
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            onDragStart({ type: "folder", id: folder.id, name: folder.name });
+          }}
+          className={cn(
+            "flex flex-1 cursor-grab items-center gap-1.5 rounded-sm px-1.5 py-0.5 font-ui text-sm transition-colors active:cursor-grabbing",
+            active
+              ? "bg-accent-primary-subtle text-text-primary"
+              : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+          )}
+        >
+          {folder.collapsed ? (
+            <Folder size={12} className="shrink-0 text-text-tertiary" />
+          ) : (
+            <FolderOpen size={12} className="shrink-0 text-text-tertiary" />
+          )}
+          <span className="flex-1 truncate">{folder.name}</span>
+          {folder.project_count > 0 && (
+            <span className="font-mono text-2xs text-text-tertiary tabular-nums">{folder.project_count}</span>
+          )}
+        </Link>
+      </div>
+
+      {!folder.collapsed && (
+        <div className="mt-px flex flex-col gap-px">
+          {projects.map((p) => {
+            const href = `/tasks/projects/${p.id}`;
+            const projActive = pathname === href;
+            return (
+              <Link
+                key={p.id}
+                href={href}
+                draggable
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  onDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: folder.id });
+                }}
+                style={{ paddingLeft: 20 + depth * 12 }}
+                className={cn(
+                  "flex cursor-grab items-center gap-1.5 rounded-sm py-0.5 pr-2 font-ui text-sm active:cursor-grabbing",
+                  projActive
+                    ? "bg-accent-primary-subtle text-text-primary"
+                    : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+                )}
+              >
+                <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(p.color))} />
+                <span className="flex-1 truncate">{p.title}</span>
+                {p.task_count > 0 && (
+                  <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
+                )}
+              </Link>
+            );
+          })}
+          {folder.children.map((child) => (
+            <FolderTreeNode
+              key={child.id}
+              folder={child}
+              depth={depth + 1}
+              pathname={pathname}
+              projectsByFolder={projectsByFolder}
+              onToggle={onToggle}
+              dragItem={dragItem}
+              onDragStart={onDragStart}
+              onDropOnFolder={onDropOnFolder}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
-  const counts = trpc.tasks.counts.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-  });
+  const router = useRouter();
+
+  const counts = trpc.tasks.counts.useQuery(undefined, { refetchOnWindowFocus: false });
+  const reviewCount = trpc.review.overdueCount.useQuery(undefined, { refetchOnWindowFocus: false });
   const projects = trpc.projects.list.useQuery({ status: "active" });
+  const foldersQuery = trpc.folders.list.useQuery(undefined, { refetchOnWindowFocus: false });
   const contexts = trpc.contexts.list.useQuery();
   const tags = trpc.tags.list.useQuery({ limit: 100 });
+
+  const utils = trpc.useUtils();
+
+  const toggleCollapsed = trpc.folders.toggleCollapsed.useMutation({
+    onSuccess: () => utils.folders.list.invalidate(),
+  });
+
+  const createFolder = trpc.folders.create.useMutation({
+    onSuccess: (folder) => {
+      utils.folders.list.invalidate();
+      router.push(`/tasks/folders/${folder.id}`);
+    },
+    onError: () => toast.error("Failed to create folder"),
+  });
+
+  const [dragItem, setDragItem] = React.useState<DragItem | null>(null);
+  const [isRootDragOver, setIsRootDragOver] = React.useState(false);
+
+  const moveFolderMutation = trpc.folders.move.useMutation({
+    onSuccess: () => utils.folders.list.invalidate(),
+    onError: () => {
+      toast.error("Failed to move folder");
+      utils.folders.list.invalidate();
+    },
+  });
+
+  const moveProjectMutation = trpc.folders.moveProject.useMutation({
+    onSuccess: () => {
+      utils.projects.list.invalidate();
+      utils.folders.list.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to move project");
+      utils.projects.list.invalidate();
+    },
+  });
+
+  function handleDragStart(item: DragItem) {
+    setDragItem(item);
+  }
+
+  function handleDropOnFolder(targetFolderId: string) {
+    if (!dragItem) return;
+    if (dragItem.type === "folder") {
+      if (dragItem.id !== targetFolderId) {
+        moveFolderMutation.mutate({ id: dragItem.id, parent_id: targetFolderId });
+      }
+    } else {
+      if (dragItem.currentFolderId !== targetFolderId) {
+        moveProjectMutation.mutate({ project_id: dragItem.id, folder_id: targetFolderId });
+      }
+    }
+    setDragItem(null);
+  }
+
+  function handleDropOnRoot(e: React.DragEvent) {
+    e.preventDefault();
+    setIsRootDragOver(false);
+    if (!dragItem) return;
+    if (dragItem.type === "folder") {
+      moveFolderMutation.mutate({ id: dragItem.id, parent_id: null });
+    } else {
+      if (dragItem.currentFolderId !== null) {
+        moveProjectMutation.mutate({ project_id: dragItem.id, folder_id: null });
+      }
+    }
+    setDragItem(null);
+  }
 
   const [projectsOpen, setProjectsOpen] = React.useState(true);
   const [contextsOpen, setContextsOpen] = React.useState(true);
@@ -139,8 +364,37 @@ export function TasksSidebar(): React.ReactElement {
     return showAllTags ? list : list.slice(0, 20);
   }, [tags.data, showAllTags]);
 
+  const folders = foldersQuery.data ?? [];
+
+  const projectsByFolder = React.useMemo(() => {
+    const map = new Map<string, { id: string; title: string; color: string | null; task_count: number }[]>();
+    const allProjects = projects.data ?? [];
+    for (const p of allProjects) {
+      if (p.folder_id) {
+        const existing = map.get(p.folder_id) ?? [];
+        existing.push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
+        map.set(p.folder_id, existing);
+      }
+    }
+    return map;
+  }, [projects.data]);
+
+  const rootProjects = React.useMemo(() => {
+    return (projects.data ?? []).filter((p) => !p.folder_id);
+  }, [projects.data]);
+
+  function handleAddFolder() {
+    const name = prompt("Folder name")?.trim();
+    if (!name) return;
+    createFolder.mutate({ name });
+  }
+
+  function handleToggleFolder(id: string, collapsed: boolean) {
+    toggleCollapsed.mutate({ id, collapsed });
+  }
+
   return (
-    <nav aria-label="Task perspectives" className="flex h-full flex-col gap-px overflow-y-auto p-2">
+    <nav aria-label="Task perspectives" className="flex h-full flex-col gap-px overflow-y-auto p-2" onDragEnd={() => { setDragItem(null); setIsRootDragOver(false); }}>
       <NavRow
         href="/tasks/inbox"
         active={pathname === "/tasks/inbox"}
@@ -156,11 +410,24 @@ export function TasksSidebar(): React.ReactElement {
         badge={counts.data?.today}
       />
       <NavRow
+        href="/tasks/forecast"
+        active={pathname === "/tasks/forecast"}
+        icon={<CalendarRange size={14} />}
+        label="Forecast"
+      />
+      <NavRow
         href="/tasks/flagged"
         active={pathname === "/tasks/flagged"}
         icon={<Flag size={14} />}
         label="Flagged"
         badge={counts.data?.flagged}
+      />
+      <NavRow
+        href="/tasks/review"
+        active={pathname === "/tasks/review"}
+        icon={<RefreshCw size={14} />}
+        label="Review"
+        badge={reviewCount.data?.count}
       />
 
       <SectionHeader
@@ -177,20 +444,65 @@ export function TasksSidebar(): React.ReactElement {
             icon={<Folder size={14} />}
             label="All projects"
           />
+          <button
+            type="button"
+            onClick={handleAddFolder}
+            className="flex items-center gap-1.5 rounded-sm px-2 py-0.5 font-ui text-2xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary"
+          >
+            <Plus size={10} />
+            Add folder
+          </button>
           {addingProject ? (
             <div className="px-2 py-1">
               <ProjectAddForm onDone={() => setAddingProject(false)} />
             </div>
           ) : null}
-          {(projects.data ?? []).map((p) => {
+
+          {folders.map((folder) => (
+            <FolderTreeNode
+              key={folder.id}
+              folder={folder}
+              depth={0}
+              pathname={pathname}
+              projectsByFolder={projectsByFolder}
+              onToggle={handleToggleFolder}
+              dragItem={dragItem}
+              onDragStart={handleDragStart}
+              onDropOnFolder={handleDropOnFolder}
+            />
+          ))}
+
+          {/* Root drop zone: appears when dragging items from a folder */}
+          {dragItem !== null && (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsRootDragOver(true); }}
+              onDragLeave={() => setIsRootDragOver(false)}
+              onDrop={handleDropOnRoot}
+              className={cn(
+                "mx-1 rounded-sm border border-dashed py-1 text-center font-ui text-2xs transition-colors",
+                isRootDragOver
+                  ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
+                  : "border-border-subtle text-text-disabled",
+              )}
+            >
+              Drop here to move to root
+            </div>
+          )}
+
+          {rootProjects.map((p) => {
             const href = `/tasks/projects/${p.id}`;
             const active = pathname === href;
             return (
               <Link
                 key={p.id}
                 href={href}
+                draggable
+                onDragStart={(e) => {
+                  e.stopPropagation();
+                  handleDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: null });
+                }}
                 className={cn(
-                  "flex items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm",
+                  "flex cursor-grab items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm active:cursor-grabbing",
                   active
                     ? "bg-accent-primary-subtle text-text-primary"
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
@@ -289,15 +601,18 @@ export function TasksSidebar(): React.ReactElement {
 
       <div className="mt-3 flex flex-col gap-px border-t border-border-subtle pt-2">
         <NavRow
+          href="/tasks/completed"
+          active={pathname === "/tasks/completed"}
+          icon={<CheckCircle2 size={14} />}
+          label="Completed"
+        />
+        <NavRow
           href="/tasks/trash"
           active={pathname === "/tasks/trash"}
           icon={<Trash2 size={14} />}
           label="Trash"
           badge={counts.data?.trash}
         />
-        <NavRow href="#" active={false} icon={<CheckCircle2 size={14} />} label="Completed" disabled />
-        <NavRow href="#" active={false} icon={<Search size={14} />} label="Forecast" disabled />
-        <NavRow href="#" active={false} icon={<RefreshCw size={14} />} label="Review" disabled />
       </div>
     </nav>
   );

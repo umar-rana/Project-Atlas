@@ -10,6 +10,10 @@ import {
   Folder,
   Trash2,
   Plus,
+  CalendarRange,
+  CheckCircle2,
+  RefreshCw,
+  ClipboardList,
 } from "lucide-react";
 import {
   useRegisterCommands,
@@ -43,6 +47,16 @@ export function TasksCommands(): null {
       router.push(`/tasks/projects/${p.id}`);
     },
   });
+
+  const folderMutation = trpc.folders.create.useMutation({
+    onSuccess: (f) => {
+      utils.folders.list.invalidate();
+      router.push(`/tasks/folders/${f.id}`);
+    },
+  });
+
+  const folderMutateRef = React.useRef(folderMutation.mutate);
+  folderMutateRef.current = folderMutation.mutate;
 
   // ── Static commands ─────────────────────────────────────────────────────
   useRegisterCommands(
@@ -81,12 +95,46 @@ export function TasksCommands(): null {
           onRun: () => router.push("/tasks/projects"),
         },
         {
+          id: "tasks-go-forecast",
+          label: "Tasks: Go to Forecast",
+          group: "Tasks",
+          icon: <CalendarRange size={14} />,
+          shortcut: ["⌘", "⇧", "F"],
+          onRun: () => router.push("/tasks/forecast"),
+        },
+        {
+          id: "tasks-go-review",
+          label: "Tasks: Start Review Session",
+          group: "Tasks",
+          icon: <RefreshCw size={14} />,
+          shortcut: ["⌘", "⇧", "R"],
+          onRun: () => router.push("/tasks/review"),
+        },
+        {
+          id: "tasks-go-completed",
+          label: "Tasks: Go to Completed",
+          group: "Tasks",
+          icon: <CheckCircle2 size={14} />,
+          onRun: () => router.push("/tasks/completed"),
+        },
+        {
           id: "tasks-go-trash",
           label: "Tasks: Open Trash",
           group: "Tasks",
           icon: <Trash2 size={14} />,
           shortcut: ["⌘", "7"],
           onRun: () => router.push("/tasks/trash"),
+        },
+        {
+          id: "tasks-add-folder",
+          label: "Tasks: Add Folder",
+          group: "Tasks",
+          icon: <Folder size={14} />,
+          onRun: () => {
+            const name = window.prompt("Folder name")?.trim();
+            if (!name) return;
+            folderMutateRef.current({ name });
+          },
         },
         {
           id: "tasks-quick-capture",
@@ -124,6 +172,8 @@ export function TasksCommands(): null {
         { id: "t-flagged",   label: "Tasks: Flagged",      group: "Tasks", keys: ["cmd", "3"] },
         { id: "t-projects",  label: "Tasks: Projects",     group: "Tasks", keys: ["cmd", "4"] },
         { id: "t-trash",     label: "Tasks: Trash",        group: "Tasks", keys: ["cmd", "7"] },
+        { id: "t-forecast",  label: "Tasks: Forecast",     group: "Tasks", keys: ["cmd", "shift", "F"] },
+        { id: "t-review",    label: "Tasks: Review session", group: "Tasks", keys: ["cmd", "shift", "R"] },
         { id: "t-capture",   label: "Capture new task",    group: "Tasks", keys: ["cmd", "N"] },
         { id: "t-newproj",   label: "New project",         group: "Tasks", keys: ["cmd", "shift", "N"] },
         { id: "t-complete",  label: "Toggle complete (focused row)",     group: "Tasks", keys: ["space"] },
@@ -137,6 +187,16 @@ export function TasksCommands(): null {
     ),
   );
 
+  const markForReviewMutation = trpc.review.markForReview.useMutation({
+    onSuccess: () => {
+      utils.review.overdueCount.invalidate();
+      utils.review.queue.invalidate();
+      utils.projects.list.invalidate();
+    },
+  });
+  const markForReviewRef = React.useRef(markForReviewMutation.mutate);
+  markForReviewRef.current = markForReviewMutation.mutate;
+
   // ── Project navigation commands (dynamic) ──────────────────────────────
   const projectCommands = React.useMemo<CommandItem[]>(() => {
     const list = projects.data ?? [];
@@ -149,6 +209,19 @@ export function TasksCommands(): null {
     }));
   }, [projects.data, router]);
   useRegisterCommands(projectCommands);
+
+  // ── Mark project for review commands (dynamic) ─────────────────────────
+  const markForReviewCommands = React.useMemo<CommandItem[]>(() => {
+    const list = projects.data ?? [];
+    return list.slice(0, 20).map((p) => ({
+      id: `tasks-mark-review-${p.id}`,
+      label: `Mark for review: ${p.title}`,
+      group: "Projects",
+      icon: <ClipboardList size={14} />,
+      onRun: () => markForReviewRef.current({ id: p.id }),
+    }));
+  }, [projects.data]);
+  useRegisterCommands(markForReviewCommands);
 
   // ── Search provider ────────────────────────────────────────────────────
   const searchProvider = React.useMemo(
@@ -201,6 +274,21 @@ export function TasksCommands(): null {
         "4": "/tasks/projects",
         "7": "/tasks/trash",
       };
+      // ⌘⇧F → Forecast, ⌘⇧R → Review
+      if (e.shiftKey) {
+        const shiftMap: Record<string, string> = {
+          "f": "/tasks/forecast",
+          "F": "/tasks/forecast",
+          "r": "/tasks/review",
+          "R": "/tasks/review",
+        };
+        const shiftDest = shiftMap[e.key];
+        if (shiftDest) {
+          e.preventDefault();
+          router.push(shiftDest);
+          return;
+        }
+      }
       const dest = map[e.key];
       if (dest) {
         e.preventDefault();

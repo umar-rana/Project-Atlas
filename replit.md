@@ -1,9 +1,10 @@
-# Atlas — Wave 2 Signed-In App Shell
+# Atlas — Wave 3b GTD Tasks Module
 
 ## Overview
-Atlas is a desktop-first personal productivity command center. **Wave 2** ships
-the signed-in app shell — the chrome every product module lives inside. Built on
-the Wave 0/1 foundation (design system + backend infrastructure).
+Atlas is a desktop-first personal productivity command center. **Wave 3b** adds
+advanced GTD features to the Tasks module: Forecast view, Review mode, Completed
+perspective, Project Folders with hierarchy, sequential project filtering,
+updated sidebar, command palette shortcuts, settings additions, and audit log entries.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router) + React 19

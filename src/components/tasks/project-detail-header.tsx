@@ -9,8 +9,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, RefreshCw } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -87,59 +89,109 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
     }
   }
 
+  const reviewIntervalLabel =
+    data.review_interval_days == null
+      ? "Never"
+      : data.review_interval_days === 3
+        ? "Every 3 days"
+        : data.review_interval_days === 7
+          ? "Weekly"
+          : data.review_interval_days === 14
+            ? "Every 2 weeks"
+            : data.review_interval_days === 30
+              ? "Monthly"
+              : `Every ${data.review_interval_days} days`;
+
   return (
-    <div className="flex items-center gap-3 border-b border-border-subtle px-3 py-2">
-      <span className={cn("size-3 shrink-0 rounded-full", PROJECT_COLOR_DOTS[data.color ?? ""] ?? "bg-text-disabled")} aria-hidden />
-      <input
-        value={titleDraft}
-        onChange={(e) => setTitleDraft(e.target.value)}
-        onBlur={commitTitle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            (e.target as HTMLInputElement).blur();
-          }
-        }}
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none"
-      />
-      <StatusPill status={STATUS_TO_PILL[data.status] ?? "active"} label={STATUS_LABEL[data.status] ?? data.status} />
-      <span className="font-mono text-2xs text-text-tertiary tabular-nums">{data.task_count} active</span>
-      <DropdownMenu>
-        <DropdownMenuTrigger className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary" aria-label="Project actions">
-          <MoreHorizontal size={14} />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "active" })}>Set active</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "on_hold" })}>Put on hold</DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              if (confirm("Mark all tasks complete and complete the project?")) {
-                markAll.mutate({ id: data.id });
-                update.mutate({ id: data.id, status: "completed" });
-              }
-            }}
-          >
-            Mark complete
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "dropped" })}>Drop</DropdownMenuItem>
-          {COLORS.map((c) => (
-            <DropdownMenuItem key={c} onSelect={() => update.mutate({ id: data.id, color: c })}>
-              <span className={cn("mr-2 size-2 rounded-full", PROJECT_COLOR_DOTS[c])} />
-              Color: {c}
+    <div className="flex flex-col gap-1 border-b border-border-subtle px-3 py-2">
+      <div className="flex items-center gap-3">
+        <span className={cn("size-3 shrink-0 rounded-full", PROJECT_COLOR_DOTS[data.color ?? ""] ?? "bg-text-disabled")} aria-hidden />
+        <input
+          value={titleDraft}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          onBlur={commitTitle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none"
+        />
+        <StatusPill status={STATUS_TO_PILL[data.status] ?? "active"} label={STATUS_LABEL[data.status] ?? data.status} />
+        <span className="font-mono text-2xs text-text-tertiary tabular-nums">{data.task_count} active</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary" aria-label="Project actions">
+            <MoreHorizontal size={14} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Status</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "active" })}>Set active</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "on_hold" })}>Put on hold</DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                if (confirm("Mark all tasks complete and complete the project?")) {
+                  markAll.mutate({ id: data.id });
+                  update.mutate({ id: data.id, status: "completed" });
+                }
+              }}
+            >
+              Mark complete
             </DropdownMenuItem>
-          ))}
-          <DropdownMenuItem
-            destructive
-            onSelect={() => {
-              if (confirm("Delete project? Its tasks will move to Inbox.")) {
-                del.mutate({ id: data.id });
-              }
-            }}
-          >
-            Delete project
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "dropped" })}>Drop</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Review interval</DropdownMenuLabel>
+            {([null, 3, 7, 14, 30] as (number | null)[]).map((days) => {
+              const label = days == null ? "Never" : days === 3 ? "Every 3 days" : days === 7 ? "Weekly" : days === 14 ? "Every 2 weeks" : "Monthly";
+              const active = data.review_interval_days === days;
+              return (
+                <DropdownMenuItem
+                  key={String(days)}
+                  onSelect={() => update.mutate({ id: data.id, review_interval_days: days })}
+                  className={active ? "font-semibold text-accent-primary" : ""}
+                >
+                  {active ? "✓ " : ""}{label}
+                </DropdownMenuItem>
+              );
+            })}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Display</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, sequential: !data.sequential })}>
+              {data.sequential ? "Disable sequential mode" : "Enable sequential mode"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Color</DropdownMenuLabel>
+            {COLORS.map((c) => (
+              <DropdownMenuItem key={c} onSelect={() => update.mutate({ id: data.id, color: c })}>
+                <span className={cn("mr-2 size-2 rounded-full", PROJECT_COLOR_DOTS[c])} />
+                {c.charAt(0).toUpperCase() + c.slice(1)}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              destructive
+              onSelect={() => {
+                if (confirm("Delete project? Its tasks will move to Inbox.")) {
+                  del.mutate({ id: data.id });
+                }
+              }}
+            >
+              Delete project
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <div className="flex items-center gap-3 pl-5 font-ui text-2xs text-text-tertiary">
+        <span className="inline-flex items-center gap-1">
+          <RefreshCw size={9} />
+          Review: {reviewIntervalLabel}
+        </span>
+        {data.sequential && (
+          <span className="inline-flex items-center gap-1">
+            Sequential
+          </span>
+        )}
+      </div>
     </div>
   );
 }
