@@ -38,40 +38,6 @@ function getModuleId(pathname: string): string {
   return "tasks";
 }
 
-function ThemeToggle(): React.ReactElement {
-  const { theme, setTheme } = useTheme();
-  const next = theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
-  const currentLabel = theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
-  const tooltipLabel = `Theme: ${currentLabel} — click to cycle`;
-
-  function handleThemeToggle() {
-    setTheme(next);
-    toast.success(`Theme: ${next.charAt(0).toUpperCase() + next.slice(1)}`, { duration: 2000 });
-  }
-
-  return (
-    <Tooltip content={tooltipLabel} side="right">
-      <button
-        type="button"
-        aria-label={tooltipLabel}
-        onClick={handleThemeToggle}
-        className={cn(
-          "relative grid size-8 place-items-center rounded-md text-text-tertiary transition-colors duration-fast ease-standard",
-          "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
-        )}
-      >
-        {theme === "light" ? (
-          <Sun size={16} aria-hidden />
-        ) : theme === "dark" ? (
-          <Moon size={16} aria-hidden />
-        ) : (
-          <Monitor size={16} aria-hidden />
-        )}
-      </button>
-    </Tooltip>
-  );
-}
-
 export function ModuleSwitcherWired(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
@@ -100,42 +66,6 @@ export function ModuleSwitcherWired(): React.ReactElement {
   const footer = (
     <>
       <div className="h-px w-6 bg-border-subtle" />
-      <Tooltip content="Settings" side="right">
-        <Link
-          href="/settings"
-          aria-label="Settings"
-          aria-current={active === "settings" ? "page" : undefined}
-          className={cn(
-            "relative grid size-8 place-items-center rounded-md text-text-tertiary transition-colors duration-fast ease-standard",
-            "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
-            active === "settings" && "bg-accent-primary-subtle text-accent-primary",
-          )}
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-            <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-            <path
-              d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </Link>
-      </Tooltip>
-      <Tooltip content="Health" side="right">
-        <Link
-          href="/admin/health"
-          aria-label="Health"
-          aria-current={active === "health" ? "page" : undefined}
-          className={cn(
-            "relative grid size-8 place-items-center rounded-md text-text-tertiary transition-colors duration-fast ease-standard",
-            "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
-            active === "health" && "bg-accent-primary-subtle text-accent-primary",
-          )}
-        >
-          <Activity size={16} aria-hidden />
-        </Link>
-      </Tooltip>
       <Tooltip content="Trash" side="right">
         <Link
           href="/trash"
@@ -148,7 +78,6 @@ export function ModuleSwitcherWired(): React.ReactElement {
           <Trash2 size={16} aria-hidden />
         </Link>
       </Tooltip>
-      <ThemeToggle />
     </>
   );
 
