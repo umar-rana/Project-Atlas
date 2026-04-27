@@ -32,7 +32,9 @@ export function resolvePublicHost(headers: Headers): string {
   }
 
   const host = headers.get("host");
-  if (host) return host;
+  if (host && !host.startsWith("0.0.0.0") && !host.startsWith("127.0.0.1") && !host.startsWith("localhost")) {
+    return host;
+  }
 
   const appUrl = process.env.APP_URL;
   if (appUrl) {
@@ -42,7 +44,10 @@ export function resolvePublicHost(headers: Headers): string {
     }
   }
 
-  return "localhost:3000";
+  const replitDevDomain = process.env.REPLIT_DEV_DOMAIN;
+  if (replitDevDomain) return replitDevDomain;
+
+  return host ?? "localhost:3000";
 }
 
 /**
