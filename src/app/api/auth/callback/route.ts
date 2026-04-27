@@ -14,15 +14,20 @@ export async function GET(req: NextRequest) {
   try {
     const cookieStore = await cookies();
     const expectedState = cookieStore.get("atlas_oidc_state")?.value;
+    const pkceCodeVerifier = cookieStore.get("atlas_oidc_pkce")?.value;
 
     if (!expectedState) {
       return NextResponse.redirect(new URL("/sign-in?error=state_missing", baseUrl));
     }
 
+    if (!pkceCodeVerifier) {
+      return NextResponse.redirect(new URL("/sign-in?error=pkce_missing", baseUrl));
+    }
+
     const host = resolvePublicHost(req.headers);
 
     const currentUrl = new URL(req.nextUrl.pathname + req.nextUrl.search, baseUrl);
-    const claims = await handleCallback(host, currentUrl, expectedState);
+    const claims = await handleCallback(host, currentUrl, expectedState, pkceCodeVerifier);
 
     if (!claims.email) {
       return NextResponse.redirect(new URL("/sign-in?error=no_email", baseUrl));
@@ -79,6 +84,7 @@ export async function GET(req: NextRequest) {
       path: "/",
     });
     response.cookies.delete("atlas_oidc_state");
+    response.cookies.delete("atlas_oidc_pkce");
 
     log.info({ userId: user.id, email: user.email }, "User signed in");
     return response;

@@ -14,20 +14,19 @@ export async function getOidcConfig(): Promise<openidClient.Configuration> {
   return _config;
 }
 
-/**
- * Resolves the public-facing host from request headers.
- *
- * Priority order:
- *  1. `x-forwarded-host` — set by the reverse proxy on the deployed / custom-domain app
- *  2. `host` header — the raw Host sent by the client
- *  3. `APP_URL` env variable — optional hardcoded fallback (e.g. https://atlas.insightive.io)
- *
- * Returns only the host portion (no protocol).
- */
 function isInternalHost(h: string): boolean {
   return h.startsWith("0.0.0.0") || h.startsWith("127.0.0.1") || h.startsWith("localhost");
 }
 
+/**
+ * Resolves the public-facing host from request headers.
+ *
+ * Priority order:
+ *  1. `x-forwarded-host` — set by the reverse proxy (filtered for internal addresses)
+ *  2. `host` header — filtered for internal addresses
+ *  3. `APP_URL` env variable — explicit fallback (e.g. https://atlas.insightive.io)
+ *  4. `REPLIT_DEV_DOMAIN` — Replit-injected dev domain
+ */
 export function resolvePublicHost(headers: Headers): string {
   const forwardedHost = headers.get("x-forwarded-host");
   if (forwardedHost) {
@@ -56,9 +55,6 @@ export function resolvePublicHost(headers: Headers): string {
 
 /**
  * Resolves the full public-facing base URL (protocol + host) from request headers.
- *
- * Follows the same priority as resolvePublicHost, then determines the protocol
- * from the environment / host patterns.
  */
 export function resolvePublicBaseUrl(headers: Headers): string {
   const host = resolvePublicHost(headers);
@@ -83,13 +79,21 @@ export function getCallbackUrl(host: string): string {
 
 export type AuthMethod = "google" | "magic_link";
 
+/**
+ * Builds the authorization URL with PKCE.
+ * Returns the URL and the code verifier — the verifier must be stored
+ * server-side (e.g. in a cookie) and passed to handleCallback().
+ */
 export async function buildLoginUrl(
   host: string,
   state: string,
   method: AuthMethod = "google",
-): Promise<URL> {
+): Promise<{ url: URL; codeVerifier: string }> {
   const config = await getOidcConfig();
   const callbackUrl = getCallbackUrl(host);
+
+  const codeVerifier = openidClient.randomPKCECodeVerifier();
+  const codeChallenge = await openidClient.calculatePKCECodeChallenge(codeVerifier);
 
   const extraParams: Record<string, string> = {};
   if (method === "magic_link") {
@@ -101,16 +105,19 @@ export async function buildLoginUrl(
     redirect_uri: callbackUrl,
     scope: "openid email profile offline_access",
     state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
     ...extraParams,
   });
 
-  return url;
+  return { url, codeVerifier };
 }
 
 export async function handleCallback(
   host: string,
   currentUrl: URL,
   expectedState: string,
+  pkceCodeVerifier: string,
 ): Promise<{
   sub: string;
   email?: string;
@@ -124,7 +131,7 @@ export async function handleCallback(
   const tokens = await openidClient.authorizationCodeGrant(
     config,
     currentUrl,
-    { expectedState },
+    { expectedState, pkceCodeVerifier },
     { redirect_uri: callbackUrl },
   );
 

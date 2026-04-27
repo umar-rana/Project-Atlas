@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
   const rawMethod = req.nextUrl.searchParams.get("method");
   const method: AuthMethod = rawMethod === "magic_link" ? "magic_link" : "google";
 
+  const { url, codeVerifier } = await buildLoginUrl(host, state, method);
+
   const cookieStore = await cookies();
   cookieStore.set("atlas_oidc_state", state, {
     httpOnly: true,
@@ -17,7 +19,13 @@ export async function GET(req: NextRequest) {
     maxAge: 600,
     path: "/",
   });
+  cookieStore.set("atlas_oidc_pkce", codeVerifier, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
 
-  const url = await buildLoginUrl(host, state, method);
   return NextResponse.redirect(url);
 }
