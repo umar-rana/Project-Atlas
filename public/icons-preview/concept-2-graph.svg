@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <rect x="0" y="0" width="256" height="256" rx="56" ry="56" fill="#2896f5"/>
+  <!-- Triangle edges connecting 3 nodes -->
+  <!-- Top: (128, 52), Bottom-left: (57, 176), Bottom-right: (199, 176) -->
+  <line x1="128" y1="52" x2="57" y2="176" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <line x1="57" y1="176" x2="199" y2="176" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <line x1="199" y1="176" x2="128" y2="52" stroke="white" stroke-width="10" stroke-linecap="round"/>
+  <!-- Nodes -->
+  <circle cx="128" cy="52" r="18" fill="white"/>
+  <circle cx="57" cy="176" r="18" fill="white"/>
+  <circle cx="199" cy="176" r="18" fill="white"/>
+</svg>

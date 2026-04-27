@@ -13,6 +13,7 @@ const PUBLIC_PATHS = [
   "/_next",
   "/favicon.ico",
   "/storybook",
+  "/icons-preview",
 ];
 
 function edgeLog(
@@ -136,6 +137,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|storybook).*)",
+    "/((?!_next/static|_next/image|favicon.ico|storybook|icons-preview).*)",
   ],
 };
