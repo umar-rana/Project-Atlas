@@ -1,6 +1,6 @@
 import { router, protectedProcedure } from "@/server/trpc";
 import { db } from "@/core/db";
-import { startOfDay, startOfWeek } from "date-fns";
+import { startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
 function utcStartOfDayInTz(tz: string, now: Date): Date {
@@ -30,8 +30,13 @@ export const aiRouter = router({
 
     const startOfDayUtc = utcStartOfDayInTz(timezone, now);
     const startOfWeekUtc = utcStartOfWeekInTz(timezone, now, weekStart);
+    const startOfMonthUtc = (() => {
+      const zoned = toZonedTime(now, timezone);
+      const zonedMonthStart = startOfMonth(zoned);
+      return fromZonedTime(startOfDay(zonedMonthStart), timezone);
+    })();
 
-    const [allTime, daily, weekly, byTask] = await Promise.all([
+    const [allTime, daily, weekly, monthly, byTask] = await Promise.all([
       db.aICallLog.aggregate({
         where: { user_id: userId },
         _count: { id: true },
@@ -44,6 +49,11 @@ export const aiRouter = router({
       }),
       db.aICallLog.aggregate({
         where: { user_id: userId, created_at: { gte: startOfWeekUtc } },
+        _count: { id: true },
+        _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
+      }),
+      db.aICallLog.aggregate({
+        where: { user_id: userId, created_at: { gte: startOfMonthUtc } },
         _count: { id: true },
         _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
       }),
@@ -74,6 +84,12 @@ export const aiRouter = router({
         inputTokens: weekly._sum.input_tokens ?? 0,
         outputTokens: weekly._sum.output_tokens ?? 0,
         costUsd: weekly._sum.cost_usd ?? 0,
+      },
+      monthly: {
+        calls: monthly._count.id,
+        inputTokens: monthly._sum.input_tokens ?? 0,
+        outputTokens: monthly._sum.output_tokens ?? 0,
+        costUsd: monthly._sum.cost_usd ?? 0,
       },
       byTask: byTask.map((t) => ({
         task: t.task,

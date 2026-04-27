@@ -22,8 +22,9 @@ export interface CommandPaletteProps {
   items: CommandItem[];
   placeholder?: string;
   emptyText?: string;
-  /** Bind ⌘K / Ctrl+K to toggle the palette. */
   enableShortcut?: boolean;
+  onQueryChange?: (query: string) => void;
+  searchItems?: CommandItem[];
 }
 
 export function CommandPalette({
@@ -33,6 +34,8 @@ export function CommandPalette({
   placeholder = "Search commands…",
   emptyText = "No commands match",
   enableShortcut = true,
+  onQueryChange,
+  searchItems,
 }: CommandPaletteProps): React.ReactElement {
   React.useEffect(() => {
     if (!enableShortcut) return;
@@ -56,6 +59,8 @@ export function CommandPalette({
     return Array.from(groups.entries());
   }, [items]);
 
+  const hasSearchItems = searchItems && searchItems.length > 0;
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -70,6 +75,7 @@ export function CommandPalette({
               <Search size={14} className="text-text-tertiary" aria-hidden />
               <CommandPrimitive.Input
                 placeholder={placeholder}
+                onValueChange={onQueryChange}
                 className="min-w-0 flex-1 border-0 bg-transparent p-0 font-ui text-sm text-text-primary outline-none placeholder:text-text-tertiary"
               />
               <KeyboardShortcut keys={["esc"]} variant="subtle" />
@@ -78,6 +84,38 @@ export function CommandPalette({
               <CommandPrimitive.Empty className="px-3 py-6 text-center text-xs text-text-tertiary">
                 {emptyText}
               </CommandPrimitive.Empty>
+
+              {hasSearchItems && (
+                <CommandPrimitive.Group
+                  heading="Search results"
+                  className={cn(
+                    "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2",
+                    "[&_[cmdk-group-heading]]:font-ui [&_[cmdk-group-heading]]:text-3xs",
+                    "[&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase",
+                    "[&_[cmdk-group-heading]]:tracking-caps [&_[cmdk-group-heading]]:text-text-tertiary",
+                  )}
+                >
+                  {searchItems!.map((item) => (
+                    <CommandPrimitive.Item
+                      key={item.id}
+                      value={`search-result ${item.id} ${item.label}`}
+                      forceMount
+                      onSelect={() => {
+                        item.onRun();
+                        onOpenChange(false);
+                      }}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-text-primary",
+                        "data-[selected=true]:bg-accent-primary-subtle",
+                      )}
+                    >
+                      {item.icon ? <span className="text-text-tertiary">{item.icon}</span> : null}
+                      <span className="flex-1 truncate">{item.label}</span>
+                    </CommandPrimitive.Item>
+                  ))}
+                </CommandPrimitive.Group>
+              )}
+
               {grouped.map(([group, list]) => (
                 <CommandPrimitive.Group
                   key={group}

@@ -19,6 +19,7 @@ export default async function SettingsPage({
   const autoOpenWizard = params.drive_linked === "1";
   const driveLinked = params.drive_linked === "1";
   const driveError = typeof params.drive_error === "string" ? params.drive_error : undefined;
+  const section = typeof params.section === "string" ? params.section : undefined;
 
   return (
     <SettingsClient
@@ -26,6 +27,7 @@ export default async function SettingsPage({
       autoOpenWizard={autoOpenWizard}
       driveLinked={driveLinked}
       driveError={driveError}
+      initialSection={section}
     />
   );
 }

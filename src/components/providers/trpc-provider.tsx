@@ -4,6 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, loggerLink } from "@trpc/client";
 import { trpc } from "@/lib/trpc/client";
+import { toast } from "@/lib/toast";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -13,6 +14,15 @@ function makeQueryClient() {
         retry: (count, error) => {
           if ((error as { data?: { code?: string } })?.data?.code === "UNAUTHORIZED") return false;
           return count < 2;
+        },
+      },
+      mutations: {
+        onError: (error: unknown) => {
+          const code = (error as { data?: { code?: string } })?.data?.code;
+          if (code === "UNAUTHORIZED") return;
+          const message =
+            (error as { message?: string })?.message ?? "Something went wrong";
+          toast.error(message, { duration: 6000 });
         },
       },
     },

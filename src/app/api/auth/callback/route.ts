@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
       ipAddress: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? undefined,
     });
 
-    const response = NextResponse.redirect(new URL("/", req.url));
+    const response = NextResponse.redirect(new URL("/tasks?welcome=1", req.url));
     response.cookies.set(SESSION_COOKIE_NAME(), token, {
       httpOnly: true,
       secure: true,

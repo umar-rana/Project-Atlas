@@ -1,8 +1,9 @@
-# Atlas — Wave 1 Foundation Layer
+# Atlas — Wave 2 Signed-In App Shell
 
 ## Overview
-Atlas is a desktop-first personal productivity command center. **Wave 1** ships
-the complete backend infrastructure layer on top of the Wave 0 design system.
+Atlas is a desktop-first personal productivity command center. **Wave 2** ships
+the signed-in app shell — the chrome every product module lives inside. Built on
+the Wave 0/1 foundation (design system + backend infrastructure).
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router) + React 19
@@ -38,20 +39,42 @@ the complete backend infrastructure layer on top of the Wave 0 design system.
 ```
 src/
 ├── app/
+│   ├── (app)/              Route group — all authenticated app routes
+│   │   ├── layout.tsx      Server component: auth guard → AppShellProvider
+│   │   ├── tasks/          Module placeholder (Wave 3)
+│   │   ├── calendar/       Module placeholder (Wave 4)
+│   │   ├── crm/            Module placeholder (Wave 5)
+│   │   ├── notes/          Module placeholder (Wave 4)
+│   │   ├── journal/        Module placeholder (Wave 5)
+│   │   ├── trash/          Trash placeholder
+│   │   ├── admin/health/   Health dashboard (uses AppShell)
+│   │   └── settings/       Settings (TwoPaneLayout, 8 sections) + DriveWizard
 │   ├── api/auth/           login, callback, logout routes (Replit OIDC)
-│   ├── api/drive/connect/  Drive OAuth initiator (generates+signs nonce cookie, redirects to Google)
-│   ├── api/drive/oauth-callback/  Drive OAuth callback (validates nonce HMAC, exchanges code)
+│   ├── api/drive/connect/  Drive OAuth initiator
+│   ├── api/drive/oauth-callback/  Drive OAuth callback
 │   ├── api/trpc/           tRPC handler
-│   ├── admin/health/       System health dashboard
-│   ├── settings/           Settings page + Drive wizard + settings client
 │   ├── sign-in/            Sign-in page
 │   ├── globals.css
 │   ├── layout.tsx          TRPCProvider + ThemeProvider + Toaster
-│   └── page.tsx            Home (auth-gated)
-├── components/             Wave 0 design system (41 components)
+│   └── page.tsx            Root redirect → /tasks (auth-gated)
+├── components/
+│   ├── shell/              Wave 2 wired shell components
+│   │   ├── app-shell-provider.tsx    Main shell orchestrator + Zustand + registries
+│   │   ├── module-switcher-wired.tsx Rail with ⌘1-5 shortcuts + theme toggle
+│   │   ├── top-bar-wired.tsx         Search → command palette, capture, user menu
+│   │   ├── user-menu.tsx             Avatar dropdown
+│   │   ├── command-palette-wired.tsx ⌘K palette with command registry
+│   │   ├── keyboard-shortcuts-overlay.tsx ⌘/ cheat sheet
+│   │   ├── sync-status.tsx           Dot + popover with real health states
+│   │   └── capture-modal.tsx         ⌘⇧I capture modal → toast
+│   ├── layout/             AppShell, ModuleSwitcher, TopBar, TwoPaneLayout, etc. (primitives)
+│   ├── composed/           CommandPalette, InspectorPanel, EmptyState
+│   └── ui/                 Atomic components (Stratum)
 ├── core/
+│   ├── commands/registry.tsx  Context-based command registry
+│   ├── shortcuts/registry.tsx Context-based shortcuts registry
 │   ├── ai/                 Anthropic abstraction (complete + queue)
-│   ├── audit/              Audit logging (AuditLog table)
+│   ├── audit/              Audit logging
 │   ├── auth/               replit-oidc.ts, session.ts
 │   ├── dates/              Timezone-aware date utils (14 unit tests)
 │   ├── db/                 Prisma client singleton
@@ -60,14 +83,16 @@ src/
 │   ├── queue/              Rate-limit in-memory queue
 │   └── storage/            Replit Object Storage wrapper
 ├── lib/
+│   ├── shell/store.ts      Zustand store for shell modal state
+│   ├── toast.ts            Re-export sonner toast
 │   ├── auth.ts             Re-exports getServerSession
 │   ├── db.ts               Re-exports Prisma client
 │   ├── logger.ts           Re-exports createLogger
 │   └── trpc/               client.ts + server.ts re-exports
-├── middleware.ts            Auth middleware + structured HTTP request logging (requestId, method, path, ms)
+├── middleware.ts            Auth middleware + structured HTTP request logging
 └── server/
     ├── trpc.ts             tRPC init + context (auth context)
-    └── routers/            _app.ts, health.ts, user.ts, drive.ts, session.ts
+    └── routers/            _app.ts, health.ts, user.ts, drive.ts, session.ts, ai.ts, capture.ts
 prisma/
 ├── schema.prisma           Wave 1 full schema (migrated: 20260427043022_wave1_foundation)
 └── migrations/
@@ -107,6 +132,24 @@ Expired sessions are purged in two ways:
 2. **Explicit (cron)**: `POST /api/cron/cleanup-sessions` deletes all expired rows and returns `{ ok: true, purged: N }`. Requires `Authorization: Bearer $CRON_SECRET`. Set up a daily external scheduler (e.g. GitHub Actions, Render cron, or Replit deployments schedule) pointing at this endpoint. In production the endpoint returns `503` if `CRON_SECRET` is not configured.
 
 ## Recent Changes
+- 2026-04-27: Wave 2 Signed-In App Shell (Task #25):
+  - `(app)` route group with shared AppShellProvider layout (auth guard + shell)
+  - AppShell wired with Zustand store for modal state (command palette, shortcuts overlay, capture modal, inspector)
+  - ModuleSwitcherWired: 5 modules with ⌘1-5 keyboard shortcuts, Settings/Health/Trash icons, theme toggle
+  - TopBarWired: module breadcrumb, search → command palette, capture button, sync status dot, user menu
+  - UserMenu: avatar dropdown with name/email/Settings/Health/Shortcuts/Sign out
+  - CommandPaletteWired: ⌘K, context-based command registry with Wave 2 navigation/app/theme/account commands
+  - KeyboardShortcutsOverlay: ⌘/ cheat sheet with search, grouped shortcuts, keycap display
+  - SyncStatus: real health state dot + popover with per-integration status, 30s auto-refresh, Sync now
+  - CaptureModal: ⌘⇧I, textarea, ⌘⏎ submit → toast "Captured to inbox (will be processed in Wave 3)"
+  - InspectorPanel slot in AppShell with pinning behavior
+  - Settings refactored to TwoPaneLayout with 8 sections: Profile, Appearance, Capture, Integrations, AI, Backups, Data, Account
+  - Module placeholder pages: /tasks, /calendar, /crm, /notes, /journal, /trash (EmptyState)
+  - Root / now redirects to /tasks
+  - Health page moved into (app) group, uses AppShell
+  - core/commands/registry.tsx + core/shortcuts/registry.tsx: plugin registries
+  - lib/shell/store.ts: Zustand shell state; lib/toast.ts: sonner re-export
+  - TypeScript: zero errors; ESLint: zero new errors
 - 2026-04-27: Session cleanup + active sessions UI (Task #8):
   - `purgeExpiredSessions()` in `src/core/auth/session.ts`; shared `resolveSession()` internal helper
   - `POST /api/cron/cleanup-sessions` cleanup endpoint (CRON_SECRET-protected in production)
@@ -118,6 +161,5 @@ Expired sessions are purged in two ways:
   - Prisma Wave 1 schema (9 models) migrated to PostgreSQL
   - Core modules: logging, dates (14 tests), db, audit, storage, queue, ai, drive
   - tRPC routers: health, user, drive
-  - Pages: /, /sign-in, /settings, /admin/health
   - Drive linking wizard (4-step UI)
   - All TypeScript errors resolved (zero TS errors)

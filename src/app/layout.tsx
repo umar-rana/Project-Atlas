@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ThemeCookieSync } from "@/components/providers/theme-cookie-sync";
 import { TRPCProvider } from "@/components/providers/trpc-provider";
 import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
@@ -28,11 +30,18 @@ export const metadata: Metadata = {
   description: "Personal productivity command center.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
-}): React.ReactElement {
+}): Promise<React.ReactElement> {
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get("atlas_theme")?.value;
+  const defaultTheme =
+    themeCookie === "light" || themeCookie === "dark" || themeCookie === "system"
+      ? themeCookie
+      : "dark";
+
   return (
     <html
       lang="en"
@@ -42,10 +51,11 @@ export default function RootLayout({
       <body className="bg-surface-base text-text-primary font-ui">
         <ThemeProvider
           attribute="data-theme"
-          defaultTheme="dark"
+          defaultTheme={defaultTheme}
           enableSystem
           disableTransitionOnChange
         >
+          <ThemeCookieSync />
           <TRPCProvider>
             {children}
           </TRPCProvider>

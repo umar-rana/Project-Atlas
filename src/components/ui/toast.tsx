@@ -41,7 +41,7 @@ export function Toaster(props: ToasterProps): React.ReactElement {
       theme={theme}
       position="bottom-right"
       visibleToasts={3}
-      duration={6000}
+      duration={4000}
       closeButton
       toastOptions={{
         classNames: {
