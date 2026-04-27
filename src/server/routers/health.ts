@@ -76,22 +76,31 @@ export const healthRouter = router({
 
     const userId = ctx.user?.id;
 
+    const safeCheck = async <T>(
+      name: string,
+      fn: () => Promise<T>,
+    ): Promise<{ result: T | null; ms: number }> => {
+      const start = Date.now();
+      try {
+        const result = await fn();
+        return { result, ms: Date.now() - start };
+      } catch (err) {
+        log.warn({ err, check: name }, "Health check threw unexpectedly");
+        return { result: null, ms: Date.now() - start };
+      }
+    };
+
     const [dbCheck, storageCheck, driveCheck, aiCheck, trpcCheck, oidcCheck] = await Promise.all([
-      timed(async () => {
-        try {
-          await db.$queryRaw`SELECT 1`;
-          return true;
-        } catch {
-          return false;
-        }
+      safeCheck("database", async () => {
+        try { await db.$queryRaw`SELECT 1`; return true; } catch { return false; }
       }),
-      timed(checkStorageHealth),
+      safeCheck("storage", checkStorageHealth),
       userId
-        ? timed(() => verifyDriveConfig(userId))
-        : Promise.resolve({ result: { ok: false, reason: "Not authenticated" }, ms: 0 }),
-      timed(checkAI),
-      timed(checkTRPC),
-      timed(async () => {
+        ? safeCheck("drive", () => verifyDriveConfig(userId))
+        : Promise.resolve({ result: { ok: false as boolean, reason: "Not authenticated" }, ms: 0 }),
+      safeCheck("ai", checkAI),
+      safeCheck("trpc", checkTRPC),
+      safeCheck("oidc", async () => {
         const start = Date.now();
         try {
           await getOidcConfig();
@@ -104,48 +113,36 @@ export const healthRouter = router({
       }),
     ]);
 
-    checks.database = { ok: dbCheck.result, latencyMs: dbCheck.ms };
-    checks.object_storage = { ok: storageCheck.result, latencyMs: storageCheck.ms };
+    checks.database = { ok: dbCheck.result ?? false, latencyMs: dbCheck.ms };
+    checks.object_storage = { ok: storageCheck.result ?? false, latencyMs: storageCheck.ms };
     checks.logging = { ok: typeof logger !== "undefined" && !!logger };
     checks.queue = {
       ok: isQueueHealthy(),
       message: isQueueHealthy() ? undefined : `${getDeadLetterCount()} dead-letter items`,
     };
-    checks.drive = {
-      ok: driveCheck.result.ok,
-      message: driveCheck.result.reason,
-      latencyMs: driveCheck.ms,
-    };
-    checks.ai = {
-      ok: aiCheck.result.ok,
-      message: aiCheck.result.message,
-      latencyMs: aiCheck.result.latencyMs,
-    };
-    checks.trpc = {
-      ok: trpcCheck.result.ok,
-      message: trpcCheck.result.message,
-      latencyMs: trpcCheck.result.latencyMs,
-    };
-    checks.oidc = {
-      ok: oidcCheck.result.ok,
-      message: oidcCheck.result.ok ? undefined : oidcCheck.result.message,
-      latencyMs: oidcCheck.result.latencyMs,
-    };
+    checks.drive = driveCheck.result
+      ? { ok: driveCheck.result.ok, message: driveCheck.result.reason, latencyMs: driveCheck.ms }
+      : { ok: false, message: "Drive check failed", latencyMs: driveCheck.ms };
+    checks.ai = aiCheck.result
+      ? { ok: aiCheck.result.ok, message: aiCheck.result.message, latencyMs: aiCheck.result.latencyMs }
+      : { ok: false, message: "AI check threw", latencyMs: aiCheck.ms };
+    checks.trpc = trpcCheck.result
+      ? { ok: trpcCheck.result.ok, message: trpcCheck.result.message, latencyMs: trpcCheck.result.latencyMs }
+      : { ok: false, message: "tRPC check threw", latencyMs: trpcCheck.ms };
+    checks.oidc = oidcCheck.result
+      ? { ok: oidcCheck.result.ok, message: oidcCheck.result.ok ? undefined : oidcCheck.result.message, latencyMs: oidcCheck.result.latencyMs }
+      : { ok: false, message: "OIDC check threw", latencyMs: oidcCheck.ms };
 
     if (ctx.user) {
-      const { result: user, ms: authMs } = await timed(async () => {
-        try {
-          return await db.user.findUnique({
-            where: { id: ctx.user!.id },
-            select: { id: true, email: true },
-          });
-        } catch {
-          return null;
-        }
+      const { result: user, ms: authMs } = await safeCheck("auth", async () => {
+        return await db.user.findUnique({
+          where: { id: ctx.user!.id },
+          select: { id: true, email: true },
+        });
       });
       checks.auth = {
         ok: !!user,
-        message: user ? `Session user ${user.email} verified in DB` : "Session user not found in DB",
+        message: user ? `Session user ${(user as { email: string }).email} verified in DB` : "Session user not found in DB",
         latencyMs: authMs,
       };
     } else {

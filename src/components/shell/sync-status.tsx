@@ -10,21 +10,22 @@ import { toast } from "@/lib/toast";
 type SyncState = "synced" | "syncing" | "error" | "idle";
 
 function useSyncStatus() {
-  const { data, isLoading, isFetching, refetch } = trpc.health.full.useQuery(undefined, {
+  const { data, isLoading, isFetching, isError, refetch } = trpc.health.ping.useQuery(undefined, {
     refetchOnWindowFocus: false,
-    refetchInterval: 30_000,
-    staleTime: 25_000,
+    refetchInterval: 60_000,
+    staleTime: 55_000,
+    retry: false,
   });
 
   const state: SyncState = isLoading || isFetching
     ? "syncing"
-    : !data
+    : isError || !data
     ? "idle"
-    : data.ok
+    : data.pong
     ? "synced"
     : "error";
 
-  return { data, state, refetch, isFetching };
+  return { data, state, refetch, isFetching, isError };
 }
 
 const DOT_CLASSES: Record<SyncState, string> = {
@@ -41,39 +42,10 @@ const STATE_LABELS: Record<SyncState, string> = {
   idle: "Unknown",
 };
 
-function CheckRow({ label, ok, latencyMs }: { label: string; ok: boolean; latencyMs?: number }) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-1">
-      <span className="font-ui text-xs text-text-secondary">{label}</span>
-      <div className="flex items-center gap-1.5">
-        {latencyMs !== undefined && (
-          <span className="font-mono text-2xs text-text-tertiary">{latencyMs}ms</span>
-        )}
-        <span
-          className={cn(
-            "inline-block size-2 rounded-full",
-            ok ? "bg-accent-success" : "bg-accent-danger",
-          )}
-        />
-      </div>
-    </div>
-  );
-}
 
 export function SyncStatus(): React.ReactElement {
-  const { data, state, refetch, isFetching } = useSyncStatus();
+  const { data, state, refetch, isFetching, isError } = useSyncStatus();
   const [open, setOpen] = React.useState(false);
-
-  const checks = data?.checks as Record<string, { ok: boolean; latencyMs?: number }> | undefined;
-
-  const CHECK_LABELS: Record<string, string> = {
-    database: "Database",
-    object_storage: "Object Storage",
-    drive: "Google Drive",
-    ai: "AI (Claude)",
-    trpc: "tRPC",
-    auth: "Auth",
-  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -87,56 +59,59 @@ export function SyncStatus(): React.ReactElement {
           <span className="hidden tablet:inline">{STATE_LABELS[state]}</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-64 p-3">
+      <PopoverContent align="end" className="w-56 p-3">
         <div className="mb-2 flex items-center justify-between">
           <p className="font-ui text-xs font-semibold uppercase tracking-caps text-text-tertiary">
-            Sync status
+            App status
           </p>
           <button
             type="button"
             onClick={() => {
               toast.promise(
                 refetch().then((r) => {
-                  if (!r.data?.ok) throw new Error("Issues detected");
+                  if (!r.data?.pong) throw new Error("Server unreachable");
                 }),
                 {
-                  loading: "Checking services…",
-                  success: "All systems operational",
-                  error: "Issues detected — check the health dashboard",
+                  loading: "Checking…",
+                  success: "Server is responsive",
+                  error: "Server unreachable",
                 },
               );
             }}
             disabled={isFetching}
-            aria-label="Sync now"
+            aria-label="Check now"
             className="inline-flex items-center gap-1 rounded-sm px-2 py-0.5 font-ui text-xs text-accent-primary hover:bg-accent-primary-subtle disabled:opacity-50"
           >
             <RefreshCw size={10} className={isFetching ? "animate-spin" : ""} />
-            Sync now
+            Check now
           </button>
         </div>
-        <div className="divide-y divide-border-subtle">
-          {checks
-            ? Object.entries(checks)
-                .filter(([key]) => CHECK_LABELS[key])
-                .map(([key, result]) => (
-                  <CheckRow
-                    key={key}
-                    label={CHECK_LABELS[key] ?? key}
-                    ok={result.ok}
-                    latencyMs={result.latencyMs}
-                  />
-                ))
-            : (
-              <p className="py-2 font-ui text-xs text-text-tertiary">
-                {isFetching ? "Checking services…" : "No data yet"}
-              </p>
-            )}
+        <div className="py-1">
+          <div className="flex items-center justify-between">
+            <span className="font-ui text-xs text-text-secondary">Server</span>
+            <span
+              className={cn(
+                "inline-block size-2 rounded-full",
+                isFetching
+                  ? "animate-pulse bg-accent-warning"
+                  : isError || !data
+                  ? "bg-text-disabled"
+                  : "bg-accent-success",
+              )}
+            />
+          </div>
         </div>
-        {data?.checkedAt && (
+        {data?.ts && (
           <p className="mt-2 font-ui text-2xs text-text-tertiary">
-            Last checked {new Date(data.checkedAt as string).toLocaleTimeString()}
+            Last checked {new Date(data.ts).toLocaleTimeString()}
           </p>
         )}
+        <a
+          href="/admin/health"
+          className="mt-2 block font-ui text-2xs text-accent-primary hover:underline"
+        >
+          Full diagnostics →
+        </a>
       </PopoverContent>
     </Popover>
   );
