@@ -42,6 +42,8 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
     }
   }, [statusLoading, linkStatus?.hasToken]);
 
+  const isAlreadyLinked = !statusLoading && !!linkStatus?.linked;
+
   const { data: sharedDrives } = trpc.drive.listSharedDrives.useQuery(undefined, {
     enabled: step === "shared-drive",
   });
@@ -115,6 +117,33 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="rounded-xl border border-border-default bg-surface-overlay p-6 shadow-3">
+      {/* Currently linked banner */}
+      {isAlreadyLinked && step !== "loading" && step !== "success" && step !== "linking" && (
+        <div className="mb-5 rounded-lg border border-border-default bg-surface-base px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">Currently connected</p>
+          <p className="mt-1 text-sm font-medium text-text-primary">
+            {linkStatus?.config?.root_folder_name ?? "Drive folder"}
+          </p>
+          <div className="mt-1 flex flex-wrap gap-3 text-xs text-text-tertiary">
+            <span className="capitalize">{linkStatus?.config?.drive_type ?? "personal"} drive</span>
+            {linkStatus?.config?.verified_at ? (
+              <span>
+                Last verified{" "}
+                {new Date(linkStatus.config.verified_at).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+            ) : linkStatus?.config?.verified ? (
+              <span className="text-accent-success">Verified</span>
+            ) : (
+              <span className="text-accent-warning">Not yet verified</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Loading */}
       {step === "loading" && (
         <div className="flex flex-col items-center gap-4 py-8">

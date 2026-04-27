@@ -17,6 +17,15 @@ export default async function SettingsPage({
 
   const params = await searchParams;
   const autoOpenWizard = params.drive_linked === "1";
+  const driveLinked = params.drive_linked === "1";
+  const driveError = typeof params.drive_error === "string" ? params.drive_error : undefined;
 
-  return <SettingsClient user={user} autoOpenWizard={autoOpenWizard} />;
+  return (
+    <SettingsClient
+      user={user}
+      autoOpenWizard={autoOpenWizard}
+      driveLinked={driveLinked}
+      driveError={driveError}
+    />
+  );
 }

@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc/client";
 import type { User } from "@prisma/client";
 import { DriveWizard } from "./drive-wizard";
+
+const DRIVE_ERROR_MESSAGES: Record<string, string> = {
+  provider: "Google declined to authorize access. Please try again.",
+  state_missing: "Your authorization session expired or the cookie was missing. Please try again.",
+  state_mismatch: "Security check failed — the OAuth state did not match. Please try again.",
+  exchange: "Failed to exchange the authorization code with Google. Please try again.",
+  config: "Drive was authorized but the configuration could not be saved. Please try again.",
+  no_code: "No authorization code was received from Google. Please try again.",
+};
 
 const TIMEZONES = [
   "UTC",
@@ -25,10 +34,35 @@ const TIMEZONES = [
 
 const DATE_FORMATS = ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "D MMM YYYY"];
 
-export function SettingsClient({ user: initialUser, autoOpenWizard = false }: { user: User; autoOpenWizard?: boolean }) {
+export function SettingsClient({
+  user: initialUser,
+  autoOpenWizard = false,
+  driveLinked = false,
+  driveError,
+}: {
+  user: User;
+  autoOpenWizard?: boolean;
+  driveLinked?: boolean;
+  driveError?: string;
+}) {
   const [saved, setSaved] = useState<string | null>(null);
   const [showWizard, setShowWizard] = useState(autoOpenWizard);
+  const [driveBanner, setDriveBanner] = useState<{ type: "success" | "error"; message: string } | null>(() => {
+    if (driveLinked) return { type: "success", message: "Google Drive connected successfully." };
+    if (driveError) {
+      const msg = DRIVE_ERROR_MESSAGES[driveError] ?? "An unexpected error occurred connecting to Drive. Please try again.";
+      return { type: "error", message: msg };
+    }
+    return null;
+  });
   const utils = trpc.useUtils();
+
+  useEffect(() => {
+    if (!driveBanner) return;
+    if (driveBanner.type !== "success") return;
+    const t = setTimeout(() => setDriveBanner(null), 6000);
+    return () => clearTimeout(t);
+  }, [driveBanner]);
 
   const { data: user } = trpc.user.me.useQuery(undefined, {
     refetchOnWindowFocus: false,
@@ -62,6 +96,25 @@ export function SettingsClient({ user: initialUser, autoOpenWizard = false }: { 
       {saved && (
         <div className="mb-4 rounded-lg bg-accent-success-muted px-4 py-2 text-sm text-text-primary">
           {saved}
+        </div>
+      )}
+
+      {driveBanner && (
+        <div
+          className={`mb-6 flex items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${
+            driveBanner.type === "success"
+              ? "border-accent-success bg-accent-success-muted text-accent-success"
+              : "border-accent-danger bg-accent-danger-muted text-accent-danger"
+          }`}
+        >
+          <span>{driveBanner.message}</span>
+          <button
+            onClick={() => setDriveBanner(null)}
+            className="flex-shrink-0 opacity-60 hover:opacity-100"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -212,36 +265,56 @@ export function SettingsClient({ user: initialUser, autoOpenWizard = false }: { 
         {showWizard ? (
           <DriveWizard onClose={() => setShowWizard(false)} />
         ) : driveStatus?.linked ? (
-          <div className="flex items-center justify-between rounded-lg border border-border-default bg-surface-overlay px-4 py-3">
-            <div>
-              <p className="text-sm font-medium text-accent-success">
-                Drive linked
-              </p>
-              <p className="text-xs text-text-tertiary">
-                {driveStatus.config?.root_folder_name}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowWizard(true)}
-                className="rounded-md border border-border-default px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-hover"
-              >
-                Change folder
-              </button>
-              <button
-                onClick={() => {
-                  if (
-                    confirm(
-                      "Unlink Drive? Atlas will lose access to your Drive folder.",
-                    )
-                  ) {
-                    unlinkDrive.mutate();
-                  }
-                }}
-                className="rounded-md border border-accent-danger px-3 py-1.5 text-xs font-medium text-accent-danger hover:bg-accent-danger-muted"
-              >
-                Unlink
-              </button>
+          <div className="rounded-lg border border-border-default bg-surface-overlay">
+            <div className="flex items-start justify-between gap-4 px-4 py-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 flex-shrink-0 rounded-full bg-accent-success" />
+                  <p className="text-sm font-medium text-text-primary">Drive connected</p>
+                </div>
+                <p className="pl-4 text-xs text-text-secondary">
+                  Folder: <span className="font-medium text-text-primary">{driveStatus.config?.root_folder_name}</span>
+                </p>
+                <p className="pl-4 text-xs text-text-secondary capitalize">
+                  Type: <span className="font-medium text-text-primary">{driveStatus.config?.drive_type ?? "personal"}</span>
+                </p>
+                {driveStatus.config?.verified_at ? (
+                  <p className="pl-4 text-xs text-text-tertiary">
+                    Last verified:{" "}
+                    {new Date(driveStatus.config.verified_at).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                ) : !driveStatus.config?.verified ? (
+                  <p className="pl-4 text-xs text-accent-warning">
+                    Folder not yet verified — it will be confirmed on the next sync.
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-shrink-0 gap-2">
+                <button
+                  onClick={() => setShowWizard(true)}
+                  className="rounded-md border border-border-default px-3 py-1.5 text-xs font-medium text-text-secondary hover:bg-surface-hover"
+                >
+                  Change folder
+                </button>
+                <button
+                  onClick={() => {
+                    if (
+                      confirm(
+                        "Unlink Drive? Atlas will lose access to your Drive folder.",
+                      )
+                    ) {
+                      unlinkDrive.mutate();
+                    }
+                  }}
+                  className="rounded-md border border-accent-danger px-3 py-1.5 text-xs font-medium text-accent-danger hover:bg-accent-danger-muted"
+                >
+                  Unlink
+                </button>
+              </div>
             </div>
           </div>
         ) : (

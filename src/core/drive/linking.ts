@@ -85,6 +85,7 @@ export async function linkDrive(params: {
     folder_journal: folderIndex["journal"] ?? null,
     folder_attachments: folderIndex["attachments"] ?? null,
     verified: true,
+    verified_at: new Date(),
   };
 
   await db.driveConfig.upsert({
@@ -120,6 +121,11 @@ export async function verifyDriveConfig(userId: string): Promise<{
 
   const hasToken = await hasDriveToken(userId);
   if (!hasToken) return { ok: false, reason: "No Drive token found" };
+
+  await db.driveConfig.update({
+    where: { user_id: userId },
+    data: { verified: true, verified_at: new Date() },
+  });
 
   return { ok: true };
 }

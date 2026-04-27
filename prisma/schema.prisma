@@ -182,9 +182,10 @@ model DriveConfig {
   folder_notes            String?
   folder_journal          String?
   folder_attachments      String?
-  verified                Boolean  @default(false)
-  created_at              DateTime @default(now()) @db.Timestamptz
-  updated_at              DateTime @updatedAt @db.Timestamptz
+  verified                Boolean   @default(false)
+  verified_at             DateTime? @db.Timestamptz
+  created_at              DateTime  @default(now()) @db.Timestamptz
+  updated_at              DateTime  @updatedAt @db.Timestamptz
 
   user                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
