@@ -10,6 +10,7 @@ const CHECK_LABELS: Record<string, string> = {
   drive: "Google Drive",
   ai: "AI (Claude)",
   trpc: "tRPC",
+  oidc: "OIDC Discovery",
   auth: "Auth",
 };
 
@@ -21,6 +22,7 @@ const CHECK_ORDER = [
   "drive",
   "ai",
   "trpc",
+  "oidc",
   "auth",
 ];
 

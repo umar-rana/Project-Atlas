@@ -3,9 +3,12 @@ import { db } from "@/core/db";
 import { checkStorageHealth } from "@/core/storage";
 import { verifyDriveConfig } from "@/core/drive/linking";
 import { isQueueHealthy, getDeadLetterCount } from "@/core/queue";
-import { logger } from "@/core/logging";
+import { logger, createLogger } from "@/core/logging";
 import { complete } from "@/core/ai";
+import { getOidcConfig } from "@/core/auth/replit-oidc";
 import { z } from "zod";
+
+const log = createLogger({ module: "health/oidc" });
 
 const CheckResult = z.object({
   ok: z.boolean(),
@@ -73,7 +76,7 @@ export const healthRouter = router({
 
     const userId = ctx.user?.id;
 
-    const [dbCheck, storageCheck, driveCheck, aiCheck, trpcCheck] = await Promise.all([
+    const [dbCheck, storageCheck, driveCheck, aiCheck, trpcCheck, oidcCheck] = await Promise.all([
       timed(async () => {
         try {
           await db.$queryRaw`SELECT 1`;
@@ -88,6 +91,17 @@ export const healthRouter = router({
         : Promise.resolve({ result: { ok: false, reason: "Not authenticated" }, ms: 0 }),
       timed(checkAI),
       timed(checkTRPC),
+      timed(async () => {
+        const start = Date.now();
+        try {
+          await getOidcConfig();
+          return { ok: true as const, latencyMs: Date.now() - start };
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "OIDC discovery failed";
+          log.error({ err }, "OIDC health check failed");
+          return { ok: false as const, message, latencyMs: Date.now() - start };
+        }
+      }),
     ]);
 
     checks.database = { ok: dbCheck.result, latencyMs: dbCheck.ms };
@@ -111,6 +125,11 @@ export const healthRouter = router({
       ok: trpcCheck.result.ok,
       message: trpcCheck.result.message,
       latencyMs: trpcCheck.result.latencyMs,
+    };
+    checks.oidc = {
+      ok: oidcCheck.result.ok,
+      message: oidcCheck.result.ok ? undefined : oidcCheck.result.message,
+      latencyMs: oidcCheck.result.latencyMs,
     };
 
     if (ctx.user) {
