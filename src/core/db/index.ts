@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { createLogger } from "@/core/logging";
 import { uuidv7 } from "uuidv7";
+import { INCLUDE_DELETED_KEY } from "./soft-delete";
 
 function diffObjects(
   before: Record<string, unknown>,
@@ -25,6 +26,11 @@ declare global {
 const SOFT_DELETE_MODELS = new Set([
   "User",
   "Attachment",
+  "Task",
+  "Project",
+  "Context",
+  "Tag",
+  "Person",
 ]);
 
 const AUDIT_MODELS = new Set(["User"]);
@@ -71,24 +77,33 @@ function createPrismaClient() {
         };
       } else if (
         params.action === "findUnique" ||
-        params.action === "findFirst"
+        params.action === "findFirst" ||
+        params.action === "findMany" ||
+        params.action === "count" ||
+        params.action === "aggregate"
       ) {
         if (!params.args) params.args = {};
-        const where = (params.args.where as Record<string, unknown>) ?? {};
-        if ((where as Record<string, unknown>).includeDeleted) {
-          const { includeDeleted: _flag, ...rest } = where as Record<string, unknown>;
+        const where = (params.args.where as Record<string, unknown> | undefined) ?? {};
+        if (INCLUDE_DELETED_KEY in where) {
+          const rest = { ...where };
+          delete rest[INCLUDE_DELETED_KEY];
           params.args.where = rest;
         } else if (!("deleted_at" in where)) {
           params.args.where = { ...where, deleted_at: null };
         }
-      } else if (params.action === "findMany") {
-        if (!params.args) params.args = {};
-        const where = (params.args.where as Record<string, unknown> | undefined) ?? {};
-        if ((where as Record<string, unknown>).includeDeleted) {
-          const { includeDeleted: _flag, ...rest } = where as Record<string, unknown>;
-          params.args.where = rest;
-        } else if (!("deleted_at" in where)) {
-          params.args.where = { ...where, deleted_at: null };
+      } else if (
+        params.action === "update" ||
+        params.action === "updateMany"
+      ) {
+        // Strip the `includeDeleted` marker so it never reaches Prisma.
+        // updateMany does not auto-filter deleted rows.
+        if (params.args) {
+          const where = (params.args.where as Record<string, unknown> | undefined) ?? {};
+          if (INCLUDE_DELETED_KEY in where) {
+            const rest = { ...where };
+            delete rest[INCLUDE_DELETED_KEY];
+            params.args.where = rest;
+          }
         }
       }
     }

@@ -34,6 +34,11 @@ model User {
   attachments     Attachment[]
   drive_config    DriveConfig?
   captures        Capture[]
+  tasks           Task[]
+  projects        Project[]
+  contexts        Context[]
+  tags            Tag[]
+  people          Person[]
 
   @@index([email])
   @@index([deleted_at])
@@ -188,6 +193,165 @@ model Capture {
 
   @@index([user_id])
   @@index([deleted_at])
+}
+
+// ─── Person (placeholder; full model in Wave 6) ──────────────────────────────
+
+model Person {
+  id           String    @id @db.Uuid
+  user_id      String    @db.Uuid
+  handle       String
+  display_name String?
+  email        String?
+  deleted_at   DateTime? @db.Timestamptz
+  created_at   DateTime  @default(now()) @db.Timestamptz
+  updated_at   DateTime  @updatedAt @db.Timestamptz
+
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, handle])
+  @@index([user_id])
+  @@index([deleted_at])
+}
+
+// ─── Tag ─────────────────────────────────────────────────────────────────────
+
+model Tag {
+  id          String    @id @db.Uuid
+  user_id     String    @db.Uuid
+  name        String
+  color       String?
+  usage_count Int       @default(0)
+  deleted_at  DateTime? @db.Timestamptz
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tasks       TagOnTask[]
+
+  @@unique([user_id, name])
+  @@index([user_id])
+  @@index([user_id, usage_count])
+  @@index([deleted_at])
+}
+
+// ─── Context ─────────────────────────────────────────────────────────────────
+
+model Context {
+  id         String    @id @db.Uuid
+  user_id    String    @db.Uuid
+  name       String
+  icon       String?
+  color      String?
+  position   Decimal   @default(0) @db.Decimal(20, 10)
+  deleted_at DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tasks      ContextOnTask[]
+
+  @@unique([user_id, name])
+  @@index([user_id])
+  @@index([deleted_at])
+}
+
+// ─── Project ─────────────────────────────────────────────────────────────────
+
+model Project {
+  id          String    @id @db.Uuid
+  user_id     String    @db.Uuid
+  title       String
+  notes       String?
+  status      String    @default("active") // active | on_hold | completed | dropped
+  color       String?
+  sequential  Boolean   @default(false)
+  position    Decimal   @default(0) @db.Decimal(20, 10)
+  completed_at DateTime? @db.Timestamptz
+  deleted_at  DateTime? @db.Timestamptz
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@index([user_id])
+  @@index([user_id, status])
+  @@index([user_id, position])
+  @@index([deleted_at])
+}
+
+// ─── Task ────────────────────────────────────────────────────────────────────
+
+model Task {
+  id          String    @id @db.Uuid
+  user_id     String    @db.Uuid
+  project_id  String?   @db.Uuid
+  parent_id   String?   @db.Uuid
+  title       String
+  notes       String?
+  status      String    @default("active") // active | completed | dropped
+  flagged     Boolean   @default(false)
+  defer_date  DateTime? @db.Timestamptz
+  due_date    DateTime? @db.Timestamptz
+  completed_at DateTime? @db.Timestamptz
+  estimated_minutes Int?
+  position    Decimal   @default(0) @db.Decimal(20, 10)
+
+  // Denormalized references derived by the parser from notes.
+  referenced_person_ids  String[] @default([])
+  referenced_tag_ids     String[] @default([])
+  referenced_entity_refs Json?
+
+  search_vector String?  // populated by triggers; ILIKE fallback for now
+
+  deleted_at  DateTime? @db.Timestamptz
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project     Project?  @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  parent      Task?     @relation("TaskSubtasks", fields: [parent_id], references: [id], onDelete: Cascade)
+  subtasks    Task[]    @relation("TaskSubtasks")
+  contexts    ContextOnTask[]
+  tags        TagOnTask[]
+
+  @@index([user_id])
+  @@index([user_id, project_id])
+  @@index([user_id, status])
+  @@index([user_id, due_date])
+  @@index([user_id, flagged])
+  @@index([user_id, parent_id])
+  @@index([project_id, position])
+  @@index([deleted_at])
+}
+
+// ─── ContextOnTask (join) ────────────────────────────────────────────────────
+
+model ContextOnTask {
+  task_id    String   @db.Uuid
+  context_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  context    Context  @relation(fields: [context_id], references: [id], onDelete: Cascade)
+
+  @@id([task_id, context_id])
+  @@index([context_id])
+}
+
+// ─── TagOnTask (join) ────────────────────────────────────────────────────────
+
+model TagOnTask {
+  task_id    String   @db.Uuid
+  tag_id     String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  task       Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([task_id, tag_id])
+  @@index([tag_id])
 }
 
 // ─── DriveConfig ─────────────────────────────────────────────────────────────

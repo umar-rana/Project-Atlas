@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 
 const log = createLogger({ module: "audit" });
 
-const AUDITED_ENTITIES = new Set(["User"]);
+const AUDITED_ENTITIES = new Set(["User", "Task", "Project"]);
 
 export interface ActivityEvent {
   user_id?: string;

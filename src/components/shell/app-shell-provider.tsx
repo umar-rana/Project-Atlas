@@ -8,6 +8,7 @@ import { TopBarWired } from "@/components/shell/top-bar-wired";
 import { CommandPaletteWired } from "@/components/shell/command-palette-wired";
 import { KeyboardShortcutsOverlay } from "@/components/shell/keyboard-shortcuts-overlay";
 import { CaptureModal } from "@/components/shell/capture-modal";
+import { TasksCommands } from "@/components/tasks/tasks-commands";
 import { CommandRegistryProvider } from "@/core/commands/registry";
 import { ShortcutsRegistryProvider } from "@/core/shortcuts/registry";
 import { useShellStore } from "@/lib/shell/store";
@@ -150,6 +151,7 @@ function ShellInner({ user, children }: AppShellProviderProps): React.ReactEleme
         </div>
       </AppShell>
       <CommandPaletteWired />
+      <TasksCommands />
       <KeyboardShortcutsOverlay />
       <CaptureModal />
     </>
