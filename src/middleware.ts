@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/api/auth/logout",
   "/api/drive/connect",
   "/api/drive/oauth-callback",
+  "/api/health",
   "/api/trpc/health.ping",
   "/_next",
   "/favicon.ico",

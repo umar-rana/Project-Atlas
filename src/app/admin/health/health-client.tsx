@@ -82,13 +82,23 @@ export function HealthClient({ userId: _userId }: { userId: string }) {
             </p>
           )}
         </div>
-        <button
-          onClick={handleRerun}
-          disabled={isRunning}
-          className="rounded-lg border border-border-default bg-surface-raised px-4 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover disabled:opacity-50"
-        >
-          {isRunning ? "Running…" : "Re-run all checks"}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/health"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border border-border-default bg-surface-raised px-4 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover"
+          >
+            JSON
+          </a>
+          <button
+            onClick={handleRerun}
+            disabled={isRunning}
+            className="rounded-lg border border-border-default bg-surface-raised px-4 py-2 text-sm font-medium text-text-primary hover:bg-surface-hover disabled:opacity-50"
+          >
+            {isRunning ? "Running…" : "Re-run all checks"}
+          </button>
+        </div>
       </div>
 
       {/* Overall status */}
