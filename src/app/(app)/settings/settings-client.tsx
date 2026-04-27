@@ -426,7 +426,7 @@ function IntegrationsSection({
 
       {[
         { label: "Google Calendar", desc: "Sync events and time-blocks with your Google Calendar." },
-        { label: "Google Contacts", desc: "Import contacts to Atlas CRM." },
+        { label: "Google Contacts", desc: "Import contacts to Atlas People." },
         { label: "Resend", desc: "Send transactional emails from Atlas workflows." },
       ].map((int) => (
         <div key={int.label} className="rounded-xl border border-border-subtle bg-surface-base p-5">

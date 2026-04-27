@@ -12,16 +12,17 @@ import { useShellStore } from "@/lib/shell/store";
 import { useShortcutsRegistry, useRegisterShortcuts } from "@/core/shortcuts/registry";
 
 const WAVE2_SHORTCUTS = [
-  { id: "s-tasks", label: "Tasks", group: "Navigation", keys: ["cmd", "1"] },
-  { id: "s-calendar", label: "Calendar", group: "Navigation", keys: ["cmd", "2"] },
-  { id: "s-crm", label: "CRM", group: "Navigation", keys: ["cmd", "3"] },
-  { id: "s-notes", label: "Notes", group: "Navigation", keys: ["cmd", "4"] },
-  { id: "s-journal", label: "Journal", group: "Navigation", keys: ["cmd", "5"] },
-  { id: "s-settings", label: "Open Settings", group: "Navigation", keys: ["cmd", ","] },
-  { id: "s-palette", label: "Command Palette", group: "Global", keys: ["cmd", "K"] },
-  { id: "s-shortcuts", label: "Keyboard Shortcuts", group: "Global", keys: ["cmd", "/"] },
-  { id: "s-capture", label: "Quick Capture", group: "Global", keys: ["cmd", "shift", "I"] },
-  { id: "s-inspector", label: "Toggle Inspector", group: "Global", keys: ["cmd", "\\"] },
+  { id: "s-tasks",     label: "Tasks",              group: "Navigation", keys: ["cmd", "1"] },
+  { id: "s-calendar",  label: "Calendar",            group: "Navigation", keys: ["cmd", "2"] },
+  { id: "s-people",    label: "People",              group: "Navigation", keys: ["cmd", "3"] },
+  { id: "s-notes",     label: "Notes",               group: "Navigation", keys: ["cmd", "4"] },
+  { id: "s-journals",  label: "Journals",            group: "Navigation", keys: ["cmd", "5"] },
+  { id: "s-documents", label: "Documents",           group: "Navigation", keys: ["cmd", "6"] },
+  { id: "s-settings",  label: "Open Settings",       group: "Navigation", keys: ["cmd", ","] },
+  { id: "s-palette",   label: "Command Palette",     group: "Global",     keys: ["cmd", "K"] },
+  { id: "s-shortcuts", label: "Keyboard Shortcuts",  group: "Global",     keys: ["cmd", "/"] },
+  { id: "s-capture",   label: "Quick Capture",       group: "Global",     keys: ["cmd", "shift", "I"] },
+  { id: "s-inspector", label: "Toggle Inspector",    group: "Global",     keys: ["cmd", "\\"] },
 ];
 
 function ShortcutSeeder(): null {

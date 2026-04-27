@@ -9,6 +9,7 @@ import {
   Users,
   FileText,
   BookOpen,
+  FolderArchive,
   Trash2,
   Activity,
   Sun,
@@ -22,29 +23,32 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
 const MODULES = [
-  { id: "tasks", label: "Tasks", icon: CheckSquare, href: "/tasks", shortcut: ["⌘", "1"] },
-  { id: "calendar", label: "Calendar", icon: Calendar, href: "/calendar", shortcut: ["⌘", "2"] },
-  { id: "crm", label: "CRM", icon: Users, href: "/crm", shortcut: ["⌘", "3"] },
-  { id: "notes", label: "Notes", icon: FileText, href: "/notes", shortcut: ["⌘", "4"] },
-  { id: "journal", label: "Journal", icon: BookOpen, href: "/journal", shortcut: ["⌘", "5"] },
+  { id: "tasks",     label: "Tasks",     icon: CheckSquare,   href: "/tasks",     shortcut: ["⌘", "1"] },
+  { id: "calendar",  label: "Calendar",  icon: Calendar,      href: "/calendar",  shortcut: ["⌘", "2"] },
+  { id: "people",    label: "People",    icon: Users,         href: "/people",    shortcut: ["⌘", "3"] },
+  { id: "notes",     label: "Notes",     icon: FileText,      href: "/notes",     shortcut: ["⌘", "4"] },
+  { id: "journals",  label: "Journals",  icon: BookOpen,      href: "/journals",  shortcut: ["⌘", "5"] },
+  { id: "documents", label: "Documents", icon: FolderArchive, href: "/documents", shortcut: ["⌘", "6"] },
 ];
 
 function getModuleId(pathname: string): string {
-  if (pathname.startsWith("/tasks")) return "tasks";
-  if (pathname.startsWith("/calendar")) return "calendar";
-  if (pathname.startsWith("/crm")) return "crm";
-  if (pathname.startsWith("/notes")) return "notes";
-  if (pathname.startsWith("/journal")) return "journal";
-  if (pathname.startsWith("/settings")) return "settings";
-  if (pathname.startsWith("/admin")) return "health";
-  if (pathname.startsWith("/usage")) return "health";
+  if (pathname.startsWith("/tasks"))     return "tasks";
+  if (pathname.startsWith("/calendar"))  return "calendar";
+  if (pathname.startsWith("/people"))    return "people";
+  if (pathname.startsWith("/notes"))     return "notes";
+  if (pathname.startsWith("/journals"))  return "journals";
+  if (pathname.startsWith("/documents")) return "documents";
+  if (pathname.startsWith("/settings"))  return "settings";
+  if (pathname.startsWith("/admin"))     return "health";
+  if (pathname.startsWith("/usage"))     return "health";
   return "tasks";
 }
 
 function ThemeToggle(): React.ReactElement {
   const { theme, setTheme } = useTheme();
   const next = theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
-  const label = `Switch to ${next} theme`;
+  const currentLabel = theme === "dark" ? "Dark" : theme === "light" ? "Light" : "System";
+  const tooltipLabel = `Theme: ${currentLabel} — click to cycle`;
 
   function handleThemeToggle() {
     setTheme(next);
@@ -52,10 +56,10 @@ function ThemeToggle(): React.ReactElement {
   }
 
   return (
-    <Tooltip content={label} side="right">
+    <Tooltip content={tooltipLabel} side="right">
       <button
         type="button"
-        aria-label={label}
+        aria-label={tooltipLabel}
         onClick={handleThemeToggle}
         className={cn(
           "relative grid size-8 place-items-center rounded-md text-text-tertiary transition-colors duration-fast ease-standard",
@@ -85,9 +89,10 @@ export function ModuleSwitcherWired(): React.ReactElement {
       const map: Record<string, string> = {
         "1": "/tasks",
         "2": "/calendar",
-        "3": "/crm",
+        "3": "/people",
         "4": "/notes",
-        "5": "/journal",
+        "5": "/journals",
+        "6": "/documents",
       };
       if (map[e.key]) {
         e.preventDefault();
