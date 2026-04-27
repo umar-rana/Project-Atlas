@@ -14,6 +14,7 @@ const devOrigins = (() => {
 
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['uuidv7'],
   ...(devOrigins ? { allowedDevOrigins: devOrigins } : {}),
   async headers() {
     if (isProd) return [];
