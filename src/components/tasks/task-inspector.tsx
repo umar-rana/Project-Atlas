@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Flag, X, Trash2, RotateCcw } from "lucide-react";
+import { Flag, X, Trash2, RotateCcw, Paperclip, Download } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
@@ -83,6 +83,12 @@ function fmtDateForInput(d: Date | string | null | undefined): string {
   return format(date, "yyyy-MM-dd");
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.ReactElement {
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
   const utils = trpc.useUtils();
@@ -158,6 +164,10 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
       utils.tasks.get.invalidate({ id: taskId });
     },
   });
+  const attachments = trpc.attachments.byTaskId.useQuery(
+    { task_id: taskId },
+    { staleTime: 30_000, enabled: Boolean(taskId) },
+  );
   const activity = trpc.tasks.activity.useQuery({ id: taskId, limit: 30 });
   const parseLog = trpc.capture.getLogForTask.useQuery(
     { task_id: taskId },
@@ -548,6 +558,44 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                   {refs.map((r) => (
                     <li key={`${r.kind}:${r.id}`}>
                       [[{r.label}]] <span className="text-text-tertiary">({r.kind})</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
+
+          {(() => {
+            const list = attachments.data ?? [];
+            if (list.length === 0) return null;
+            return (
+              <section className="mt-4">
+                <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary flex items-center gap-1">
+                  <Paperclip size={10} />
+                  Attachments
+                </h3>
+                <ul className="flex flex-col gap-1">
+                  {list.map((att) => (
+                    <li
+                      key={att.id}
+                      className="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-ui text-xs text-text-primary" title={att.filename}>
+                          {att.filename}
+                        </p>
+                        <p className="font-ui text-2xs text-text-tertiary">
+                          {formatBytes(att.size_bytes)}
+                        </p>
+                      </div>
+                      <a
+                        href={`/api/attachments/${att.file_id}`}
+                        download={att.filename}
+                        className="shrink-0 rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                        aria-label={`Download ${att.filename}`}
+                      >
+                        <Download size={13} />
+                      </a>
                     </li>
                   ))}
                 </ul>

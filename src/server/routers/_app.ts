@@ -14,6 +14,7 @@ import { foldersRouter } from "./folders";
 import { reviewRouter } from "./review";
 import { forecastRouter } from "./forecast";
 import { emailsRouter } from "./emails";
+import { attachmentsRouter } from "./attachments";
 
 export const appRouter = router({
   health: healthRouter,
@@ -31,6 +32,7 @@ export const appRouter = router({
   review: reviewRouter,
   forecast: forecastRouter,
   emails: emailsRouter,
+  attachments: attachmentsRouter,
 });
 
 export type AppRouter = typeof appRouter;
