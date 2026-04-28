@@ -23,12 +23,20 @@ interface ListTaskRow {
 // Configurable per-endpoint stubs. Tests poke `mockState.queries.tasksList`
 // before render; mutations are tracked by path so we can assert moveMut
 // payloads if needed.
+//
+// `clientMutates` exposes the direct-client mutate fns used by the keyboard
+// handler (utils.client.tasks.*) so keyboard-shortcut tests can assert on them.
 const mockState = vi.hoisted(() => ({
   queries: {
     tasksList: [] as ListTaskRow[],
   },
   mutates: new Map<string, ReturnType<typeof import("vitest").vi.fn>>(),
   mutateAsyncs: new Map<string, ReturnType<typeof import("vitest").vi.fn>>(),
+  clientMutates: {
+    complete: null as ReturnType<typeof import("vitest").vi.fn> | null,
+    uncomplete: null as ReturnType<typeof import("vitest").vi.fn> | null,
+    update: null as ReturnType<typeof import("vitest").vi.fn> | null,
+  },
 }));
 
 vi.mock("@/lib/trpc/client", async () => {
@@ -73,19 +81,31 @@ vi.mock("@/lib/trpc/client", async () => {
   }
 
   const invalidate = vitestVi.fn();
+
+  // These are the fns called by the keyboard handler via utils.client.tasks.*
+  // They are stored in mockState so tests outside the factory can assert on them.
+  const completeMutate = vitestVi.fn(async () => ({}));
+  const uncompleteMutate = vitestVi.fn(async () => ({}));
+  const updateMutate = vitestVi.fn(async () => ({}));
+
+  mockState.clientMutates.complete = completeMutate;
+  mockState.clientMutates.uncomplete = uncompleteMutate;
+  mockState.clientMutates.update = updateMutate;
+
   const utils = {
     tasks: {
       list: { invalidate },
       get: { invalidate },
       counts: { invalidate },
+      completed: { invalidate },
     },
     tags: { list: { invalidate } },
     projects: { list: { invalidate } },
     client: {
       tasks: {
-        complete: { mutate: vitestVi.fn(async () => ({})) },
-        uncomplete: { mutate: vitestVi.fn(async () => ({})) },
-        update: { mutate: vitestVi.fn(async () => ({})) },
+        complete: { mutate: completeMutate },
+        uncomplete: { mutate: uncompleteMutate },
+        update: { mutate: updateMutate },
       },
     },
   };
@@ -155,6 +175,13 @@ function resetStore() {
     selectedTaskId: null,
     selectedTaskIds: new Set<string>(),
     lastClickedId: null,
+  });
+}
+
+/** Fire a keydown on window — simulates global keyboard shortcuts. */
+function pressKey(key: string, extra: Partial<KeyboardEventInit> = {}) {
+  act(() => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...extra }));
   });
 }
 
@@ -311,5 +338,236 @@ describe("TaskList — bulk-action selection model", () => {
     expect(bulkComplete?.mock.calls.length ?? 0).toBe(1);
     const arg = bulkComplete!.mock.calls[0][0] as { ids: string[] };
     expect([...arg.ids].sort()).toEqual(["t2", "t4"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Keyboard shortcuts
+// ---------------------------------------------------------------------------
+// The handler lives in a `useEffect` in TaskList and calls
+// `utils.client.tasks.<endpoint>.mutate(...)` directly (bypassing useMutation).
+// These tests drive `window.dispatchEvent` keydowns and assert the correct
+// mutation / store state changes occur, and that INPUT/TEXTAREA elements
+// suppress all shortcuts.
+// ---------------------------------------------------------------------------
+describe("TaskList — keyboard shortcuts", () => {
+  beforeEach(() => {
+    mockState.clientMutates.complete?.mockClear();
+    mockState.clientMutates.uncomplete?.mockClear();
+    mockState.clientMutates.update?.mockClear();
+    for (const fn of mockState.mutates.values()) fn.mockClear();
+    mockState.queries.tasksList = [
+      makeRow("a1"),
+      makeRow("a2"),
+      makeRow("a3"),
+    ];
+    resetStore();
+  });
+
+  function renderList() {
+    return render(
+      <TaskList
+        perspective="inbox"
+        title="Inbox"
+        enableQuickAdd={false}
+      />,
+    );
+  }
+
+  // 'j' / 'k' focus movement is verified by pressing the navigation key then
+  // triggering a mutation shortcut and checking which task id was used.
+
+  it("'j' moves focus to the next row: space then fires complete on the second task", () => {
+    renderList();
+
+    pressKey("j");
+    pressKey(" ");
+
+    expect(mockState.clientMutates.complete).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a2" });
+  });
+
+  it("multiple 'j' presses advance focus through the list", () => {
+    renderList();
+
+    pressKey("j");
+    pressKey("j");
+    pressKey(" ");
+
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a3" });
+  });
+
+  it("'j' clamps at the last row — further presses do not go out of bounds", () => {
+    renderList();
+
+    // More presses than rows.
+    pressKey("j");
+    pressKey("j");
+    pressKey("j");
+    pressKey("j");
+    pressKey(" ");
+
+    // Still fires on the last task (a3), not undefined.
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a3" });
+  });
+
+  it("'k' moves focus back to the previous row", () => {
+    renderList();
+
+    pressKey("j");
+    pressKey("j");
+    pressKey("k");
+    pressKey(" ");
+
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a2" });
+  });
+
+  it("'k' clamps at the first row — further presses do not go below 0", () => {
+    renderList();
+
+    pressKey("k");
+    pressKey("k");
+    pressKey(" ");
+
+    // Initial index is 0, clamped — still fires on a1.
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a1" });
+  });
+
+  it("space fires tasks.complete.mutate with the focused task's id (active task)", () => {
+    renderList();
+
+    pressKey(" ");
+
+    expect(mockState.clientMutates.complete).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a1" });
+    expect(mockState.clientMutates.uncomplete).not.toHaveBeenCalled();
+  });
+
+  it("space fires tasks.uncomplete.mutate when the focused task is already completed", () => {
+    mockState.queries.tasksList = [
+      makeRow("a1", { status: "completed" }),
+      makeRow("a2"),
+      makeRow("a3"),
+    ];
+    renderList();
+
+    pressKey(" ");
+
+    expect(mockState.clientMutates.uncomplete).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.uncomplete).toHaveBeenCalledWith({ id: "a1" });
+    expect(mockState.clientMutates.complete).not.toHaveBeenCalled();
+  });
+
+  it("Cmd+D fires tasks.complete.mutate for the focused task", () => {
+    renderList();
+
+    pressKey("d", { metaKey: true });
+
+    expect(mockState.clientMutates.complete).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a1" });
+  });
+
+  it("Ctrl+D also fires tasks.complete.mutate (cross-platform modifier)", () => {
+    renderList();
+
+    pressKey("d", { ctrlKey: true });
+
+    expect(mockState.clientMutates.complete).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.complete).toHaveBeenCalledWith({ id: "a1" });
+  });
+
+  it("'f' fires tasks.update.mutate to flag the focused (unflagged) task", () => {
+    renderList();
+
+    pressKey("f");
+
+    expect(mockState.clientMutates.update).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.update).toHaveBeenCalledWith({ id: "a1", flagged: true });
+  });
+
+  it("'f' fires tasks.update.mutate to unflag the focused (already-flagged) task", () => {
+    mockState.queries.tasksList = [
+      makeRow("a1", { flagged: true }),
+      makeRow("a2"),
+      makeRow("a3"),
+    ];
+    renderList();
+
+    pressKey("f");
+
+    expect(mockState.clientMutates.update).toHaveBeenCalledTimes(1);
+    expect(mockState.clientMutates.update).toHaveBeenCalledWith({ id: "a1", flagged: false });
+  });
+
+  it("Cmd+I sets selectedTaskId in the store to the focused task", () => {
+    renderList();
+
+    pressKey("j");
+    pressKey("i", { metaKey: true });
+
+    expect(useTasksStore.getState().selectedTaskId).toBe("a2");
+  });
+
+  it("Ctrl+I also sets selectedTaskId (cross-platform modifier)", () => {
+    renderList();
+
+    pressKey("i", { ctrlKey: true });
+
+    expect(useTasksStore.getState().selectedTaskId).toBe("a1");
+  });
+
+  it("all shortcuts are suppressed when the event target is an INPUT element", () => {
+    renderList();
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+
+    act(() => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "f", bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "i", metaKey: true, bubbles: true }));
+    });
+
+    expect(mockState.clientMutates.complete).not.toHaveBeenCalled();
+    expect(mockState.clientMutates.uncomplete).not.toHaveBeenCalled();
+    expect(mockState.clientMutates.update).not.toHaveBeenCalled();
+    expect(useTasksStore.getState().selectedTaskId).toBeNull();
+
+    document.body.removeChild(input);
+  });
+
+  it("all shortcuts are suppressed when the event target is a TEXTAREA element", () => {
+    renderList();
+
+    const textarea = document.createElement("textarea");
+    document.body.appendChild(textarea);
+
+    act(() => {
+      textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "j", bubbles: true }));
+      textarea.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+      textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "f", bubbles: true }));
+    });
+
+    expect(mockState.clientMutates.complete).not.toHaveBeenCalled();
+    expect(mockState.clientMutates.uncomplete).not.toHaveBeenCalled();
+    expect(mockState.clientMutates.update).not.toHaveBeenCalled();
+
+    document.body.removeChild(textarea);
+  });
+
+  it("shortcuts do nothing when the task list is empty", () => {
+    mockState.queries.tasksList = [];
+    renderList();
+
+    pressKey("j");
+    pressKey("k");
+    pressKey(" ");
+    pressKey("f");
+    pressKey("i", { metaKey: true });
+
+    expect(mockState.clientMutates.complete).not.toHaveBeenCalled();
+    expect(mockState.clientMutates.update).not.toHaveBeenCalled();
+    expect(useTasksStore.getState().selectedTaskId).toBeNull();
   });
 });
