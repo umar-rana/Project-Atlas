@@ -61,6 +61,26 @@ function isEntityRefArray(value: unknown): value is EntityRef[] {
   );
 }
 
+function AttachmentThumbnail({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (failed) {
+    return (
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-surface-base">
+        <Paperclip size={16} className="text-text-tertiary" />
+      </span>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-12 w-12 shrink-0 rounded-sm object-cover"
+    />
+  );
+}
+
 interface TaskInspectorProps {
   taskId: string;
   inTrash?: boolean;
@@ -575,29 +595,45 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                   Attachments
                 </h3>
                 <ul className="flex flex-col gap-1">
-                  {list.map((att) => (
-                    <li
-                      key={att.id}
-                      className="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-ui text-xs text-text-primary" title={att.filename}>
-                          {att.filename}
-                        </p>
-                        <p className="font-ui text-2xs text-text-tertiary">
-                          {formatBytes(att.size_bytes)}
-                        </p>
-                      </div>
-                      <a
-                        href={`/api/attachments/${att.file_id}`}
-                        download={att.filename}
-                        className="shrink-0 rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-                        aria-label={`Download ${att.filename}`}
+                  {list.map((att) => {
+                    const isImage = att.content_type?.startsWith("image/");
+                    const src = `/api/attachments/${att.file_id}`;
+                    return (
+                      <li
+                        key={att.id}
+                        className="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5"
                       >
-                        <Download size={13} />
-                      </a>
-                    </li>
-                  ))}
+                        {isImage ? (
+                          <a
+                            href={src}
+                            download={att.filename}
+                            className="shrink-0"
+                            aria-label={`Download ${att.filename}`}
+                          >
+                            <AttachmentThumbnail src={src} alt={att.filename} />
+                          </a>
+                        ) : (
+                          <Paperclip size={20} className="shrink-0 text-text-tertiary" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-ui text-xs text-text-primary" title={att.filename}>
+                            {att.filename}
+                          </p>
+                          <p className="font-ui text-2xs text-text-tertiary">
+                            {formatBytes(att.size_bytes)}
+                          </p>
+                        </div>
+                        <a
+                          href={src}
+                          download={att.filename}
+                          className="shrink-0 rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                          aria-label={`Download ${att.filename}`}
+                        >
+                          <Download size={13} />
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             );
