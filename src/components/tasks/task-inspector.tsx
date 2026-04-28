@@ -188,6 +188,10 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     { task_id: taskId },
     { staleTime: 30_000, enabled: Boolean(taskId) },
   );
+  const deleteAttachment = trpc.attachments.delete.useMutation({
+    onSuccess: () => utils.attachments.byTaskId.invalidate({ task_id: taskId }),
+    onError: () => toast.error("Failed to remove attachment"),
+  });
   const activity = trpc.tasks.activity.useQuery({ id: taskId, limit: 30 });
   const parseLog = trpc.capture.getLogForTask.useQuery(
     { task_id: taskId },
@@ -631,9 +635,25 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                         >
                           <Download size={13} />
                         </a>
+                        {!inTrash && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`Remove "${att.filename}"?`)) {
+                                deleteAttachment.mutate({ id: att.id });
+                              }
+                            }}
+                            disabled={deleteAttachment.isPending}
+                            className="shrink-0 rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-accent-danger"
+                            aria-label={`Remove ${att.filename}`}
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
                       </li>
                     );
                   })}
+
                 </ul>
               </section>
             );

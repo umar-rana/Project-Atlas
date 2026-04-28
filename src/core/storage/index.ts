@@ -107,12 +107,21 @@ export async function deleteFile(params: {
     throw new Error("File not found or access denied");
   }
 
+  const client = getClient();
+  const deleteResult = await client.delete(attachment.storage_path);
+  if (!deleteResult.ok) {
+    log.warn(
+      { fileId: params.fileId, path: attachment.storage_path, err: deleteResult.error },
+      "Object storage delete failed — proceeding with DB soft-delete so attachment is no longer accessible",
+    );
+  }
+
   await db.attachment.update({
     where: { id: attachment.id },
     data: { deleted_at: new Date() },
   });
 
-  log.info({ fileId: params.fileId, userId: params.userId }, "File soft-deleted");
+  log.info({ fileId: params.fileId, userId: params.userId }, "Attachment deleted");
 }
 
 export async function checkStorageHealth(): Promise<boolean> {
