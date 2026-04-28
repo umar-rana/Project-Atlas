@@ -14,6 +14,7 @@ datasource db {
 
 model User {
   id                      String    @id @db.Uuid
+  clerk_id                String?   @unique
   email                   String    @unique
   name                    String?
   image                   String?
@@ -28,7 +29,6 @@ model User {
   updated_at              DateTime  @updatedAt @db.Timestamptz
   deleted_at              DateTime? @db.Timestamptz
 
-  sessions           Session[]
   audit_logs         AuditLog[]
   integration_tokens IntegrationToken[]
   sync_states        SyncState[]
@@ -45,27 +45,9 @@ model User {
   tags               Tag[]
   people             Person[]
 
+  @@index([clerk_id])
   @@index([email])
   @@index([deleted_at])
-}
-
-// ─── Session ─────────────────────────────────────────────────────────────────
-
-model Session {
-  id          String   @id @db.Uuid
-  user_id     String   @db.Uuid
-  token       String   @unique
-  expires_at  DateTime @db.Timestamptz
-  created_at  DateTime @default(now()) @db.Timestamptz
-  last_seen   DateTime @default(now()) @db.Timestamptz
-  user_agent  String?
-  ip_address  String?
-
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([user_id])
-  @@index([expires_at])
 }
 
 // ─── AuditLog ────────────────────────────────────────────────────────────────

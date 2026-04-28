@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, randomBytes } from "crypto";
-import { getServerSession } from "@/core/auth/session";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/core/db";
 import { getAuthUrl } from "@/core/drive/client";
 import { createLogger } from "@/core/logging";
 
 const log = createLogger({ module: "drive/connect" });
 
 export async function GET(req: NextRequest) {
-  const user = await getServerSession();
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  const user = await db.user.findUnique({ where: { clerk_id: clerkId } });
   if (!user) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }

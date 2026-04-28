@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
+import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ThemeCookieSync } from "@/components/providers/theme-cookie-sync";
 import { TRPCProvider } from "@/components/providers/trpc-provider";
@@ -48,25 +49,31 @@ export default async function RootLayout({
       : "dark";
 
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${fontUi.variable} ${fontReading.variable} ${fontMono.variable}`}
-    >
-      <body className="bg-surface-base text-text-primary font-ui">
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme={defaultTheme}
-          enableSystem
-          disableTransitionOnChange
-        >
-          <ThemeCookieSync />
-          <TRPCProvider>
-            {children}
-          </TRPCProvider>
-          <Toaster />
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider
+        signInUrl="/sign-in"
+        signInFallbackRedirectUrl="/tasks"
+        signUpFallbackRedirectUrl="/tasks"
+      >
+      <html
+        lang="en"
+        suppressHydrationWarning
+        className={`${fontUi.variable} ${fontReading.variable} ${fontMono.variable}`}
+      >
+        <body className="bg-surface-base text-text-primary font-ui">
+          <ThemeProvider
+            attribute="data-theme"
+            defaultTheme={defaultTheme}
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ThemeCookieSync />
+            <TRPCProvider>
+              {children}
+            </TRPCProvider>
+            <Toaster />
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

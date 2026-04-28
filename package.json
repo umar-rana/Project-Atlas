@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
+    "@clerk/nextjs": "^7.2.7",
     "@google-cloud/storage": "^7.19.0",
     "@hookform/resolvers": "^3.10.0",
     "@noble/ciphers": "^2.2.0",

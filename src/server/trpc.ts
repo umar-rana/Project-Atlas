@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { getServerSessionInfo } from "@/core/auth/session";
+import { auth } from "@clerk/nextjs/server";
+import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { ZodError } from "zod";
 import type { User } from "@prisma/client";
@@ -8,12 +9,14 @@ const log = createLogger({ module: "trpc" });
 
 export interface TRPCContext {
   user: User | null;
-  sessionId: string | null;
 }
 
 export async function createTRPCContext(): Promise<TRPCContext> {
-  const info = await getServerSessionInfo();
-  return { user: info?.user ?? null, sessionId: info?.sessionId ?? null };
+  const { userId } = await auth();
+  if (!userId) return { user: null };
+
+  const user = await db.user.findUnique({ where: { clerk_id: userId } });
+  return { user };
 }
 
 const t = initTRPC.context<TRPCContext>().create({

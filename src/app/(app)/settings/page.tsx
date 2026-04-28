@@ -1,6 +1,6 @@
 import { Metadata } from "next";
-import { getServerSession } from "@/core/auth/session";
 import { redirect } from "next/navigation";
+import { getOrCreateUserFromClerk } from "@/lib/auth";
 import { SettingsClient } from "./settings-client";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const user = await getServerSession();
+  const user = await getOrCreateUserFromClerk();
   if (!user) redirect("/sign-in");
 
   const params = await searchParams;

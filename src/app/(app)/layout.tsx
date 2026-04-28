@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "@/core/auth/session";
+import { getOrCreateUserFromClerk } from "@/lib/auth";
 import { AppShellProvider } from "@/components/shell/app-shell-provider";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await getServerSession();
+  const user = await getOrCreateUserFromClerk();
   if (!user) redirect("/sign-in");
 
   return (

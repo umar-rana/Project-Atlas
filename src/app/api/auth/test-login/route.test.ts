@@ -3,22 +3,32 @@ import { NextRequest } from "next/server";
 
 const findUniqueMock = vi.fn();
 const createUserMock = vi.fn();
-const createSessionMock = vi.fn();
+const updateUserMock = vi.fn();
+const getUserListMock = vi.fn();
+const createClerkUserMock = vi.fn();
+const createSignInTokenMock = vi.fn();
 
 vi.mock("@/core/db", () => ({
   db: {
     user: {
       findUnique: (...args: unknown[]) => findUniqueMock(...args),
       create: (...args: unknown[]) => createUserMock(...args),
+      update: (...args: unknown[]) => updateUserMock(...args),
     },
   },
   newId: () => "test-user-id-0000000000000000",
 }));
 
-vi.mock("@/core/auth/session", () => ({
-  createSession: (...args: unknown[]) => createSessionMock(...args),
-  SESSION_COOKIE_NAME: () => "atlas_session",
-  SESSION_MAX_AGE: () => 7 * 24 * 60 * 60,
+vi.mock("@clerk/nextjs/server", () => ({
+  clerkClient: async () => ({
+    users: {
+      getUserList: (...args: unknown[]) => getUserListMock(...args),
+      createUser: (...args: unknown[]) => createClerkUserMock(...args),
+    },
+    signInTokens: {
+      createSignInToken: (...args: unknown[]) => createSignInTokenMock(...args),
+    },
+  }),
 }));
 
 vi.mock("@/core/logging", () => ({
@@ -31,6 +41,7 @@ vi.mock("@/core/logging", () => ({
 }));
 
 const VALID_SECRET = "a".repeat(40);
+const MOCK_CLERK_USER_ID = "user_test_12345";
 
 function buildRequest(headers: Record<string, string> = {}) {
   return new NextRequest("http://localhost:5000/api/auth/test-login", {
@@ -47,7 +58,10 @@ describe("POST /api/auth/test-login", () => {
   beforeEach(() => {
     findUniqueMock.mockReset();
     createUserMock.mockReset();
-    createSessionMock.mockReset();
+    updateUserMock.mockReset();
+    getUserListMock.mockReset();
+    createClerkUserMock.mockReset();
+    createSignInTokenMock.mockReset();
   });
 
   afterEach(() => {
@@ -59,8 +73,7 @@ describe("POST /api/auth/test-login", () => {
     if (originalNodeEnv === undefined) {
       delete (process.env as Record<string, string | undefined>).NODE_ENV;
     } else {
-      (process.env as Record<string, string | undefined>).NODE_ENV =
-        originalNodeEnv;
+      (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
     }
     if (originalAllow === undefined) {
       delete process.env.E2E_ALLOW_IN_PRODUCTION;
@@ -73,23 +86,17 @@ describe("POST /api/auth/test-login", () => {
   it("returns 404 when E2E_AUTH_SECRET is not set", async () => {
     delete process.env.E2E_AUTH_SECRET;
     const { POST } = await import("./route");
-    const res = await POST(
-      buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }),
-    );
+    const res = await POST(buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }));
     expect(res.status).toBe(404);
-    expect(findUniqueMock).not.toHaveBeenCalled();
-    expect(createSessionMock).not.toHaveBeenCalled();
+    expect(getUserListMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 when E2E_AUTH_SECRET is too short (< 32 chars)", async () => {
     process.env.E2E_AUTH_SECRET = "short-secret";
     vi.resetModules();
     const { POST } = await import("./route");
-    const res = await POST(
-      buildRequest({ Authorization: "Bearer short-secret" }),
-    );
+    const res = await POST(buildRequest({ Authorization: "Bearer short-secret" }));
     expect(res.status).toBe(404);
-    expect(createSessionMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when the bearer token does not match", async () => {
@@ -100,7 +107,7 @@ describe("POST /api/auth/test-login", () => {
       buildRequest({ Authorization: "Bearer wrong-secret-of-the-right-length-xxxxx" }),
     );
     expect(res.status).toBe(401);
-    expect(createSessionMock).not.toHaveBeenCalled();
+    expect(getUserListMock).not.toHaveBeenCalled();
   });
 
   it("returns 404 in production even if E2E_AUTH_SECRET is set (without E2E_ALLOW_IN_PRODUCTION)", async () => {
@@ -109,32 +116,9 @@ describe("POST /api/auth/test-login", () => {
     delete process.env.E2E_ALLOW_IN_PRODUCTION;
     vi.resetModules();
     const { POST } = await import("./route");
-    const res = await POST(
-      buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }),
-    );
+    const res = await POST(buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }));
     expect(res.status).toBe(404);
-    expect(createSessionMock).not.toHaveBeenCalled();
-  });
-
-  it("activates in production when E2E_ALLOW_IN_PRODUCTION=1 is also set (CI mode)", async () => {
-    process.env.E2E_AUTH_SECRET = VALID_SECRET;
-    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
-    process.env.E2E_ALLOW_IN_PRODUCTION = "1";
-    vi.resetModules();
-
-    findUniqueMock.mockResolvedValueOnce({
-      id: "existing-user-id",
-      email: "e2e@atlas.test",
-      name: "Atlas E2E",
-    });
-    createSessionMock.mockResolvedValueOnce("ci.signed.token");
-
-    const { POST } = await import("./route");
-    const res = await POST(
-      buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }),
-    );
-    expect(res.status).toBe(200);
-    expect(createSessionMock).toHaveBeenCalledOnce();
+    expect(getUserListMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when the Authorization header is missing", async () => {
@@ -143,66 +127,83 @@ describe("POST /api/auth/test-login", () => {
     const { POST } = await import("./route");
     const res = await POST(buildRequest());
     expect(res.status).toBe(401);
-    expect(createSessionMock).not.toHaveBeenCalled();
   });
 
-  it("provisions the test user on first call and mints a session cookie", async () => {
+  it("returns 200 with signInUrl on success for existing Clerk user", async () => {
     process.env.E2E_AUTH_SECRET = VALID_SECRET;
     vi.resetModules();
 
+    getUserListMock.mockResolvedValueOnce({
+      totalCount: 1,
+      data: [{ id: MOCK_CLERK_USER_ID }],
+    });
+    findUniqueMock.mockResolvedValueOnce({
+      id: "existing-user-id",
+      email: "e2e@atlas.test",
+      name: "Atlas E2E",
+      clerk_id: MOCK_CLERK_USER_ID,
+    });
+    createSignInTokenMock.mockResolvedValueOnce({ token: "test-sign-in-token" });
+
+    const { POST } = await import("./route");
+    const res = await POST(buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }));
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json.signInUrl).toContain("__clerk_ticket=test-sign-in-token");
+    expect(json.user.email).toBe("e2e@atlas.test");
+    expect(createClerkUserMock).not.toHaveBeenCalled();
+  });
+
+  it("creates Clerk user and Prisma user on first call", async () => {
+    process.env.E2E_AUTH_SECRET = VALID_SECRET;
+    vi.resetModules();
+
+    getUserListMock.mockResolvedValueOnce({ totalCount: 0, data: [] });
+    createClerkUserMock.mockResolvedValueOnce({ id: MOCK_CLERK_USER_ID });
+    // No existing user in Prisma
+    findUniqueMock.mockResolvedValueOnce(null);
     findUniqueMock.mockResolvedValueOnce(null);
     createUserMock.mockResolvedValueOnce({
       id: "test-user-id-0000000000000000",
       email: "e2e@atlas.test",
       name: "Atlas E2E",
+      clerk_id: MOCK_CLERK_USER_ID,
     });
-    createSessionMock.mockResolvedValueOnce("signed.session.token");
+    createSignInTokenMock.mockResolvedValueOnce({ token: "new-sign-in-token" });
 
     const { POST } = await import("./route");
-    const res = await POST(
-      buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }),
-    );
+    const res = await POST(buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }));
     expect(res.status).toBe(200);
 
+    expect(createClerkUserMock).toHaveBeenCalledOnce();
     expect(createUserMock).toHaveBeenCalledOnce();
-    const createArgs = createUserMock.mock.calls[0]![0] as {
-      data: { email: string; name: string };
-    };
-    expect(createArgs.data.email).toBe("e2e@atlas.test");
-
-    expect(createSessionMock).toHaveBeenCalledOnce();
-
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(json.cookieName).toBe("atlas_session");
-    expect(json.cookieValue).toBe("signed.session.token");
-    expect(json.user.email).toBe("e2e@atlas.test");
-
-    const setCookie = res.headers.get("set-cookie") ?? "";
-    expect(setCookie).toContain("atlas_session=signed.session.token");
-    expect(setCookie.toLowerCase()).toContain("httponly");
+    expect(json.signInUrl).toContain("__clerk_ticket=new-sign-in-token");
   });
 
-  it("reuses the existing test user on subsequent calls", async () => {
+  it("activates in production when E2E_ALLOW_IN_PRODUCTION=1 is also set (CI mode)", async () => {
     process.env.E2E_AUTH_SECRET = VALID_SECRET;
+    (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+    process.env.E2E_ALLOW_IN_PRODUCTION = "1";
     vi.resetModules();
 
+    getUserListMock.mockResolvedValueOnce({
+      totalCount: 1,
+      data: [{ id: MOCK_CLERK_USER_ID }],
+    });
     findUniqueMock.mockResolvedValueOnce({
       id: "existing-user-id",
       email: "e2e@atlas.test",
-      name: "Atlas E2E",
+      clerk_id: MOCK_CLERK_USER_ID,
     });
-    createSessionMock.mockResolvedValueOnce("another.signed.token");
+    createSignInTokenMock.mockResolvedValueOnce({ token: "ci-token" });
 
     const { POST } = await import("./route");
-    const res = await POST(
-      buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }),
-    );
+    const res = await POST(buildRequest({ Authorization: `Bearer ${VALID_SECRET}` }));
     expect(res.status).toBe(200);
-    expect(createUserMock).not.toHaveBeenCalled();
-    expect(createSessionMock).toHaveBeenCalledWith(
-      "existing-user-id",
-      expect.any(Object),
-    );
+    expect(createSignInTokenMock).toHaveBeenCalledOnce();
   });
 });

@@ -1,8 +1,8 @@
-import { getServerSession } from "@/core/auth/session";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export default async function RootPage() {
-  const user = await getServerSession();
-  if (!user) redirect("/sign-in");
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
   redirect("/tasks");
 }

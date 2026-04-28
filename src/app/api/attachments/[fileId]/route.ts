@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSessionInfo } from "@/core/auth/session";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/core/db";
 import { getFile } from "@/core/storage";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ fileId: string }> },
 ): Promise<NextResponse> {
-  const session = await getServerSessionInfo();
-  if (!session?.user) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await db.user.findUnique({ where: { clerk_id: clerkId } });
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -15,7 +21,7 @@ export async function GET(
 
   try {
     const { data, contentType, filename } = await getFile({
-      userId: session.user.id,
+      userId: user.id,
       fileId,
     });
 

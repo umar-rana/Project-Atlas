@@ -1,44 +1,28 @@
 // Playwright e2e: happy-path "create task → open inspector → edit title →
 // reload → confirm persistence".
 //
-// This script uses `playwright-core` (already a devDependency) so we don't
-// need to install the full `@playwright/test` runner.
-//
-// There are two ways to authenticate:
+// Authentication modes:
 //
 //   1. CI / automated mode (preferred) — set `E2E_AUTH_SECRET` to the same
 //      value the server has configured. The script POSTs to
-//      `/api/auth/test-login` with `Authorization: Bearer <secret>` to mint
-//      a fresh session for the deterministic `e2e@atlas.test` user. The
-//      server-side endpoint is fully disabled unless that env var is set
-//      with length >= 32, so it is safe to ship in any environment that
-//      doesn't set the secret.
+//      `/api/auth/test-login` with `Authorization: Bearer <secret>`. The
+//      server returns a Clerk sign-in token URL; the browser navigates to it
+//      and Clerk handles the session setup.
 //
-//   2. Local / manual mode — sign in via your browser, copy the value of
-//      the `atlas_session` cookie, and pass it via `ATLAS_SESSION_COOKIE`.
-//      This is the original workflow and still works.
+//   2. Local / manual mode — sign in via your browser and pass the Clerk
+//      `__session` cookie value via `ATLAS_SESSION_COOKIE`.
 //
 // Examples:
 //
-//   # CI mode (against an ephemeral local server):
+//   # CI mode:
 //   APP_URL=http://localhost:5000 \
 //   E2E_AUTH_SECRET=<32+ char secret> \
 //   node e2e/task-list.e2e.mjs
 //
-//   # Local mode against your Repl:
+//   # Local mode:
 //   APP_URL=https://<your-repl>.replit.dev \
-//   ATLAS_SESSION_COOKIE=<value of the `atlas_session` cookie> \
+//   ATLAS_SESSION_COOKIE=<__session cookie value> \
 //   node e2e/task-list.e2e.mjs
-//
-// Failures exit with code 1 so this can be wired into CI.
-//
-// What it does:
-//   1. Visits /tasks/inbox.
-//   2. Types a unique title into the quick-add input and presses Enter.
-//   3. Waits for the new row to appear, clicks it to open the inspector.
-//   4. Edits the title in the inspector and blurs to commit.
-//   5. Reloads the page.
-//   6. Asserts the new title is still present.
 
 import { chromium } from "playwright-core";
 
@@ -46,7 +30,6 @@ const APP_URL = process.env.APP_URL ?? process.env.REPLIT_DEV_DOMAIN
   ? (process.env.APP_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`)
   : "http://localhost:5000";
 const SESSION_COOKIE = process.env.ATLAS_SESSION_COOKIE;
-const COOKIE_NAME_OVERRIDE = process.env.ATLAS_SESSION_COOKIE_NAME;
 const E2E_AUTH_SECRET = process.env.E2E_AUTH_SECRET;
 const CHROMIUM =
   process.env.CHROMIUM_PATH ||
@@ -55,14 +38,13 @@ const CHROMIUM =
 
 if (!SESSION_COOKIE && !E2E_AUTH_SECRET) {
   console.error(
-    "[e2e] Missing credentials. Set either E2E_AUTH_SECRET (CI mode, hits " +
-      "/api/auth/test-login) or ATLAS_SESSION_COOKIE (manual mode, copy " +
-      "from your browser after signing in).",
+    "[e2e] Missing credentials. Set either E2E_AUTH_SECRET (CI mode) or " +
+      "ATLAS_SESSION_COOKIE (manual mode, copy __session cookie from browser).",
   );
   process.exit(2);
 }
 
-async function obtainSessionViaTestLogin(appUrl, secret) {
+async function obtainSignInUrl(appUrl, secret) {
   const url = new URL("/api/auth/test-login", appUrl).toString();
   const res = await fetch(url, {
     method: "POST",
@@ -79,25 +61,15 @@ async function obtainSessionViaTestLogin(appUrl, secret) {
     );
   }
   const json = await res.json();
-  if (!json?.cookieName || !json?.cookieValue) {
-    throw new Error("test-login returned no cookie payload");
+  if (!json?.signInUrl) {
+    throw new Error("test-login returned no signInUrl");
   }
-  return { name: json.cookieName, value: json.cookieValue };
+  return new URL(json.signInUrl, appUrl).toString();
 }
 
 const stamp = Date.now();
 const ORIGINAL_TITLE = `e2e quick task ${stamp}`;
 const EDITED_TITLE = `${ORIGINAL_TITLE} — edited`;
-
-let cookieName = COOKIE_NAME_OVERRIDE ?? "atlas_session";
-let cookieValue = SESSION_COOKIE;
-
-if (E2E_AUTH_SECRET) {
-  console.log(`[e2e] minting CI session via ${APP_URL}/api/auth/test-login`);
-  const minted = await obtainSessionViaTestLogin(APP_URL, E2E_AUTH_SECRET);
-  cookieName = COOKIE_NAME_OVERRIDE ?? minted.name;
-  cookieValue = minted.value;
-}
 
 const browser = await chromium.launch({
   ...(CHROMIUM ? { executablePath: CHROMIUM } : {}),
@@ -111,22 +83,33 @@ try {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
   });
-  await context.addCookies([
-    {
-      name: cookieName,
-      value: cookieValue,
-      domain: url.hostname,
-      path: "/",
-      httpOnly: true,
-      secure: url.protocol === "https:",
-      sameSite: "Lax",
-    },
-  ]);
 
   const page = await context.newPage();
   page.on("pageerror", (e) => {
     console.error(`[e2e] pageerror: ${e.message}`);
   });
+
+  if (E2E_AUTH_SECRET) {
+    console.log(`[e2e] obtaining Clerk sign-in token from ${APP_URL}/api/auth/test-login`);
+    const signInUrl = await obtainSignInUrl(APP_URL, E2E_AUTH_SECRET);
+    console.log(`[e2e] navigating to sign-in token URL`);
+    await page.goto(signInUrl, { waitUntil: "networkidle" });
+    // Wait for Clerk to process the ticket and redirect to /tasks
+    await page.waitForURL((u) => !u.includes("/sign-in"), { timeout: 15_000 });
+  } else {
+    // Manual mode: inject the __session cookie directly
+    await context.addCookies([
+      {
+        name: "__session",
+        value: SESSION_COOKIE,
+        domain: url.hostname,
+        path: "/",
+        httpOnly: true,
+        secure: url.protocol === "https:",
+        sameSite: "Lax",
+      },
+    ]);
+  }
 
   console.log(`[e2e] navigating to ${APP_URL}/tasks/inbox`);
   const resp = await page.goto(`${APP_URL}/tasks/inbox`, {
@@ -135,12 +118,12 @@ try {
   if (!resp || !resp.ok()) {
     throw new Error(
       `Initial navigation failed: status ${resp?.status() ?? "n/a"}. ` +
-        `If you were redirected to /sign-in, your session cookie is invalid or expired.`,
+        `If you were redirected to /sign-in, your session is invalid or expired.`,
     );
   }
   if (page.url().includes("/sign-in")) {
     throw new Error(
-      "Redirected to /sign-in — session cookie not accepted by the app.",
+      "Redirected to /sign-in — session not accepted by the app.",
     );
   }
 

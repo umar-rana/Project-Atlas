@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { Settings, Activity, Keyboard, LogOut, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Avatar } from "@/components/ui/avatar";
@@ -31,6 +32,7 @@ const THEMES = [
 
 export function UserMenu({ name, email, image }: UserMenuProps): React.ReactElement {
   const router = useRouter();
+  const { signOut } = useClerk();
   const setShortcutsOverlayOpen = useShellStore((s) => s.setShortcutsOverlayOpen);
   const { theme, setTheme } = useTheme();
 
@@ -43,7 +45,7 @@ export function UserMenu({ name, email, image }: UserMenuProps): React.ReactElem
 
   function handleSignOut() {
     toast("Signing out…", { duration: 2000 });
-    setTimeout(() => { window.location.href = "/api/auth/logout"; }, 600);
+    setTimeout(() => { signOut({ redirectUrl: "/sign-in" }); }, 600);
   }
 
   function handleTheme(value: "light" | "dark" | "system") {

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "@/core/auth/session";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/core/db";
 import { complete } from "@/core/ai";
 
 export async function GET(req: NextRequest) {
-  const user = await getServerSession();
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await db.user.findUnique({ where: { clerk_id: clerkId } });
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

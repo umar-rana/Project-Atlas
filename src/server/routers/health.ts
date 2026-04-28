@@ -5,9 +5,8 @@ import { verifyDriveConfig } from "@/core/drive/linking";
 import { isQueueHealthy, getDeadLetterCount } from "@/core/queue";
 import { logger, createLogger } from "@/core/logging";
 import { complete } from "@/core/ai";
-import { getOidcConfig } from "@/core/auth/replit-oidc";
 
-const log = createLogger({ module: "health/oidc" });
+const log = createLogger({ module: "health" });
 
 type CheckResult = {
   ok: boolean;
@@ -61,6 +60,26 @@ async function checkTRPC(): Promise<{ ok: boolean; message?: string; latencyMs?:
   }
 }
 
+async function checkClerk(): Promise<{ ok: boolean; message?: string; latencyMs?: number }> {
+  const start = Date.now();
+  try {
+    const res = await fetch("https://api.clerk.com/v1/jwks", {
+      signal: AbortSignal.timeout(5000),
+    });
+    const latencyMs = Date.now() - start;
+    if (!res.ok) {
+      return { ok: false, latencyMs, message: `Clerk JWKS HTTP ${res.status}` };
+    }
+    return { ok: true, latencyMs };
+  } catch (err) {
+    return {
+      ok: false,
+      latencyMs: Date.now() - start,
+      message: err instanceof Error ? err.message : "Clerk check failed",
+    };
+  }
+}
+
 export const healthRouter = router({
   ping: publicProcedure.query(() => ({ pong: true, ts: new Date().toISOString() })),
 
@@ -83,7 +102,7 @@ export const healthRouter = router({
       }
     };
 
-    const [dbCheck, storageCheck, driveCheck, aiCheck, trpcCheck, oidcCheck] = await Promise.all([
+    const [dbCheck, storageCheck, driveCheck, aiCheck, trpcCheck, clerkCheck] = await Promise.all([
       safeCheck("database", async () => {
         try { await db.$queryRaw`SELECT 1`; return true; } catch { return false; }
       }),
@@ -93,17 +112,7 @@ export const healthRouter = router({
         : Promise.resolve({ result: { ok: false as boolean, reason: "Not authenticated" }, ms: 0 }),
       safeCheck("ai", checkAI),
       safeCheck("trpc", checkTRPC),
-      safeCheck("oidc", async () => {
-        const start = Date.now();
-        try {
-          await getOidcConfig();
-          return { ok: true as const, latencyMs: Date.now() - start };
-        } catch (err) {
-          const message = err instanceof Error ? err.message : "OIDC discovery failed";
-          log.error({ err }, "OIDC health check failed");
-          return { ok: false as const, message, latencyMs: Date.now() - start };
-        }
-      }),
+      safeCheck("clerk", checkClerk),
     ]);
 
     checks.database = { ok: dbCheck.result ?? false, latencyMs: dbCheck.ms };
@@ -122,9 +131,9 @@ export const healthRouter = router({
     checks.trpc = trpcCheck.result
       ? { ok: trpcCheck.result.ok, message: trpcCheck.result.message, latencyMs: trpcCheck.result.latencyMs }
       : { ok: false, message: "tRPC check threw", latencyMs: trpcCheck.ms };
-    checks.oidc = oidcCheck.result
-      ? { ok: oidcCheck.result.ok, message: oidcCheck.result.ok ? undefined : oidcCheck.result.message, latencyMs: oidcCheck.result.latencyMs }
-      : { ok: false, message: "OIDC check threw", latencyMs: oidcCheck.ms };
+    checks.clerk = clerkCheck.result
+      ? { ok: clerkCheck.result.ok, message: clerkCheck.result.ok ? undefined : clerkCheck.result.message, latencyMs: clerkCheck.result.latencyMs }
+      : { ok: false, message: "Clerk check threw", latencyMs: clerkCheck.ms };
 
     if (ctx.user) {
       const { result: user, ms: authMs } = await safeCheck("auth", async () => {
@@ -135,7 +144,7 @@ export const healthRouter = router({
       });
       checks.auth = {
         ok: !!user,
-        message: user ? `Session user ${(user as { email: string }).email} verified in DB` : "Session user not found in DB",
+        message: user ? `Clerk user ${(user as { email: string }).email} verified in DB` : "Clerk user not found in DB",
         latencyMs: authMs,
       };
     } else {

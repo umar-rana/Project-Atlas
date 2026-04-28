@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { getServerSession } from "@/core/auth/session";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "@/core/db";
 import { exchangeCode } from "@/core/drive/client";
 import { createLogger } from "@/core/logging";
 
@@ -23,7 +24,12 @@ function verifyNonceCookie(signedNonce: string, secret: string): string | null {
 }
 
 export async function GET(req: NextRequest) {
-  const user = await getServerSession();
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  const user = await db.user.findUnique({ where: { clerk_id: clerkId } });
   if (!user) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
