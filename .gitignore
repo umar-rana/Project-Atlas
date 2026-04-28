@@ -43,3 +43,6 @@ next-env.d.ts
 
 # replit
 .cache
+
+# clerk configuration (can include secrets)
+/.clerk/
