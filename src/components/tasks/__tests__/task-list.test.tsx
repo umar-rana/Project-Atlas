@@ -572,6 +572,20 @@ describe("TaskList — keyboard shortcuts", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Drag-and-drop reordering
+// ---------------------------------------------------------------------------
+// The drag path is completely separate from keyboard / click handlers:
+//   onDragStart  → sets dragId.current
+//   onDragOver   → sets dropTargetId.current (not asserted, but exercised)
+//   onDrop       → reads dragId, computes before_id/after_id, calls moveMut
+//
+// Each test fires DOM drag events on the task-row divs so that the real
+// event handlers in TaskListItem (which call the parent callbacks) run,
+// rather than calling the callbacks directly. This catches regressions in
+// the index math *and* in the wiring between the child event handlers and
+// the parent's mutate call.
+// ---------------------------------------------------------------------------
 describe("TaskList — drag-and-drop reordering", () => {
   beforeEach(() => {
     for (const fn of mockState.mutates.values()) fn.mockClear();
@@ -596,86 +610,117 @@ describe("TaskList — drag-and-drop reordering", () => {
     );
   }
 
-  function row(container: HTMLElement, id: string) {
+  function getRow(container: HTMLElement, id: string): HTMLElement {
     const el = container.querySelector(`[data-task-id="${id}"]`);
     if (!el) throw new Error(`Row ${id} not found`);
     return el as HTMLElement;
   }
 
-  function dragTo(container: HTMLElement, sourceId: string, targetId: string) {
-    const src = row(container, sourceId);
-    const tgt = row(container, targetId);
-    const dataTransfer = { setData: vi.fn(), getData: vi.fn() };
+  function dragRowOntoRow(
+    container: HTMLElement,
+    sourceId: string,
+    targetId: string,
+  ) {
+    const source = getRow(container, sourceId);
+    const target = getRow(container, targetId);
     act(() => {
-      fireEvent.dragStart(src, { dataTransfer });
-      fireEvent.dragOver(tgt, { dataTransfer });
-      fireEvent.drop(tgt, { dataTransfer });
+      fireEvent.dragStart(source, {
+        dataTransfer: { setData: () => {} },
+      });
+      fireEvent.dragOver(target);
+      fireEvent.drop(target);
     });
   }
 
-  it("dragging DOWN calls tasks.move with the correct before_id and after_id", () => {
-    // List: [t1, t2, t3, t4, t5]. Drag t1 → t3.
-    // sourceIdx=0 < targetIdx=2, so beforeIdx=2 (t3), afterIdx=3 (t4).
+  it("dragging a row above another fires tasks.move with the correct before_id and after_id", () => {
+    // Drag t4 (idx 3) onto t2 (idx 1) — moving upward.
+    // Expected placement: between t1 (before) and t2 (after).
     const { container } = renderList();
-    dragTo(container, "t1", "t3");
+    dragRowOntoRow(container, "t4", "t2");
 
     const moveMutate = mockState.mutates.get("tasks.move");
     expect(moveMutate).toHaveBeenCalledTimes(1);
-    expect(moveMutate?.mock.calls[0][0]).toEqual({
-      id: "t1",
-      before_id: "t3",
-      after_id: "t4",
-    });
-  });
-
-  it("dragging UP calls tasks.move with the correct before_id and after_id", () => {
-    // List: [t1, t2, t3, t4, t5]. Drag t4 → t2.
-    // sourceIdx=3 > targetIdx=1, so beforeIdx=0 (t1), afterIdx=1 (t2).
-    const { container } = renderList();
-    dragTo(container, "t4", "t2");
-
-    const moveMutate = mockState.mutates.get("tasks.move");
-    expect(moveMutate).toHaveBeenCalledTimes(1);
-    expect(moveMutate?.mock.calls[0][0]).toEqual({
+    expect(moveMutate).toHaveBeenCalledWith({
       id: "t4",
       before_id: "t1",
       after_id: "t2",
     });
   });
 
-  it("dragging to the first position sends before_id: null", () => {
-    // List: [t1, t2, t3, t4, t5]. Drag t4 → t1.
-    // sourceIdx=3 > targetIdx=0, so beforeIdx=-1 (undefined→null), afterIdx=0 (t1).
+  it("dragging a row below another fires tasks.move with the correct before_id and after_id", () => {
+    // Drag t2 (idx 1) onto t4 (idx 3) — moving downward.
+    // Expected placement: between t4 (before) and t5 (after).
     const { container } = renderList();
-    dragTo(container, "t4", "t1");
+    dragRowOntoRow(container, "t2", "t4");
 
     const moveMutate = mockState.mutates.get("tasks.move");
     expect(moveMutate).toHaveBeenCalledTimes(1);
-    expect(moveMutate?.mock.calls[0][0]).toEqual({
-      id: "t4",
+    expect(moveMutate).toHaveBeenCalledWith({
+      id: "t2",
+      before_id: "t4",
+      after_id: "t5",
+    });
+  });
+
+  it("dragging a row onto itself is a no-op (tasks.move is not called)", () => {
+    const { container } = renderList();
+    dragRowOntoRow(container, "t3", "t3");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate?.mock.calls.length ?? 0).toBe(0);
+  });
+
+  it("dragging the last row above the first clamps: before_id is null, after_id is the first row", () => {
+    // Drag t5 (idx 4) onto t1 (idx 0) — moving to the very top.
+    // beforeIdx = 0 - 1 = -1 → before = undefined → before_id: null
+    const { container } = renderList();
+    dragRowOntoRow(container, "t5", "t1");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate).toHaveBeenCalledTimes(1);
+    expect(moveMutate).toHaveBeenCalledWith({
+      id: "t5",
       before_id: null,
       after_id: "t1",
     });
   });
 
-  it("dragging to the last position sends after_id: null", () => {
-    // List: [t1, t2, t3, t4, t5]. Drag t1 → t5.
-    // sourceIdx=0 < targetIdx=4, so beforeIdx=4 (t5), afterIdx=5 (undefined→null).
+  it("dragging the first row below the last clamps: before_id is the last row, after_id is null", () => {
+    // Drag t1 (idx 0) onto t5 (idx 4) — moving to the very bottom.
+    // afterIdx = 4 + 1 = 5 → after = undefined → after_id: null
     const { container } = renderList();
-    dragTo(container, "t1", "t5");
+    dragRowOntoRow(container, "t1", "t5");
 
     const moveMutate = mockState.mutates.get("tasks.move");
     expect(moveMutate).toHaveBeenCalledTimes(1);
-    expect(moveMutate?.mock.calls[0][0]).toEqual({
+    expect(moveMutate).toHaveBeenCalledWith({
       id: "t1",
       before_id: "t5",
       after_id: null,
     });
   });
 
-  it("dropping a task onto itself does not call tasks.move", () => {
+  it("dragging an adjacent row above its neighbor fires tasks.move with the correct neighbours", () => {
+    // Drag t3 (idx 2) onto t2 (idx 1) — swapping with the row directly above.
+    // sourceIdx=2 > targetIdx=1 → beforeIdx=0 (t1), afterIdx=1 (t2)
     const { container } = renderList();
-    dragTo(container, "t3", "t3");
+    dragRowOntoRow(container, "t3", "t2");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate).toHaveBeenCalledTimes(1);
+    expect(moveMutate).toHaveBeenCalledWith({
+      id: "t3",
+      before_id: "t1",
+      after_id: "t2",
+    });
+  });
+
+  it("tasks.move is not called when no drag has started before drop fires", () => {
+    // Drop fires on a target without a prior dragStart — dragId.current is null.
+    const { container } = renderList();
+    act(() => {
+      fireEvent.drop(getRow(container, "t3"));
+    });
 
     const moveMutate = mockState.mutates.get("tasks.move");
     expect(moveMutate?.mock.calls.length ?? 0).toBe(0);
