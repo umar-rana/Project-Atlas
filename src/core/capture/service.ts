@@ -35,7 +35,16 @@ async function getUserContext(userId: string): Promise<{
       select: { timezone: true, ai_confidence_threshold: true, tasks_prefs: true },
     });
     const prefs = (user?.tasks_prefs ?? {}) as Record<string, unknown>;
-    const aiEnabled = prefs["ai_capture_enabled"] !== false;
+    const capturePrefs = (
+      typeof prefs["capture_prefs"] === "object" && prefs["capture_prefs"] !== null
+        ? prefs["capture_prefs"]
+        : {}
+    ) as Record<string, unknown>;
+    const masterEnabled =
+      prefs["ai_capture_enabled"] !== false &&
+      capturePrefs["ai_capture_enabled"] !== false;
+    const fallbackEnabled = capturePrefs["ai_fallback_enabled"] !== false;
+    const aiEnabled = masterEnabled && fallbackEnabled;
     return {
       timezone: user?.timezone ?? "UTC",
       confidenceThreshold: user?.ai_confidence_threshold ?? 0.70,
@@ -269,22 +278,21 @@ export async function captureAndCreate(
   const taskId = newId();
 
   if (!needsAi || !userCtx.aiEnabled) {
-    const parsed: ParsedCapture = needsAi && !userCtx.aiEnabled
-      ? runFallback(rawText)
-      : {
-          title: tier1.title ?? rawText.slice(0, 80),
-          tags: tier1.tags,
-          contexts: tier1.contexts,
-          due_date: tier1.due_date,
-          defer_date: tier1.defer_date,
-          project_hint: tier1.project_hint,
-          person_refs: tier1.person_refs,
-          entity_refs: tier1.entity_refs,
-          flagged: tier1.flagged,
-          parse_tier: "local_only",
-          local_confidence: confidence.score,
-          basic_parse: false,
-        };
+    // Both cases (high confidence OR AI disabled) use Tier-1 local parse — not degraded fallback.
+    const parsed: ParsedCapture = {
+      title: tier1.title ?? rawText.slice(0, 80),
+      tags: tier1.tags,
+      contexts: tier1.contexts,
+      due_date: tier1.due_date,
+      defer_date: tier1.defer_date,
+      project_hint: tier1.project_hint,
+      person_refs: tier1.person_refs,
+      entity_refs: tier1.entity_refs,
+      flagged: tier1.flagged,
+      parse_tier: "local_only",
+      local_confidence: confidence.score,
+      basic_parse: false,
+    };
 
     const projectId = projectIdOverride ?? await resolveProjectId(parsed.project_hint, userId);
     const durationMs = Date.now() - start;

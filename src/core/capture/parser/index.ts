@@ -2,7 +2,6 @@ import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { runTier1 } from "./tier-1-local";
 import { runTier2 } from "./tier-2-ai";
-import { runFallback } from "./fallback";
 import { scoreConfidence } from "./confidence";
 import type { ParsedCapture, ParseContext } from "./types";
 
@@ -75,9 +74,9 @@ export async function runPipeline(
         basic_parse: false,
       };
     }
-  } else if (needsAi && !ctx.aiEnabled) {
-    parsed = runFallback(rawText);
   } else {
+    // Either confidence is high enough (no AI needed) or AI is disabled.
+    // Both cases return Tier-1 local parse output — not a degraded fallback.
     parsed = {
       title: tier1.title ?? rawText.slice(0, 80),
       tags: tier1.tags,

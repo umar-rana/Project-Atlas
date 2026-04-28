@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { InboxProcessingSuggestions } from "./inbox-processing-suggestions";
 // Flat structural types mirroring the shape selected by the tasks.get
 // router (TASK_INCLUDE). We avoid `RouterOutputs["tasks"]["get"]` here
 // because Prisma's deeply-typed include trees push tsc into TS2589
@@ -158,6 +159,11 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     },
   });
   const activity = trpc.tasks.activity.useQuery({ id: taskId, limit: 30 });
+  const parseLog = trpc.capture.getLogForTask.useQuery(
+    { task_id: taskId },
+    { staleTime: 60_000, enabled: Boolean(taskId) },
+  );
+  const logParseOverride = trpc.capture.logParseOverride.useMutation();
 
   const data = task.data;
 
@@ -205,9 +211,35 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
 
   function patchContexts(nextIds: string[]) {
     update.mutate({ id: taskData.id, context_ids: nextIds });
+    const hint = parseLog.data;
+    if (hint && Array.isArray(hint.contexts) && hint.contexts.length > 0) {
+      const hintNames = [...hint.contexts].map((n) => n.toLowerCase()).sort();
+      const newNames = nextIds
+        .map((id) => (contexts.data ?? []).find((c) => c.id === id)?.name ?? "")
+        .filter(Boolean)
+        .map((n) => n.toLowerCase())
+        .sort();
+      const differs = JSON.stringify(hintNames) !== JSON.stringify(newNames);
+      if (differs) {
+        logParseOverride.mutate({ task_id: taskData.id, field: "contexts" });
+      }
+    }
   }
   function patchTags(nextIds: string[]) {
     update.mutate({ id: taskData.id, tag_ids: nextIds });
+    const hint = parseLog.data;
+    if (hint && Array.isArray(hint.tags) && hint.tags.length > 0) {
+      const hintNames = [...hint.tags].map((n) => n.toLowerCase()).sort();
+      const newNames = nextIds
+        .map((id) => (tags.data ?? []).find((t) => t.id === id)?.name ?? "")
+        .filter(Boolean)
+        .map((n) => n.toLowerCase())
+        .sort();
+      const differs = JSON.stringify(hintNames) !== JSON.stringify(newNames);
+      if (differs) {
+        logParseOverride.mutate({ task_id: taskData.id, field: "tags" });
+      }
+    }
   }
 
   async function addNewTag() {
@@ -294,17 +326,35 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             </button>
           </div>
 
+          {!inTrash && (
+            <InboxProcessingSuggestions
+              taskId={taskData.id}
+              currentProjectId={taskData.project_id}
+              currentContextIds={selectedContextIds}
+              currentTagIds={selectedTagIds}
+              disabled={inTrash}
+            />
+          )}
+
           <div className="mt-3 grid grid-cols-2 gap-2">
             <label className="flex flex-col gap-1 font-ui text-2xs text-text-tertiary">
               Project
               <select
                 value={taskData.project_id ?? ""}
-                onChange={(e) =>
-                  update.mutate({
-                    id: taskData.id,
-                    project_id: e.target.value || null,
-                  })
-                }
+                onChange={(e) => {
+                  const newProjectId = e.target.value || null;
+                  update.mutate({ id: taskData.id, project_id: newProjectId });
+                  const hint = parseLog.data;
+                  if (hint?.project_hint) {
+                    const newTitle = newProjectId
+                      ? ((projects.data ?? []).find((p) => p.id === newProjectId)?.title ?? "")
+                      : "";
+                    const differs = newTitle.toLowerCase() !== hint.project_hint.toLowerCase();
+                    if (differs) {
+                      logParseOverride.mutate({ task_id: taskData.id, field: "project" });
+                    }
+                  }
+                }}
                 disabled={inTrash}
                 className="rounded-sm border border-border-default bg-surface-base px-2 py-1 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus"
               >
