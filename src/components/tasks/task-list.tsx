@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Inbox, Sparkles, X } from "lucide-react";
+import { Inbox, Keyboard, Sparkles, X } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
 import { TaskListItem } from "./task-list-item";
@@ -75,6 +75,15 @@ export function TaskList({
   const setLastClicked = useTasksStore((s) => s.setLastClicked);
 
   const [sortBy, setSortBy] = React.useState<"manual" | "due" | "title" | "flagged">("manual");
+
+  const [hasFinePointer, setHasFinePointer] = React.useState(false);
+  React.useEffect(() => {
+    const mq = window.matchMedia("(pointer: fine)");
+    setHasFinePointer(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setHasFinePointer(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const inboxHintsQuery = trpc.capture.inboxProjectHints.useQuery(undefined, {
     enabled: perspective === "inbox",
@@ -368,23 +377,45 @@ export function TaskList({
           <EmptyState icon={<Inbox size={28} aria-hidden />} title={emptyTitle} body={emptyBody} />
         </div>
       ) : (
-        <div role="grid" className="flex-1 overflow-y-auto">
-          {tasks.map((task, idx) => (
-            <TaskListItem
-              key={task.id}
-              task={task}
-              selected={selectedTaskId === task.id}
-              isFocused={focusedIdx === idx}
-              isMultiSelected={selectedTaskIds.has(task.id)}
-              onSelect={handleSelect}
-              onMultiToggle={handleMultiToggle}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              inTrash={perspective === "trash"}
-            />
-          ))}
-        </div>
+        <>
+          <div role="grid" className="flex-1 overflow-y-auto">
+            {tasks.map((task, idx) => (
+              <TaskListItem
+                key={task.id}
+                task={task}
+                selected={selectedTaskId === task.id}
+                isFocused={focusedIdx === idx}
+                isMultiSelected={selectedTaskIds.has(task.id)}
+                onSelect={handleSelect}
+                onMultiToggle={handleMultiToggle}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                inTrash={perspective === "trash"}
+              />
+            ))}
+          </div>
+          {hasFinePointer && (
+            <div className="flex items-center gap-1.5 border-t border-border-subtle px-3 py-1.5">
+              <Keyboard size={11} className="shrink-0 text-text-tertiary" aria-hidden />
+              <p className="font-ui text-2xs text-text-tertiary">
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">j</kbd>
+                <span className="mx-0.5">/</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">k</kbd>
+                <span className="mx-1.5">navigate</span>
+                <span className="mx-1">·</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">space</kbd>
+                <span className="mx-1.5">complete</span>
+                <span className="mx-1">·</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">f</kbd>
+                <span className="mx-1.5">flag</span>
+                <span className="mx-1">·</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘I</kbd>
+                <span className="mx-1.5">inspect</span>
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       <BulkActionBar />

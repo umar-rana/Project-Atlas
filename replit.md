@@ -1,110 +1,27 @@
 # Atlas — Wave 3c Capture Intelligence
 
 ## Overview
-Atlas is a desktop-first personal productivity command center. **Wave 3c Part 1** adds
-the hybrid parsing pipeline: a local-first capture intelligence system where chrono-node,
-regex, and compromise.js parse the majority of captures at zero AI cost, with Claude Haiku
-called only as a fallback for ambiguous input (~20-30%). The full captures tRPC router
-(parseAndCreate, preview, recentLogs, updateThreshold, strategyStats, qualityStats,
-thresholdImpact, exportStats) is wired up. The capture modal is updated to use the new service.
+Atlas is a desktop-first personal productivity command center. Its primary purpose is to provide a local-first capture intelligence system that efficiently processes user input. The system prioritizes cost-effective local parsing using technologies like `chrono-node`, regex, and `compromise.js` for the majority of captures, reserving more expensive AI services like Claude Haiku as a fallback for ambiguous cases. This hybrid approach aims to significantly reduce AI costs while maintaining high accuracy.
 
-## Tech Stack
-- **Framework**: Next.js 15 (App Router) + React 19
-- **Language**: TypeScript (strict, zero errors)
-- **Styling**: Tailwind CSS 3.4 driven by Stratum tokens
-- **UI primitives**: Radix UI, cmdk, vaul, sonner
-- **Theming**: next-themes (`attribute="data-theme"`, default dark)
-- **Storybook**: 9 on port 6000
-- **Auth**: Replit OIDC (openid-client v6) — no Auth.js/next-auth
-- **Database**: PostgreSQL via Prisma (Wave 1 schema migrated)
-- **Sessions**: DB-backed sessions + iron-session cookie (`atlas_sess`)
-- **API**: tRPC v11 (health, user, drive routers)
-- **AI**: Anthropic Claude via Replit integration
-- **Storage**: Replit Object Storage (`@replit/object-storage`)
-- **Logging**: Pino + pino-pretty
-- **Crypto**: Node.js built-in AES-256-GCM (for Drive token encryption)
-- **Drive**: Google Drive API via `googleapis`
-- **Queue**: Priority-aware in-memory dispatch queue with DB-backed rate limiting (`src/core/queue/`)
-- **Dates**: date-fns-tz utilities with per-user prefs (14 passing unit tests)
+The project integrates a comprehensive captures tRPC router for managing various aspects of capture intelligence, including parsing, previewing, logging, and statistical analysis. Key capabilities include a re-engineered capture modal, email-to-inbox functionality for seamless capture from emails, and a robust, authenticated application shell with a focus on user experience and productivity.
 
-## Key Environment Variables
-- `SESSION_SECRET` — iron-session encryption key (set as Replit secret)
-- `DATABASE_URL` — PostgreSQL connection string (Replit DB)
-- `TOKEN_ENCRYPTION_KEY` — 64-char hex, 32-byte AES key for Drive tokens
-- `LOG_LEVEL` — pino log level (default: `info`)
-- `REPL_ID` — Replit app ID (auto-provided by Replit)
-- `REPLIT_DEV_DOMAIN` — auto-provided by Replit
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` — needed for Drive OAuth (not yet configured)
-- `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` — Anthropic credentials (Replit blueprint)
-- `CRON_SECRET` — Bearer secret for `POST /api/cron/cleanup-sessions`; **required in production** (endpoint returns 503 if unset outside dev)
-- `RESEND_WEBHOOK_SECRET` — Resend/svix webhook signing secret for `POST /api/email/inbound`; if unset, signature check is skipped (dev only); in production, set this to the secret from the Resend dashboard (format: `whsec_...`)
-- `RESEND_API_KEY` — Resend outbound API key for sending the inbox verification test email from `Settings → Capture → Verify routing`. Falls back to `RESEND_KEY` if `RESEND_API_KEY` is not set. If neither is set, the `emails.sendVerificationEmail` mutation returns a clear error.
+## User Preferences
+I prefer iterative development with clear, concise communication. Before making major architectural changes or introducing new dependencies, please ask for approval. When implementing features, prioritize desktop-first experiences and ensure strict TypeScript compliance with zero errors. I value a clean codebase with consistent styling (Tailwind CSS driven by Stratum tokens) and well-tested utilities. Avoid making changes to `.github/workflows/ci.yml`.
 
-## Project Structure
-```
-src/
-├── app/
-│   ├── (app)/              Route group — all authenticated app routes
-│   │   ├── layout.tsx      Server component: auth guard → AppShellProvider
-│   │   ├── tasks/          Module placeholder (Wave 3)
-│   │   ├── calendar/       Module placeholder (Wave 4)
-│   │   ├── crm/            Module placeholder (Wave 5)
-│   │   ├── notes/          Module placeholder (Wave 4)
-│   │   ├── journal/        Module placeholder (Wave 5)
-│   │   ├── trash/          Trash placeholder
-│   │   ├── admin/health/   Health dashboard (uses AppShell)
-│   │   └── settings/       Settings (TwoPaneLayout, 8 sections) + DriveWizard
-│   ├── api/auth/           login, callback, logout routes (Replit OIDC)
-│   ├── api/drive/connect/  Drive OAuth initiator
-│   ├── api/drive/oauth-callback/  Drive OAuth callback
-│   ├── api/trpc/           tRPC handler
-│   ├── sign-in/            Sign-in page
-│   ├── globals.css
-│   ├── layout.tsx          TRPCProvider + ThemeProvider + Toaster
-│   └── page.tsx            Root redirect → /tasks (auth-gated)
-├── components/
-│   ├── shell/              Wave 2 wired shell components
-│   │   ├── app-shell-provider.tsx    Main shell orchestrator + Zustand + registries
-│   │   ├── module-switcher-wired.tsx Rail with ⌘1-5 shortcuts + theme toggle
-│   │   ├── top-bar-wired.tsx         Search → command palette, capture, user menu
-│   │   ├── user-menu.tsx             Avatar dropdown
-│   │   ├── command-palette-wired.tsx ⌘K palette with command registry
-│   │   ├── keyboard-shortcuts-overlay.tsx ⌘/ cheat sheet
-│   │   ├── sync-status.tsx           Dot + popover with real health states
-│   │   └── capture-modal.tsx         ⌘⇧I capture modal → toast
-│   ├── layout/             AppShell, ModuleSwitcher, TopBar, TwoPaneLayout, etc. (primitives)
-│   ├── composed/           CommandPalette, InspectorPanel, EmptyState
-│   └── ui/                 Atomic components (Stratum)
-├── core/
-│   ├── commands/registry.tsx  Context-based command registry
-│   ├── shortcuts/registry.tsx Context-based shortcuts registry
-│   ├── ai/                 Anthropic abstraction (complete + queue)
-│   ├── audit/              Audit logging
-│   ├── auth/               replit-oidc.ts, session.ts
-│   ├── dates/              Timezone-aware date utils (14 unit tests)
-│   ├── db/                 Prisma client singleton
-│   ├── drive/              Google Drive client, primitives, linking, encrypt
-│   ├── logging/            Pino logger factory
-│   ├── queue/              Rate-limit in-memory queue
-│   └── storage/            Replit Object Storage wrapper
-├── lib/
-│   ├── shell/store.ts      Zustand store for shell modal state
-│   ├── toast.ts            Re-export sonner toast
-│   ├── auth.ts             Re-exports getServerSession
-│   ├── db.ts               Re-exports Prisma client
-│   ├── logger.ts           Re-exports createLogger
-│   └── trpc/               client.ts + server.ts re-exports
-├── middleware.ts            Auth middleware + structured HTTP request logging
-└── server/
-    ├── trpc.ts             tRPC init + context (auth context)
-    └── routers/            _app.ts, health.ts, user.ts, drive.ts, session.ts, ai.ts, capture.ts
-prisma/
-├── schema.prisma           Wave 1 full schema (migrated: 20260427043022_wave1_foundation)
-└── migrations/
-```
+## System Architecture
+The application is built on Next.js 15 (App Router) + React 19, utilizing TypeScript for strict type checking. Styling is managed with Tailwind CSS 3.4 and custom Stratum tokens, complemented by UI primitives from Radix UI, cmdk, vaul, and sonner. Theming supports dark mode via `next-themes`.
 
-## Prisma Models (Wave 1)
-User, Session, AuditLog, IntegrationToken, SyncState, RateLimitTracker, AICallLog, Attachment, DriveConfig
+Core architectural decisions include:
+- **Hybrid Parsing Pipeline**: A local-first capture intelligence system where `chrono-node`, regex, and `compromise.js` handle the majority of input parsing. Claude Haiku is used as a fallback for ambiguous input (~20-30%), optimizing AI costs.
+- **tRPC API**: A type-safe API layer for all backend interactions, including health checks, user management, drive integration, session management, AI calls, and capture processing.
+- **Database**: PostgreSQL via Prisma, with a foundational schema (Wave 1) that includes models for users, sessions, audit logs, integration tokens, and AI call logs.
+- **Authentication**: Replit OIDC (openid-client v6) for secure user authentication and session management using DB-backed sessions and an `iron-session` cookie.
+- **Application Shell**: A robust, authenticated application shell featuring a `TwoPaneLayout` for settings, a `ModuleSwitcher` with keyboard shortcuts, a `TopBar` for search and user actions, a `CommandPalette` (`⌘K`) for quick access, and a `KeyboardShortcutsOverlay` (`⌘/`).
+- **Capture Modals**: A re-engineered `CaptureModal` (`⌘⇧I`) for efficient input capture.
+- **Email-to-Inbox**: Integration of email parsing (`mailparser`) with Resend inbound webhooks for capturing information directly from emails, including attachment handling and user-configurable filtering (auto-replies, calendar invites, blocklists).
+- **Date Handling**: Timezone-aware date utilities using `date-fns-tz`.
+- **Queueing**: A priority-aware in-memory dispatch queue with DB-backed rate limiting.
+- **Error Handling & Logging**: Comprehensive audit logging and Pino for structured logging.
 
 ## Configuration Files
 - `tailwind.config.ts` — Stratum tokens + animations
@@ -228,3 +145,15 @@ Safe patch updates **were** applied in #69: `openid-client→6.8.4`, `@typescrip
   - tRPC routers: health, user, drive
   - Drive linking wizard (4-step UI)
   - All TypeScript errors resolved (zero TS errors)
+
+## External Dependencies
+- **Anthropic Claude**: Used for AI-driven fallback parsing via Replit integration.
+- **Google Drive API**: Integrated via `googleapis` for drive linking, storage, and token encryption.
+- **Replit Object Storage**: Utilized for storing attachments and other large objects.
+- **Resend**: For inbound email processing via webhooks (`/api/email/inbound`) and outbound email sending (e.g., verification emails).
+- **PostgreSQL**: The primary database, accessed through Prisma.
+- **Prisma**: ORM for database interactions.
+- **openid-client**: For Replit OIDC authentication.
+- **chrono-node, compromise.js**: Libraries for local-first capture parsing.
+- **mailparser**: For parsing inbound emails.
+- **date-fns-tz**: For timezone-aware date utilities.
