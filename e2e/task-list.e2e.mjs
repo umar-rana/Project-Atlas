@@ -145,7 +145,7 @@ try {
   }
 
   console.log(`[e2e] creating task: ${ORIGINAL_TITLE}`);
-  const quickAdd = page.locator("input[placeholder*='Add task' i], input[placeholder*='quick' i]").first();
+  const quickAdd = page.locator("input[placeholder*='Add a task' i], input[placeholder*='Add task' i], input[placeholder*='quick' i]").first();
   await quickAdd.waitFor({ state: "visible", timeout: 10_000 });
   await quickAdd.click();
   await quickAdd.fill(ORIGINAL_TITLE);

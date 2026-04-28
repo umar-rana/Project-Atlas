@@ -14,7 +14,7 @@
     "build-storybook": "storybook build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "node e2e/task-list.e2e.mjs",
+    "test:e2e": "node e2e/task-list.e2e.mjs && node e2e/task-complete.e2e.mjs && node e2e/quick-capture.e2e.mjs && node e2e/project-context.e2e.mjs && node e2e/sign-out.e2e.mjs && node e2e/forecast.e2e.mjs",
     "storybook:sweep": "node scripts/storybook-theme-sweep.mjs",
     "storybook:sweep:overlays": "node scripts/storybook-overlay-sweep.mjs"
   },

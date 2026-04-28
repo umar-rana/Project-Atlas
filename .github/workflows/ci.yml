@@ -118,8 +118,23 @@ jobs:
           tail -n 200 /tmp/atlas-server.log || true
           exit 1
 
-      - name: Run end-to-end test
-        run: npm run test:e2e
+      - name: e2e — task list (create → edit → persist)
+        run: node e2e/task-list.e2e.mjs
+
+      - name: e2e — task completion + completed list
+        run: node e2e/task-complete.e2e.mjs
+
+      - name: e2e — quick-capture modal
+        run: node e2e/quick-capture.e2e.mjs
+
+      - name: e2e — project and context creation
+        run: node e2e/project-context.e2e.mjs
+
+      - name: e2e — sign-out flow
+        run: node e2e/sign-out.e2e.mjs
+
+      - name: e2e — forecast view date columns
+        run: node e2e/forecast.e2e.mjs
 
       - name: Dump server log on failure
         if: failure()

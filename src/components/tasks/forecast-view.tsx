@@ -396,7 +396,7 @@ export function ForecastView(): React.ReactElement {
               </div>
             )}
 
-            <div className="flex flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+            <div data-testid="forecast-day-grid" className="flex flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
               {(data?.days ?? []).map((day) => (
                 <DayColumn
                   key={day.date}

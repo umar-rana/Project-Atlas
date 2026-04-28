@@ -3,7 +3,7 @@
 ## Overview
 Atlas is a desktop-first personal productivity command center. Its primary purpose is to provide a local-first capture intelligence system that efficiently processes user input. The system prioritizes cost-effective local parsing using technologies like `chrono-node`, regex, and `compromise.js` for the majority of captures, reserving more expensive AI services like Claude Haiku as a fallback for ambiguous cases. This hybrid approach aims to significantly reduce AI costs while maintaining high accuracy.
 
-The project integrates a comprehensive captures tRPC router for managing various aspects of capture intelligence, including parsing, previewing, logging, and statistical analysis. Key capabilities include a re-engineered capture modal, email-to-inbox functionality for seamless capture from emails, and a robust, authenticated application shell with a focus on user experience and productivity.
+The project integrates a comprehensive captures tRPC router for managing various aspects of capture intelligence, including parsing, previewing, logging, and statistical analysis. Key capabilities include a re-engineered capture modal, email-to-inbox functionality for seamless capture from emails, and a robust, authenticated application shell with a focus on user experience and productivity. Future ambitions include modules for tasks, calendar, CRM, notes, and journaling, transforming Atlas into a complete personal productivity hub.
 
 ## User Preferences
 I prefer iterative development with clear, concise communication. Before making major architectural changes or introducing new dependencies, please ask for approval. When implementing features, prioritize desktop-first experiences and ensure strict TypeScript compliance with zero errors. I value a clean codebase with consistent styling (Tailwind CSS driven by Stratum tokens) and well-tested utilities. Avoid making changes to `.github/workflows/ci.yml`.
@@ -18,16 +18,48 @@ Core architectural decisions include:
 - **Authentication**: Replit OIDC (openid-client v6) for secure user authentication and session management using DB-backed sessions and an `iron-session` cookie.
 - **Application Shell**: A robust, authenticated application shell featuring a `TwoPaneLayout` for settings, a `ModuleSwitcher` with keyboard shortcuts, a `TopBar` for search and user actions, a `CommandPalette` (`⌘K`) for quick access, and a `KeyboardShortcutsOverlay` (`⌘/`).
 - **Capture Modals**: A re-engineered `CaptureModal` (`⌘⇧I`) for efficient input capture.
+- **Settings and Configuration**: A comprehensive settings section with a `TwoPaneLayout` for managing profile, appearance, capture preferences (including email filters and blocklists), integrations, AI, backups, data, and account.
 - **Email-to-Inbox**: Integration of email parsing (`mailparser`) with Resend inbound webhooks for capturing information directly from emails, including attachment handling and user-configurable filtering (auto-replies, calendar invites, blocklists).
 - **Date Handling**: Timezone-aware date utilities using `date-fns-tz`.
+- **Session Management**: DB-backed sessions with opportunistic and cron-based cleanup of expired sessions, and a UI for users to view and revoke active sessions.
+- **Google Drive Integration**: Utilizes the Google Drive API for linking and encrypting Drive tokens, featuring a 4-step wizard for OAuth.
 - **Queueing**: A priority-aware in-memory dispatch queue with DB-backed rate limiting.
 - **Error Handling & Logging**: Comprehensive audit logging and Pino for structured logging.
+- **Extensible Command and Shortcut Registries**: Context-based registries for managing application commands and keyboard shortcuts.
+- **UI/UX Decisions**:
+    - Desktop-first design.
+    - Component splitting (e.g., `task-inspector`, `tasks-sidebar`) for better maintainability and performance.
+    - `React.memo` for performance optimization in list items.
+    - Narrowed Prisma `select` statements to retrieve only necessary fields, reducing wire payload and improving type inference.
 
-## Configuration Files
-- `tailwind.config.ts` — Stratum tokens + animations
-- `next.config.mjs` — `allowedDevOrigins: ['*']`, dev cache disabled
-- `tsconfig.json` — strict mode, `noUncheckedIndexedAccess`, path aliases
-- `prisma/schema.prisma` — Wave 1 full schema
+## External Dependencies
+- **Next.js**: Application framework
+- **React**: UI library
+- **TypeScript**: Programming language
+- **Tailwind CSS**: Utility-first CSS framework
+- **Radix UI, cmdk, vaul, sonner**: UI component primitives
+- **next-themes**: Theming solution
+- **Replit OIDC (openid-client)**: Authentication service
+- **PostgreSQL**: Database
+- **Prisma**: ORM for database interaction
+- **tRPC**: Type-safe API layer
+- **Anthropic Claude**: AI service via Replit integration
+- **Replit Object Storage**: Cloud storage for attachments
+- **Pino + pino-pretty**: Logging
+- **Node.js crypto**: AES-256-GCM for encryption
+- **Google Drive API (googleapis)**: For Google Drive integration
+- **date-fns-tz**: Date and time utilities
+- **mailparser**: For parsing email content
+- **Resend**: Email service for inbound webhooks and outbound verification emails
+
+## End-to-End Tests
+Playwright-based scripts in `e2e/` run against a live server. Shared auth/browser helpers live in `e2e/helpers.mjs`. Each scenario is a standalone `.e2e.mjs` file:
+- `task-list.e2e.mjs` — create task → edit title in inspector → reload → persist
+- `task-complete.e2e.mjs` — create task → complete via checkbox → verify in completed list
+- `quick-capture.e2e.mjs` — open capture modal → submit task → verify in inbox
+- `project-context.e2e.mjs` — create project and context via sidebar
+- `sign-out.e2e.mjs` — sign out via user menu → verify redirect to sign-in
+- `forecast.e2e.mjs` — visit forecast view → verify day columns rendered
 
 ## Auth Flow
 1. `/sign-in` → user clicks → `/api/auth/login` → Replit OIDC → `/api/auth/callback`
