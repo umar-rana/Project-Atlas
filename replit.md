@@ -38,6 +38,7 @@ thresholdImpact, exportStats) is wired up. The capture modal is updated to use t
 - `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` — Anthropic credentials (Replit blueprint)
 - `CRON_SECRET` — Bearer secret for `POST /api/cron/cleanup-sessions`; **required in production** (endpoint returns 503 if unset outside dev)
 - `RESEND_WEBHOOK_SECRET` — Resend/svix webhook signing secret for `POST /api/email/inbound`; if unset, signature check is skipped (dev only); in production, set this to the secret from the Resend dashboard (format: `whsec_...`)
+- `RESEND_API_KEY` — Resend outbound API key for sending the inbox verification test email from `Settings → Capture → Verify routing`. Falls back to `RESEND_KEY` if `RESEND_API_KEY` is not set. If neither is set, the `emails.sendVerificationEmail` mutation returns a clear error.
 
 ## Project Structure
 ```

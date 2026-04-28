@@ -517,6 +517,26 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
   const [copiedDirect, setCopiedDirect] = useState(false);
   const [copiedPlain, setCopiedPlain] = useState(false);
   const [optimisticChips, setOptimisticChips] = useState<string[] | null>(null);
+  const [verifyState, setVerifyState] = useState<
+    | { status: "idle" }
+    | { status: "success"; message: string }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
+
+  const sendVerification = trpc.emails.sendVerificationEmail.useMutation({
+    onSuccess: (data) => {
+      setVerifyState({
+        status: "success",
+        message: `Test email sent to ${data.recipient}. Check your inbox in a moment.`,
+      });
+    },
+    onError: (err) => {
+      setVerifyState({
+        status: "error",
+        message: err.message || "Could not send the test email. Please try again.",
+      });
+    },
+  });
 
   const directAddress = `inbox+${userId}@${EMAIL_DOMAIN}`;
   const plainAddress = `inbox@${EMAIL_DOMAIN}`;
@@ -633,6 +653,50 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
           <p className="font-ui text-2xs text-text-tertiary">
             <span className="font-medium text-text-secondary">Tip:</span> Use the direct address when forwarding from a different email account, or when emailing via an alias. Forwarded emails are supported — the original sender is extracted where possible.
           </p>
+        </div>
+
+        <div className="mt-4 border-t border-border-subtle pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-ui text-sm font-medium text-text-primary">Verify routing</p>
+              <p className="font-ui text-xs text-text-tertiary">
+                Send a one-time test email to{" "}
+                <span className="font-medium text-text-secondary">{userEmail}</span> to confirm Atlas can reach you.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setVerifyState({ status: "idle" });
+                sendVerification.mutate();
+              }}
+              disabled={sendVerification.isPending}
+              className={cn(
+                "shrink-0 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-primary transition-colors",
+                "hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-60",
+              )}
+            >
+              {sendVerification.isPending ? "Sending…" : "Send test email"}
+            </button>
+          </div>
+          {verifyState.status !== "idle" && (
+            <div
+              role="status"
+              className={cn(
+                "mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 font-ui text-xs",
+                verifyState.status === "success"
+                  ? "border-accent-success bg-accent-success-muted text-accent-success"
+                  : "border-accent-danger bg-accent-danger-muted text-accent-danger",
+              )}
+            >
+              {verifyState.status === "success" ? (
+                <Check size={13} className="mt-0.5 shrink-0" />
+              ) : (
+                <X size={13} className="mt-0.5 shrink-0" />
+              )}
+              <span>{verifyState.message}</span>
+            </div>
+          )}
         </div>
       </div>
 
