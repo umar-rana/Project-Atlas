@@ -246,7 +246,22 @@ export async function POST(req: NextRequest) {
     const sender = finalFromAddress.toLowerCase().trim();
     const isBlocked = blocklist.some((blocked) => {
       if (!blocked) return false;
-      return sender === blocked || sender.endsWith(`@${blocked}`);
+      // Exact email match
+      if (sender === blocked) return true;
+      // Domain match: "example.com" blocks "user@example.com"
+      if (sender.endsWith(`@${blocked}`)) return true;
+      // Wildcard subdomain: "*.example.com" blocks "user@sub.example.com"
+      if (blocked.startsWith('*.')) {
+        const domainSuffix = blocked.slice(1); // e.g. ".example.com"
+        const senderDomain = sender.includes('@') ? (sender.split('@')[1] ?? '') : '';
+        if (senderDomain.endsWith(domainSuffix)) return true;
+      }
+      // Wildcard local-part: "*@newsletters.example.com" blocks any email @newsletters.example.com
+      if (blocked.startsWith('*@')) {
+        const atDomain = blocked.slice(1); // e.g. "@newsletters.example.com"
+        if (sender.endsWith(atDomain)) return true;
+      }
+      return false;
     });
     if (isBlocked) {
       discardReason = "blocklisted";

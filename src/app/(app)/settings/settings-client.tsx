@@ -395,7 +395,16 @@ function Toggle({
 function isValidEmailOrDomain(value: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const domainRegex = /^(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
-  return emailRegex.test(value) || domainRegex.test(value);
+  // *.example.com or *.sub.example.com — wildcard subdomain block
+  const wildcardDomainRegex = /^\*\.([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+  // *@newsletters.example.com — wildcard local-part block
+  const wildcardEmailRegex = /^\*@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
+  return (
+    emailRegex.test(value) ||
+    domainRegex.test(value) ||
+    wildcardDomainRegex.test(value) ||
+    wildcardEmailRegex.test(value)
+  );
 }
 
 function BlocklistChipInput({
@@ -486,7 +495,7 @@ function BlocklistChipInput({
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={disabled}
-          placeholder={chips.length === 0 ? "noreply@example.com or example.com" : ""}
+          placeholder={chips.length === 0 ? "noreply@example.com, example.com, *.example.com, or *@example.com" : ""}
           className="min-w-[160px] flex-1 bg-transparent font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
         />
       </div>
@@ -494,7 +503,7 @@ function BlocklistChipInput({
         <p className="font-ui text-2xs text-accent-warning">Already in the blocklist.</p>
       )}
       {invalidHint && (
-        <p className="font-ui text-2xs text-accent-warning">Enter a valid email address or domain (e.g. example.com).</p>
+        <p className="font-ui text-2xs text-accent-warning">Enter a valid email, domain, or wildcard pattern (e.g. example.com, *.example.com, or *@example.com).</p>
       )}
     </div>
   );
