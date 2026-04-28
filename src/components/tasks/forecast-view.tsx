@@ -378,7 +378,7 @@ export function ForecastView(): React.ReactElement {
               <div className="flex items-center gap-2 border-b border-border-subtle bg-surface-sunken px-3 py-1.5">
                 <Calendar size={12} className="text-text-tertiary" />
                 <span className="font-ui text-2xs text-text-tertiary">
-                  Google Calendar not connected — events won't appear.
+                  Google Calendar not connected — events won&apos;t appear.
                 </span>
                 <a
                   href="/settings?section=integrations"

@@ -336,7 +336,7 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
             <div className="rounded-md border border-dashed border-border-subtle py-6 text-center">
               <p className="font-ui text-sm text-text-tertiary">No projects in this folder</p>
               <p className="font-ui text-2xs text-text-disabled">
-                Drag projects here from the sidebar, or move them from a project's settings.
+                Drag projects here from the sidebar, or move them from a project&apos;s settings.
               </p>
             </div>
           )}
