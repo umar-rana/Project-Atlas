@@ -123,7 +123,8 @@ User, Session, AuditLog, IntegrationToken, SyncState, RateLimitTracker, AICallLo
 - `Start application` workflow: `npm run dev`
 - Storybook workflow: `npm run storybook` (port 6000)
 - Type check: `npx tsc --noEmit` (zero errors)
-- Unit tests: `npx vitest run` (14 date utility tests pass)
+- Unit + component tests: `npx vitest run` (jsdom; 30 tests — date utilities + `TaskInspector` and `TaskListItem` smoke tests including a `React.memo` regression check)
+- E2E happy-path: `npm run test:e2e` (manual; needs `APP_URL` + `ATLAS_SESSION_COOKIE` env vars — see README "Tests")
 
 ## Replit-Specific Setup
 - Binds to `0.0.0.0:5000` for proxy iframe compatibility

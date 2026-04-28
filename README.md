@@ -92,9 +92,39 @@ npm run build             # Production build
 npm run start             # Run production build
 npm run lint              # eslint . (zero warnings allowed)
 npm run type-check        # tsc --noEmit (strict)
+npm run test              # Vitest (unit + component tests, jsdom)
+npm run test:watch        # Vitest in watch mode
+npm run test:e2e          # Playwright happy-path against a running app (see below)
 npm run storybook         # Storybook on :6006
 npm run build-storybook   # Static Storybook export
 ```
+
+## Tests
+
+- **Unit + component tests** — `npm run test` runs Vitest in a jsdom
+  environment. Covers core date utilities (`src/core/dates/dates.test.ts`)
+  and component smoke tests for the task list:
+  - `src/components/tasks/__tests__/task-list-item.test.tsx` — renders the
+    row and proves `React.memo` skips re-renders when props are referentially
+    stable. Will fail loudly if `TaskListItem` ever loses memoization.
+  - `src/components/tasks/__tests__/task-inspector.test.tsx` — renders the
+    inspector, switches between the Details / Activity tabs, and asserts the
+    `tasks.update` mutation fires with the expected payload when the title is
+    edited and blurred.
+- **End-to-end happy-path** — `npm run test:e2e` runs `e2e/task-list.e2e.mjs`
+  via `playwright-core`. It is **not** automated yet because Atlas is gated
+  behind Replit OIDC; sign in via your browser, copy the `atlas_session`
+  cookie, and run:
+
+  ```bash
+  APP_URL=https://<your-repl>.replit.dev \
+  ATLAS_SESSION_COOKIE=<session cookie value> \
+  npm run test:e2e
+  ```
+
+  The script creates a task via the quick-add input, opens the inspector,
+  edits the title, reloads, and asserts the new title persists. Exit code
+  `0` on success, `1` on failure.
 
 ## Deployment
 
