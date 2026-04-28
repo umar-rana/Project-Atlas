@@ -143,7 +143,7 @@ needs its own dedicated migration task with a reproducible verification plan.
 Apply them in isolation, not bundled together.
 
 - **Prisma 5 → 7**: schema/connection-URL changes; `prisma migrate` semantics shift; some types renamed.
-- **Next.js 15 → 16**: `next lint` is removed (already deprecation-warning today); router/cache defaults change.
+- **Next.js 15 → 16**: router/cache defaults change. (`next lint` migration to direct ESLint CLI was completed in Task #73.)
 - **Tailwind 3 → 4**: new engine + config format (`@theme` directive), full design-token migration required.
 - **Zod 3 → 4**: new error format, `safeParse` shape changes, deprecated APIs removed — touches every router input schema.
 - **Vitest 2 → 4** (and the chained `@vitest/*` packages): config file shape and reporter API moved.
@@ -154,6 +154,16 @@ Apply them in isolation, not bundled together.
 Safe patch updates **were** applied in #69: `openid-client→6.8.4`, `@typescript-eslint/{eslint-plugin,parser}→8.59.1`, `postcss→8.5.12`.
 
 ## Recent Changes
+- 2026-04-28: Linter migration to direct ESLint CLI (Task #73):
+  - Ran `npx @next/codemod@canary next-lint-to-eslint-cli .` and finished the migration manually:
+    - `package.json` script `lint`: `next lint` → `eslint .` (no more deprecation banner; future-proof for Next.js 16 which removes `next lint`).
+    - Replaced `.eslintrc.json` with flat config `eslint.config.mjs` (uses `@eslint/eslintrc` `FlatCompat` to keep loading legacy `next/core-web-vitals`, `prettier`, and `plugin:storybook/recommended` configs since `eslint-config-next@15` is still legacy; v16 will ship native flat config).
+    - Preserved the existing `@typescript-eslint/no-unused-vars` override (warn, `^_` ignore pattern) verbatim.
+    - Added `linterOptions.reportUnusedDisableDirectives: "off"` to match the legacy ESLint default — flat-config v9 defaults this to `"warn"`, which would have introduced 4 brand-new warnings purely from the migration (`src/core/capture/parser/tier-1-local.ts`, `src/core/commands/registry.tsx`, `src/core/shortcuts/registry.tsx`).
+    - Added `ignores` for `.next/`, `node_modules/`, `storybook-static/`, `public/` (compiled storybook bundles), `scripts/`, `.local/` (skill scaffolding), `.replit_integration_files/`, `.storybook/`, and `next-env.d.ts` to mirror what `next lint` actually scanned (it only walked `src/`, `app/`, `pages/`, `components/`, `lib/`).
+  - README updated (`npm run lint` comment now says `eslint .`); replit.md "Deferred Major Upgrades" entry for Next.js 16 no longer warns about `next lint` removal.
+  - Verification: `npm run lint` exits clean (0 errors, 0 warnings, no deprecation banner).
+
 - 2026-04-28: End-to-end code review pass (Task #69):
   - Patch updates: `openid-client→6.8.4`, `@typescript-eslint/{eslint-plugin,parser}→8.59.1`, `postcss→8.5.12` (no breaking changes).
   - Cleared all 10 ESLint warnings (unused vars in sign-in, capture-modal, health, forecast-view, review-session; missing-dep effects in folder-detail-view + review-session); resolved a TS2589 ("excessively deep") error in `forecast-view.tsx` by depending on a scalar derived from `meData` rather than the full query object.

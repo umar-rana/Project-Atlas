@@ -90,7 +90,7 @@ follow.
 npm run dev               # Next.js dev server on :5000
 npm run build             # Production build
 npm run start             # Run production build
-npm run lint              # next lint (zero warnings allowed)
+npm run lint              # eslint . (zero warnings allowed)
 npm run type-check        # tsc --noEmit (strict)
 npm run storybook         # Storybook on :6006
 npm run build-storybook   # Static Storybook export
