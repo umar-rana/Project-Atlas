@@ -125,6 +125,7 @@ User, Session, AuditLog, IntegrationToken, SyncState, RateLimitTracker, AICallLo
 - Type check: `npx tsc --noEmit` (zero errors)
 - Unit + component tests: `npx vitest run` (jsdom; 30 tests — date utilities + `TaskInspector` and `TaskListItem` smoke tests including a `React.memo` regression check)
 - E2E happy-path: `npm run test:e2e` (manual; needs `APP_URL` + `ATLAS_SESSION_COOKIE` env vars — see README "Tests")
+- CI: `.github/workflows/ci.yml` runs `npm run lint`, `npm run type-check`, and `npm run test` on every push and PR to `main` (Node 20, npm cache). Status badge in README links to the latest run.
 
 ## Replit-Specific Setup
 - Binds to `0.0.0.0:5000` for proxy iframe compatibility

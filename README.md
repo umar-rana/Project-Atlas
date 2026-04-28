@@ -1,5 +1,7 @@
 # Atlas
 
+[![CI](../../actions/workflows/ci.yml/badge.svg?branch=main)](../../actions/workflows/ci.yml)
+
 A desktop-first personal productivity command center. **Wave 0** ships only the
 project skeleton, the **Stratum** design token system, the theme switcher, the
 Storybook workshop, and the foundational primitive / composed / layout
@@ -101,6 +103,11 @@ npm run build-storybook   # Static Storybook export
 
 ## Tests
 
+- **Continuous integration** — `.github/workflows/ci.yml` runs `npm run lint`,
+  `npm run type-check`, and `npm run test` on every push and pull request
+  targeting `main`. The job fails (and blocks the PR) if any step fails, so
+  regressions can't land unnoticed. The status badge at the top of this README
+  links to the latest run.
 - **Unit + component tests** — `npm run test` runs Vitest in a jsdom
   environment. Covers core date utilities (`src/core/dates/dates.test.ts`)
   and component smoke tests for the task list:
