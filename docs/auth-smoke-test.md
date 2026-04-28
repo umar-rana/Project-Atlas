@@ -26,7 +26,6 @@ Verified: 2026-04-27 against live Replit dev domain.
   - `redirect_uri` pointing back to the live app's `/api/auth/callback`
   - `scope` includes `openid email profile offline_access`
   - `state` is a fresh random 32-char hex string per request
-  - `client_id` is the Replit REPL_ID
 - Tests 3–5 confirm the Edge middleware correctly blocks unauthenticated access and preserves the `from` redirect parameter
 - Test 7 confirms the callback route's state validation works: missing OIDC cookie → safe redirect to sign-in
 
