@@ -21,6 +21,7 @@ import {
   Check,
   ExternalLink,
   X,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -509,14 +510,16 @@ function BlocklistChipInput({
   );
 }
 
-function CaptureSection({ userId }: { userId: string }) {
+function CaptureSection({ userId, userEmail }: { userId: string; userEmail: string }) {
   const utils = trpc.useUtils();
   const { data: rawUserData } = trpc.user.me.useQuery(undefined, { refetchOnWindowFocus: false });
   const userData = rawUserData as User | undefined;
-  const [copied, setCopied] = useState(false);
+  const [copiedDirect, setCopiedDirect] = useState(false);
+  const [copiedPlain, setCopiedPlain] = useState(false);
   const [optimisticChips, setOptimisticChips] = useState<string[] | null>(null);
 
-  const inboxAddress = `inbox+${userId}@${EMAIL_DOMAIN}`;
+  const directAddress = `inbox+${userId}@${EMAIL_DOMAIN}`;
+  const plainAddress = `inbox@${EMAIL_DOMAIN}`;
 
   const { data: emailsData, isLoading: emailsLoading } = trpc.emails.list.useQuery(
     { limit: 10 },
@@ -542,10 +545,17 @@ function CaptureSection({ userId }: { userId: string }) {
     : [];
   const displayedChips = optimisticChips ?? blocklistArray;
 
-  function handleCopy() {
-    navigator.clipboard.writeText(inboxAddress).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  function handleCopyDirect() {
+    navigator.clipboard.writeText(directAddress).then(() => {
+      setCopiedDirect(true);
+      setTimeout(() => setCopiedDirect(false), 2000);
+    });
+  }
+
+  function handleCopyPlain() {
+    navigator.clipboard.writeText(plainAddress).then(() => {
+      setCopiedPlain(true);
+      setTimeout(() => setCopiedPlain(false), 2000);
     });
   }
 
@@ -564,24 +574,66 @@ function CaptureSection({ userId }: { userId: string }) {
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Email-to-inbox</h3>
         <p className="mb-4 font-ui text-xs text-text-secondary">
-          Forward or send emails to the address below and they will appear as Inbox tasks automatically.
+          Forward or send emails to one of the addresses below and they will appear as Inbox tasks automatically.
         </p>
 
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2">
-          <code className="flex-1 font-mono text-sm text-text-primary break-all">{inboxAddress}</code>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
-            title="Copy address"
-          >
-            {copied ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
-          </button>
+        <div className="flex flex-col gap-3">
+          <div>
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <span className="rounded-full bg-accent-success-muted px-2 py-0.5 font-ui text-2xs font-medium text-accent-success">
+                Always works
+              </span>
+              <span className="font-ui text-xs font-medium text-text-primary">Direct address</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2">
+              <code className="flex-1 font-mono text-sm text-text-primary break-all">{directAddress}</code>
+              <button
+                type="button"
+                onClick={handleCopyDirect}
+                className="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                title="Copy address"
+              >
+                {copiedDirect ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
+              </button>
+            </div>
+            <p className="mt-1 font-ui text-2xs text-text-tertiary">
+              Your personal inbox address. Emails sent here are always routed to your account, regardless of which address you send from.
+            </p>
+          </div>
+
+          <div className="h-px bg-border-subtle" />
+
+          <div>
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <span className="rounded-full bg-accent-warning-muted px-2 py-0.5 font-ui text-2xs font-medium text-accent-warning">
+                Sender must match
+              </span>
+              <span className="font-ui text-xs font-medium text-text-primary">Plain address</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2">
+              <code className="flex-1 font-mono text-sm text-text-primary break-all">{plainAddress}</code>
+              <button
+                type="button"
+                onClick={handleCopyPlain}
+                className="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                title="Copy address"
+              >
+                {copiedPlain ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
+              </button>
+            </div>
+            <p className="mt-1 font-ui text-2xs text-text-tertiary">
+              Shared inbox address. Only works when you email from{" "}
+              <span className="font-medium text-text-secondary">{userEmail}</span> — the address registered on your account.
+            </p>
+          </div>
         </div>
 
-        <p className="font-ui text-2xs text-text-tertiary">
-          Forwarded emails are supported. The original sender is extracted where possible.
-        </p>
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-border-subtle bg-surface-sunken px-3 py-2.5">
+          <Info size={13} className="mt-0.5 shrink-0 text-text-tertiary" />
+          <p className="font-ui text-2xs text-text-tertiary">
+            <span className="font-medium text-text-secondary">Tip:</span> Use the direct address when forwarding from a different email account, or when emailing via an alias. Forwarded emails are supported — the original sender is extracted where possible.
+          </p>
+        </div>
       </div>
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
@@ -646,7 +698,7 @@ function CaptureSection({ userId }: { userId: string }) {
           <div className="rounded-lg border border-border-dashed border-dashed bg-surface-sunken px-4 py-8 text-center">
             <p className="font-ui text-sm text-text-tertiary">No emails received yet.</p>
             <p className="mt-1 font-ui text-xs text-text-tertiary">
-              Send an email to <span className="font-medium text-text-secondary">{inboxAddress}</span> to get started.
+              Send an email to <span className="font-medium text-text-secondary">{directAddress}</span> to get started.
             </p>
           </div>
         ) : (
@@ -1625,7 +1677,7 @@ export function SettingsClient({
     <div className="h-full overflow-y-auto p-6">
       {section === "profile" && <ProfileSection initialUser={user} />}
       {section === "appearance" && <AppearanceSection />}
-      {section === "capture" && <CaptureSection userId={user.id} />}
+      {section === "capture" && <CaptureSection userId={user.id} userEmail={user.email} />}
       {section === "tasks" && <TasksSection />}
       {section === "integrations" && (
         <IntegrationsSection
