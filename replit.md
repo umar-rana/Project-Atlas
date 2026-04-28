@@ -123,9 +123,18 @@ User, Session, AuditLog, IntegrationToken, SyncState, RateLimitTracker, AICallLo
 - `Start application` workflow: `npm run dev`
 - Storybook workflow: `npm run storybook` (port 6000)
 - Type check: `npx tsc --noEmit` (zero errors)
-- Unit + component tests: `npx vitest run` (jsdom; 30 tests — date utilities + `TaskInspector` and `TaskListItem` smoke tests including a `React.memo` regression check)
-- E2E happy-path: `npm run test:e2e` (manual; needs `APP_URL` + `ATLAS_SESSION_COOKIE` env vars — see README "Tests")
-- CI: `.github/workflows/ci.yml` runs `npm run lint`, `npm run type-check`, and `npm run test` on every push and PR to `main` (Node 20, npm cache). Status badge in README links to the latest run.
+- Unit + component tests: `npx vitest run` (jsdom; 36 tests — date utilities, `TaskInspector` and `TaskListItem` smoke tests including a `React.memo` regression check, and the `/api/auth/test-login` route guards)
+- E2E happy-path: `npm run test:e2e`. Two auth modes: (a) **CI mode** with `E2E_AUTH_SECRET` (POSTs `/api/auth/test-login` to mint a session for `e2e@atlas.test`); (b) **Manual mode** with `ATLAS_SESSION_COOKIE` (browser-copied). See README "Tests".
+- CI: `.github/workflows/ci.yml` has two jobs:
+  1. `verify` — `npm run lint`, `npm run type-check`, `npm run test` on every push and PR to `main` (Node 20, npm cache).
+  2. `e2e` — needs `verify`. Spins up Postgres 16 service, generates Prisma client, applies migrations, builds Next, starts `npm start`, waits for `/api/health`, installs Playwright Chromium, then runs `npm run test:e2e` against `http://localhost:5000` using `E2E_AUTH_SECRET`. A failing run blocks the PR.
+  Status badge in README links to the latest run.
+
+## Test-only Auth Bypass (`/api/auth/test-login`)
+- Route at `src/app/api/auth/test-login/route.ts`. Provisions a deterministic `e2e@atlas.test` user and mints a normal `atlas_session` cookie via `createSession`.
+- **Disabled by default** with two-layer guard: returns 404 unless `E2E_AUTH_SECRET` is set with length ≥ 32, AND (when `NODE_ENV=production`) `E2E_ALLOW_IN_PRODUCTION=1` is also set. CI sets both because `next start` forces `NODE_ENV=production`. **Neither var must EVER be set in production.**
+- When enabled, callers must present `Authorization: Bearer <secret>` (constant-time compared). Used by the CI e2e job and the e2e script.
+- Listed in `PUBLIC_PATHS` in `src/middleware.ts` so unauthenticated callers can reach it.
 
 ## Replit-Specific Setup
 - Binds to `0.0.0.0:5000` for proxy iframe compatibility

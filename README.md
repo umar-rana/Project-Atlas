@@ -105,9 +105,12 @@ npm run build-storybook   # Static Storybook export
 
 - **Continuous integration** — `.github/workflows/ci.yml` runs `npm run lint`,
   `npm run type-check`, and `npm run test` on every push and pull request
-  targeting `main`. The job fails (and blocks the PR) if any step fails, so
-  regressions can't land unnoticed. The status badge at the top of this README
-  links to the latest run.
+  targeting `main`. A second job spins up a Postgres service, builds Atlas,
+  starts it, and runs the Playwright happy-path script (see below). Both jobs
+  fail (and block the PR) if any step fails, so regressions — including ones
+  in the real sign-in → quick-add → inspector edit flow — can't land
+  unnoticed. The status badge at the top of this README links to the latest
+  run.
 - **Unit + component tests** — `npm run test` runs Vitest in a jsdom
   environment. Covers core date utilities (`src/core/dates/dates.test.ts`)
   and component smoke tests for the task list:
@@ -119,19 +122,45 @@ npm run build-storybook   # Static Storybook export
     `tasks.update` mutation fires with the expected payload when the title is
     edited and blurred.
 - **End-to-end happy-path** — `npm run test:e2e` runs `e2e/task-list.e2e.mjs`
-  via `playwright-core`. It is **not** automated yet because Atlas is gated
-  behind Replit OIDC; sign in via your browser, copy the `atlas_session`
-  cookie, and run:
+  via `playwright-core`. The script creates a task via the quick-add input,
+  opens the inspector, edits the title, reloads, and asserts the new title
+  persists. Exit code `0` on success, `1` on failure.
 
-  ```bash
-  APP_URL=https://<your-repl>.replit.dev \
-  ATLAS_SESSION_COOKIE=<session cookie value> \
-  npm run test:e2e
-  ```
+  It supports two auth modes:
 
-  The script creates a task via the quick-add input, opens the inspector,
-  edits the title, reloads, and asserts the new title persists. Exit code
-  `0` on success, `1` on failure.
+  1. **CI mode** (used by the `e2e` job in `ci.yml`) — set `E2E_AUTH_SECRET`
+     to a value of length ≥ 32. The script POSTs that secret to
+     `/api/auth/test-login`, which provisions a deterministic `e2e@atlas.test`
+     user and mints a normal session cookie. The endpoint is gated by two
+     env vars: it returns 404 unless `E2E_AUTH_SECRET` is set, AND when
+     `NODE_ENV=production` (e.g. under `next start`) it additionally
+     requires `E2E_ALLOW_IN_PRODUCTION=1` — defense in depth so a
+     stray secret in prod still keeps the bypass disabled.
+     **Neither `E2E_AUTH_SECRET` nor `E2E_ALLOW_IN_PRODUCTION` must EVER
+     be set in the production deployment.**
+
+     ```bash
+     APP_URL=http://localhost:5000 \
+     E2E_AUTH_SECRET=<32+ char secret> \
+     npm run test:e2e
+     ```
+
+  2. **Manual mode** — sign in via your browser, copy the value of the
+     `atlas_session` cookie, and run:
+
+     ```bash
+     APP_URL=https://<your-repl>.replit.dev \
+     ATLAS_SESSION_COOKIE=<session cookie value> \
+     npm run test:e2e
+     ```
+
+  In CI, `.github/workflows/ci.yml` boots a Postgres service, runs
+  `prisma migrate deploy`, builds the app with `npm run build`, starts it
+  with `npm start`, waits for `/api/health`, then runs the script in CI
+  mode. A failing run blocks the PR just like the lint/type-check/unit
+  steps do. The `E2E_AUTH_SECRET` and `E2E_SESSION_SECRET` repository
+  secrets override the workflow's built-in fallback values; setting them
+  is recommended but not required.
 
 ## Deployment
 

@@ -2,15 +2,35 @@
 // reload → confirm persistence".
 //
 // This script uses `playwright-core` (already a devDependency) so we don't
-// need to install the full `@playwright/test` runner. Run it manually with:
+// need to install the full `@playwright/test` runner.
 //
+// There are two ways to authenticate:
+//
+//   1. CI / automated mode (preferred) — set `E2E_AUTH_SECRET` to the same
+//      value the server has configured. The script POSTs to
+//      `/api/auth/test-login` with `Authorization: Bearer <secret>` to mint
+//      a fresh session for the deterministic `e2e@atlas.test` user. The
+//      server-side endpoint is fully disabled unless that env var is set
+//      with length >= 32, so it is safe to ship in any environment that
+//      doesn't set the secret.
+//
+//   2. Local / manual mode — sign in via your browser, copy the value of
+//      the `atlas_session` cookie, and pass it via `ATLAS_SESSION_COOKIE`.
+//      This is the original workflow and still works.
+//
+// Examples:
+//
+//   # CI mode (against an ephemeral local server):
+//   APP_URL=http://localhost:5000 \
+//   E2E_AUTH_SECRET=<32+ char secret> \
+//   node e2e/task-list.e2e.mjs
+//
+//   # Local mode against your Repl:
 //   APP_URL=https://<your-repl>.replit.dev \
 //   ATLAS_SESSION_COOKIE=<value of the `atlas_session` cookie> \
 //   node e2e/task-list.e2e.mjs
 //
-// The session cookie is required because the app is gated behind Replit
-// OIDC; copy it out of your browser devtools after logging in. Failures
-// exit with code 1 so this can be wired into CI later.
+// Failures exit with code 1 so this can be wired into CI.
 //
 // What it does:
 //   1. Visits /tasks/inbox.
@@ -26,22 +46,58 @@ const APP_URL = process.env.APP_URL ?? process.env.REPLIT_DEV_DOMAIN
   ? (process.env.APP_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`)
   : "http://localhost:5000";
 const SESSION_COOKIE = process.env.ATLAS_SESSION_COOKIE;
-const COOKIE_NAME = process.env.ATLAS_SESSION_COOKIE_NAME ?? "atlas_session";
+const COOKIE_NAME_OVERRIDE = process.env.ATLAS_SESSION_COOKIE_NAME;
+const E2E_AUTH_SECRET = process.env.E2E_AUTH_SECRET;
 const CHROMIUM =
   process.env.CHROMIUM_PATH ||
   process.env.REPLIT_PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
   undefined;
 
-if (!SESSION_COOKIE) {
+if (!SESSION_COOKIE && !E2E_AUTH_SECRET) {
   console.error(
-    "[e2e] Missing ATLAS_SESSION_COOKIE env var. Sign in to the app in a browser, copy the value of the `atlas_session` cookie, and re-run with ATLAS_SESSION_COOKIE=<value>.",
+    "[e2e] Missing credentials. Set either E2E_AUTH_SECRET (CI mode, hits " +
+      "/api/auth/test-login) or ATLAS_SESSION_COOKIE (manual mode, copy " +
+      "from your browser after signing in).",
   );
   process.exit(2);
+}
+
+async function obtainSessionViaTestLogin(appUrl, secret) {
+  const url = new URL("/api/auth/test-login", appUrl).toString();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "User-Agent": "atlas-e2e",
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(
+      `test-login failed: ${res.status} ${res.statusText}` +
+        (body ? ` — ${body.slice(0, 200)}` : ""),
+    );
+  }
+  const json = await res.json();
+  if (!json?.cookieName || !json?.cookieValue) {
+    throw new Error("test-login returned no cookie payload");
+  }
+  return { name: json.cookieName, value: json.cookieValue };
 }
 
 const stamp = Date.now();
 const ORIGINAL_TITLE = `e2e quick task ${stamp}`;
 const EDITED_TITLE = `${ORIGINAL_TITLE} — edited`;
+
+let cookieName = COOKIE_NAME_OVERRIDE ?? "atlas_session";
+let cookieValue = SESSION_COOKIE;
+
+if (E2E_AUTH_SECRET) {
+  console.log(`[e2e] minting CI session via ${APP_URL}/api/auth/test-login`);
+  const minted = await obtainSessionViaTestLogin(APP_URL, E2E_AUTH_SECRET);
+  cookieName = COOKIE_NAME_OVERRIDE ?? minted.name;
+  cookieValue = minted.value;
+}
 
 const browser = await chromium.launch({
   ...(CHROMIUM ? { executablePath: CHROMIUM } : {}),
@@ -57,8 +113,8 @@ try {
   });
   await context.addCookies([
     {
-      name: COOKIE_NAME,
-      value: SESSION_COOKIE,
+      name: cookieName,
+      value: cookieValue,
       domain: url.hostname,
       path: "/",
       httpOnly: true,

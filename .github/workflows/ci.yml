@@ -37,3 +37,97 @@ jobs:
 
       - name: Unit and component tests
         run: npm run test
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: atlas
+          POSTGRES_PASSWORD: atlas
+          POSTGRES_DB: atlas_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atlas -d atlas_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://atlas:atlas@localhost:5432/atlas_e2e
+      SESSION_SECRET: ${{ secrets.E2E_SESSION_SECRET || 'ci-session-secret-do-not-use-anywhere-else-1234567890abcdef' }}
+      E2E_AUTH_SECRET: ${{ secrets.E2E_AUTH_SECRET || 'ci-e2e-auth-secret-do-not-use-anywhere-else-1234567890abcdef' }}
+      # `next start` forces NODE_ENV=production; the test-login route
+      # requires this opt-in flag too, so the bypass only activates in CI.
+      E2E_ALLOW_IN_PRODUCTION: "1"
+      APP_URL: http://localhost:5000
+      NODE_ENV: production
+      LOG_LEVEL: warn
+      # The OIDC code paths read these but the e2e flow never exercises them;
+      # set safe placeholders so module load doesn't throw.
+      REPL_ID: ci-placeholder
+      REPLIT_DEV_DOMAIN: localhost:5000
+      TOKEN_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Build app
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx --yes playwright@1.59.1 install --with-deps chromium
+
+      - name: Start app
+        run: |
+          nohup npm start > /tmp/atlas-server.log 2>&1 &
+          echo $! > /tmp/atlas-server.pid
+
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:5000/api/health > /dev/null; then
+              echo "App is up after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "App did not become ready in time. Server log:"
+          tail -n 200 /tmp/atlas-server.log || true
+          exit 1
+
+      - name: Run end-to-end test
+        run: npm run test:e2e
+
+      - name: Dump server log on failure
+        if: failure()
+        run: tail -n 500 /tmp/atlas-server.log || true
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -f /tmp/atlas-server.pid ]; then
+            kill "$(cat /tmp/atlas-server.pid)" 2>/dev/null || true
+          fi

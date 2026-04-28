@@ -336,7 +336,7 @@ describe("TaskList — bulk-action selection model", () => {
 
     const bulkComplete = mockState.mutates.get("tasks.bulkComplete");
     expect(bulkComplete?.mock.calls.length ?? 0).toBe(1);
-    const arg = bulkComplete!.mock.calls[0][0] as { ids: string[] };
+    const arg = bulkComplete!.mock.calls[0]![0] as { ids: string[] };
     expect([...arg.ids].sort()).toEqual(["t2", "t4"]);
   });
 });
