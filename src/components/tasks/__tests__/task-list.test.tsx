@@ -571,3 +571,113 @@ describe("TaskList — keyboard shortcuts", () => {
     expect(useTasksStore.getState().selectedTaskId).toBeNull();
   });
 });
+
+describe("TaskList — drag-and-drop reordering", () => {
+  beforeEach(() => {
+    for (const fn of mockState.mutates.values()) fn.mockClear();
+    for (const fn of mockState.mutateAsyncs.values()) fn.mockClear();
+    mockState.queries.tasksList = [
+      makeRow("t1"),
+      makeRow("t2"),
+      makeRow("t3"),
+      makeRow("t4"),
+      makeRow("t5"),
+    ];
+    resetStore();
+  });
+
+  function renderList() {
+    return render(
+      <TaskList
+        perspective="inbox"
+        title="Inbox"
+        enableQuickAdd={false}
+      />,
+    );
+  }
+
+  function row(container: HTMLElement, id: string) {
+    const el = container.querySelector(`[data-task-id="${id}"]`);
+    if (!el) throw new Error(`Row ${id} not found`);
+    return el as HTMLElement;
+  }
+
+  function dragTo(container: HTMLElement, sourceId: string, targetId: string) {
+    const src = row(container, sourceId);
+    const tgt = row(container, targetId);
+    const dataTransfer = { setData: vi.fn(), getData: vi.fn() };
+    act(() => {
+      fireEvent.dragStart(src, { dataTransfer });
+      fireEvent.dragOver(tgt, { dataTransfer });
+      fireEvent.drop(tgt, { dataTransfer });
+    });
+  }
+
+  it("dragging DOWN calls tasks.move with the correct before_id and after_id", () => {
+    // List: [t1, t2, t3, t4, t5]. Drag t1 → t3.
+    // sourceIdx=0 < targetIdx=2, so beforeIdx=2 (t3), afterIdx=3 (t4).
+    const { container } = renderList();
+    dragTo(container, "t1", "t3");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate).toHaveBeenCalledTimes(1);
+    expect(moveMutate?.mock.calls[0][0]).toEqual({
+      id: "t1",
+      before_id: "t3",
+      after_id: "t4",
+    });
+  });
+
+  it("dragging UP calls tasks.move with the correct before_id and after_id", () => {
+    // List: [t1, t2, t3, t4, t5]. Drag t4 → t2.
+    // sourceIdx=3 > targetIdx=1, so beforeIdx=0 (t1), afterIdx=1 (t2).
+    const { container } = renderList();
+    dragTo(container, "t4", "t2");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate).toHaveBeenCalledTimes(1);
+    expect(moveMutate?.mock.calls[0][0]).toEqual({
+      id: "t4",
+      before_id: "t1",
+      after_id: "t2",
+    });
+  });
+
+  it("dragging to the first position sends before_id: null", () => {
+    // List: [t1, t2, t3, t4, t5]. Drag t4 → t1.
+    // sourceIdx=3 > targetIdx=0, so beforeIdx=-1 (undefined→null), afterIdx=0 (t1).
+    const { container } = renderList();
+    dragTo(container, "t4", "t1");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate).toHaveBeenCalledTimes(1);
+    expect(moveMutate?.mock.calls[0][0]).toEqual({
+      id: "t4",
+      before_id: null,
+      after_id: "t1",
+    });
+  });
+
+  it("dragging to the last position sends after_id: null", () => {
+    // List: [t1, t2, t3, t4, t5]. Drag t1 → t5.
+    // sourceIdx=0 < targetIdx=4, so beforeIdx=4 (t5), afterIdx=5 (undefined→null).
+    const { container } = renderList();
+    dragTo(container, "t1", "t5");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate).toHaveBeenCalledTimes(1);
+    expect(moveMutate?.mock.calls[0][0]).toEqual({
+      id: "t1",
+      before_id: "t5",
+      after_id: null,
+    });
+  });
+
+  it("dropping a task onto itself does not call tasks.move", () => {
+    const { container } = renderList();
+    dragTo(container, "t3", "t3");
+
+    const moveMutate = mockState.mutates.get("tasks.move");
+    expect(moveMutate?.mock.calls.length ?? 0).toBe(0);
+  });
+});
