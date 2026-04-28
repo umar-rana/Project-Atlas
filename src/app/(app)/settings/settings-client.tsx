@@ -658,6 +658,7 @@ function CaptureSection({ userId }: { userId: string }) {
                   <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Subject</th>
                   <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Status</th>
                   <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Task</th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Block</th>
                 </tr>
               </thead>
               <tbody>
@@ -689,6 +690,31 @@ function CaptureSection({ userId }: { userId: string }) {
                       ) : (
                         <span className="font-ui text-xs text-text-tertiary">—</span>
                       )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {capture.from_address ? (() => {
+                        const addr = capture.from_address.trim().toLowerCase();
+                        const isBlocked = displayedChips.includes(addr);
+                        return (
+                          <button
+                            onClick={() => {
+                              const updated = isBlocked
+                                ? displayedChips.filter((c) => c !== addr)
+                                : [...displayedChips, addr];
+                              handleBlocklistChange(updated);
+                            }}
+                            disabled={updateMutation.isPending}
+                            className={cn(
+                              "rounded px-2 py-0.5 font-ui text-2xs font-medium transition-colors disabled:opacity-50",
+                              isBlocked
+                                ? "bg-surface-sunken text-text-secondary hover:bg-surface-overlay"
+                                : "bg-accent-danger-muted text-accent-danger hover:opacity-80",
+                            )}
+                          >
+                            {isBlocked ? "Unblock" : "Block"}
+                          </button>
+                        );
+                      })() : <span className="font-ui text-xs text-text-tertiary">—</span>}
                     </td>
                   </tr>
                 ))}
