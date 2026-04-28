@@ -13,8 +13,12 @@ interface TaskListItemProps {
   selected: boolean;
   isFocused: boolean;
   isMultiSelected: boolean;
-  onSelect: (e: React.MouseEvent) => void;
-  onMultiToggle: (e: React.MouseEvent) => void;
+  // The parent passes stable callbacks (wrapped in useCallback) and we forward
+  // the row's `task` so the parent doesn't have to allocate a per-row arrow on
+  // every render. This is what makes the `React.memo` wrapper below actually
+  // skip work — without stable refs the shallow prop compare always misses.
+  onSelect: (task: TaskRow, e: React.MouseEvent) => void;
+  onMultiToggle: (task: TaskRow, e: React.MouseEvent) => void;
   onDragStart?: (id: string) => void;
   onDragOver?: (id: string) => void;
   onDrop?: (targetId: string) => void;
@@ -35,7 +39,7 @@ function dueLabel(due: Date | null): string | null {
   return format(due, "MMM d");
 }
 
-export function TaskListItem({
+function TaskListItemImpl({
   task,
   selected,
   isFocused,
@@ -132,9 +136,9 @@ export function TaskListItem({
       }}
       onClick={(e) => {
         if (e.shiftKey || e.metaKey || e.ctrlKey) {
-          onMultiToggle(e);
+          onMultiToggle(task, e);
         } else {
-          onSelect(e);
+          onSelect(task, e);
         }
       }}
       className={cn(
@@ -330,3 +334,5 @@ export function TaskListItem({
     </div>
   );
 }
+
+export const TaskListItem = React.memo(TaskListItemImpl);

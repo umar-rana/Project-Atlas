@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Flag, X, Trash2, RotateCcw, Paperclip, Download } from "lucide-react";
+import { Flag, X, Trash2, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
@@ -10,6 +10,9 @@ import { useTasksStore } from "@/lib/tasks/store";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import { InboxProcessingSuggestions } from "./inbox-processing-suggestions";
+import { TaskInspectorAttachments } from "./task-inspector-attachments";
+import { TaskInspectorActivityTab } from "./task-inspector-activity-tab";
+import { TaskInspectorSubtasks } from "./task-inspector-subtasks";
 // Flat structural types mirroring the shape selected by the tasks.get
 // router (TASK_INCLUDE). We avoid `RouterOutputs["tasks"]["get"]` here
 // because Prisma's deeply-typed include trees push tsc into TS2589
@@ -41,12 +44,6 @@ interface InspectorTask {
   subtasks?: InspectorSubtask[];
   referenced_entity_refs: unknown;
 }
-interface ActivityEvent {
-  id: string;
-  action: string;
-  created_at: Date | string;
-  diff: unknown;
-}
 type EntityRef = { kind: string; id: string; label: string };
 
 function isEntityRefArray(value: unknown): value is EntityRef[] {
@@ -58,26 +55,6 @@ function isEntityRefArray(value: unknown): value is EntityRef[] {
       typeof (v as { kind?: unknown }).kind === "string" &&
       typeof (v as { id?: unknown }).id === "string" &&
       typeof (v as { label?: unknown }).label === "string",
-  );
-}
-
-function AttachmentThumbnail({ src, alt }: { src: string; alt: string }) {
-  const [failed, setFailed] = React.useState(false);
-  if (failed) {
-    return (
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-border-subtle bg-surface-base">
-        <Paperclip size={16} className="text-text-tertiary" />
-      </span>
-    );
-  }
-  return (
-    <img
-      src={src}
-      alt={alt}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className="h-12 w-12 shrink-0 rounded-sm object-cover"
-    />
   );
 }
 
@@ -103,12 +80,6 @@ function fmtDateForInput(d: Date | string | null | undefined): string {
   return format(date, "yyyy-MM-dd");
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.ReactElement {
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
   const utils = trpc.useUtils();
@@ -121,25 +92,6 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const tags = trpc.tags.list.useQuery({ limit: 500 });
   const tagCreate = trpc.tags.create.useMutation({
     onSuccess: () => utils.tags.list.invalidate(),
-  });
-  const subtaskCreate = trpc.tasks.create.useMutation({
-    onSettled: () => {
-      utils.tasks.get.invalidate({ id: taskId });
-      utils.tasks.list.invalidate();
-      utils.tasks.counts.invalidate();
-    },
-  });
-  const subtaskComplete = trpc.tasks.complete.useMutation({
-    onSettled: () => {
-      utils.tasks.get.invalidate({ id: taskId });
-      utils.tasks.list.invalidate();
-    },
-  });
-  const subtaskUncomplete = trpc.tasks.uncomplete.useMutation({
-    onSettled: () => {
-      utils.tasks.get.invalidate({ id: taskId });
-      utils.tasks.list.invalidate();
-    },
   });
   const update = trpc.tasks.update.useMutation({
     onError: () => toast.error("Save failed — try again"),
@@ -184,15 +136,6 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
       utils.tasks.get.invalidate({ id: taskId });
     },
   });
-  const attachments = trpc.attachments.byTaskId.useQuery(
-    { task_id: taskId },
-    { staleTime: 30_000, enabled: Boolean(taskId) },
-  );
-  const deleteAttachment = trpc.attachments.delete.useMutation({
-    onSuccess: () => utils.attachments.byTaskId.invalidate({ task_id: taskId }),
-    onError: () => toast.error("Failed to remove attachment"),
-  });
-  const activity = trpc.tasks.activity.useQuery({ id: taskId, limit: 30 });
   const parseLog = trpc.capture.getLogForTask.useQuery(
     { task_id: taskId },
     { staleTime: 60_000, enabled: Boolean(taskId) },
@@ -210,7 +153,6 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const [titleDraft, setTitleDraft] = React.useState("");
   const [notesDraft, setNotesDraft] = React.useState("");
   const [newTagInput, setNewTagInput] = React.useState("");
-  const [newSubtaskInput, setNewSubtaskInput] = React.useState("");
 
   const dataId = data?.id;
   const dataTitle = data?.title;
@@ -518,57 +460,12 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             />
           </section>
 
-          {(() => {
-            const subtasks: InspectorSubtask[] = taskData.subtasks ?? [];
-            return (
-              <section className="mt-4">
-                <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
-                  Subtasks
-                </h3>
-                {subtasks.length > 0 ? (
-                  <ul className="mb-1 flex flex-col gap-1">
-                    {subtasks.map((st) => (
-                      <li key={st.id} className="flex items-center gap-2 font-ui text-xs text-text-secondary">
-                        <Checkbox
-                          checked={st.status === "completed"}
-                          disabled={inTrash}
-                          onCheckedChange={(v) => {
-                            if (v) subtaskComplete.mutate({ id: st.id });
-                            else subtaskUncomplete.mutate({ id: st.id });
-                          }}
-                          aria-label={st.status === "completed" ? "Reopen subtask" : "Complete subtask"}
-                        />
-                        <span className={cn(st.status === "completed" && "text-text-tertiary line-through")}>
-                          {st.title}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {!inTrash ? (
-                  <input
-                    value={newSubtaskInput}
-                    onChange={(e) => setNewSubtaskInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const title = newSubtaskInput.trim();
-                        if (!title) return;
-                        subtaskCreate.mutate({
-                          title,
-                          parent_id: taskData.id,
-                          project_id: taskData.project_id ?? null,
-                        });
-                        setNewSubtaskInput("");
-                      }
-                    }}
-                    placeholder="Add subtask…"
-                    className="w-full rounded-sm border border-border-subtle bg-surface-base px-2 py-1 font-ui text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
-                  />
-                ) : null}
-              </section>
-            );
-          })()}
+          <TaskInspectorSubtasks
+            parentTaskId={taskData.id}
+            parentProjectId={taskData.project_id ?? null}
+            subtasks={taskData.subtasks ?? []}
+            inTrash={inTrash}
+          />
 
           {(() => {
             const refs: EntityRef[] = isEntityRefArray(taskData.referenced_entity_refs)
@@ -589,75 +486,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             );
           })()}
 
-          {(() => {
-            const list = attachments.data ?? [];
-            if (list.length === 0) return null;
-            return (
-              <section className="mt-4">
-                <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary flex items-center gap-1">
-                  <Paperclip size={10} />
-                  Attachments
-                </h3>
-                <ul className="flex flex-col gap-1">
-                  {list.map((att) => {
-                    const isImage = att.content_type?.startsWith("image/");
-                    const src = `/api/attachments/${att.file_id}`;
-                    return (
-                      <li
-                        key={att.id}
-                        className="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5"
-                      >
-                        {isImage ? (
-                          <a
-                            href={src}
-                            download={att.filename}
-                            className="shrink-0"
-                            aria-label={`Download ${att.filename}`}
-                          >
-                            <AttachmentThumbnail src={src} alt={att.filename} />
-                          </a>
-                        ) : (
-                          <Paperclip size={20} className="shrink-0 text-text-tertiary" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-ui text-xs text-text-primary" title={att.filename}>
-                            {att.filename}
-                          </p>
-                          <p className="font-ui text-2xs text-text-tertiary">
-                            {formatBytes(att.size_bytes)}
-                          </p>
-                        </div>
-                        <a
-                          href={src}
-                          download={att.filename}
-                          className="shrink-0 rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-                          aria-label={`Download ${att.filename}`}
-                        >
-                          <Download size={13} />
-                        </a>
-                        {!inTrash && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`Remove "${att.filename}"?`)) {
-                                deleteAttachment.mutate({ id: att.id });
-                              }
-                            }}
-                            disabled={deleteAttachment.isPending}
-                            className="shrink-0 rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-accent-danger"
-                            aria-label={`Remove ${att.filename}`}
-                          >
-                            <X size={13} />
-                          </button>
-                        )}
-                      </li>
-                    );
-                  })}
-
-                </ul>
-              </section>
-            );
-          })()}
+          <TaskInspectorAttachments taskId={taskData.id} inTrash={inTrash} />
 
           <footer className="mt-6 flex items-center justify-end gap-2 border-t border-border-subtle pt-3">
             {inTrash ? (
@@ -691,31 +520,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           </footer>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-3">
-          {(() => {
-            const events: ActivityEvent[] = activity.data ?? [];
-            if (events.length === 0) {
-              return <p className="font-ui text-2xs text-text-tertiary">No activity yet.</p>;
-            }
-            return (
-              <ol className="flex flex-col gap-2">
-                {events.map((a) => (
-                  <li key={a.id} className="rounded-sm border border-border-subtle p-2 font-ui text-2xs">
-                    <div className="flex items-center justify-between text-text-tertiary">
-                      <span className="font-medium uppercase tracking-caps">{a.action}</span>
-                      <time>{format(new Date(a.created_at), "MMM d, HH:mm")}</time>
-                    </div>
-                    {a.diff ? (
-                      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap font-mono text-text-secondary">
-                        {JSON.stringify(a.diff, null, 2)}
-                      </pre>
-                    ) : null}
-                  </li>
-                ))}
-              </ol>
-            );
-          })()}
-        </div>
+        <TaskInspectorActivityTab taskId={taskData.id} />
       )}
     </aside>
   );

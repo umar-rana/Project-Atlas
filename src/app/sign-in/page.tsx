@@ -1,15 +1,10 @@
 import { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Sign In — Atlas",
 };
 
-export default function SignInPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ from?: string; error?: string }>;
-}) {
+export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-base px-6">
       <div className="w-full max-w-md">

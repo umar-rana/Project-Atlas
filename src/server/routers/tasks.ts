@@ -51,13 +51,18 @@ function nextPosition(maxPos: Prisma.Decimal | null): string {
   return base.plus(1024).toString();
 }
 
+// Narrowed projection: only the fields the UI actually reads. Smaller payloads
+// over the wire and — just as important — a flatter Prisma return type, which
+// keeps tsc out of TS2589 ("excessively deep") territory in consumers like
+// the inspector and forecast view.
 const TASK_INCLUDE = {
-  contexts: { include: { context: true } },
-  tags: { include: { tag: true } },
-  project: true,
+  contexts: { include: { context: { select: { id: true, name: true } } } },
+  tags: { include: { tag: { select: { id: true, name: true } } } },
+  project: { select: { id: true, title: true, color: true } },
   subtasks: {
     where: { deleted_at: null },
     orderBy: { position: "asc" },
+    select: { id: true, status: true, title: true },
   },
 } satisfies Prisma.TaskInclude;
 

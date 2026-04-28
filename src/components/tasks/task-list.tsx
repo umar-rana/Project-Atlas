@@ -191,35 +191,46 @@ export function TaskList({
     return () => window.removeEventListener("keydown", handleKey);
   }, [tasks, focusedIdx, utils, setSelectedTaskId]);
 
-  function handleSelect(task: TaskRow) {
+  const handleSelect = React.useCallback((task: TaskRow) => {
     setSelectedTaskId(task.id);
     setLastClicked(task.id);
     clearSelection();
-  }
+  }, [setSelectedTaskId, setLastClicked, clearSelection]);
 
-  function handleMultiToggle(task: TaskRow, e: React.MouseEvent) {
-    if (e.shiftKey && lastClickedId) {
-      const aIdx = tasks.findIndex((t) => t.id === lastClickedId);
-      const bIdx = tasks.findIndex((t) => t.id === task.id);
+  // Read latest tasks/lastClicked from refs so the callback identity stays
+  // stable across renders. Otherwise React.memo on TaskListItem can never
+  // skip a render because this prop would change every time.
+  const tasksRef = React.useRef(tasks);
+  tasksRef.current = tasks;
+  const lastClickedRef = React.useRef(lastClickedId);
+  lastClickedRef.current = lastClickedId;
+
+  const handleMultiToggle = React.useCallback((task: TaskRow, e: React.MouseEvent) => {
+    const currentTasks = tasksRef.current;
+    const currentLastClicked = lastClickedRef.current;
+    if (e.shiftKey && currentLastClicked) {
+      const aIdx = currentTasks.findIndex((t) => t.id === currentLastClicked);
+      const bIdx = currentTasks.findIndex((t) => t.id === task.id);
       if (aIdx >= 0 && bIdx >= 0) {
         const [start, end] = aIdx < bIdx ? [aIdx, bIdx] : [bIdx, aIdx];
-        selectMany(tasks.slice(start, end + 1).map((t) => t.id));
+        selectMany(currentTasks.slice(start, end + 1).map((t) => t.id));
         return;
       }
     }
     toggleSelected(task.id);
-  }
+  }, [selectMany, toggleSelected]);
 
-  function handleDrop(targetId: string) {
+  const handleDrop = React.useCallback((targetId: string) => {
     const sourceId = dragId.current;
     if (!sourceId || sourceId === targetId) return;
-    const targetIdx = tasks.findIndex((t) => t.id === targetId);
-    const sourceIdx = tasks.findIndex((t) => t.id === sourceId);
+    const currentTasks = tasksRef.current;
+    const targetIdx = currentTasks.findIndex((t) => t.id === targetId);
+    const sourceIdx = currentTasks.findIndex((t) => t.id === sourceId);
     if (targetIdx < 0) return;
     const beforeIdx = sourceIdx > targetIdx ? targetIdx - 1 : targetIdx;
     const afterIdx = sourceIdx > targetIdx ? targetIdx : targetIdx + 1;
-    const before = tasks[beforeIdx];
-    const after = tasks[afterIdx];
+    const before = currentTasks[beforeIdx];
+    const after = currentTasks[afterIdx];
     moveMut.mutate({
       id: sourceId,
       before_id: before?.id ?? null,
@@ -227,7 +238,14 @@ export function TaskList({
     });
     dragId.current = null;
     dropTargetId.current = null;
-  }
+  }, [moveMut]);
+
+  const handleDragStart = React.useCallback((id: string) => {
+    dragId.current = id;
+  }, []);
+  const handleDragOver = React.useCallback((id: string) => {
+    dropTargetId.current = id;
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -356,11 +374,11 @@ export function TaskList({
               selected={selectedTaskId === task.id}
               isFocused={focusedIdx === idx}
               isMultiSelected={selectedTaskIds.has(task.id)}
-              onSelect={() => handleSelect(task)}
-              onMultiToggle={(e) => handleMultiToggle(task, e)}
-              onDragStart={(id) => (dragId.current = id)}
-              onDragOver={(id) => (dropTargetId.current = id)}
-              onDrop={(targetId) => handleDrop(targetId)}
+              onSelect={handleSelect}
+              onMultiToggle={handleMultiToggle}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
               inTrash={perspective === "trash"}
             />
           ))}

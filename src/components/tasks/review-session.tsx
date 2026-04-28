@@ -40,7 +40,10 @@ export function ReviewSession(): React.ReactElement {
 
   const [stableQueue, setStableQueue] = React.useState<NonNullable<typeof queueQuery.data>["projects"] | null>(null);
   const [currentIdx, setCurrentIdx] = React.useState(0);
-  const [history, setHistory] = React.useState<string[]>([]);
+  // Track which project IDs the user has acted on this session. Currently used
+  // only for analytics-style tracking via the ref; the array is preserved to
+  // make a future "undo last" feature trivial without re-instrumenting.
+  const historyRef = React.useRef<string[]>([]);
   const [summary, setSummary] = React.useState<SessionSummary | null>(null);
   const [summaryData, setSummaryData] = React.useState<SessionSummary>({
     keep_active: 0,
@@ -110,14 +113,24 @@ export function ReviewSession(): React.ReactElement {
   });
 
   const [notesDraft, setNotesDraft] = React.useState("");
+  // Reset draft only when the *project* changes, not when its server-side notes
+  // shift (e.g., another tab updates them) — that would clobber the user's
+  // in-progress edits. Tracking the last-applied id in a ref lets us include
+  // both deps to satisfy exhaustive-deps without changing semantics.
+  const notesProjectIdRef = React.useRef<string | null>(null);
+  const currentProjectId = currentProject?.id ?? null;
+  const currentProjectNotes = currentProject?.notes ?? "";
   React.useEffect(() => {
-    setNotesDraft(currentProject?.notes ?? "");
-  }, [currentProject?.id]);
+    if (notesProjectIdRef.current !== currentProjectId) {
+      notesProjectIdRef.current = currentProjectId;
+      setNotesDraft(currentProjectNotes);
+    }
+  }, [currentProjectId, currentProjectNotes]);
 
   function handleAction(action: ReviewAction) {
     if (!currentProject || reviewMutation.isPending) return;
 
-    setHistory((prev) => [...prev, currentProject.id]);
+    historyRef.current = [...historyRef.current, currentProject.id];
     pendingActionRef.current = action;
 
     reviewMutation.mutate({
@@ -144,9 +157,9 @@ export function ReviewSession(): React.ReactElement {
     setConfirmComplete(null);
   }
 
-  function handleExit() {
+  const handleExit = React.useCallback(() => {
     router.push("/tasks");
-  }
+  }, [router]);
 
   React.useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -157,7 +170,7 @@ export function ReviewSession(): React.ReactElement {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  }, [handleExit]);
 
   if (queueQuery.isLoading) {
     return (

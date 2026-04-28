@@ -98,7 +98,7 @@ export function CaptureModal(): React.ReactElement {
       let parsed: Awaited<ReturnType<typeof preview.mutateAsync>> | null = null;
       try {
         parsed = await preview.mutateAsync({ raw_text: value });
-      } catch (err) {
+      } catch {
         toast.error("Preview failed — capturing without review");
       }
       if (parsed) {

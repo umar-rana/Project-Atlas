@@ -136,7 +136,35 @@ Expired sessions are purged in two ways:
 1. **Opportunistic (automatic)**: ~5% of session validations trigger a background `purgeExpiredSessions()` call (non-blocking, fire-and-forget).
 2. **Explicit (cron)**: `POST /api/cron/cleanup-sessions` deletes all expired rows and returns `{ ok: true, purged: N }`. Requires `Authorization: Bearer $CRON_SECRET`. Set up a daily external scheduler (e.g. GitHub Actions, Render cron, or Replit deployments schedule) pointing at this endpoint. In production the endpoint returns `503` if `CRON_SECRET` is not configured.
 
+## Deferred Major Upgrades
+The following major-version upgrades were intentionally **not** applied during the
+2026-04-28 lint/cleanup pass (Task #69). Each one is a known-breaking jump that
+needs its own dedicated migration task with a reproducible verification plan.
+Apply them in isolation, not bundled together.
+
+- **Prisma 5 → 7**: schema/connection-URL changes; `prisma migrate` semantics shift; some types renamed.
+- **Next.js 15 → 16**: `next lint` is removed (already deprecation-warning today); router/cache defaults change.
+- **Tailwind 3 → 4**: new engine + config format (`@theme` directive), full design-token migration required.
+- **Zod 3 → 4**: new error format, `safeParse` shape changes, deprecated APIs removed — touches every router input schema.
+- **Vitest 2 → 4** (and the chained `@vitest/*` packages): config file shape and reporter API moved.
+- **TypeScript 5 → 6**: stricter checks; needs a full `tsc --noEmit` audit + `tsconfig` revisit.
+- **lucide-react 0.469 → 1.x**: tree-shaking and icon naming overhaul; affects imports across the app shell and tasks UI.
+- **sonner 1 → 2**: API change for `toast.*` variants and the `<Toaster />` provider.
+
+Safe patch updates **were** applied in #69: `openid-client→6.8.4`, `@typescript-eslint/{eslint-plugin,parser}→8.59.1`, `postcss→8.5.12`.
+
 ## Recent Changes
+- 2026-04-28: End-to-end code review pass (Task #69):
+  - Patch updates: `openid-client→6.8.4`, `@typescript-eslint/{eslint-plugin,parser}→8.59.1`, `postcss→8.5.12` (no breaking changes).
+  - Cleared all 10 ESLint warnings (unused vars in sign-in, capture-modal, health, forecast-view, review-session; missing-dep effects in folder-detail-view + review-session); resolved a TS2589 ("excessively deep") error in `forecast-view.tsx` by depending on a scalar derived from `meData` rather than the full query object.
+  - **Component splits**:
+    - `task-inspector.tsx` (709 LOC) → split into `task-inspector.tsx` (~525), `task-inspector-attachments.tsx`, `task-inspector-activity-tab.tsx`, `task-inspector-subtasks.tsx`. Each subcomponent owns its own queries/mutations so the parent stops re-rendering them.
+    - `tasks-sidebar.tsx` (619 LOC) → extracted the recursive folder/project tree (`FolderTreeNode`, `FolderNode`, `DragItem`, `colorDotClass`) into `folder-tree-node.tsx`. Sidebar is now ~435 LOC.
+  - **Perf pass**:
+    - `TaskListItem` wrapped in `React.memo`; refactored `TaskListItemProps.onSelect` / `onMultiToggle` to take `(task, e)` so the parent passes one stable callback per kind. `task-list.tsx` callbacks are now `useCallback`-stable, with a `tasksRef` ladder so `handleMultiToggle`/`handleDrop` read live state without invalidating identity.
+    - Narrowed `TASK_INCLUDE` in `src/server/routers/tasks.ts` to `select` only the fields the UI actually reads (`project: id/title/color`; `subtasks: id/status/title`; nested `tag/context: id/name`). Smaller wire payload + flatter Prisma return types (helps tsc avoid TS2589 in inspector consumers).
+  - Verification: `tsc --noEmit` clean, `next lint` reports zero warnings/zero errors.
+
 - 2026-04-27: Wave 3c Part 2 — Email-to-inbox (Task #44):
   - `src/core/capture/email-parser.ts` — mailparser wrapper: extracts plain-text/HTML body, subject, from, attachments; detects auto-replies (Auto-Submitted header), calendar invites (.ics, text/calendar), and Fwd: prefix; truncates body to 10k chars
   - `src/app/api/email/inbound/route.ts` — Resend inbound webhook handler: validates Resend/svix signature (HMAC-SHA256); extracts user_id from `inbox+{userId}@atlas.insightive.io`; applies blocklist + filter settings; creates EmailCapture; calls captureAndCreate with source="email"; uploads attachments to Object Storage; writes audit log `email_capture_received`

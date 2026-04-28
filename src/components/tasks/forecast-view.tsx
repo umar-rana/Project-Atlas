@@ -43,11 +43,9 @@ type ForecastTask = {
 function TaskCard({
   task,
   onComplete,
-  onReschedule,
 }: {
   task: ForecastTask;
   onComplete: (id: string) => void;
-  onReschedule?: (id: string, date: Date) => void;
 }) {
   const isCompleted = task.status === "completed";
 
@@ -217,13 +215,21 @@ export function ForecastView(): React.ReactElement {
   });
   const [startDate, setStartDate] = React.useState(() => startOfDay(new Date()));
 
+  // Depend on a narrowed primitive (7 | 14) instead of the full Prisma-typed
+  // `meData` object — the latter triggers TS2589 "type instantiation is
+  // excessively deep" because the dependency tuple inference walks the entire
+  // generated user shape. The effect only needs to know the resolved
+  // forecast-days preference, so a scalar dep keeps behavior identical and
+  // tsc happy.
+  const remoteForecastDays: 7 | 14 | null =
+    meData !== undefined ? extractForecastDays(meData) : null;
   React.useEffect(() => {
-    if (!daysInitialized && meData !== undefined) {
+    if (!daysInitialized && remoteForecastDays !== null) {
       const stored = readStoredDays();
-      setDays(stored !== null ? stored : extractForecastDays(meData));
+      setDays(stored !== null ? stored : remoteForecastDays);
       setDaysInitialized(true);
     }
-  }, [meData, daysInitialized]);
+  }, [remoteForecastDays, daysInitialized]);
 
   function handleSetDays(n: 7 | 14) {
     storeDays(n);

@@ -6,21 +6,14 @@ import { isQueueHealthy, getDeadLetterCount } from "@/core/queue";
 import { logger, createLogger } from "@/core/logging";
 import { complete } from "@/core/ai";
 import { getOidcConfig } from "@/core/auth/replit-oidc";
-import { z } from "zod";
 
 const log = createLogger({ module: "health/oidc" });
 
-const CheckResult = z.object({
-  ok: z.boolean(),
-  message: z.string().optional(),
-  latencyMs: z.number().optional(),
-});
-
-async function timed<T>(fn: () => Promise<T>): Promise<{ result: T; ms: number }> {
-  const start = Date.now();
-  const result = await fn();
-  return { result, ms: Date.now() - start };
-}
+type CheckResult = {
+  ok: boolean;
+  message?: string;
+  latencyMs?: number;
+};
 
 async function checkAI(): Promise<{ ok: boolean; message?: string; latencyMs?: number }> {
   const start = Date.now();
@@ -72,7 +65,7 @@ export const healthRouter = router({
   ping: publicProcedure.query(() => ({ pong: true, ts: new Date().toISOString() })),
 
   full: publicProcedure.query(async ({ ctx }) => {
-    const checks: Record<string, z.infer<typeof CheckResult>> = {};
+    const checks: Record<string, CheckResult> = {};
 
     const userId = ctx.user?.id;
 

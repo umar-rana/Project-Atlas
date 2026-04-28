@@ -39,12 +39,16 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   const [notesDraft, setNotesDraft] = React.useState("");
   const [editingNotes, setEditingNotes] = React.useState(false);
 
+  // Depend on the narrowed scalar fields directly so refresh of the underlying
+  // query reliably resyncs the drafts without re-running on unrelated identity
+  // changes to `query.data`.
+  const queryName = query.data?.name;
+  const queryNotes = query.data?.notes;
   React.useEffect(() => {
-    if (query.data) {
-      setNameDraft(query.data.name);
-      setNotesDraft(query.data.notes ?? "");
-    }
-  }, [query.data?.name, query.data?.notes]);
+    if (queryName === undefined && queryNotes === undefined) return;
+    setNameDraft(queryName ?? "");
+    setNotesDraft(queryNotes ?? "");
+  }, [queryName, queryNotes]);
 
   const updateFolder = trpc.folders.update.useMutation({
     onSuccess: () => {
