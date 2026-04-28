@@ -1,13 +1,20 @@
 import * as React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { render, fireEvent, act } from "@testing-library/react";
 
-// We expose a render counter via the trpc mock: every call to
-// `trpc.useUtils()` increments it. `useUtils()` is called once on every
-// render of `TaskListItemImpl`, so the counter is a faithful proxy for how
-// many times the real component body actually ran. If `React.memo` ever
-// regresses, parent re-renders will increment this counter.
-const trpcRenderTracker = vi.hoisted(() => ({ taskListItemRenderCount: 0 }));
+// Per-endpoint mutation tracking. Every call to `trpc.<router>.<endpoint>.useMutation()`
+// returns the same `vi.fn()` for that path, so tests can assert on the args passed
+// to e.g. `tasks.complete.mutate(...)` regardless of which component instance fired it.
+//
+// The render counter is also exposed: every call to `trpc.useUtils()` increments it.
+// `useUtils()` is called once on every render of `TaskListItemImpl`, so the counter is
+// a faithful proxy for how many times the real component body actually ran. If
+// `React.memo` ever regresses, parent re-renders will increment this counter.
+const trpcState = vi.hoisted(() => ({
+  taskListItemRenderCount: 0,
+  mutates: new Map<string, ReturnType<typeof import("vitest").vi.fn>>(),
+  mutateAsyncs: new Map<string, ReturnType<typeof import("vitest").vi.fn>>(),
+}));
 
 vi.mock("@/lib/trpc/client", async () => {
   const { vi: vitestVi } = await import("vitest");
@@ -21,31 +28,55 @@ vi.mock("@/lib/trpc/client", async () => {
     tags: { list: { invalidate } },
   };
 
-  function buildEndpoint() {
+  function getMutate(path: string) {
+    let fn = trpcState.mutates.get(path);
+    if (!fn) {
+      fn = vitestVi.fn();
+      trpcState.mutates.set(path, fn);
+    }
+    return fn;
+  }
+  function getMutateAsync(path: string) {
+    let fn = trpcState.mutateAsyncs.get(path);
+    if (!fn) {
+      fn = vitestVi.fn(async () => ({}));
+      trpcState.mutateAsyncs.set(path, fn);
+    }
+    return fn;
+  }
+
+  function buildEndpoint(path: string) {
     return {
       useQuery: () => ({ data: undefined, isLoading: false }),
       useMutation: () => ({
-        mutate: vitestVi.fn(),
-        mutateAsync: vitestVi.fn(async () => ({})),
+        mutate: getMutate(path),
+        mutateAsync: getMutateAsync(path),
       }),
     };
   }
 
-  function buildRouter() {
-    return new Proxy({}, { get: () => buildEndpoint() });
+  function buildRouter(routerName: string) {
+    return new Proxy(
+      {},
+      {
+        get(_t, endpointName: string) {
+          return buildEndpoint(`${routerName}.${endpointName}`);
+        },
+      },
+    );
   }
 
   const trpc = new Proxy(
     {
       useUtils: () => {
-        trpcRenderTracker.taskListItemRenderCount += 1;
+        trpcState.taskListItemRenderCount += 1;
         return utils;
       },
     } as Record<string, unknown>,
     {
       get(target, key: string) {
         if (key === "useUtils") return target.useUtils;
-        return buildRouter();
+        return buildRouter(key);
       },
     },
   );
@@ -81,10 +112,18 @@ function makeRow(overrides: Partial<TaskRow> = {}): TaskRow {
   };
 }
 
+function getMutate(path: string) {
+  const fn = trpcState.mutates.get(path);
+  if (!fn) throw new Error(`No mutate fn registered for ${path} yet`);
+  return fn;
+}
+
 describe("TaskListItem", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    trpcRenderTracker.taskListItemRenderCount = 0;
+    trpcState.taskListItemRenderCount = 0;
+    for (const fn of trpcState.mutates.values()) fn.mockClear();
+    for (const fn of trpcState.mutateAsyncs.values()) fn.mockClear();
   });
 
   it("renders the task title", () => {
@@ -127,14 +166,14 @@ describe("TaskListItem", () => {
     }
 
     const { rerender } = render(<Parent unrelated={1} />);
-    expect(trpcRenderTracker.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(1);
 
     rerender(<Parent unrelated={2} />);
     // Memo win: parent re-rendered, TaskListItem did not.
-    expect(trpcRenderTracker.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(1);
 
     rerender(<Parent unrelated={3} />);
-    expect(trpcRenderTracker.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(1);
   });
 
   it("re-renders TaskListItem when the task prop changes by reference", () => {
@@ -156,11 +195,11 @@ describe("TaskListItem", () => {
 
     const t1 = makeRow();
     const { rerender, getByText } = render(<Parent task={t1} />);
-    expect(trpcRenderTracker.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(1);
 
     // Same reference → memo still skips.
     rerender(<Parent task={t1} />);
-    expect(trpcRenderTracker.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(1);
 
     // New reference with new content → memo lets it through. The component
     // also has a `useEffect([task.title])` that resyncs the title draft, so
@@ -168,7 +207,106 @@ describe("TaskListItem", () => {
     // not skipping" rather than pinning the exact count.
     const t2 = makeRow({ title: "Buy bread" });
     rerender(<Parent task={t2} />);
-    expect(trpcRenderTracker.taskListItemRenderCount).toBeGreaterThan(1);
+    expect(trpcState.taskListItemRenderCount).toBeGreaterThan(1);
     expect(getByText("Buy bread")).toBeInTheDocument();
+  });
+
+  describe("right-click context menu", () => {
+    function openMenu(taskOverrides: Partial<TaskRow> = {}) {
+      const utils = render(
+        <TaskListItem
+          task={makeRow(taskOverrides)}
+          selected={false}
+          isFocused={false}
+          isMultiSelected={false}
+          onSelect={vi.fn()}
+          onMultiToggle={vi.fn()}
+        />,
+      );
+      const row = utils.container.querySelector('[role="row"]') as HTMLElement;
+      fireEvent.contextMenu(row);
+      return utils;
+    }
+
+    it("'Mark complete' fires tasks.complete with the task id", () => {
+      const { getByRole } = openMenu();
+      fireEvent.click(getByRole("menuitem", { name: "Mark complete" }));
+      const completeMutate = getMutate("tasks.complete");
+      expect(completeMutate).toHaveBeenCalledTimes(1);
+      expect(completeMutate).toHaveBeenCalledWith({ id: "task-1" });
+    });
+
+    it("'Move to trash' fires tasks.delete with the task id", () => {
+      const { getByRole } = openMenu();
+      fireEvent.click(getByRole("menuitem", { name: "Move to trash" }));
+      const delMutate = getMutate("tasks.delete");
+      expect(delMutate).toHaveBeenCalledTimes(1);
+      expect(delMutate).toHaveBeenCalledWith({ id: "task-1" });
+    });
+
+    it("'Move to Inbox' fires tasks.update with project_id: null when the task is in a project", () => {
+      const { getByRole } = openMenu({ project_id: "proj-9" });
+      fireEvent.click(getByRole("menuitem", { name: "Move to Inbox" }));
+      const updateMutate = getMutate("tasks.update");
+      expect(updateMutate).toHaveBeenCalledTimes(1);
+      expect(updateMutate).toHaveBeenCalledWith({ id: "task-1", project_id: null });
+    });
+
+    it("does not show 'Move to Inbox' when the task is already in the inbox", () => {
+      const { queryByRole } = openMenu({ project_id: null });
+      expect(queryByRole("menuitem", { name: "Move to Inbox" })).toBeNull();
+    });
+  });
+
+  describe("inline title edit", () => {
+    function startEditing() {
+      const utils = render(
+        <TaskListItem
+          task={makeRow()}
+          selected={false}
+          isFocused={false}
+          isMultiSelected={false}
+          onSelect={vi.fn()}
+          onMultiToggle={vi.fn()}
+        />,
+      );
+      const titleBtn = utils.getByText("Buy milk");
+      fireEvent.doubleClick(titleBtn);
+      const input = utils.container.querySelector("input[type='text'], input:not([type])") as HTMLInputElement;
+      return { ...utils, input };
+    }
+
+    it("double-click + Enter commits the new title via tasks.update", () => {
+      const { input } = startEditing();
+      expect(input).toBeTruthy();
+      act(() => {
+        fireEvent.change(input, { target: { value: "Buy oat milk" } });
+        fireEvent.keyDown(input, { key: "Enter" });
+      });
+      const updateMutate = getMutate("tasks.update");
+      expect(updateMutate).toHaveBeenCalledTimes(1);
+      expect(updateMutate).toHaveBeenCalledWith({ id: "task-1", title: "Buy oat milk" });
+    });
+
+    it("Escape cancels editing without firing tasks.update", () => {
+      const { input, container } = startEditing();
+      act(() => {
+        fireEvent.change(input, { target: { value: "Buy oat milk" } });
+        fireEvent.keyDown(input, { key: "Escape" });
+      });
+      const updateMutate = trpcState.mutates.get("tasks.update");
+      expect(updateMutate?.mock.calls.length ?? 0).toBe(0);
+      // The original title is restored and the editor is gone.
+      expect(container.querySelector("input")).toBeNull();
+    });
+
+    it("does not fire tasks.update on Enter when the title is unchanged", () => {
+      const { input } = startEditing();
+      act(() => {
+        fireEvent.keyDown(input, { key: "Enter" });
+      });
+      const updateMutate = trpcState.mutates.get("tasks.update");
+      expect(updateMutate?.mock.calls.length ?? 0).toBe(0);
+    });
   });
 });
