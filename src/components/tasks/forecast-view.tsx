@@ -246,6 +246,7 @@ export function ForecastView(): React.ReactElement {
     onSuccess: () => {
       utils.forecast.week.invalidate();
       utils.tasks.counts.invalidate();
+      utils.tasks.completed.invalidate();
     },
   });
 

@@ -38,12 +38,14 @@ export function TaskInspectorSubtasks({
     onSettled: () => {
       utils.tasks.get.invalidate({ id: parentTaskId });
       utils.tasks.list.invalidate();
+      utils.tasks.completed.invalidate();
     },
   });
   const subtaskUncomplete = trpc.tasks.uncomplete.useMutation({
     onSettled: () => {
       utils.tasks.get.invalidate({ id: parentTaskId });
       utils.tasks.list.invalidate();
+      utils.tasks.completed.invalidate();
     },
   });
 

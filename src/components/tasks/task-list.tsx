@@ -165,11 +165,13 @@ export function TaskList({
             void utils.client.tasks.uncomplete.mutate({ id: t.id }).then(() => {
               utils.tasks.list.invalidate();
               utils.tasks.counts.invalidate();
+              utils.tasks.completed.invalidate();
             });
           } else {
             void utils.client.tasks.complete.mutate({ id: t.id }).then(() => {
               utils.tasks.list.invalidate();
               utils.tasks.counts.invalidate();
+              utils.tasks.completed.invalidate();
             });
           }
         }

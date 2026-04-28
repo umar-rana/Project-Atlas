@@ -70,12 +70,14 @@ function TaskListItemImpl({
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
+      utils.tasks.completed.invalidate();
     },
   });
   const uncomplete = trpc.tasks.uncomplete.useMutation({
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
+      utils.tasks.completed.invalidate();
     },
   });
   const del = trpc.tasks.delete.useMutation({

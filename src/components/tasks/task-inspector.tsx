@@ -126,6 +126,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
+      utils.tasks.completed.invalidate();
       utils.tasks.get.invalidate({ id: taskId });
     },
   });
@@ -133,6 +134,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
+      utils.tasks.completed.invalidate();
       utils.tasks.get.invalidate({ id: taskId });
     },
   });
