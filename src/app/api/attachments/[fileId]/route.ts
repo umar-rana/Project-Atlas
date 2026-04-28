@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/core/db";
-import { getFile } from "@/core/storage";
+import { getFileUrl } from "@/core/storage";
 
 export async function GET(
   _req: NextRequest,
@@ -20,20 +20,13 @@ export async function GET(
   const { fileId } = await params;
 
   try {
-    const { data, contentType, filename } = await getFile({
+    const { url } = await getFileUrl({
       userId: user.id,
       fileId,
+      expiresInSeconds: 3600,
     });
 
-    const safeFilename = encodeURIComponent(filename);
-    return new NextResponse(Buffer.from(data), {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename*=UTF-8''${safeFilename}`,
-        "Cache-Control": "private, max-age=3600",
-      },
-    });
+    return NextResponse.redirect(url, { status: 302 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("not found") || message.includes("access denied")) {

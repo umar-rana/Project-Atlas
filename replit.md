@@ -42,7 +42,7 @@ The application is built on Next.js 15 (App Router) + React 19 with TypeScript. 
 - **Prisma**: ORM for database interaction
 - **tRPC**: Type-safe API layer
 - **Anthropic Claude**: AI service via Replit integration
-- **Replit Object Storage**: Cloud storage for attachments
+- **Cloudflare R2**: Cloud storage for file attachments via `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner`. Files served through `atlas.insightive.io` using 1-hour signed URLs. Provider abstraction at `src/core/storage/` supports `r2` (active) and `replit` (rollback stub), selected via `STORAGE_PROVIDER` env var.
 - **Pino + pino-pretty**: Logging
 - **Node.js crypto**: AES-256-GCM for encryption
 - **Google Drive API (googleapis)**: For Google Drive integration

@@ -1,37 +1,28 @@
 /**
- * Drive Sync — outbound push from Replit Object Storage (ProjectAtlas) to Google Drive.
+ * Drive Sync — outbound push from object storage (ProjectAtlas) to Google Drive.
  *
  * Architecture:
- *   Replit Object Storage (ProjectAtlas) ──► Google Drive (user's linked account)
+ *   Object Storage (R2/ProjectAtlas) ──► Google Drive (user's linked account)
  *
- * Drive is NEVER the source of truth. All primary data lives in Replit Object Storage.
+ * Drive is NEVER the source of truth. All primary data lives in object storage.
  * These helpers are called by sync jobs to push a copy of content to the user's Drive
  * as a secondary, human-readable backup destination.
  *
  * Reading back from Drive into Atlas is explicitly out of scope.
  */
 
-import { Client } from "@replit/object-storage";
+import { storage } from "@/core/storage";
 import { db } from "@/core/db";
 import { uploadFile as driveUpload } from "./primitives";
 import { createLogger } from "@/core/logging";
 
 const log = createLogger({ module: "drive/sync" });
 
-let _storageClient: Client | null = null;
-
-function getStorageClient(): Client {
-  if (!_storageClient) {
-    _storageClient = new Client();
-  }
-  return _storageClient;
-}
-
 /**
- * Push a file that lives in Replit Object Storage out to Google Drive.
+ * Push a file that lives in object storage out to Google Drive.
  *
  * Flow:
- *   1. Fetch the file from Replit Object Storage (ProjectAtlas bucket).
+ *   1. Fetch the file from object storage (ProjectAtlas bucket).
  *   2. Upload the bytes to the user's linked Drive folder.
  *
  * @param userId       - Atlas user ID (used to retrieve Drive credentials).
@@ -48,25 +39,16 @@ export async function pushStorageFileToDrive(params: {
   filename: string;
   mimeType: string;
 }): Promise<{ driveFileId: string }> {
-  const client = getStorageClient();
-
   log.info(
-    { userId: params.userId, storagePath: params.storagePath, driveParentId: params.driveParentId },
-    "Fetching file from Replit Object Storage for Drive push",
+    { userId: params.userId, storagePath: params.storagePath, driveParentId: params.driveParentId, provider: storage.providerName },
+    "Fetching file from object storage for Drive push",
   );
 
-  const download = await client.downloadAsBytes(params.storagePath);
-  if (!download.ok) {
-    throw new Error(
-      `Failed to fetch ${params.storagePath} from Replit Object Storage: ${download.error}`,
-    );
-  }
-
-  const data = Buffer.from(download.value[0] as Uint8Array);
+  const data = await storage.download(params.storagePath);
 
   log.info(
     { userId: params.userId, filename: params.filename, bytes: data.byteLength },
-    "Pushing file from Replit Object Storage to Google Drive",
+    "Pushing file from object storage to Google Drive",
   );
 
   const driveFile = await driveUpload(
@@ -83,7 +65,7 @@ export async function pushStorageFileToDrive(params: {
 
   log.info(
     { userId: params.userId, driveFileId: driveFile.id, storagePath: params.storagePath },
-    "File pushed from Replit Object Storage to Google Drive",
+    "File pushed from object storage to Google Drive",
   );
 
   return { driveFileId: driveFile.id };
@@ -91,7 +73,7 @@ export async function pushStorageFileToDrive(params: {
 
 /**
  * Push a raw buffer directly to Google Drive (e.g. for database exports that are
- * assembled in-memory rather than read from Replit Object Storage).
+ * assembled in-memory rather than read from object storage).
  *
  * This is still a one-way push — Drive receives a copy; the canonical data stays in Atlas.
  */

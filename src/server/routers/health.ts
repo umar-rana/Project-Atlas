@@ -116,7 +116,12 @@ export const healthRouter = router({
     ]);
 
     checks.database = { ok: dbCheck.result ?? false, latencyMs: dbCheck.ms };
-    checks.object_storage = { ok: storageCheck.result ?? false, latencyMs: storageCheck.ms };
+    const storageResult = storageCheck.result;
+    checks.object_storage = {
+      ok: storageResult?.ok ?? false,
+      message: storageResult ? `provider: ${storageResult.provider}` : "Storage check failed",
+      latencyMs: storageCheck.ms,
+    };
     checks.logging = { ok: typeof logger !== "undefined" && !!logger };
     checks.queue = {
       ok: isQueueHealthy(),
