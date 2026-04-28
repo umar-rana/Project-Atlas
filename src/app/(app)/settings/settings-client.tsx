@@ -20,6 +20,7 @@ import {
   Copy,
   Check,
   ExternalLink,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -391,13 +392,120 @@ function Toggle({
   );
 }
 
+function isValidEmailOrDomain(value: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const domainRegex = /^(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
+  return emailRegex.test(value) || domainRegex.test(value);
+}
+
+function BlocklistChipInput({
+  chips,
+  onChange,
+  disabled,
+}: {
+  chips: string[];
+  onChange: (next: string[]) => void;
+  disabled?: boolean;
+}) {
+  const [inputValue, setInputValue] = useState("");
+  const [duplicateHint, setDuplicateHint] = useState(false);
+  const [invalidHint, setInvalidHint] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function tryAdd(raw: string) {
+    const value = raw.trim().toLowerCase();
+    if (!value) return;
+
+    if (!isValidEmailOrDomain(value)) {
+      setInvalidHint(true);
+      setTimeout(() => setInvalidHint(false), 2000);
+      return;
+    }
+
+    if (chips.includes(value)) {
+      setDuplicateHint(true);
+      setTimeout(() => setDuplicateHint(false), 2000);
+      return;
+    }
+
+    onChange([...chips, value]);
+    setInputValue("");
+    setDuplicateHint(false);
+    setInvalidHint(false);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      tryAdd(inputValue);
+    } else if (e.key === "Backspace" && inputValue === "" && chips.length > 0) {
+      onChange(chips.slice(0, -1));
+    }
+  }
+
+  function handleBlur() {
+    if (inputValue.trim()) {
+      tryAdd(inputValue);
+    }
+  }
+
+  function removeChip(index: number) {
+    onChange(chips.filter((_, i) => i !== index));
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        className={cn(
+          "flex min-h-[2.5rem] flex-wrap gap-1.5 rounded-md border bg-surface-overlay px-2 py-1.5 focus-within:ring-2 focus-within:ring-border-focus",
+          duplicateHint || invalidHint ? "border-accent-warning" : "border-border-default",
+        )}
+        onClick={() => inputRef.current?.focus()}
+      >
+        {chips.map((chip, i) => (
+          <span
+            key={chip}
+            className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 font-mono text-xs text-text-primary"
+          >
+            {chip}
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(e) => { e.stopPropagation(); removeChip(i); }}
+              className="ml-0.5 rounded-full p-0.5 text-text-tertiary hover:bg-border-subtle hover:text-text-primary transition-colors disabled:opacity-50"
+              aria-label={`Remove ${chip}`}
+            >
+              <X size={10} />
+            </button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => { setInputValue(e.target.value); setDuplicateHint(false); setInvalidHint(false); }}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          disabled={disabled}
+          placeholder={chips.length === 0 ? "noreply@example.com or example.com" : ""}
+          className="min-w-[160px] flex-1 bg-transparent font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
+        />
+      </div>
+      {duplicateHint && (
+        <p className="font-ui text-2xs text-accent-warning">Already in the blocklist.</p>
+      )}
+      {invalidHint && (
+        <p className="font-ui text-2xs text-accent-warning">Enter a valid email address or domain (e.g. example.com).</p>
+      )}
+    </div>
+  );
+}
+
 function CaptureSection({ userId }: { userId: string }) {
   const utils = trpc.useUtils();
   const { data: rawUserData } = trpc.user.me.useQuery(undefined, { refetchOnWindowFocus: false });
   const userData = rawUserData as User | undefined;
   const [copied, setCopied] = useState(false);
-  const [blocklistDraft, setBlocklistDraft] = useState<string | null>(null);
-  const blocklistSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [optimisticChips, setOptimisticChips] = useState<string[] | null>(null);
 
   const inboxAddress = `inbox+${userId}@${EMAIL_DOMAIN}`;
 
@@ -407,7 +515,11 @@ function CaptureSection({ userId }: { userId: string }) {
   );
 
   const updateMutation = trpc.user.updatePreferences.useMutation({
-    onSuccess: () => utils.user.me.invalidate(),
+    onSuccess: () => {
+      utils.user.me.invalidate();
+      setOptimisticChips(null);
+    },
+    onError: () => setOptimisticChips(null),
   });
 
   const tasksPrefs = (typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
@@ -419,7 +531,7 @@ function CaptureSection({ userId }: { userId: string }) {
   const blocklistArray = Array.isArray(tasksPrefs["email_blocklist"])
     ? (tasksPrefs["email_blocklist"] as string[])
     : [];
-  const blocklistValue = blocklistDraft ?? blocklistArray.join("\n");
+  const displayedChips = optimisticChips ?? blocklistArray;
 
   function handleCopy() {
     navigator.clipboard.writeText(inboxAddress).then(() => {
@@ -428,13 +540,9 @@ function CaptureSection({ userId }: { userId: string }) {
     });
   }
 
-  function handleBlocklistChange(val: string) {
-    setBlocklistDraft(val);
-    if (blocklistSaveTimeout.current) clearTimeout(blocklistSaveTimeout.current);
-    blocklistSaveTimeout.current = setTimeout(() => {
-      updateMutation.mutate({ email_blocklist: val });
-      setBlocklistDraft(null);
-    }, 1000);
+  function handleBlocklistChange(chips: string[]) {
+    setOptimisticChips(chips);
+    updateMutation.mutate({ email_blocklist: chips });
   }
 
   return (
@@ -504,14 +612,12 @@ function CaptureSection({ userId }: { userId: string }) {
           <div>
             <p className="mb-1 font-ui text-sm text-text-primary">Sender blocklist</p>
             <p className="mb-2 font-ui text-xs text-text-tertiary">
-              One address per line. Emails from matching senders are discarded.
+              Type an address or domain and press Enter or comma to add. Emails from matching senders are discarded.
             </p>
-            <textarea
-              rows={3}
-              value={blocklistValue}
-              onChange={(e) => handleBlocklistChange(e.target.value)}
-              placeholder="noreply@example.com"
-              className="w-full resize-none rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus"
+            <BlocklistChipInput
+              chips={displayedChips}
+              onChange={handleBlocklistChange}
+              disabled={updateMutation.isPending}
             />
           </div>
         </div>

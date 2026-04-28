@@ -2,6 +2,9 @@ import { router, protectedProcedure } from "@/server/trpc";
 import { db } from "@/core/db";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+
+const EMAIL_OR_DOMAIN_RE = /^([^\s@]+@[^\s@]+\.[^\s@]+|(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+)$/;
 
 export const userRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -24,7 +27,7 @@ export const userRouter = router({
         tasks_default_sequential: z.boolean().optional(),
         email_filter_auto_replies: z.boolean().optional(),
         email_filter_calendar: z.boolean().optional(),
-        email_blocklist: z.string().optional(),
+        email_blocklist: z.union([z.string(), z.array(z.string())]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -45,11 +48,21 @@ export const userRouter = router({
       if (email_filter_auto_replies !== undefined) tasksPrefsUpdate.email_filter_auto_replies = email_filter_auto_replies;
       if (email_filter_calendar !== undefined) tasksPrefsUpdate.email_filter_calendar = email_filter_calendar;
       if (email_blocklist !== undefined) {
-        const addresses = email_blocklist
-          .split(/[\n,]/)
-          .map((s) => s.trim().toLowerCase())
-          .filter(Boolean);
-        tasksPrefsUpdate.email_blocklist = addresses;
+        const raw = Array.isArray(email_blocklist)
+          ? email_blocklist.map((s) => s.trim().toLowerCase()).filter(Boolean)
+          : email_blocklist
+              .split(/[\n,]/)
+              .map((s) => s.trim().toLowerCase())
+              .filter(Boolean);
+        const invalid = raw.filter((s) => !EMAIL_OR_DOMAIN_RE.test(s));
+        if (invalid.length > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid blocklist entries: ${invalid.join(", ")}`,
+          });
+        }
+        const unique = [...new Set(raw)];
+        tasksPrefsUpdate.email_blocklist = unique;
       }
 
       const hasTasksPrefs = Object.keys(tasksPrefsUpdate).length > 0;
