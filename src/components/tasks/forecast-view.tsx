@@ -187,18 +187,46 @@ export function ForecastView(): React.ReactElement {
     return typeof val === "number" && val === 14 ? 14 : 7;
   }
 
-  const [days, setDays] = React.useState<7 | 14>(() => extractForecastDays(utils.user.me.getData()));
-  const [daysInitialized, setDaysInitialized] = React.useState(() => utils.user.me.getData() !== undefined);
+  const STORAGE_KEY = "forecast_days";
+
+  function readStoredDays(): 7 | 14 | null {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+      if (raw === "7") return 7;
+      if (raw === "14") return 14;
+    } catch {
+    }
+    return null;
+  }
+
+  function storeDays(n: 7 | 14) {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(n));
+    } catch {
+    }
+  }
+
+  const [days, setDays] = React.useState<7 | 14>(() => {
+    const stored = readStoredDays();
+    if (stored !== null) return stored;
+    return extractForecastDays(utils.user.me.getData());
+  });
+  const [daysInitialized, setDaysInitialized] = React.useState(() => {
+    if (readStoredDays() !== null) return true;
+    return utils.user.me.getData() !== undefined;
+  });
   const [startDate, setStartDate] = React.useState(() => startOfDay(new Date()));
 
   React.useEffect(() => {
     if (!daysInitialized && meData !== undefined) {
-      setDays(extractForecastDays(meData));
+      const stored = readStoredDays();
+      setDays(stored !== null ? stored : extractForecastDays(meData));
       setDaysInitialized(true);
     }
   }, [meData, daysInitialized]);
 
   function handleSetDays(n: 7 | 14) {
+    storeDays(n);
     setDaysInitialized(true);
     setDays(n);
   }
