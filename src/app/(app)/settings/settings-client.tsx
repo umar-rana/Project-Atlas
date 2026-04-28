@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
@@ -17,6 +17,9 @@ import {
   Database,
   LogOut,
   CheckSquare,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -332,6 +335,257 @@ function AppearanceSection() {
   );
 }
 
+const EMAIL_DOMAIN = "atlas.insightive.io";
+
+function EmailStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    processed: "bg-accent-success-muted text-accent-success",
+    discarded: "bg-surface-overlay text-text-tertiary",
+    failed: "bg-accent-danger-muted text-accent-danger",
+    pending: "bg-accent-warning-muted text-accent-warning",
+    processing: "bg-accent-warning-muted text-accent-warning",
+  };
+  const labels: Record<string, string> = {
+    processed: "Processed",
+    discarded: "Discarded",
+    failed: "Failed",
+    pending: "Pending",
+    processing: "Processing",
+  };
+  return (
+    <span className={cn("rounded-full px-2 py-0.5 font-ui text-2xs font-medium", styles[status] ?? styles.pending)}>
+      {labels[status] ?? status}
+    </span>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (val: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:focus-ring disabled:opacity-50",
+        checked ? "bg-accent-primary" : "bg-border-subtle",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition-transform",
+          checked ? "translate-x-4" : "translate-x-0",
+        )}
+      />
+    </button>
+  );
+}
+
+function CaptureSection({ userId }: { userId: string }) {
+  const utils = trpc.useUtils();
+  const { data: rawUserData } = trpc.user.me.useQuery(undefined, { refetchOnWindowFocus: false });
+  const userData = rawUserData as User | undefined;
+  const [copied, setCopied] = useState(false);
+  const [blocklistDraft, setBlocklistDraft] = useState<string | null>(null);
+  const blocklistSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const inboxAddress = `inbox+${userId}@${EMAIL_DOMAIN}`;
+
+  const { data: emailsData, isLoading: emailsLoading } = trpc.emails.list.useQuery(
+    { limit: 10 },
+    { refetchOnWindowFocus: false },
+  );
+
+  const updateMutation = trpc.user.updatePreferences.useMutation({
+    onSuccess: () => utils.user.me.invalidate(),
+  });
+
+  const tasksPrefs = (typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
+    ? userData.tasks_prefs as Record<string, unknown>
+    : {});
+
+  const filterAutoReplies = tasksPrefs["email_filter_auto_replies"] !== false;
+  const filterCalendar = tasksPrefs["email_filter_calendar"] !== false;
+  const blocklistArray = Array.isArray(tasksPrefs["email_blocklist"])
+    ? (tasksPrefs["email_blocklist"] as string[])
+    : [];
+  const blocklistValue = blocklistDraft ?? blocklistArray.join("\n");
+
+  function handleCopy() {
+    navigator.clipboard.writeText(inboxAddress).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  function handleBlocklistChange(val: string) {
+    setBlocklistDraft(val);
+    if (blocklistSaveTimeout.current) clearTimeout(blocklistSaveTimeout.current);
+    blocklistSaveTimeout.current = setTimeout(() => {
+      updateMutation.mutate({ email_blocklist: val });
+      setBlocklistDraft(null);
+    }, 1000);
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <SectionHeader
+        title="Capture"
+        description="Configure how Atlas captures and processes incoming content."
+      />
+
+      <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Email-to-inbox</h3>
+        <p className="mb-4 font-ui text-xs text-text-secondary">
+          Forward or send emails to the address below and they will appear as Inbox tasks automatically.
+        </p>
+
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2">
+          <code className="flex-1 font-mono text-sm text-text-primary break-all">{inboxAddress}</code>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+            title="Copy address"
+          >
+            {copied ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
+          </button>
+        </div>
+
+        <p className="font-ui text-2xs text-text-tertiary">
+          Forwarded emails are supported. The original sender is extracted where possible.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Filters</h3>
+        <p className="mb-4 font-ui text-xs text-text-secondary">
+          Automatically discard emails that match these conditions.
+        </p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-ui text-sm text-text-primary">Discard auto-replies</p>
+              <p className="font-ui text-xs text-text-tertiary">
+                Emails with an <code className="font-mono text-2xs">Auto-Submitted</code> header are silently discarded.
+              </p>
+            </div>
+            <Toggle
+              checked={filterAutoReplies}
+              onChange={(val) => updateMutation.mutate({ email_filter_auto_replies: val })}
+              disabled={updateMutation.isPending}
+            />
+          </div>
+          <div className="h-px bg-border-subtle" />
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-ui text-sm text-text-primary">Discard calendar invites</p>
+              <p className="font-ui text-xs text-text-tertiary">
+                Emails with <code className="font-mono text-2xs">.ics</code> attachments or calendar content-type are discarded.
+              </p>
+            </div>
+            <Toggle
+              checked={filterCalendar}
+              onChange={(val) => updateMutation.mutate({ email_filter_calendar: val })}
+              disabled={updateMutation.isPending}
+            />
+          </div>
+          <div className="h-px bg-border-subtle" />
+          <div>
+            <p className="mb-1 font-ui text-sm text-text-primary">Sender blocklist</p>
+            <p className="mb-2 font-ui text-xs text-text-tertiary">
+              One address per line. Emails from matching senders are discarded.
+            </p>
+            <textarea
+              rows={3}
+              value={blocklistValue}
+              onChange={(e) => handleBlocklistChange(e.target.value)}
+              placeholder="noreply@example.com"
+              className="w-full resize-none rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="font-ui text-sm font-semibold text-text-primary">Recent emails</h3>
+            <p className="font-ui text-xs text-text-secondary">The 10 most recently received emails.</p>
+          </div>
+        </div>
+
+        {emailsLoading ? (
+          <p className="font-ui text-sm text-text-tertiary">Loading…</p>
+        ) : !emailsData || emailsData.captures.length === 0 ? (
+          <div className="rounded-lg border border-border-dashed border-dashed bg-surface-sunken px-4 py-8 text-center">
+            <p className="font-ui text-sm text-text-tertiary">No emails received yet.</p>
+            <p className="mt-1 font-ui text-xs text-text-tertiary">
+              Send an email to <span className="font-medium text-text-secondary">{inboxAddress}</span> to get started.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border-default">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border-subtle bg-surface-sunken">
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">From</th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Subject</th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Status</th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Task</th>
+                </tr>
+              </thead>
+              <tbody>
+                {emailsData.captures.map((capture, i) => (
+                  <tr
+                    key={capture.id}
+                    className={cn(
+                      "border-b border-border-subtle last:border-0",
+                      i % 2 === 0 ? "bg-surface-raised" : "bg-surface-overlay",
+                    )}
+                  >
+                    <td className="max-w-[140px] truncate px-3 py-2 font-ui text-xs text-text-secondary">
+                      {capture.from_address}
+                    </td>
+                    <td className="max-w-[200px] truncate px-3 py-2 font-ui text-xs text-text-primary">
+                      {capture.subject ?? <span className="italic text-text-tertiary">No subject</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <EmailStatusBadge status={capture.status} />
+                    </td>
+                    <td className="px-3 py-2">
+                      {capture.task_id ? (
+                        <a
+                          href={`/tasks/inbox?taskId=${capture.task_id}`}
+                          className="inline-flex items-center gap-1 font-ui text-xs text-accent-primary hover:underline"
+                        >
+                          View <ExternalLink size={10} />
+                        </a>
+                      ) : (
+                        <span className="font-ui text-xs text-text-tertiary">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function IntegrationsSection({
   autoOpenWizard,
   driveLinked,
@@ -430,7 +684,6 @@ function IntegrationsSection({
       {[
         { label: "Google Calendar", desc: "Sync events and time-blocks with your Google Calendar." },
         { label: "Google Contacts", desc: "Import contacts to Atlas People." },
-        { label: "Resend", desc: "Send transactional emails from Atlas workflows." },
       ].map((int) => (
         <div key={int.label} className="rounded-xl border border-border-subtle bg-surface-base p-5">
           <div className="flex items-center justify-between">
@@ -444,6 +697,29 @@ function IntegrationsSection({
           </div>
         </div>
       ))}
+
+      <div className="rounded-xl border border-border-subtle bg-surface-base p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-ui text-sm font-semibold text-text-primary">Resend (Inbound Email)</h3>
+            <p className="font-ui text-xs text-text-tertiary">
+              Routes emails sent to your inbox address to Atlas tasks. Configure your inbox address in{" "}
+              <button
+                type="button"
+                className="text-accent-primary hover:underline"
+                onClick={() => {
+                  window.location.href = "/settings?section=capture";
+                }}
+              >
+                Settings → Capture
+              </button>.
+            </p>
+          </div>
+          <span className="rounded-full bg-accent-success-muted px-2.5 py-0.5 font-ui text-2xs font-medium text-accent-success">
+            Active
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1208,12 +1484,7 @@ export function SettingsClient({
     <div className="h-full overflow-y-auto p-6">
       {section === "profile" && <ProfileSection initialUser={user} />}
       {section === "appearance" && <AppearanceSection />}
-      {section === "capture" && (
-        <PlaceholderSection
-          title="Capture"
-          description="Configure how Atlas captures and processes incoming content."
-        />
-      )}
+      {section === "capture" && <CaptureSection userId={user.id} />}
       {section === "tasks" && <TasksSection />}
       {section === "integrations" && (
         <IntegrationsSection

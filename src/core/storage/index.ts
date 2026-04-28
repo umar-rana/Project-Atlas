@@ -29,6 +29,7 @@ export async function uploadFile(params: {
   filename: string;
   contentType: string;
   data: Buffer | Uint8Array;
+  taskId?: string;
 }): Promise<{ fileId: string; path: string }> {
   const fileId = newId();
   const path = storagePath(params.userId, fileId, params.filename);
@@ -48,6 +49,7 @@ export async function uploadFile(params: {
       id: newId(),
       file_id: fileId,
       user_id: params.userId,
+      task_id: params.taskId ?? null,
       filename: params.filename,
       content_type: params.contentType,
       size_bytes: params.data.byteLength,
@@ -55,7 +57,7 @@ export async function uploadFile(params: {
     },
   });
 
-  log.info({ path, userId: params.userId }, "File uploaded");
+  log.info({ path, userId: params.userId, taskId: params.taskId }, "File uploaded");
   return { fileId, path };
 }
 

@@ -165,6 +165,7 @@ model AICallLog {
 model Attachment {
   id            String   @id @db.Uuid
   user_id       String   @db.Uuid
+  task_id       String?  @db.Uuid
   file_id       String   @unique
   filename      String
   content_type  String
@@ -176,6 +177,7 @@ model Attachment {
   user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+  @@index([task_id])
   @@index([deleted_at])
 }
 

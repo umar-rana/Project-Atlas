@@ -37,6 +37,7 @@ thresholdImpact, exportStats) is wired up. The capture modal is updated to use t
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` — needed for Drive OAuth (not yet configured)
 - `ANTHROPIC_API_KEY` / `ANTHROPIC_BASE_URL` — Anthropic credentials (Replit blueprint)
 - `CRON_SECRET` — Bearer secret for `POST /api/cron/cleanup-sessions`; **required in production** (endpoint returns 503 if unset outside dev)
+- `RESEND_WEBHOOK_SECRET` — Resend/svix webhook signing secret for `POST /api/email/inbound`; if unset, signature check is skipped (dev only); in production, set this to the secret from the Resend dashboard (format: `whsec_...`)
 
 ## Project Structure
 ```
@@ -135,6 +136,17 @@ Expired sessions are purged in two ways:
 2. **Explicit (cron)**: `POST /api/cron/cleanup-sessions` deletes all expired rows and returns `{ ok: true, purged: N }`. Requires `Authorization: Bearer $CRON_SECRET`. Set up a daily external scheduler (e.g. GitHub Actions, Render cron, or Replit deployments schedule) pointing at this endpoint. In production the endpoint returns `503` if `CRON_SECRET` is not configured.
 
 ## Recent Changes
+- 2026-04-27: Wave 3c Part 2 — Email-to-inbox (Task #44):
+  - `src/core/capture/email-parser.ts` — mailparser wrapper: extracts plain-text/HTML body, subject, from, attachments; detects auto-replies (Auto-Submitted header), calendar invites (.ics, text/calendar), and Fwd: prefix; truncates body to 10k chars
+  - `src/app/api/email/inbound/route.ts` — Resend inbound webhook handler: validates Resend/svix signature (HMAC-SHA256); extracts user_id from `inbox+{userId}@atlas.insightive.io`; applies blocklist + filter settings; creates EmailCapture; calls captureAndCreate with source="email"; uploads attachments to Object Storage; writes audit log `email_capture_received`
+  - `src/server/routers/emails.ts` — tRPC router: `emails.list` (paginated, 10 per page), `emails.byId`, `emails.discardCapture`
+  - `src/server/routers/_app.ts` — added `emails` router
+  - `src/server/routers/user.ts` — `updatePreferences` extended with `email_filter_auto_replies`, `email_filter_calendar`, `email_blocklist` fields (stored in tasks_prefs JSON)
+  - `src/core/audit/index.ts` — added "EmailCapture" to audited entities
+  - `src/app/(app)/settings/settings-client.tsx` — Capture section fully implemented: inbox address display + copy button, filter toggles (auto-replies, calendar), sender blocklist textarea, recent emails table (from, subject, status, task link); Integrations section updated to show Resend as "Active"
+  - New env var: `RESEND_WEBHOOK_SECRET` — set in Replit secrets; used for Resend/svix webhook signature validation (optional in dev, required in production)
+  - Package added: `mailparser`, `@types/mailparser`
+
 - 2026-04-27: Wave 2 Signed-In App Shell (Task #25):
   - `(app)` route group with shared AppShellProvider layout (auth guard + shell)
   - AppShell wired with Zustand store for modal state (command palette, shortcuts overlay, capture modal, inspector)

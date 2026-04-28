@@ -13,6 +13,7 @@ import { searchRouter } from "./search";
 import { foldersRouter } from "./folders";
 import { reviewRouter } from "./review";
 import { forecastRouter } from "./forecast";
+import { emailsRouter } from "./emails";
 
 export const appRouter = router({
   health: healthRouter,
@@ -29,6 +30,7 @@ export const appRouter = router({
   folders: foldersRouter,
   review: reviewRouter,
   forecast: forecastRouter,
+  emails: emailsRouter,
 });
 
 export type AppRouter = typeof appRouter;

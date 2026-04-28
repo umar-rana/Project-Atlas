@@ -37,6 +37,7 @@ interface TaskListProps {
   enableQuickAdd?: boolean;
   emptyTitle?: string;
   emptyBody?: string;
+  highlightId?: string | null;
 }
 
 export function TaskList({
@@ -49,6 +50,7 @@ export function TaskList({
   enableQuickAdd = true,
   emptyTitle = "Nothing here",
   emptyBody = "Use the quick-add bar to capture a task.",
+  highlightId,
 }: TaskListProps): React.ReactElement {
   const query = trpc.tasks.list.useQuery({
     perspective,
@@ -107,6 +109,18 @@ export function TaskList({
     }
     return null;
   }, [perspective, inboxHintsQuery.data, projectsQuery.data, dismissedBulkHints]);
+
+  const highlightApplied = React.useRef(false);
+  React.useEffect(() => {
+    if (!highlightId || highlightApplied.current || query.isLoading) return;
+    const match = (query.data as TaskRow[] | undefined)?.find((t) => t.id === highlightId);
+    if (!match) return;
+    highlightApplied.current = true;
+    setSelectedTaskId(highlightId);
+    requestAnimationFrame(() => {
+      document.querySelector(`[data-task-id="${highlightId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [highlightId, query.data, query.isLoading, setSelectedTaskId]);
 
   const tasks = React.useMemo<TaskRow[]>(() => {
     const list = (query.data as TaskRow[] | undefined) ?? [];

@@ -22,15 +22,35 @@ export const userRouter = router({
         tasks_default_review_interval_days: z.number().int().min(1).max(365).nullable().optional(),
         tasks_default_forecast_days: z.enum(["7", "14"]).optional(),
         tasks_default_sequential: z.boolean().optional(),
+        email_filter_auto_replies: z.boolean().optional(),
+        email_filter_calendar: z.boolean().optional(),
+        email_blocklist: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { tasks_default_review_interval_days, tasks_default_forecast_days, tasks_default_sequential, ...coreFields } = input;
+      const {
+        tasks_default_review_interval_days,
+        tasks_default_forecast_days,
+        tasks_default_sequential,
+        email_filter_auto_replies,
+        email_filter_calendar,
+        email_blocklist,
+        ...coreFields
+      } = input;
 
       const tasksPrefsUpdate: Record<string, unknown> = {};
       if (tasks_default_review_interval_days !== undefined) tasksPrefsUpdate.default_review_interval_days = tasks_default_review_interval_days;
       if (tasks_default_forecast_days !== undefined) tasksPrefsUpdate.default_forecast_days = parseInt(tasks_default_forecast_days, 10);
       if (tasks_default_sequential !== undefined) tasksPrefsUpdate.default_sequential = tasks_default_sequential;
+      if (email_filter_auto_replies !== undefined) tasksPrefsUpdate.email_filter_auto_replies = email_filter_auto_replies;
+      if (email_filter_calendar !== undefined) tasksPrefsUpdate.email_filter_calendar = email_filter_calendar;
+      if (email_blocklist !== undefined) {
+        const addresses = email_blocklist
+          .split(/[\n,]/)
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean);
+        tasksPrefsUpdate.email_blocklist = addresses;
+      }
 
       const hasTasksPrefs = Object.keys(tasksPrefsUpdate).length > 0;
 
