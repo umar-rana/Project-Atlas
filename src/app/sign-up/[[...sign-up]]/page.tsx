@@ -4,24 +4,25 @@ import { SignUp } from "@clerk/nextjs";
 
 const darkAppearance = {
   variables: {
-    colorBackground: "#16181d",
-    colorInputBackground: "#1e2028",
-    colorText: "#e2e5ed",
-    colorTextSecondary: "#8b92a5",
-    colorInputText: "#e2e5ed",
-    colorPrimary: "#4f8ef7",
-    colorDanger: "#ef4444",
-    borderRadius: "0.5rem",
+    colorBackground: "var(--surface-raised)",
+    colorInputBackground: "var(--surface-sunken)",
+    colorText: "var(--text-primary)",
+    colorTextSecondary: "var(--text-secondary)",
+    colorInputText: "var(--text-primary)",
+    colorPrimary: "var(--accent-primary)",
+    colorDanger: "var(--accent-danger)",
+    borderRadius: "var(--radius-lg)",
+    fontFamily: "var(--font-ui)",
   },
   elements: {
-    card: "shadow-xl border border-white/8",
+    card: "shadow-3 border border-border-subtle",
     formButtonPrimary: "bg-accent-primary hover:opacity-90",
   },
 };
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-base px-6">
+    <div className="font-ui flex min-h-screen items-center justify-center bg-surface-base px-6">
       <div className="flex flex-col items-center gap-8">
         <div className="text-center">
           <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-accent-primary shadow-2">
