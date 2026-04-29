@@ -9,7 +9,7 @@ import {
   Users,
   FileText,
   BookOpen,
-  FolderArchive,
+  Vault,
   Trash2,
 } from "lucide-react";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
@@ -22,7 +22,7 @@ const MODULES = [
   { id: "people",    label: "People",    icon: Users,         href: "/people",    shortcut: ["⌘", "3"] },
   { id: "notes",     label: "Notes",     icon: FileText,      href: "/notes",     shortcut: ["⌘", "4"] },
   { id: "journals",  label: "Journals",  icon: BookOpen,      href: "/journals",  shortcut: ["⌘", "5"] },
-  { id: "documents", label: "Documents", icon: FolderArchive, href: "/documents", shortcut: ["⌘", "6"] },
+  { id: "vault",     label: "Vault",     icon: Vault,         href: "/vault",     shortcut: ["⌘", "6"] },
 ];
 
 function getModuleId(pathname: string): string {
@@ -31,7 +31,7 @@ function getModuleId(pathname: string): string {
   if (pathname.startsWith("/people"))    return "people";
   if (pathname.startsWith("/notes"))     return "notes";
   if (pathname.startsWith("/journals"))  return "journals";
-  if (pathname.startsWith("/documents")) return "documents";
+  if (pathname.startsWith("/vault"))     return "vault";
   if (pathname.startsWith("/settings"))  return "settings";
   if (pathname.startsWith("/admin"))     return "health";
   if (pathname.startsWith("/usage"))     return "health";
@@ -52,7 +52,7 @@ export function ModuleSwitcherWired(): React.ReactElement {
         "3": "/people",
         "4": "/notes",
         "5": "/journals",
-        "6": "/documents",
+        "6": "/vault",
       };
       if (map[e.key]) {
         e.preventDefault();
