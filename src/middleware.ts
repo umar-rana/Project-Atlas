@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
+  "/",
+  "/privacy(.*)",
+  "/terms(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/auth/test-login(.*)",
@@ -43,10 +46,12 @@ function toMobilePath(pathname: string): string | null {
 
 function shouldRedirectToMobile(req: NextRequest): boolean {
   const { pathname } = req.nextUrl;
+  if (pathname === "/") return false;
   if (pathname.startsWith("/m")) return false;
   if (pathname.startsWith("/api")) return false;
   if (pathname.startsWith("/_next")) return false;
   if (pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) return false;
+  if (pathname.startsWith("/privacy") || pathname.startsWith("/terms")) return false;
   if (STATIC_ASSET_RE.test(pathname)) return false;
   if (req.cookies.get("prefer-desktop")?.value === "1") return false;
   return isMobileRequest(req);
