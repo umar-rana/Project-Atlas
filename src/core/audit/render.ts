@@ -76,7 +76,11 @@ export function renderAuditEntry(entry: AuditLog): string {
     return title ? `Created task "${title}"` : "Created this task";
   }
 
-  if (action === "complete") return "Marked as completed";
+  if (action === "complete") {
+    const msg = meta?.message as string | undefined;
+    if (msg) return msg;
+    return "Marked as completed";
+  }
   if (action === "uncomplete") return "Reopened task";
   if (action === "delete") return "Moved to trash";
   if (action === "restore") return "Restored from trash";

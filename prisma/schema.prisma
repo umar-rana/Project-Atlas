@@ -319,6 +319,11 @@ model Task {
   estimated_minutes Int?
   position    Decimal   @default(0) @db.Decimal(20, 10)
 
+  // Recurrence
+  recurrence_rule      String?
+  recurrence_anchor    String    @default("due_date") // due_date | completion_date
+  recurrence_parent_id String?   @db.Uuid
+
   // Denormalized references derived by the parser from notes.
   referenced_person_ids  String[] @default([])
   referenced_tag_ids     String[] @default([])

@@ -10,6 +10,8 @@ import {
   releaseTagReferences,
 } from "@/core/references/resolver";
 import { createLogger } from "@/core/logging";
+import { computeNextOccurrence, ruleForNextOccurrence } from "@/core/recurrence/rrule-helpers";
+import { RRule } from "rrule";
 
 const log = createLogger({ module: "tasks-router" });
 
@@ -623,18 +625,242 @@ export const tasksRouter = router({
   complete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const result = await db.task.updateMany({
+      const completedAt = new Date();
+      const task = await db.task.findFirst({
         where: { id: input.id, user_id: ctx.user.id },
-        data: { status: "completed", completed_at: new Date() },
+        select: {
+          id: true,
+          title: true,
+          notes: true,
+          project_id: true,
+          estimated_minutes: true,
+          due_date: true,
+          defer_date: true,
+          flagged: true,
+          recurrence_rule: true,
+          recurrence_anchor: true,
+          recurrence_parent_id: true,
+          tags: { select: { tag_id: true } },
+          contexts: { select: { context_id: true } },
+          checklist_items: {
+            where: { deleted_at: null },
+            select: { id: true, title: true, position: true },
+          },
+        },
       });
-      if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Pre-compute next occurrence data before the transaction so the
+      // mark-complete and next-occurrence creation are fully atomic.
+      let nextOccurrenceId: string | null = null;
+      let nextOccurrenceDate: Date | null = null;
+      let newId_: string | null = null;
+      let childRule: string | null = null;
+      let chainAnchorId: string | null = null;
+      let position: number | null = null;
+
+      if (task.recurrence_rule) {
+        nextOccurrenceDate = computeNextOccurrence(
+          task.recurrence_rule,
+          (task.recurrence_anchor ?? "due_date") as "due_date" | "completion_date",
+          completedAt,
+          task.due_date,
+        );
+
+        if (nextOccurrenceDate) {
+          newId_ = newId();
+          chainAnchorId = task.recurrence_parent_id ?? task.id;
+          childRule = ruleForNextOccurrence(task.recurrence_rule);
+
+          const maxAgg = await db.task.aggregate({
+            _max: { position: true },
+            where: { user_id: ctx.user.id, project_id: task.project_id, parent_id: null },
+          });
+          position = nextPosition(maxAgg._max.position);
+          nextOccurrenceId = newId_;
+        }
+      }
+
+      // Single atomic transaction: mark task complete + create next occurrence.
+      await db.$transaction(async (tx) => {
+        await tx.task.update({
+          where: { id: input.id },
+          data: { status: "completed", completed_at: completedAt },
+        });
+
+        if (nextOccurrenceDate && newId_ && chainAnchorId !== null && position !== null) {
+          await tx.task.create({
+            data: {
+              id: newId_,
+              user_id: ctx.user.id,
+              title: task.title,
+              notes: task.notes ?? null,
+              project_id: task.project_id ?? null,
+              estimated_minutes: task.estimated_minutes ?? null,
+              due_date: nextOccurrenceDate,
+              flagged: false,
+              recurrence_rule: childRule,
+              recurrence_anchor: childRule ? (task.recurrence_anchor ?? "due_date") : "due_date",
+              recurrence_parent_id: childRule ? chainAnchorId : null,
+              position: new Prisma.Decimal(position),
+            },
+          });
+
+          if (task.tags.length > 0) {
+            await tx.tagOnTask.createMany({
+              data: task.tags.map((t) => ({ task_id: newId_!, tag_id: t.tag_id })),
+              skipDuplicates: true,
+            });
+          }
+
+          if (task.contexts.length > 0) {
+            await tx.contextOnTask.createMany({
+              data: task.contexts.map((c) => ({ task_id: newId_!, context_id: c.context_id })),
+              skipDuplicates: true,
+            });
+          }
+
+          if (task.checklist_items.length > 0) {
+            await tx.checklistItem.createMany({
+              data: task.checklist_items.map((ci) => ({
+                id: newId(),
+                user_id: ctx.user.id,
+                task_id: newId_!,
+                title: ci.title,
+                position: ci.position,
+              })),
+            });
+          }
+        }
+      });
+
+      const auditMeta: Record<string, unknown> = {};
+      if (nextOccurrenceId && nextOccurrenceDate) {
+        const dateStr = nextOccurrenceDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        auditMeta.next_occurrence_id = nextOccurrenceId;
+        auditMeta.message = `Completed; next occurrence created for ${dateStr}`;
+      }
+
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Task",
         entity_id: input.id,
         action: "complete",
+        meta: Object.keys(auditMeta).length > 0 ? auditMeta : undefined,
       });
+      return { ok: true, next_occurrence_id: nextOccurrenceId };
+    }),
+
+  // ── Recurrence procedures ────────────────────────────────────────────────
+  setRecurrence: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        rule: z.string().min(1).max(500),
+        anchor: z.enum(["due_date", "completion_date"]).default("due_date"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id },
+        select: { id: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Validate the RRULE string before persisting to prevent silently
+      // broken recurring tasks that stop generating occurrences.
+      try {
+        const rruleStr = input.rule.startsWith("RRULE:") ? input.rule : `RRULE:${input.rule}`;
+        RRule.fromString(rruleStr);
+      } catch {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid recurrence rule" });
+      }
+
+      await db.task.update({
+        where: { id: input.id },
+        data: {
+          recurrence_rule: input.rule,
+          recurrence_anchor: input.anchor,
+          // Anchor tasks point to themselves so all chain members share
+          // recurrence_parent_id = anchor_id as a consistent data invariant.
+          recurrence_parent_id: input.id,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: input.id,
+        action: "update",
+        meta: { recurrence_rule: input.rule, recurrence_anchor: input.anchor },
+      });
+
       return { ok: true };
+    }),
+
+  removeRecurrence: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id },
+        select: { id: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.task.update({
+        where: { id: input.id },
+        data: {
+          recurrence_rule: null,
+          recurrence_anchor: "due_date",
+          recurrence_parent_id: null,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: input.id,
+        action: "update",
+        meta: { recurrence_rule: null },
+      });
+
+      return { ok: true };
+    }),
+
+  recurrenceInstances: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        limit: z.number().int().min(1).max(50).default(10),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id },
+        select: { id: true, recurrence_parent_id: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const chainAnchorId = task.recurrence_parent_id ?? task.id;
+
+      const instances = await db.task.findMany({
+        where: {
+          user_id: ctx.user.id,
+          OR: [
+            { id: chainAnchorId },
+            { recurrence_parent_id: chainAnchorId },
+          ],
+        },
+        orderBy: { due_date: "asc" },
+        take: input.limit,
+        select: { id: true, title: true, due_date: true, status: true, completed_at: true },
+      });
+
+      return instances;
     }),
 
   uncomplete: protectedProcedure
@@ -658,11 +884,17 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const now = new Date();
-      const result = await db.task.updateMany({
+      const task = await db.task.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true, recurrence_rule: true, recurrence_parent_id: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.task.update({
+        where: { id: input.id },
         data: { deleted_at: now },
       });
-      if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
+
       // Cascade soft-delete to child subtasks and checklist items.
       await db.task.updateMany({
         where: { parent_id: input.id, user_id: ctx.user.id, deleted_at: null },
@@ -672,6 +904,23 @@ export const tasksRouter = router({
         where: { task_id: input.id, user_id: ctx.user.id, deleted_at: null },
         data: { deleted_at: now },
       });
+
+      // Break the recurrence chain when deleting the anchor task.
+      // An anchor has recurrence_parent_id === task.id (self-reference).
+      // We clear recurrence_parent_id from direct descendants so the chain
+      // link is severed; their recurrence_rule is preserved so they are
+      // "untouched" in terms of content but no longer linked to the anchor.
+      if (task.recurrence_rule && task.recurrence_parent_id === input.id) {
+        await db.task.updateMany({
+          where: {
+            user_id: ctx.user.id,
+            recurrence_parent_id: input.id,
+            deleted_at: null,
+          },
+          data: { recurrence_parent_id: null },
+        });
+      }
+
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Task",

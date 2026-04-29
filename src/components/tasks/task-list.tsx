@@ -130,6 +130,8 @@ export interface TaskRow {
     position: string | number | { toString(): string };
   }[];
   is_blocked?: boolean;
+  recurrence_rule?: string | null;
+  recurrence_anchor?: string | null;
 }
 
 interface TaskListProps {

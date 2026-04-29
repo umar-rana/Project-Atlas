@@ -14,6 +14,7 @@ import { TaskInspectorAttachments } from "./task-inspector-attachments";
 import { TaskInspectorActivityTab } from "./task-inspector-activity-tab";
 import { ChecklistSection } from "./checklist-section";
 import { SubtaskSection } from "./subtask-section";
+import { RecurrenceForm } from "./recurrence-form";
 
 interface InspectorContextLink {
   context: { id: string; name: string };
@@ -51,6 +52,8 @@ interface InspectorTask {
   checklist_items?: InspectorChecklistItem[];
   parent?: { id: string; title: string } | null;
   referenced_entity_refs: unknown;
+  recurrence_rule?: string | null;
+  recurrence_anchor?: string | null;
 }
 type EntityRef = { kind: string; id: string; label: string };
 
@@ -542,6 +545,16 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               className="w-full resize-y rounded-sm border border-border-default bg-surface-base p-2 font-ui text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
             />
           </section>
+
+          {!inTrash && (
+            <RecurrenceForm
+              taskId={taskData.id}
+              recurrenceRule={taskData.recurrence_rule}
+              recurrenceAnchor={taskData.recurrence_anchor}
+              hasSubtasks={subtasks.length > 0}
+              disabled={inTrash}
+            />
+          )}
 
           {showMigrationPrompt && (
             <div className="mt-4 flex items-start gap-2 rounded-sm border border-accent-info/30 bg-accent-info/5 p-2.5">

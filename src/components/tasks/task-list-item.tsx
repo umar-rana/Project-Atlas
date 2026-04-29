@@ -1,13 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight } from "lucide-react";
+import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight, RefreshCw } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
 import type { TaskRow } from "./task-list";
+import { describeRule } from "@/core/recurrence/rrule-helpers";
+import { RecurrenceQuickPopover } from "./recurrence-quick-popover";
 
 interface TaskListItemProps {
   task: TaskRow;
@@ -53,6 +55,7 @@ function TaskListItemImpl({
   const utils = trpc.useUtils();
   const toggleExpandedParent = useTasksStore((s) => s.toggleExpandedParent);
   const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
+  const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
 
   const [editing, setEditing] = React.useState(false);
   const [titleDraft, setTitleDraft] = React.useState(task.title);
@@ -280,11 +283,30 @@ function TaskListItemImpl({
           <Unlock size={12} />
         </button>
       )}
+      {task.recurrence_rule && !inTrash && (
+        <span
+          title={describeRule(
+            task.recurrence_rule,
+            (task.recurrence_anchor ?? "due_date") as "due_date" | "completion_date",
+          )}
+          className="shrink-0 text-accent-info"
+          aria-label="Recurring task"
+        >
+          <RefreshCw size={10} />
+        </span>
+      )}
       {due ? (
         <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
           {dueLabel(due)}
         </span>
       ) : null}
+      {!inTrash && (
+        <RecurrenceQuickPopover
+          taskId={task.id}
+          hasRule={Boolean(task.recurrence_rule)}
+          onOpenCustom={() => setSelectedTaskId(task.id)}
+        />
+      )}
       {isProjectView && hasSubtasks && (
         <button
           type="button"
