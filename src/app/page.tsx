@@ -8,6 +8,9 @@ import {
   Users,
   FileText,
   BookOpen,
+  Mail,
+  LogIn,
+  Zap,
 } from "lucide-react";
 
 export default async function RootPage() {
@@ -19,6 +22,7 @@ export default async function RootPage() {
       <Header />
       <main>
         <Hero />
+        <GettingStarted />
         <WhatAtlasIs />
         <Modules />
       </main>
@@ -92,6 +96,90 @@ function Hero() {
         <p className="mt-6 text-sm text-text-tertiary">
           Currently in private use among family and friends. By invitation only.
         </p>
+      </div>
+    </section>
+  );
+}
+
+const gettingStartedSteps = [
+  {
+    icon: Mail,
+    step: "1",
+    title: "Check your invitation email",
+    description:
+      "Atlas is invite-only. Look for an invitation from Atlas in your inbox — it has a link that takes you straight to the sign-in page.",
+  },
+  {
+    icon: LogIn,
+    step: "2",
+    title: "Sign in with Google or a magic link",
+    description:
+      "Click 'Continue with Google' to sign in instantly, or enter your email to receive a one-time magic link — no password needed.",
+  },
+  {
+    icon: Zap,
+    step: "3",
+    title: "Capture your first task",
+    description:
+      "You'll land in Tasks. Hit the '+' button or press ⌘⇧I to open Quick Capture and add your first item. That's it — you're in.",
+  },
+];
+
+function GettingStarted() {
+  return (
+    <section
+      id="getting-started"
+      className="border-t border-border-subtle bg-surface-base"
+    >
+      <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mb-12 max-w-2xl">
+          <h2 className="text-2xl font-semibold text-text-primary tablet:text-3xl">
+            How to get started
+          </h2>
+          <p className="mt-3 text-base leading-relaxed text-text-secondary">
+            New to Atlas? Here&apos;s how to go from invitation to your first
+            captured task in under two minutes.
+          </p>
+        </div>
+
+        <div className="grid gap-6 tablet:grid-cols-3">
+          {gettingStartedSteps.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.step}
+                className="relative rounded-xl border border-border-subtle bg-surface-raised p-6"
+              >
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-primary-subtle">
+                    <Icon
+                      className="h-4 w-4 text-accent-primary"
+                      strokeWidth={1.75}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
+                    Step {item.step}
+                  </span>
+                </div>
+                <h3 className="text-base font-semibold text-text-primary">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+                  {item.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-10">
+          <Link
+            href="/sign-in"
+            className="inline-flex rounded-lg bg-accent-primary px-6 py-2.5 text-sm font-medium text-text-on-accent transition-opacity hover:opacity-90"
+          >
+            Sign in to Atlas
+          </Link>
+        </div>
       </div>
     </section>
   );
