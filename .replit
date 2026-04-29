@@ -75,7 +75,6 @@ timeoutMs = 120000
 LOG_LEVEL = "debug"
 GOOGLE_REDIRECT_URI = "https://atlas.insightive.io/api/drive/oauth-callback"
 STORAGE_PROVIDER = "r2"
-R2_PUBLIC_DOMAIN = "https://atlas.insightive.io"
 
 [userenv.development]
 APP_URL = "https://589c0f2c-f9be-408b-abb6-984853e85b49-00-2yh90adfura7a.sisko.replit.dev"

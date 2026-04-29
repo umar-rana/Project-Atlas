@@ -2,7 +2,7 @@
 
 ## Overview
 
-Atlas uses Cloudflare R2 as its object storage backend for file attachments. Files are served through a branded custom domain (`atlas.insightive.io`) using time-limited signed URLs that expire after one hour.
+Atlas uses Cloudflare R2 as its object storage backend for file attachments. Files are served through a branded custom domain (`atlasstore.insightive.io`) using time-limited signed URLs that expire after one hour.
 
 ## Architecture
 
@@ -16,7 +16,7 @@ Client request
 302 Redirect
     │
     ▼
-atlas.insightive.io/<path>?X-Amz-Signature=...
+atlasstore.insightive.io/<path>?X-Amz-Signature=...
     │  Cloudflare R2 validates the signature
     ▼
 File bytes delivered directly to the client
@@ -37,7 +37,7 @@ All storage secrets are stored in Replit Secrets (never in code):
 | `R2_SECRET_ACCESS_KEY` | R2 API token secret key |
 | `R2_BUCKET_NAME` | Bucket name (`projectatlas`) |
 | `R2_ENDPOINT` | S3-compatible endpoint (`https://<accountId>.r2.cloudflarestorage.com`) |
-| `R2_PUBLIC_DOMAIN` | Custom domain for signed URLs (`https://atlas.insightive.io`) |
+| `R2_PUBLIC_DOMAIN` | Custom domain for signed URLs (`https://atlasstore.insightive.io`) |
 
 ### Provider Selection
 
@@ -53,10 +53,10 @@ The AWS SDK generates a pre-signed `GetObject` URL against the S3-compatible R2 
 
 1. Generate signed URL against `https://<accountId>.r2.cloudflarestorage.com/<bucket>/<key>?...`
 2. Strip the bucket-name path prefix from the URL path
-3. Replace the hostname with `atlas.insightive.io`
+3. Replace the hostname with `atlasstore.insightive.io`
 4. Preserve the full query string (all signature components)
 
-Result: `https://atlas.insightive.io/users/<userId>/attachments/<year>/<month>/<fileId>-<filename>?X-Amz-Signature=...`
+Result: `https://atlasstore.insightive.io/users/<userId>/attachments/<year>/<month>/<fileId>-<filename>?X-Amz-Signature=...`
 
 **Default expiry**: 3600 seconds (1 hour).
 
