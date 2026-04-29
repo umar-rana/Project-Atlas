@@ -104,6 +104,7 @@ export const tasksRouter = router({
         context_id: z.string().uuid().optional(),
         tag_name: z.string().optional(),
         include_completed: z.boolean().default(false),
+        include_deferred: z.boolean().default(false),
         limit: z.number().int().min(1).max(500).default(200),
       }),
     )
@@ -129,6 +130,11 @@ export const tasksRouter = router({
         where.status = "active";
       }
 
+      const now = new Date();
+      const notDeferred: Prisma.TaskWhereInput = {
+        OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+      };
+
       if (input.perspective === "inbox") {
         where.project_id = null;
         where.parent_id = null;
@@ -137,10 +143,15 @@ export const tasksRouter = router({
         start.setHours(0, 0, 0, 0);
         const end = new Date(start);
         end.setDate(end.getDate() + 1);
-        where.OR = [
-          { due_date: { lt: end } },
-          { defer_date: { lt: end, not: null } },
-          { flagged: true, due_date: null },
+        where.AND = [
+          notDeferred,
+          {
+            OR: [
+              { due_date: { lt: end } },
+              { defer_date: { lte: now, not: null } },
+              { flagged: true, due_date: null },
+            ],
+          },
         ];
       } else if (input.perspective === "flagged") {
         where.flagged = true;
@@ -153,6 +164,9 @@ export const tasksRouter = router({
         }
         where.project_id = input.project_id;
         where.parent_id = null;
+        if (!input.include_deferred) {
+          where.AND = [notDeferred];
+        }
       } else if (input.perspective === "context") {
         if (!input.context_id) {
           throw new TRPCError({
@@ -244,10 +258,15 @@ export const tasksRouter = router({
     }),
 
   counts: protectedProcedure.query(async ({ ctx }) => {
+    const now = new Date();
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
+
+    const notDeferred: Prisma.TaskWhereInput = {
+      OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+    };
 
     const [inbox, today, flagged, trash] = await Promise.all([
       db.task.count({
@@ -262,10 +281,15 @@ export const tasksRouter = router({
         where: {
           user_id: ctx.user.id,
           status: "active",
-          OR: [
-            { due_date: { lt: end } },
-            { defer_date: { lt: end, not: null } },
-            { flagged: true, due_date: null },
+          AND: [
+            notDeferred,
+            {
+              OR: [
+                { due_date: { lt: end } },
+                { defer_date: { lte: now, not: null } },
+                { flagged: true, due_date: null },
+              ],
+            },
           ],
         },
       }),
@@ -282,6 +306,23 @@ export const tasksRouter = router({
 
     return { inbox, today, flagged, trash };
   }),
+
+  countDeferred: protectedProcedure
+    .input(z.object({ project_id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const count = await db.task.count({
+        where: {
+          user_id: ctx.user.id,
+          project_id: input.project_id,
+          parent_id: null,
+          status: "active",
+          deleted_at: null,
+          defer_date: { gt: now },
+        },
+      });
+      return { count };
+    }),
 
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid(), includeDeleted: z.boolean().default(false) }))

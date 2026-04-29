@@ -70,13 +70,18 @@ export const forecastRouter = router({
       const start = input.start_date ? startOfDay(input.start_date) : today;
       const end = endOfDay(addDays(start, input.days - 1));
 
-      const [scheduledTasks, overdueTasks] = await Promise.all([
+      const isPastRange = end < today;
+
+      const now = new Date();
+
+      const [activeScheduled, completedScheduled, overdueTasks] = await Promise.all([
         db.task.findMany({
           where: {
             user_id: userId,
             status: "active",
             deleted_at: null,
             due_date: { gte: start, lte: end },
+            OR: [{ defer_date: null }, { defer_date: { lte: now } }],
           },
           include: {
             project: { select: { id: true, title: true, color: true } },
@@ -87,18 +92,36 @@ export const forecastRouter = router({
         db.task.findMany({
           where: {
             user_id: userId,
-            status: "active",
+            status: "completed",
             deleted_at: null,
-            due_date: { lt: today },
+            due_date: { gte: start, lt: today },
           },
           include: {
             project: { select: { id: true, title: true, color: true } },
             contexts: { include: { context: { select: { id: true, name: true } } } },
           },
-          orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
-          take: 100,
+          orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
         }),
+        isPastRange
+          ? Promise.resolve([])
+          : db.task.findMany({
+              where: {
+                user_id: userId,
+                status: "active",
+                deleted_at: null,
+                due_date: { lt: today },
+                OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+              },
+              include: {
+                project: { select: { id: true, title: true, color: true } },
+                contexts: { include: { context: { select: { id: true, name: true } } } },
+              },
+              orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
+              take: 100,
+            }),
       ]);
+
+      const scheduledTasks = [...activeScheduled, ...completedScheduled];
 
       const [filteredScheduled, filteredOverdue] = await Promise.all([
         applySequentialFilter(scheduledTasks),
@@ -134,13 +157,19 @@ export const forecastRouter = router({
       const day = startOfDay(input.date);
       const end = endOfDay(day);
 
-      const [rawTasks, rawOverdue] = await Promise.all([
+      const todayStart = startOfDay(new Date());
+      const isPast = endOfDay(day) < todayStart;
+
+      const now = new Date();
+
+      const [activeTasks, completedTasks, rawOverdue] = await Promise.all([
         db.task.findMany({
           where: {
             user_id: userId,
             status: "active",
             deleted_at: null,
             due_date: { gte: day, lte: end },
+            OR: [{ defer_date: null }, { defer_date: { lte: now } }],
           },
           include: {
             project: { select: { id: true, title: true, color: true } },
@@ -148,21 +177,41 @@ export const forecastRouter = router({
           },
           orderBy: [{ flagged: "desc" }, { position: "asc" }],
         }),
-        db.task.findMany({
-          where: {
-            user_id: userId,
-            status: "active",
-            deleted_at: null,
-            due_date: { lt: day },
-          },
-          include: {
-            project: { select: { id: true, title: true, color: true } },
-            contexts: { include: { context: { select: { id: true, name: true } } } },
-          },
-          orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
-          take: 50,
-        }),
+        isPast
+          ? db.task.findMany({
+              where: {
+                user_id: userId,
+                status: "completed",
+                deleted_at: null,
+                due_date: { gte: day, lte: end },
+              },
+              include: {
+                project: { select: { id: true, title: true, color: true } },
+                contexts: { include: { context: { select: { id: true, name: true } } } },
+              },
+              orderBy: [{ flagged: "desc" }, { position: "asc" }],
+            })
+          : Promise.resolve([]),
+        isPast
+          ? Promise.resolve([])
+          : db.task.findMany({
+              where: {
+                user_id: userId,
+                status: "active",
+                deleted_at: null,
+                due_date: { lt: day },
+                OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+              },
+              include: {
+                project: { select: { id: true, title: true, color: true } },
+                contexts: { include: { context: { select: { id: true, name: true } } } },
+              },
+              orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
+              take: 50,
+            }),
       ]);
+
+      const rawTasks = [...activeTasks, ...completedTasks];
 
       const [tasks, overdue] = await Promise.all([
         applySequentialFilter(rawTasks),

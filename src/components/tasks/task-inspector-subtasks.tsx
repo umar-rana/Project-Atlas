@@ -4,11 +4,13 @@ import * as React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { formatEstimatedTime, sumEstimatedMinutes } from "@/core/aggregation/time-format";
 
 interface InspectorSubtask {
   id: string;
   status: string;
   title: string;
+  estimated_minutes?: number | null;
 }
 
 interface TaskInspectorSubtasksProps {
@@ -49,10 +51,14 @@ export function TaskInspectorSubtasks({
     },
   });
 
+  const incompleteSubtasks = subtasks.filter((s) => s.status !== "completed");
+  const totalEstMins = sumEstimatedMinutes(incompleteSubtasks, false);
+  const showTimeTotal = incompleteSubtasks.some((s) => (s.estimated_minutes ?? 0) > 0);
+
   return (
     <section className="mt-4">
       <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
-        Subtasks
+        Subtasks{showTimeTotal && <span className="ml-1 normal-case font-normal">· ~{formatEstimatedTime(totalEstMins)} total</span>}
       </h3>
       {subtasks.length > 0 ? (
         <ul className="mb-1 flex flex-col gap-1">

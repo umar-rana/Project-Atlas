@@ -8,6 +8,7 @@ import { TaskListItem } from "./task-list-item";
 import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
 import { EmptyState } from "@/components/composed/empty-state";
+import { formatEstimatedTime, sumEstimatedMinutes } from "@/core/aggregation/time-format";
 
 interface TaskListItemWithSubtasksProps {
   task: TaskRow;
@@ -159,13 +160,21 @@ export function TaskList({
   emptyBody = "Use the quick-add bar to capture a task.",
   highlightId,
 }: TaskListProps): React.ReactElement {
+  const [showDeferred, setShowDeferred] = React.useState(false);
+
   const query = trpc.tasks.list.useQuery({
     perspective,
     project_id: projectId,
     context_id: contextId,
     tag_name: tagName,
     include_completed: false,
+    include_deferred: perspective === "project" ? showDeferred : undefined,
   });
+
+  const deferredCountQuery = trpc.tasks.countDeferred.useQuery(
+    { project_id: projectId! },
+    { enabled: perspective === "project" && !!projectId && !showDeferred, staleTime: 30_000 },
+  );
 
   const utils = trpc.useUtils();
   const moveMut = trpc.tasks.move.useMutation({
@@ -239,9 +248,17 @@ export function TaskList({
   }, [highlightId, query.data, query.isLoading, setSelectedTaskId]);
 
   const tasks = React.useMemo<TaskRow[]>(() => {
+    const now = new Date();
     const list = (query.data as TaskRow[] | undefined) ?? [];
-    if (sortBy === "manual") return list;
-    const sorted = [...list];
+    const annotated = showDeferred && perspective === "project"
+      ? list.map((t) => {
+          const d = t.defer_date ? new Date(t.defer_date) : null;
+          if (d && d > now) return { ...t, is_blocked: true };
+          return t;
+        })
+      : list;
+    if (sortBy === "manual") return annotated;
+    const sorted = [...annotated];
     if (sortBy === "due") {
       sorted.sort((a, b) => {
         const ad = a.due_date ? new Date(a.due_date).getTime() : Number.POSITIVE_INFINITY;
@@ -254,7 +271,7 @@ export function TaskList({
       sorted.sort((a, b) => Number(b.flagged) - Number(a.flagged));
     }
     return sorted;
-  }, [query.data, sortBy]);
+  }, [query.data, sortBy, showDeferred, perspective]);
   const dragId = React.useRef<string | null>(null);
   const dropTargetId = React.useRef<string | null>(null);
 
@@ -365,6 +382,32 @@ export function TaskList({
     dropTargetId.current = id;
   }, []);
 
+  const incompleteTasks = tasks.filter((t) => t.status !== "completed");
+  const totalEstMins = sumEstimatedMinutes(incompleteTasks, false);
+  const showTimeAggregate =
+    (perspective === "today" || perspective === "project") &&
+    incompleteTasks.some((t) => t.estimated_minutes != null && t.estimated_minutes > 0);
+
+  const deferredCount = deferredCountQuery.data?.count ?? 0;
+
+  function buildHeaderStats(): string {
+    const base = `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`;
+    if (perspective === "project") {
+      const incomplete = incompleteTasks.length;
+      if (showTimeAggregate) {
+        return `${base} · ${incomplete} incomplete · ~${formatEstimatedTime(totalEstMins)} estimated`;
+      }
+      return `${base} · ${incomplete} incomplete`;
+    }
+    if (perspective === "today") {
+      if (showTimeAggregate) {
+        return `${base} · ~${formatEstimatedTime(totalEstMins)} · 0 calendar events`;
+      }
+      return `${base} · 0 calendar events`;
+    }
+    return base;
+  }
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
@@ -391,7 +434,7 @@ export function TaskList({
             </select>
           </label>
           <span className="font-mono text-2xs text-text-tertiary tabular-nums">
-            {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+            {buildHeaderStats()}
           </span>
         </div>
       </header>
@@ -524,6 +567,20 @@ export function TaskList({
             </div>
           )}
         </>
+      )}
+
+      {perspective === "project" && (deferredCount > 0 || showDeferred) && (
+        <div className="border-t border-border-subtle px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setShowDeferred((v) => !v)}
+            className="font-ui text-2xs text-text-tertiary hover:text-text-secondary"
+          >
+            {showDeferred
+              ? "Hide deferred"
+              : `Show deferred (${deferredCount})`}
+          </button>
+        </div>
       )}
 
       <BulkActionBar />

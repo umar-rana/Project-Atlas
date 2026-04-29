@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format, isToday, addDays, startOfDay } from "date-fns";
+import { format, isToday, addDays, startOfDay, isBefore } from "date-fns";
 import {
   CalendarDays,
   AlertCircle,
@@ -43,21 +43,24 @@ type ForecastTask = {
 function TaskCard({
   task,
   onComplete,
+  isPast,
 }: {
   task: ForecastTask;
   onComplete: (id: string) => void;
+  isPast?: boolean;
 }) {
   const isCompleted = task.status === "completed";
 
   return (
     <div
-      draggable
-      onDragStart={(e) => {
+      draggable={!isPast}
+      onDragStart={isPast ? undefined : (e) => {
         e.dataTransfer.setData("task-id", task.id);
       }}
       className={cn(
         "group flex items-start gap-2 rounded-sm border border-border-subtle bg-surface-base p-2 shadow-1 transition-colors hover:border-border-default",
         isCompleted && "opacity-50",
+        isPast && "cursor-default",
       )}
     >
       <Checkbox
@@ -106,6 +109,7 @@ function DayColumn({
 }) {
   const d = new Date(date + "T00:00:00");
   const today = isToday(d);
+  const isPast = isBefore(d, startOfDay(new Date())) && !today;
   const [dragOver, setDragOver] = React.useState(false);
 
   return (
@@ -113,13 +117,14 @@ function DayColumn({
       className={cn(
         "flex min-w-0 flex-1 flex-col rounded-md border",
         today ? "border-accent-primary bg-accent-primary-subtle" : "border-border-subtle bg-surface-base",
+        isPast && "opacity-80",
       )}
-      onDragOver={(e) => {
+      onDragOver={isPast ? undefined : (e) => {
         e.preventDefault();
         setDragOver(true);
       }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => {
+      onDragLeave={isPast ? undefined : () => setDragOver(false)}
+      onDrop={isPast ? undefined : (e) => {
         e.preventDefault();
         const taskId = e.dataTransfer.getData("task-id");
         if (taskId) onDrop(taskId, date);
@@ -163,7 +168,7 @@ function DayColumn({
           <p className="py-2 text-center font-ui text-2xs text-text-disabled">—</p>
         ) : (
           tasks.map((t) => (
-            <TaskCard key={t.id} task={t} onComplete={onComplete} />
+            <TaskCard key={t.id} task={t} onComplete={onComplete} isPast={isPast} />
           ))
         )}
       </div>
@@ -237,9 +242,10 @@ export function ForecastView(): React.ReactElement {
     setDays(n);
   }
 
+  const isPastRange = isBefore(addDays(startDate, days - 1), startOfDay(new Date()));
   const query = trpc.forecast.week.useQuery(
     { start_date: startDate, days },
-    { staleTime: 5 * 60_000 },
+    { staleTime: isPastRange ? 30 * 60_000 : 5 * 60_000 },
   );
 
   const complete = trpc.tasks.complete.useMutation({
@@ -270,11 +276,11 @@ export function ForecastView(): React.ReactElement {
   }
 
   function prevWeek() {
-    setStartDate((d) => addDays(d, -days));
+    setStartDate((d) => addDays(d, -7));
   }
 
   function nextWeek() {
-    setStartDate((d) => addDays(d, days));
+    setStartDate((d) => addDays(d, 7));
   }
 
   function goToday() {
@@ -319,10 +325,11 @@ export function ForecastView(): React.ReactElement {
             <button
               type="button"
               onClick={prevWeek}
-              aria-label="Previous period"
-              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+              aria-label="Previous week"
+              className="flex items-center gap-0.5 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
             >
-              <ChevronLeft size={14} />
+              <ChevronLeft size={12} />
+              Previous week
             </button>
             <button
               type="button"
@@ -334,10 +341,11 @@ export function ForecastView(): React.ReactElement {
             <button
               type="button"
               onClick={nextWeek}
-              aria-label="Next period"
-              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+              aria-label="Next week"
+              className="flex items-center gap-0.5 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
             >
-              <ChevronRight size={14} />
+              Next week
+              <ChevronRight size={12} />
             </button>
           </div>
         </div>

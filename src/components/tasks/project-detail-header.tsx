@@ -119,7 +119,6 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
           className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none"
         />
         <StatusPill status={STATUS_TO_PILL[data.status] ?? "active"} label={STATUS_LABEL[data.status] ?? data.status} />
-        <span className="font-mono text-2xs text-text-tertiary tabular-nums">{data.task_count} active</span>
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary" aria-label="Project actions">
             <MoreHorizontal size={14} />
