@@ -5,6 +5,16 @@ if [ -f package.json ]; then
   npm install --no-audit --no-fund
 fi
 
+# Strip any surrounding single or double quotes that may have been included
+# when the secret was stored (e.g. DIRECT_DATABASE_URL="'postgresql://...'").
+# Fall back to DATABASE_URL if DIRECT_DATABASE_URL is not configured.
+_raw_direct="${DIRECT_DATABASE_URL:-$DATABASE_URL}"
+_raw_direct="${_raw_direct#\'}"
+_raw_direct="${_raw_direct%\'}"
+_raw_direct="${_raw_direct#\"}"
+_raw_direct="${_raw_direct%\"}"
+export DIRECT_DATABASE_URL="$_raw_direct"
+
 npx prisma generate
 
 # Resolve the best available database URL for migrations.

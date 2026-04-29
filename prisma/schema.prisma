@@ -46,6 +46,7 @@ model User {
   tags               Tag[]
   people             Person[]
   checklist_items    ChecklistItem[]
+  work_logs          TaskWorkLog[]
 
   @@index([clerk_id])
   @@index([email])
@@ -336,6 +337,7 @@ model Task {
   contexts         ContextOnTask[]
   tags             TagOnTask[]
   checklist_items  ChecklistItem[]
+  work_logs        TaskWorkLog[]
 
   @@index([user_id])
   @@index([user_id, project_id])
@@ -443,6 +445,26 @@ model WaitlistEntry {
 
   @@index([email])
   @@index([created_at])
+}
+
+// ─── TaskWorkLog ──────────────────────────────────────────────────────────────
+
+model TaskWorkLog {
+  id               String    @id @db.Uuid
+  user_id          String    @db.Uuid
+  task_id          String    @db.Uuid
+  body             String
+  duration_minutes Int?
+  deleted_at       DateTime? @db.Timestamptz
+  created_at       DateTime  @default(now()) @db.Timestamptz
+  updated_at       DateTime  @updatedAt @db.Timestamptz
+
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  task             Task      @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id, created_at])
+  @@index([user_id, created_at])
+  @@index([deleted_at])
 }
 
 // ─── DriveConfig ─────────────────────────────────────────────────────────────
