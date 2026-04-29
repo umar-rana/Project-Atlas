@@ -14,6 +14,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/drive/oauth-callback(.*)",
   "/api/health(.*)",
   "/api/trpc/health.ping(.*)",
+  "/api/trpc/waitlist.submit(.*)",
   "/api/cron/(.*)",
 ]);
 

@@ -429,6 +429,19 @@ model CaptureParseLog {
   @@index([created_at])
 }
 
+// ─── WaitlistEntry ───────────────────────────────────────────────────────────
+
+model WaitlistEntry {
+  id         String   @id @db.Uuid
+  name       String
+  email      String   @unique
+  message    String?
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  @@index([email])
+  @@index([created_at])
+}
+
 // ─── DriveConfig ─────────────────────────────────────────────────────────────
 
 model DriveConfig {

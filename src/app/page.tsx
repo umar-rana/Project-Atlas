@@ -12,6 +12,7 @@ import {
   LogIn,
   Zap,
 } from "lucide-react";
+import { RequestAccessForm } from "@/components/homepage/request-access-form";
 
 export default async function RootPage() {
   const { userId } = await auth();
@@ -25,6 +26,7 @@ export default async function RootPage() {
         <GettingStarted />
         <WhatAtlasIs />
         <Modules />
+        <RequestAccess />
       </main>
       <Footer />
     </div>
@@ -282,6 +284,28 @@ function Modules() {
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function RequestAccess() {
+  return (
+    <section className="border-t border-border-subtle bg-surface-raised">
+      <div className="mx-auto max-w-6xl px-6 py-20">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="text-2xl font-semibold text-text-primary tablet:text-3xl">
+            Request access
+          </h2>
+          <p className="mt-3 text-base leading-relaxed text-text-secondary">
+            Atlas is currently invite-only, shared among a small circle of family
+            and friends. If you&apos;re interested in trying it when more spots
+            open up, leave your details below.
+          </p>
+          <div className="mt-8">
+            <RequestAccessForm />
+          </div>
+        </div>
       </div>
     </section>
   );
