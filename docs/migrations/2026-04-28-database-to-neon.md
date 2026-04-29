@@ -123,6 +123,30 @@ The original Replit Postgres connection string is preserved in `REPLIT_DATABASE_
 
 ---
 
+## Decommission Review — 2026-04-29
+
+Reviewed by Atlas agent (task #127) on 2026-04-29. Safety window has **not yet passed** (expires 2026-05-05). No secrets were deleted.
+
+### Findings
+
+| Item | Status |
+|---|---|
+| `DATABASE_URL_NEON` secret present | ✅ — Neon is the active database |
+| `REPLIT_DATABASE_URL_BACKUP` secret present | ✅ — Still intact as rollback target |
+| `DATABASE_URL` | ⚠️ Runtime-managed by Replit Postgres service (cannot be manually deleted; it is removed automatically when the Replit Postgres integration is detached from the project) |
+| `resolveDbUrl()` fallback (`?? process.env.DATABASE_URL`) | Still in place — safe to remove after decommission |
+
+### What decommission requires (after 2026-05-05)
+
+1. Delete the `REPLIT_DATABASE_URL_BACKUP` secret from Replit Secrets.
+2. Remove the Replit Postgres (Helium) integration from the project — this automatically removes the runtime-managed `DATABASE_URL` variable.
+3. Remove the `?? process.env.DATABASE_URL` fallback from `resolveDbUrl()` in `src/core/db/index.ts` and simplify the function.
+4. Update this document to mark decommission complete.
+
+**Decommission is pending. No action taken on 2026-04-29.**
+
+---
+
 ## Neon Project Details
 
 - **Provider:** Neon (neon.tech)
