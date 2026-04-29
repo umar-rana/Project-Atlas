@@ -44,6 +44,7 @@ model User {
   contexts           Context[]
   tags               Tag[]
   people             Person[]
+  checklist_items    ChecklistItem[]
 
   @@index([clerk_id])
   @@index([email])
@@ -327,12 +328,13 @@ model Task {
   created_at  DateTime  @default(now()) @db.Timestamptz
   updated_at  DateTime  @updatedAt @db.Timestamptz
 
-  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  project     Project?  @relation(fields: [project_id], references: [id], onDelete: SetNull)
-  parent      Task?     @relation("TaskSubtasks", fields: [parent_id], references: [id], onDelete: Cascade)
-  subtasks    Task[]    @relation("TaskSubtasks")
-  contexts    ContextOnTask[]
-  tags        TagOnTask[]
+  user             User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project          Project?  @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  parent           Task?     @relation("TaskSubtasks", fields: [parent_id], references: [id], onDelete: Cascade)
+  subtasks         Task[]    @relation("TaskSubtasks")
+  contexts         ContextOnTask[]
+  tags             TagOnTask[]
+  checklist_items  ChecklistItem[]
 
   @@index([user_id])
   @@index([user_id, project_id])
@@ -464,4 +466,25 @@ model DriveConfig {
   user                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+}
+
+// ─── ChecklistItem ────────────────────────────────────────────────────────────
+
+model ChecklistItem {
+  id           String    @id @db.Uuid
+  user_id      String    @db.Uuid
+  task_id      String    @db.Uuid
+  title        String
+  completed_at DateTime? @db.Timestamptz
+  position     Decimal   @default(0) @db.Decimal(20, 10)
+  created_at   DateTime  @default(now()) @db.Timestamptz
+  updated_at   DateTime  @updatedAt @db.Timestamptz
+  deleted_at   DateTime? @db.Timestamptz
+
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  task         Task      @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id, position])
+  @@index([user_id])
+  @@index([deleted_at])
 }

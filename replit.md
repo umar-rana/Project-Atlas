@@ -108,7 +108,22 @@ Apply them in isolation, not bundled together.
 
 Safe patch updates **were** applied in #69: `openid-client→6.8.4`, `@typescript-eslint/{eslint-plugin,parser}→8.59.1`, `postcss→8.5.12`.
 
+## Tasks — Checklist & Subtasks
+Added split between lightweight checklist items and full subtask Tasks (Task #123):
+- **ChecklistItem model** (`prisma/schema.prisma`): id, user_id, task_id, title, completed_at?, position Decimal, timestamps, soft-delete. Indexed on `[task_id, position]`.
+- **Checklist tRPC router** (`src/server/routers/checklist.ts`): list, create, update, delete, reorder (fractional indexing), migrateSubtasksToChecklist.
+- **ChecklistSection component** (`src/components/tasks/checklist-section.tsx`): inline-edit on click, drag-to-reorder, checkbox toggle, hover-delete, "+ Add item" button.
+- **SubtaskSection + SubtaskRow** (`src/components/tasks/subtask-section.tsx`, `subtask-row.tsx`): full Task rows with due date (color-coded), flag toggle, inline title edit, ">" chevron to navigate inspector with breadcrumb.
+- **Task inspector** updated: breadcrumb navigation, complete-all-subtasks confirmation dialog, data migration prompt for old-style simple subtasks.
+- **Task list item** updated: checklist progress badge "X/Y", collapse/expand chevron for parents in project view, "↳ from [parent]" reference line in Today/Flagged for subtasks.
+- **Task list** updated: expanded subtask rows render inline under parents in project view. Zustand store extended with `expandedParentIds` and `inspectorBreadcrumb`.
+- **Depth enforcement**: `tasks.create` and `tasks.update` reject `parent_id` if the parent itself has a `parent_id` (max 1-level deep).
+- **Cascades**: `tasks.delete` soft-deletes child Tasks + ChecklistItems; `tasks.restore` restores them; `tasks.update` propagates `project_id` changes to children.
+- **TASK_INCLUDE** extended: includes `parent`, richer `subtasks` (due_date, flagged, estimated_minutes), and `checklist_items`.
+- Inbox shows only top-level tasks (`parent_id = null AND project_id = null`).
+
 ## Recent Changes
+- 2026-04-29: Checklist & subtask split (Task #123).
 - 2026-04-28: Migrated auth from Replit OIDC to Clerk (Task #74).
 - 2026-04-28: Linter migration to direct ESLint CLI (Task #73).
 - 2026-04-28: End-to-end code review pass (Task #69).

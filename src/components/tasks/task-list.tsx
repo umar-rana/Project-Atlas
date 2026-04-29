@@ -9,6 +9,97 @@ import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
 import { EmptyState } from "@/components/composed/empty-state";
 
+interface TaskListItemWithSubtasksProps {
+  task: TaskRow;
+  idx: number;
+  selectedTaskId: string | null;
+  focusedIdx: number;
+  selectedTaskIds: Set<string>;
+  onSelect: (task: TaskRow, e: React.MouseEvent) => void;
+  onMultiToggle: (task: TaskRow, e: React.MouseEvent) => void;
+  onDragStart: (id: string) => void;
+  onDragOver: (id: string) => void;
+  onDrop: (targetId: string) => void;
+  perspective: string;
+}
+
+function TaskListItemWithSubtasks({
+  task,
+  idx,
+  selectedTaskId,
+  focusedIdx,
+  selectedTaskIds,
+  onSelect,
+  onMultiToggle,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  perspective,
+}: TaskListItemWithSubtasksProps) {
+  const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
+  const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
+  const isExpanded = expandedParentIds.has(task.id);
+  const isProjectView = perspective === "project";
+  const subtasks = task.subtasks ?? [];
+
+  return (
+    <>
+      <TaskListItem
+        task={task}
+        selected={selectedTaskId === task.id}
+        isFocused={focusedIdx === idx}
+        isMultiSelected={selectedTaskIds.has(task.id)}
+        onSelect={onSelect}
+        onMultiToggle={onMultiToggle}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        inTrash={perspective === "trash"}
+        perspective={perspective}
+      />
+      {isProjectView && isExpanded && subtasks.length > 0 && subtasks.map((st) => {
+        const subtaskRow: TaskRow = {
+          id: st.id,
+          title: st.title,
+          notes: null,
+          status: st.status,
+          flagged: st.flagged ?? false,
+          project_id: task.project_id,
+          parent_id: task.id,
+          defer_date: null,
+          due_date: st.due_date ?? null,
+          estimated_minutes: st.estimated_minutes ?? null,
+          contexts: [],
+          tags: [],
+          project: task.project,
+          parent: { id: task.id, title: task.title },
+          subtasks: [],
+          checklist_items: [],
+          is_blocked: false,
+        };
+        return (
+          <TaskListItem
+            key={st.id}
+            task={subtaskRow}
+            selected={selectedTaskId === st.id}
+            isFocused={false}
+            isMultiSelected={selectedTaskIds.has(st.id)}
+            onSelect={(t, e) => {
+              setSelectedTaskId(t.id);
+            }}
+            onMultiToggle={onMultiToggle}
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            inTrash={false}
+            perspective={perspective}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export interface TaskRow {
   id: string;
   title: string;
@@ -23,7 +114,21 @@ export interface TaskRow {
   contexts: { context: { id: string; name: string } }[];
   tags: { tag: { id: string; name: string } }[];
   project: { id: string; title: string; color: string | null } | null;
-  subtasks?: { id: string; status: string; title: string }[];
+  parent?: { id: string; title: string } | null;
+  subtasks?: {
+    id: string;
+    status: string;
+    title: string;
+    due_date?: Date | string | null;
+    flagged?: boolean;
+    estimated_minutes?: number | null;
+  }[];
+  checklist_items?: {
+    id: string;
+    title: string;
+    completed_at: Date | string | null;
+    position: string | number | { toString(): string };
+  }[];
   is_blocked?: boolean;
 }
 
@@ -380,18 +485,19 @@ export function TaskList({
         <>
           <div role="grid" className="flex-1 overflow-y-auto">
             {tasks.map((task, idx) => (
-              <TaskListItem
+              <TaskListItemWithSubtasks
                 key={task.id}
                 task={task}
-                selected={selectedTaskId === task.id}
-                isFocused={focusedIdx === idx}
-                isMultiSelected={selectedTaskIds.has(task.id)}
+                idx={idx}
+                selectedTaskId={selectedTaskId}
+                focusedIdx={focusedIdx}
+                selectedTaskIds={selectedTaskIds}
                 onSelect={handleSelect}
                 onMultiToggle={handleMultiToggle}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
-                inTrash={perspective === "trash"}
+                perspective={perspective}
               />
             ))}
           </div>

@@ -59,10 +59,23 @@ const TASK_INCLUDE = {
   contexts: { include: { context: { select: { id: true, name: true } } } },
   tags: { include: { tag: { select: { id: true, name: true } } } },
   project: { select: { id: true, title: true, color: true } },
+  parent: { select: { id: true, title: true } },
   subtasks: {
     where: { deleted_at: null },
     orderBy: { position: "asc" },
-    select: { id: true, status: true, title: true },
+    select: {
+      id: true,
+      status: true,
+      title: true,
+      due_date: true,
+      flagged: true,
+      estimated_minutes: true,
+    },
+  },
+  checklist_items: {
+    where: { deleted_at: null },
+    orderBy: { position: "asc" },
+    select: { id: true, title: true, completed_at: true, position: true },
   },
 } satisfies Prisma.TaskInclude;
 
@@ -316,11 +329,17 @@ export const tasksRouter = router({
       }
 
       if (input.parent_id) {
-        const owns = await db.task.findFirst({
+        const parent = await db.task.findFirst({
           where: { id: input.parent_id, user_id: userId },
-          select: { id: true },
+          select: { id: true, parent_id: true },
         });
-        if (!owns) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
+        if (!parent) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
+        if (parent.parent_id) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Subtasks cannot be nested: maximum depth is one level.",
+          });
+        }
       }
 
       if (input.context_ids?.length) {
@@ -447,11 +466,17 @@ export const tasksRouter = router({
         if (!owns) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
       if (input.parent_id) {
-        const owns = await db.task.findFirst({
+        const parent = await db.task.findFirst({
           where: { id: input.parent_id, user_id: userId },
-          select: { id: true },
+          select: { id: true, parent_id: true },
         });
-        if (!owns) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
+        if (!parent) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
+        if (parent.parent_id) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Subtasks cannot be nested: maximum depth is one level.",
+          });
+        }
       }
       if (input.context_ids?.length) {
         const owned = await db.context.findMany({
@@ -495,6 +520,14 @@ export const tasksRouter = router({
           where: { id: input.id },
           data,
         });
+
+        // If project_id changed, move all child subtasks to the new project.
+        if (input.project_id !== undefined && input.project_id !== before.project_id) {
+          await tx.task.updateMany({
+            where: { parent_id: input.id, user_id: userId },
+            data: { project_id: input.project_id ?? null },
+          });
+        }
 
         if (input.context_ids !== undefined) {
           await tx.contextOnTask.deleteMany({ where: { task_id: input.id } });
@@ -624,13 +657,21 @@ export const tasksRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      // Soft delete; middleware rewrites deleteMany→updateMany. updateMany
-      // accepts a non-unique where so we can enforce ownership safely.
+      const now = new Date();
       const result = await db.task.updateMany({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
-        data: { deleted_at: new Date() },
+        data: { deleted_at: now },
       });
       if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
+      // Cascade soft-delete to child subtasks and checklist items.
+      await db.task.updateMany({
+        where: { parent_id: input.id, user_id: ctx.user.id, deleted_at: null },
+        data: { deleted_at: now },
+      });
+      await db.checklistItem.updateMany({
+        where: { task_id: input.id, user_id: ctx.user.id, deleted_at: null },
+        data: { deleted_at: now },
+      });
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Task",
@@ -643,8 +684,6 @@ export const tasksRouter = router({
   restore: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      // updateMany doesn't auto-filter soft-deleted rows, so this works
-      // without the marker — but we still scope to soft-deleted ids.
       const result = await db.task.updateMany({
         where: {
           id: input.id,
@@ -654,6 +693,15 @@ export const tasksRouter = router({
         data: { deleted_at: null },
       });
       if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
+      // Cascade restore to child subtasks and checklist items.
+      await db.task.updateMany({
+        where: { parent_id: input.id, user_id: ctx.user.id, NOT: { deleted_at: null } },
+        data: { deleted_at: null },
+      });
+      await db.checklistItem.updateMany({
+        where: { task_id: input.id, user_id: ctx.user.id, NOT: { deleted_at: null } },
+        data: { deleted_at: null },
+      });
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Task",

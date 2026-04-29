@@ -16,6 +16,7 @@ import { forecastRouter } from "./forecast";
 import { emailsRouter } from "./emails";
 import { attachmentsRouter } from "./attachments";
 import { waitlistRouter } from "./waitlist";
+import { checklistRouter } from "./checklist";
 
 export const appRouter = router({
   health: healthRouter,
@@ -35,6 +36,7 @@ export const appRouter = router({
   emails: emailsRouter,
   attachments: attachmentsRouter,
   waitlist: waitlistRouter,
+  checklist: checklistRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Flag, GripVertical, MessageSquare, Unlock } from "lucide-react";
+import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc/client";
+import { useTasksStore } from "@/lib/tasks/store";
 import type { TaskRow } from "./task-list";
 
 interface TaskListItemProps {
@@ -13,16 +14,13 @@ interface TaskListItemProps {
   selected: boolean;
   isFocused: boolean;
   isMultiSelected: boolean;
-  // The parent passes stable callbacks (wrapped in useCallback) and we forward
-  // the row's `task` so the parent doesn't have to allocate a per-row arrow on
-  // every render. This is what makes the `React.memo` wrapper below actually
-  // skip work — without stable refs the shallow prop compare always misses.
   onSelect: (task: TaskRow, e: React.MouseEvent) => void;
   onMultiToggle: (task: TaskRow, e: React.MouseEvent) => void;
   onDragStart?: (id: string) => void;
   onDragOver?: (id: string) => void;
   onDrop?: (targetId: string) => void;
   inTrash?: boolean;
+  perspective?: string;
 }
 
 function dueColorClass(due: Date | null): string {
@@ -50,8 +48,12 @@ function TaskListItemImpl({
   onDragOver,
   onDrop,
   inTrash,
+  perspective,
 }: TaskListItemProps) {
   const utils = trpc.useUtils();
+  const toggleExpandedParent = useTasksStore((s) => s.toggleExpandedParent);
+  const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
+
   const [editing, setEditing] = React.useState(false);
   const [titleDraft, setTitleDraft] = React.useState(task.title);
 
@@ -104,6 +106,21 @@ function TaskListItemImpl({
   const isCompleted = task.status === "completed";
   const due = task.due_date ? new Date(task.due_date) : null;
 
+  const hasSubtasks = (task.subtasks?.length ?? 0) > 0;
+  const isExpanded = expandedParentIds.has(task.id);
+  const isProjectView = perspective === "project";
+
+  const checklistItems = task.checklist_items ?? [];
+  const checklistTotal = checklistItems.length;
+  const checklistDone = checklistItems.filter((ci) => ci.completed_at != null).length;
+  const hasChecklist = checklistTotal > 0;
+
+  const isSubtask = task.parent_id != null;
+  const showParentRef =
+    isSubtask &&
+    task.parent != null &&
+    (perspective === "today" || perspective === "flagged");
+
   function commitTitle() {
     setEditing(false);
     const next = titleDraft.trim();
@@ -150,6 +167,7 @@ function TaskListItemImpl({
         isMultiSelected && "bg-accent-primary-subtle",
         isFocused && "ring-1 ring-inset ring-border-focus",
         task.is_blocked && "opacity-50",
+        isSubtask && "pl-6",
       )}
     >
       <span className="cursor-grab text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
@@ -214,6 +232,11 @@ function TaskListItemImpl({
           </button>
         )}
         <div className="mt-0.5 flex items-center gap-1.5 font-ui text-2xs text-text-tertiary">
+          {showParentRef && (
+            <span className="inline-flex items-center gap-0.5 text-text-tertiary">
+              ↳ {task.parent!.title}
+            </span>
+          )}
           {task.is_blocked && !task.flagged && (
             <span className="inline-flex items-center gap-0.5 rounded-sm bg-surface-raised px-1 py-px font-ui text-2xs text-text-disabled">
               <Unlock size={9} />
@@ -235,12 +258,12 @@ function TaskListItemImpl({
               #{tg.tag.name}
             </span>
           ))}
-          {task.subtasks && task.subtasks.length > 0 ? (
+          {hasChecklist && (
             <span className="inline-flex items-center gap-0.5">
-              <MessageSquare size={10} />
-              {task.subtasks.length}
+              <CheckSquare size={10} />
+              {checklistDone}/{checklistTotal}
             </span>
-          ) : null}
+          )}
         </div>
       </div>
       {task.is_blocked && !task.flagged && (
@@ -262,6 +285,22 @@ function TaskListItemImpl({
           {dueLabel(due)}
         </span>
       ) : null}
+      {isProjectView && hasSubtasks && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleExpandedParent(task.id);
+          }}
+          aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+          className="shrink-0 rounded-sm p-0.5 text-text-tertiary hover:text-text-secondary"
+        >
+          <ChevronRight
+            size={12}
+            className={cn("transition-transform", isExpanded && "rotate-90")}
+          />
+        </button>
+      )}
       {menu && !inTrash ? (
         <div
           role="menu"

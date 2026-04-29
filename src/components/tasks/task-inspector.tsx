@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Flag, X, Trash2, RotateCcw } from "lucide-react";
+import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
@@ -12,12 +12,9 @@ import { toast } from "@/lib/toast";
 import { InboxProcessingSuggestions } from "./inbox-processing-suggestions";
 import { TaskInspectorAttachments } from "./task-inspector-attachments";
 import { TaskInspectorActivityTab } from "./task-inspector-activity-tab";
-import { TaskInspectorSubtasks } from "./task-inspector-subtasks";
-// Flat structural types mirroring the shape selected by the tasks.get
-// router (TASK_INCLUDE). We avoid `RouterOutputs["tasks"]["get"]` here
-// because Prisma's deeply-typed include trees push tsc into TS2589
-// "excessively deep" errors. Keeping the shape narrow at the boundary
-// is intentional and sourced from the router shape.
+import { ChecklistSection } from "./checklist-section";
+import { SubtaskSection } from "./subtask-section";
+
 interface InspectorContextLink {
   context: { id: string; name: string };
 }
@@ -28,6 +25,15 @@ interface InspectorSubtask {
   id: string;
   status: string;
   title: string;
+  due_date: Date | string | null;
+  flagged: boolean;
+  estimated_minutes: number | null;
+}
+interface InspectorChecklistItem {
+  id: string;
+  title: string;
+  completed_at: Date | string | null;
+  position: string | number | { toString(): string };
 }
 interface InspectorTask {
   id: string;
@@ -42,6 +48,8 @@ interface InspectorTask {
   contexts: InspectorContextLink[];
   tags: InspectorTagLink[];
   subtasks?: InspectorSubtask[];
+  checklist_items?: InspectorChecklistItem[];
+  parent?: { id: string; title: string } | null;
   referenced_entity_refs: unknown;
 }
 type EntityRef = { kind: string; id: string; label: string };
@@ -82,6 +90,10 @@ function fmtDateForInput(d: Date | string | null | undefined): string {
 
 export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.ReactElement {
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
+  const breadcrumb = useTasksStore((s) => s.inspectorBreadcrumb);
+  const setInspectorBreadcrumb = useTasksStore((s) => s.setInspectorBreadcrumb);
+  const navigateToSubtask = useTasksStore((s) => s.navigateToSubtask);
+
   const utils = trpc.useUtils();
   const task = trpc.tasks.get.useQuery(
     { id: taskId, includeDeleted: inTrash ?? false },
@@ -138,6 +150,19 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
       utils.tasks.get.invalidate({ id: taskId });
     },
   });
+  const bulkComplete = trpc.tasks.bulkComplete.useMutation({
+    onSettled: () => {
+      utils.tasks.list.invalidate();
+      utils.tasks.get.invalidate({ id: taskId });
+    },
+  });
+  const migrateChecklist = trpc.checklist.migrateSubtasksToChecklist.useMutation({
+    onSettled: () => {
+      utils.tasks.get.invalidate({ id: taskId });
+      utils.tasks.list.invalidate();
+    },
+  });
+
   const parseLog = trpc.capture.getLogForTask.useQuery(
     { task_id: taskId },
     { staleTime: 60_000, enabled: Boolean(taskId) },
@@ -155,6 +180,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const [titleDraft, setTitleDraft] = React.useState("");
   const [notesDraft, setNotesDraft] = React.useState("");
   const [newTagInput, setNewTagInput] = React.useState("");
+  const [migrationDismissed, setMigrationDismissed] = React.useState(false);
 
   const dataId = data?.id;
   const dataTitle = data?.title;
@@ -163,6 +189,11 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     if (dataTitle !== undefined) setTitleDraft(dataTitle);
     if (dataNotes !== undefined) setNotesDraft(dataNotes ?? "");
   }, [dataId, dataTitle, dataNotes]);
+
+  // Reset migration dismissed state when task changes.
+  React.useEffect(() => {
+    setMigrationDismissed(false);
+  }, [taskId]);
 
   if (task.isLoading || !data) {
     return (
@@ -186,6 +217,39 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const taskData: InspectorTask = data;
   const selectedContextIds = taskData.contexts.map((c) => c.context.id);
   const selectedTagIds = taskData.tags.map((t) => t.tag.id);
+  const subtasks = (taskData.subtasks ?? []) as InspectorSubtask[];
+  const checklistItems = (taskData.checklist_items ?? []) as InspectorChecklistItem[];
+
+  // Detect simple subtasks eligible for migration to checklist items.
+  const simpleSubtasks = subtasks.filter(
+    (st) =>
+      st.due_date == null &&
+      !st.flagged &&
+      st.estimated_minutes == null,
+  );
+  const showMigrationPrompt =
+    !migrationDismissed &&
+    simpleSubtasks.length > 0 &&
+    !inTrash;
+
+  function handleCompleteToggle(newValue: boolean) {
+    if (newValue) {
+      const incompleteSubtasks = subtasks.filter((st) => st.status !== "completed");
+      if (incompleteSubtasks.length > 0) {
+        const shouldCompleteAll = window.confirm(
+          `This task has ${incompleteSubtasks.length} incomplete subtask${incompleteSubtasks.length === 1 ? "" : "s"}. Complete them all?`,
+        );
+        complete.mutate({ id: taskData.id });
+        if (shouldCompleteAll) {
+          bulkComplete.mutate({ ids: incompleteSubtasks.map((st) => st.id) });
+        }
+      } else {
+        complete.mutate({ id: taskData.id });
+      }
+    } else {
+      uncomplete.mutate({ id: taskData.id });
+    }
+  }
 
   function patchContexts(nextIds: string[]) {
     update.mutate({ id: taskData.id, context_ids: nextIds });
@@ -238,9 +302,29 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   return (
     <aside className="flex h-full w-full flex-col border-l border-border-subtle bg-surface-overlay">
       <header className="flex items-center gap-2 border-b border-border-subtle px-3 py-2">
-        <h2 className="m-0 flex-1 truncate font-ui text-sm font-semibold text-text-primary">
-          {inTrash ? "Trashed task" : "Task"}
-        </h2>
+        {breadcrumb ? (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedTaskId(breadcrumb.taskId);
+              setInspectorBreadcrumb(null);
+            }}
+            className="flex items-center gap-0.5 rounded-sm font-ui text-xs text-text-tertiary hover:text-text-secondary"
+            aria-label="Back to parent task"
+          >
+            <ChevronLeft size={13} />
+            <span className="max-w-24 truncate">{breadcrumb.title}</span>
+          </button>
+        ) : (
+          <h2 className="m-0 flex-1 truncate font-ui text-sm font-semibold text-text-primary">
+            {inTrash ? "Trashed task" : "Task"}
+          </h2>
+        )}
+        {breadcrumb && (
+          <span className="flex-1 truncate font-ui text-xs text-text-secondary">
+            {taskData.title}
+          </span>
+        )}
         <button
           type="button"
           aria-label="Close inspector"
@@ -274,10 +358,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               size="md"
               checked={taskData.status === "completed"}
               disabled={inTrash}
-              onCheckedChange={(v) => {
-                if (v) complete.mutate({ id: taskData.id });
-                else uncomplete.mutate({ id: taskData.id });
-              }}
+              onCheckedChange={(v) => handleCompleteToggle(Boolean(v))}
             />
             <textarea
               value={titleDraft}
@@ -462,10 +543,48 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             />
           </section>
 
-          <TaskInspectorSubtasks
+          {showMigrationPrompt && (
+            <div className="mt-4 flex items-start gap-2 rounded-sm border border-accent-info/30 bg-accent-info/5 p-2.5">
+              <AlertCircle size={13} className="mt-0.5 shrink-0 text-accent-info" />
+              <div className="flex-1">
+                <p className="font-ui text-xs text-text-primary">
+                  <span className="font-semibold">{simpleSubtasks.length} subtask{simpleSubtasks.length === 1 ? "" : "s"}</span> look like simple steps. Convert to checklist items?
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    migrateChecklist.mutate({ parent_task_id: taskData.id });
+                    setMigrationDismissed(true);
+                  }}
+                  disabled={migrateChecklist.isPending}
+                  className="rounded-sm border border-accent-info/40 bg-accent-info/10 px-2 py-1 font-ui text-2xs font-medium text-accent-info hover:bg-accent-info/20 disabled:opacity-50"
+                >
+                  Convert
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMigrationDismissed(true)}
+                  className="rounded-sm border border-border-subtle px-2 py-1 font-ui text-2xs text-text-tertiary hover:border-border-default"
+                >
+                  Keep
+                </button>
+              </div>
+            </div>
+          )}
+
+          <ChecklistSection
+            taskId={taskData.id}
+            items={checklistItems}
+            inTrash={inTrash}
+          />
+
+          <SubtaskSection
             parentTaskId={taskData.id}
+            parentTaskTitle={taskData.title}
             parentProjectId={taskData.project_id ?? null}
-            subtasks={taskData.subtasks ?? []}
+            subtasks={subtasks}
             inTrash={inTrash}
           />
 
