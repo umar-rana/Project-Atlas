@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { auth } from "@clerk/nextjs/server";
-import { db, newId } from "@/core/db";
+import { db } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { ZodError } from "zod";
 import type { User } from "@prisma/client";

@@ -1,69 +1,69 @@
 import { router, protectedProcedure } from "@/server/trpc";
-import { db } from "@/core/db";
+import { clerkClient, auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 export const sessionRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const sessions = await db.session.findMany({
-      where: {
-        user_id: ctx.user.id,
-        expires_at: { gt: new Date() },
-      },
-      orderBy: { last_seen: "desc" },
-      select: {
-        id: true,
-        user_agent: true,
-        ip_address: true,
-        created_at: true,
-        last_seen: true,
-        expires_at: true,
-      },
+    const clerkId = ctx.user.clerk_id;
+    if (!clerkId) return [];
+
+    const { sessionId: currentSessionId } = await auth();
+    const client = await clerkClient();
+
+    const result = await client.sessions.getSessionList({
+      userId: clerkId,
+      status: "active",
     });
 
-    return sessions.map((s) => ({
-      ...s,
-      isCurrent: s.id === ctx.sessionId,
+    return result.data.map((s) => ({
+      id: s.id,
+      user_agent: s.latestActivity?.browserName ?? null,
+      ip_address: s.latestActivity?.ipAddress ?? null,
+      last_seen: new Date(s.lastActiveAt),
+      isCurrent: s.id === currentSessionId,
     }));
   }),
 
   revoke: protectedProcedure
     .input(z.object({ sessionId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      if (input.sessionId === ctx.sessionId) {
+      const { sessionId: currentSessionId } = await auth();
+      if (input.sessionId === currentSessionId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Cannot revoke your current session. Use sign out instead.",
         });
       }
 
-      const session = await db.session.findUnique({
-        where: { id: input.sessionId },
-        select: { user_id: true },
-      });
-
-      if (!session || session.user_id !== ctx.user.id) {
+      const client = await clerkClient();
+      const session = await client.sessions.getSession(input.sessionId);
+      if (session.userId !== ctx.user.clerk_id) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
       }
 
-      await db.session.delete({ where: { id: input.sessionId } });
+      await client.sessions.revokeSession(input.sessionId);
       return { success: true };
     }),
 
   revokeAll: protectedProcedure.mutation(async ({ ctx }) => {
-    if (!ctx.sessionId) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Cannot identify current session — try signing out and back in.",
-      });
-    }
+    const clerkId = ctx.user.clerk_id;
+    if (!clerkId) return { success: true };
 
-    await db.session.deleteMany({
-      where: {
-        user_id: ctx.user.id,
-        id: { not: ctx.sessionId },
-      },
+    const { sessionId: currentSessionId } = await auth();
+    const client = await clerkClient();
+
+    const result = await client.sessions.getSessionList({
+      userId: clerkId,
+      status: "active",
     });
+
+    await Promise.all(
+      result.data
+        .filter((s) => s.id !== currentSessionId)
+        .map((s) => client.sessions.revokeSession(s.id)),
+    );
+
     return { success: true };
   }),
 });

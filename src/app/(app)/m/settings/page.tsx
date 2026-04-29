@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Monitor, LogOut, Palette, User, Info } from "lucide-react";
 import { useClerk, useUser } from "@clerk/nextjs";
@@ -72,10 +73,13 @@ export default function MobileSettingsPage() {
           <div className="border-b border-border-subtle px-4 py-4">
             <div className="flex items-center gap-3">
               {user.imageUrl ? (
-                <img
+                <Image
                   src={user.imageUrl}
                   alt=""
+                  width={48}
+                  height={48}
                   className="h-12 w-12 rounded-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-raised font-ui text-lg font-semibold text-text-secondary">
