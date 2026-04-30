@@ -10,6 +10,7 @@ import { useTasksStore } from "@/lib/tasks/store";
 import type { TaskRow } from "./task-list";
 import { describeRule } from "@/core/recurrence/rrule-helpers";
 import { RecurrenceQuickPopover } from "./recurrence-quick-popover";
+import { TaskRowQuickActions } from "./task-row-quick-actions";
 
 interface TaskListItemProps {
   task: TaskRow;
@@ -59,6 +60,10 @@ function TaskListItemImpl({
 
   const [editing, setEditing] = React.useState(false);
   const [titleDraft, setTitleDraft] = React.useState(task.title);
+  const [hovered, setHovered] = React.useState(false);
+  const [anyPopoverOpen, setAnyPopoverOpen] = React.useState(false);
+
+  const showQuickActions = (hovered || anyPopoverOpen) && !inTrash;
 
   React.useEffect(() => {
     setTitleDraft(task.title);
@@ -153,6 +158,8 @@ function TaskListItemImpl({
         e.preventDefault();
         onDrop?.(task.id);
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onContextMenu={(e) => {
         e.preventDefault();
         setMenu({ x: e.clientX, y: e.clientY });
@@ -298,29 +305,38 @@ function TaskListItemImpl({
           <Unlock size={12} />
         </button>
       )}
-      {task.recurrence_rule && !inTrash && (
-        <span
-          title={describeRule(
-            task.recurrence_rule,
-            (task.recurrence_anchor ?? "due_date") as "due_date" | "completion_date",
-          )}
-          className="shrink-0 text-accent-info"
-          aria-label="Recurring task"
-        >
-          <RefreshCw size={10} />
-        </span>
-      )}
-      {due ? (
-        <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
-          {dueLabel(due)}
-        </span>
-      ) : null}
-      {!inTrash && (
-        <RecurrenceQuickPopover
-          taskId={task.id}
-          hasRule={Boolean(task.recurrence_rule)}
-          onOpenCustom={() => setSelectedTaskId(task.id)}
+      {showQuickActions ? (
+        <TaskRowQuickActions
+          task={task}
+          onAnyPopoverOpenChange={setAnyPopoverOpen}
         />
+      ) : (
+        <>
+          {task.recurrence_rule && !inTrash && (
+            <span
+              title={describeRule(
+                task.recurrence_rule,
+                (task.recurrence_anchor ?? "due_date") as "due_date" | "completion_date",
+              )}
+              className="shrink-0 text-accent-info"
+              aria-label="Recurring task"
+            >
+              <RefreshCw size={10} />
+            </span>
+          )}
+          {due ? (
+            <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
+              {dueLabel(due)}
+            </span>
+          ) : null}
+          {!inTrash && (
+            <RecurrenceQuickPopover
+              taskId={task.id}
+              hasRule={Boolean(task.recurrence_rule)}
+              onOpenCustom={() => setSelectedTaskId(task.id)}
+            />
+          )}
+        </>
       )}
       {isProjectView && hasSubtasks && (
         <button

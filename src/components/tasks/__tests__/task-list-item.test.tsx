@@ -2,6 +2,19 @@ import * as React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, act } from "@testing-library/react";
 
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@tanstack/react-query")>();
+  return {
+    ...real,
+    useQueryClient: () => ({
+      cancelQueries: vi.fn(async () => {}),
+      getQueriesData: vi.fn(() => []),
+      setQueriesData: vi.fn(),
+      setQueryData: vi.fn(),
+    }),
+  };
+});
+
 // Per-endpoint mutation tracking. Every call to `trpc.<router>.<endpoint>.useMutation()`
 // returns the same `vi.fn()` for that path, so tests can assert on the args passed
 // to e.g. `tasks.complete.mutate(...)` regardless of which component instance fired it.
@@ -166,14 +179,17 @@ describe("TaskListItem", () => {
     }
 
     const { rerender } = render(<Parent unrelated={1} />);
-    expect(trpcState.taskListItemRenderCount).toBe(1);
+    // RecurrenceQuickPopover (always rendered in the non-hover row) also calls
+    // trpc.useUtils(), so each TaskListItem render increments the counter by 2.
+    const countAfterMount = trpcState.taskListItemRenderCount;
+    expect(countAfterMount).toBeGreaterThanOrEqual(1);
 
     rerender(<Parent unrelated={2} />);
     // Memo win: parent re-rendered, TaskListItem did not.
-    expect(trpcState.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(countAfterMount);
 
     rerender(<Parent unrelated={3} />);
-    expect(trpcState.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(countAfterMount);
   });
 
   it("re-renders TaskListItem when the task prop changes by reference", () => {
@@ -195,11 +211,14 @@ describe("TaskListItem", () => {
 
     const t1 = makeRow();
     const { rerender, getByText } = render(<Parent task={t1} />);
-    expect(trpcState.taskListItemRenderCount).toBe(1);
+    // RecurrenceQuickPopover (always rendered in the non-hover row) also calls
+    // trpc.useUtils(), so capture the mount count rather than asserting a hard number.
+    const countAfterMount = trpcState.taskListItemRenderCount;
+    expect(countAfterMount).toBeGreaterThanOrEqual(1);
 
     // Same reference → memo still skips.
     rerender(<Parent task={t1} />);
-    expect(trpcState.taskListItemRenderCount).toBe(1);
+    expect(trpcState.taskListItemRenderCount).toBe(countAfterMount);
 
     // New reference with new content → memo lets it through. The component
     // also has a `useEffect([task.title])` that resyncs the title draft, so
@@ -207,7 +226,7 @@ describe("TaskListItem", () => {
     // not skipping" rather than pinning the exact count.
     const t2 = makeRow({ title: "Buy bread" });
     rerender(<Parent task={t2} />);
-    expect(trpcState.taskListItemRenderCount).toBeGreaterThan(1);
+    expect(trpcState.taskListItemRenderCount).toBeGreaterThan(countAfterMount);
     expect(getByText("Buy bread")).toBeInTheDocument();
   });
 
