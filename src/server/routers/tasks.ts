@@ -17,6 +17,25 @@ const log = createLogger({ module: "tasks-router" });
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Given a timezone offset in minutes (as returned by `new Date().getTimezoneOffset()`
+ * on the client — positive west of UTC, negative east), returns midnight boundaries
+ * for today and tomorrow in that local timezone, expressed as UTC Date objects.
+ */
+function getLocalDayBoundaries(timezoneOffsetMinutes: number) {
+  const nowUtc = new Date();
+  // Shift to "local" time by subtracting the offset
+  const localNow = new Date(nowUtc.getTime() - timezoneOffsetMinutes * 60_000);
+  const y = localNow.getUTCFullYear();
+  const m = localNow.getUTCMonth();
+  const d = localNow.getUTCDate();
+  // Local midnight expressed as UTC: shift back by adding the offset
+  const todayStart = new Date(Date.UTC(y, m, d) + timezoneOffsetMinutes * 60_000);
+  const tomorrowStart = new Date(Date.UTC(y, m, d + 1) + timezoneOffsetMinutes * 60_000);
+  const dayAfterTomorrowStart = new Date(Date.UTC(y, m, d + 2) + timezoneOffsetMinutes * 60_000);
+  return { nowUtc, todayStart, tomorrowStart, dayAfterTomorrowStart };
+}
+
 const TaskCreateInput = z.object({
   title: z.string().min(1).max(500),
   notes: z.string().max(50_000).optional(),
@@ -110,6 +129,7 @@ export const tasksRouter = router({
         include_completed: z.boolean().default(false),
         include_deferred: z.boolean().default(false),
         limit: z.number().int().min(1).max(500).default(200),
+        timezoneOffset: z.number().int().min(-840).max(840).default(0),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -134,40 +154,32 @@ export const tasksRouter = router({
         where.status = "active";
       }
 
-      const now = new Date();
+      const { nowUtc, todayStart, tomorrowStart, dayAfterTomorrowStart } =
+        getLocalDayBoundaries(input.timezoneOffset);
       const notDeferred: Prisma.TaskWhereInput = {
-        OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+        OR: [{ defer_date: null }, { defer_date: { lte: nowUtc } }],
       };
 
       if (input.perspective === "inbox") {
         where.project_id = null;
         where.parent_id = null;
       } else if (input.perspective === "today") {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 1);
         where.AND = [
           notDeferred,
           {
             OR: [
-              { due_date: { gte: start, lt: end } },
-              { due_date: { lt: start } },
-              { flagged: true },
+              { due_date: { lt: tomorrowStart } },
+              { defer_date: { lte: nowUtc, not: null } },
+              { flagged: true, due_date: null },
             ],
           },
         ];
       } else if (input.perspective === "tomorrow") {
-        const tomorrowStart = new Date();
-        tomorrowStart.setHours(0, 0, 0, 0);
-        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-        const tomorrowEnd = new Date(tomorrowStart);
-        tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
         where.AND = [
           {
             OR: [
-              { due_date: { gte: tomorrowStart, lt: tomorrowEnd } },
-              { defer_date: { gte: tomorrowStart, lt: tomorrowEnd } },
+              { due_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
+              { defer_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
             ],
           },
         ];
@@ -275,68 +287,65 @@ export const tasksRouter = router({
       return items;
     }),
 
-  counts: protectedProcedure.query(async ({ ctx }) => {
-    const now = new Date();
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    const tomorrowStart = new Date(end);
-    const tomorrowEnd = new Date(tomorrowStart);
-    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+  counts: protectedProcedure
+    .input(z.object({ timezoneOffset: z.number().int().min(-840).max(840).default(0) }))
+    .query(async ({ ctx, input }) => {
+      const { nowUtc, tomorrowStart, dayAfterTomorrowStart } = getLocalDayBoundaries(
+        input.timezoneOffset,
+      );
 
-    const notDeferred: Prisma.TaskWhereInput = {
-      OR: [{ defer_date: null }, { defer_date: { lte: now } }],
-    };
+      const notDeferred: Prisma.TaskWhereInput = {
+        OR: [{ defer_date: null }, { defer_date: { lte: nowUtc } }],
+      };
 
-    const [inbox, today, tomorrow, flagged, trash] = await Promise.all([
-      db.task.count({
-        where: {
-          user_id: ctx.user.id,
-          status: "active",
-          project_id: null,
-          parent_id: null,
-        },
-      }),
-      db.task.count({
-        where: {
-          user_id: ctx.user.id,
-          status: "active",
-          AND: [
-            notDeferred,
-            {
-              OR: [
-                { due_date: { lt: end } },
-                { defer_date: { lte: now, not: null } },
-                { flagged: true, due_date: null },
-              ],
-            },
-          ],
-        },
-      }),
-      db.task.count({
-        where: {
-          user_id: ctx.user.id,
-          status: "active",
-          OR: [
-            { due_date: { gte: tomorrowStart, lt: tomorrowEnd } },
-            { defer_date: { gte: tomorrowStart, lt: tomorrowEnd } },
-          ],
-        },
-      }),
-      db.task.count({
-        where: { user_id: ctx.user.id, status: "active", flagged: true },
-      }),
-      db.task.count({
-        where: withDeleted<Prisma.TaskWhereInput>({
-          user_id: ctx.user.id,
-          NOT: { deleted_at: null },
+      const [inbox, today, tomorrow, flagged, trash] = await Promise.all([
+        db.task.count({
+          where: {
+            user_id: ctx.user.id,
+            status: "active",
+            project_id: null,
+            parent_id: null,
+          },
         }),
-      }),
-    ]);
+        db.task.count({
+          where: {
+            user_id: ctx.user.id,
+            status: "active",
+            AND: [
+              notDeferred,
+              {
+                OR: [
+                  { due_date: { lt: tomorrowStart } },
+                  { defer_date: { lte: nowUtc, not: null } },
+                  { flagged: true, due_date: null },
+                ],
+              },
+            ],
+          },
+        }),
+        db.task.count({
+          where: {
+            user_id: ctx.user.id,
+            status: "active",
+            OR: [
+              { due_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
+              { defer_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
+            ],
+          },
+        }),
+        db.task.count({
+          where: { user_id: ctx.user.id, status: "active", flagged: true },
+        }),
+        db.task.count({
+          where: withDeleted<Prisma.TaskWhereInput>({
+            user_id: ctx.user.id,
+            NOT: { deleted_at: null },
+          }),
+        }),
+      ]);
 
-    return { inbox, today, tomorrow, flagged, trash };
-  }),
+      return { inbox, today, tomorrow, flagged, trash };
+    }),
 
   countDeferred: protectedProcedure
     .input(z.object({ project_id: z.string().uuid() }))

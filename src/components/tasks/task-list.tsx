@@ -179,6 +179,7 @@ export function TaskList({
     tag_name: tagName,
     include_completed: false,
     include_deferred: perspective === "project" ? showDeferred : undefined,
+    timezoneOffset: new Date().getTimezoneOffset(),
   });
 
   const deferredCountQuery = trpc.tasks.countDeferred.useQuery(

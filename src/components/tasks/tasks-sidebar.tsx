@@ -95,7 +95,10 @@ export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
 
-  const counts = trpc.tasks.counts.useQuery(undefined, { refetchOnWindowFocus: false });
+  const counts = trpc.tasks.counts.useQuery(
+    { timezoneOffset: new Date().getTimezoneOffset() },
+    { refetchOnWindowFocus: false },
+  );
   const reviewCount = trpc.review.overdueCount.useQuery(undefined, { refetchOnWindowFocus: false });
   const projects = trpc.projects.list.useQuery({ status: "active" });
   const foldersQuery = trpc.folders.list.useQuery(undefined, { refetchOnWindowFocus: false });
