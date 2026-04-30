@@ -22,6 +22,10 @@ args = "Start application"
 task = "workflow.run"
 args = "Storybook"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "test:integration"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -45,6 +49,17 @@ outputType = "console"
 task = "shell.exec"
 args = "npm run storybook -- -p 6000"
 waitForPort = 6000
+
+[[workflows.workflow]]
+name = "test:integration"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run test:integration"
+
+[workflows.workflow.metadata]
+isValidation = true
 
 [[ports]]
 localPort = 5000

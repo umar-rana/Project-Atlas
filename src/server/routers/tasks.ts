@@ -170,7 +170,7 @@ export const tasksRouter = router({
             OR: [
               { due_date: { lt: tomorrowStart } },
               { defer_date: { lte: nowUtc, not: null } },
-              { flagged: true, due_date: null },
+              { flagged: true },
             ],
           },
         ];
@@ -317,7 +317,7 @@ export const tasksRouter = router({
                 OR: [
                   { due_date: { lt: tomorrowStart } },
                   { defer_date: { lte: nowUtc, not: null } },
-                  { flagged: true, due_date: null },
+                  { flagged: true },
                 ],
               },
             ],
