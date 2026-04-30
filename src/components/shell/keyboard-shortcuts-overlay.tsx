@@ -22,8 +22,9 @@ const WAVE2_SHORTCUTS = [
   { id: "s-settings",  label: "Open Settings",       group: "Navigation", keys: ["cmd", ","] },
   { id: "s-palette",   label: "Command Palette",     group: "Global",     keys: ["cmd", "K"] },
   { id: "s-shortcuts", label: "Keyboard Shortcuts",  group: "Global",     keys: ["cmd", "/"] },
+  { id: "s-shortcuts-q", label: "Keyboard Shortcuts",  group: "Global",   keys: ["?"] },
   { id: "s-capture",   label: "Quick Capture",       group: "Global",     keys: ["cmd", "shift", "I"] },
-  { id: "s-inspector", label: "Toggle Inspector",    group: "Global",     keys: ["cmd", "\\"] },
+  { id: "s-inspector", label: "Toggle Inspector panel", group: "Inspector", keys: ["cmd", "\\"] },
 ];
 
 function ShortcutSeeder(): null {

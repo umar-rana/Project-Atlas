@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { Inbox, Keyboard, Sparkles, X } from "lucide-react";
+import { HelpCircle, Inbox, Keyboard, Sparkles, X } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
+import { useShellStore } from "@/lib/shell/store";
 import { TaskListItem } from "./task-list-item";
 import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
@@ -198,6 +199,8 @@ export function TaskList({
   const setLastClicked = useTasksStore((s) => s.setLastClicked);
 
   const [sortBy, setSortBy] = React.useState<"manual" | "due" | "title" | "flagged">("manual");
+
+  const setShortcutsOverlayOpen = useShellStore((s) => s.setShortcutsOverlayOpen);
 
   const [hasFinePointer, setHasFinePointer] = React.useState(false);
   React.useEffect(() => {
@@ -607,6 +610,15 @@ export function TaskList({
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘I</kbd>
                 <span className="mx-1.5">inspect</span>
               </p>
+              <button
+                type="button"
+                onClick={() => setShortcutsOverlayOpen(true)}
+                title="Keyboard shortcuts (?)"
+                aria-label="Keyboard shortcuts"
+                className="ml-auto shrink-0 text-text-tertiary hover:text-text-secondary"
+              >
+                <HelpCircle size={13} aria-hidden />
+              </button>
             </div>
           )}
         </>

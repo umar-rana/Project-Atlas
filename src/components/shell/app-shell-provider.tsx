@@ -76,6 +76,16 @@ function GlobalShortcuts(): null {
         return;
       }
 
+      if (!meta && !e.altKey && e.key === "?") {
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+          return;
+        }
+        e.preventDefault();
+        setShortcutsOverlayOpen(true);
+        return;
+      }
+
       if (meta && e.shiftKey && e.key.toLowerCase() === "i") {
         e.preventDefault();
         setCaptureModalOpen(true);
