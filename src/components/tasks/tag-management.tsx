@@ -59,6 +59,7 @@ function RenameInline({
     onSuccess: () => {
       utils.tags.usageStats.invalidate();
       utils.tags.list.invalidate();
+      utils.tasks.list.invalidate();
       toast.success("Tag renamed");
       onDone();
     },
