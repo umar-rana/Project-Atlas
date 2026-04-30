@@ -4,6 +4,7 @@ import { router, publicProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { TRPCError } from "@trpc/server";
 import { createLogger } from "@/core/logging";
+import { sendWaitlistNotification } from "@/core/email";
 
 const log = createLogger({ module: "waitlist" });
 
@@ -42,6 +43,15 @@ export const waitlistRouter = router({
       }
 
       log.info("New waitlist entry created");
+
+      const notifyResult = await sendWaitlistNotification({
+        name: input.name.trim(),
+        email: normalizedEmail,
+        message: input.message?.trim() ?? null,
+      });
+      if (!notifyResult.success) {
+        log.warn({ error: notifyResult.error }, "Waitlist notification email failed");
+      }
 
       return { success: true };
     }),
