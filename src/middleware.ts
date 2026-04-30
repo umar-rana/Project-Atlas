@@ -60,6 +60,14 @@ function shouldRedirectToMobile(req: NextRequest): boolean {
 }
 
 export default clerkMiddleware(async (auth, req) => {
+  const { pathname } = req.nextUrl;
+
+  // Let static files from the public directory pass through without auth.
+  // The _next/* exclusions in config.matcher don't cover /public root files.
+  if (STATIC_ASSET_RE.test(pathname) && !pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   if (!isPublicRoute(req)) {
     const { userId } = await auth();
     if (!userId) {

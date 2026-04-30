@@ -1,6 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import {
   CheckSquare,
@@ -8,6 +7,7 @@ import {
   Users,
   FileText,
   BookOpen,
+  Vault,
   Mail,
   LogIn,
   Zap,
@@ -38,7 +38,8 @@ function Header() {
     <header className="sticky top-0 z-50 border-b border-border-subtle bg-surface-base/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/icon.svg"
             alt="Atlas"
             width={32}
@@ -71,15 +72,16 @@ function Hero() {
     <section className="mx-auto max-w-6xl px-6 py-24 text-center tablet:py-32">
       <div className="mx-auto max-w-3xl">
         <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-primary shadow-lg">
-          <Image src="/icon.svg" alt="Atlas" width={40} height={40} className="rounded-xl" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.svg" alt="Atlas" width={40} height={40} className="rounded-xl" />
         </div>
         <h1 className="text-4xl font-semibold tracking-tight text-text-primary tablet:text-5xl">
           A personal command center for the way you actually work
         </h1>
         <p className="mt-6 text-lg leading-relaxed text-text-secondary">
           Your tasks, your calendar, the people you&apos;re in touch with, your
-          notes, your journal — in one place, with the connections between them
-          intact.
+          notes, your journal, your vault — in one place, with the connections
+          between them intact.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 tablet:flex-row tablet:justify-center">
           <Link
@@ -196,25 +198,28 @@ function WhatAtlasIs() {
         </h2>
         <div className="mt-6 max-w-3xl space-y-4 text-base leading-relaxed text-text-secondary">
           <p>
-            Most productivity tools are good at one thing and force you to bolt
-            on others. Atlas brings together your tasks, your calendar, the
-            people you&apos;re in touch with, your notes, and your journal — so
-            the connections between them actually live in one system.
+            Atlas is opinionated — deliberately so. It wasn&apos;t designed by
+            committee or shaped by customer surveys. It was built from one
+            person&apos;s conviction about how work should be organised: that
+            your tasks, calendar, relationships, notes, journal, and most
+            important records shouldn&apos;t live in separate tools with no
+            awareness of each other.
           </p>
           <p>
             The meeting you have tomorrow, the person you&apos;re meeting, the
             project you&apos;ll discuss, the notes you took last week — instead
-            of living in separate apps with no awareness of each other, they live
-            together. When you reference a person, project, idea, or earlier
-            thought, Atlas recognizes it and creates the connection. You
-            don&apos;t have to think about organizing — the structure builds
-            itself from how you actually work.
+            of living in separate apps, they live together. When you reference a
+            person, project, idea, or earlier thought, Atlas recognises it and
+            creates the connection. You don&apos;t have to think about organising
+            — the structure builds itself from how you actually work.
           </p>
           <p>
-            This is built for people who think carefully about how they work.
-            If you&apos;ve tried OmniFocus and Notion and Things and a calendar
-            app and a journaling app and felt the friction of moving between
-            them, Atlas is for you.
+            That opinionated foundation is both its limitation and its strength.
+            No customer feedback was collected, no user research was run. It was
+            built for a specific way of working — and if that way resonates with
+            you, it fits like something purpose-built. If you&apos;ve tried
+            OmniFocus and Notion and Things and a calendar app and a journaling
+            app and felt the friction of moving between them, Atlas is for you.
           </p>
         </div>
       </div>
@@ -227,7 +232,7 @@ const modules = [
     icon: CheckSquare,
     name: "Tasks",
     description:
-      "Your inbox for everything that needs to happen. Capture a thought in two seconds and it lives somewhere you'll actually see it again. Organize into projects when you're ready, or leave things in the inbox until you have time to think. The bar for capture is low; the bar for focus is high.",
+      "Your inbox for everything that needs to happen. Capture a thought in two seconds and it lives somewhere you'll actually see it again. Organise into projects when you're ready, or leave things in the inbox until you have time to think. The bar for capture is low; the bar for focus is high.",
   },
   {
     icon: CalendarDays,
@@ -245,13 +250,19 @@ const modules = [
     icon: FileText,
     name: "Notes",
     description:
-      "The thinking you want to keep. Project briefs, meeting notes, reading notes, ideas. Atlas's notes are clean markdown documents — but with one important difference: they connect. A note from a meeting links to the people who were there and the calendar event. A reference to an idea links to that earlier note.",
+      "The thinking you want to keep. Project briefs, meeting notes, reading notes, ideas. Atlas's notes are clean markdown documents — but with one important difference: they connect. A note from a meeting links to the people who were there and the calendar event.",
   },
   {
     icon: BookOpen,
     name: "Journals",
     description:
-      "The ongoing record of your days. A daily journal for processing — what happened, what you learned, what's on your mind. It's private, simple, and lives alongside everything else. When you reference a project in your journal entry, you can come back to that project and see the journal entries that mentioned it.",
+      "The ongoing record of your days. A daily journal for processing — what happened, what you learned, what's on your mind. It's private, simple, and lives alongside everything else. When you reference a project in your journal entry, you can come back to that project and see the entries that mentioned it.",
+  },
+  {
+    icon: Vault,
+    name: "Vault",
+    description:
+      "Secure storage for the records that define your life — passports, property documents, legal agreements, digital credentials. The things you rarely need but absolutely cannot lose. Kept in one place, private, always findable when it matters.",
   },
 ];
 
@@ -259,7 +270,7 @@ function Modules() {
   return (
     <section id="modules" className="mx-auto max-w-6xl px-6 py-20">
       <h2 className="text-2xl font-semibold text-text-primary tablet:text-3xl">
-        Five modules, one system
+        Six modules, one system
       </h2>
       <p className="mt-3 text-base text-text-secondary">
         Each module is useful on its own. Together they become something more.
@@ -316,7 +327,8 @@ function Footer() {
     <footer className="border-t border-border-subtle bg-surface-base">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 tablet:flex-row">
         <div className="flex items-center gap-3">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/icon.svg"
             alt="Atlas"
             width={24}
