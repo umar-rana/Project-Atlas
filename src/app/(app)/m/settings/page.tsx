@@ -3,9 +3,11 @@
 import * as React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Monitor, LogOut, Palette, User, Info } from "lucide-react";
+import { Monitor, LogOut, User, Info, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast";
 
 function SettingsRow({
   icon: Icon,
@@ -45,6 +47,57 @@ function SettingsRow({
         ) : null}
       </div>
     </button>
+  );
+}
+
+const THEMES = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const;
+
+function ThemeRow() {
+  const { theme, setTheme } = useTheme();
+
+  function handleTheme(value: "light" | "dark" | "system") {
+    setTheme(value);
+    toast.success(`Theme: ${value.charAt(0).toUpperCase() + value.slice(1)}`, { duration: 2000 });
+  }
+
+  return (
+    <div className="flex min-h-[56px] items-center gap-3 px-4 py-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-raised">
+        {theme === "light" ? (
+          <Sun size={16} aria-hidden className="text-text-secondary" />
+        ) : theme === "dark" ? (
+          <Moon size={16} aria-hidden className="text-text-secondary" />
+        ) : (
+          <Monitor size={16} aria-hidden className="text-text-secondary" />
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="mb-2 font-ui text-sm font-medium text-text-primary">Theme</p>
+        <div className="flex gap-2">
+          {THEMES.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => handleTheme(value)}
+              aria-pressed={theme === value}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-1 rounded-lg border py-2 font-ui text-xs font-medium transition-colors",
+                theme === value
+                  ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
+                  : "border-border-subtle bg-surface-raised text-text-secondary active:bg-surface-hover",
+              )}
+            >
+              <Icon size={14} aria-hidden />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -104,7 +157,8 @@ export default function MobileSettingsPage() {
           <p className="px-4 pb-1 font-ui text-xs font-medium uppercase tracking-wide text-text-tertiary">
             Display
           </p>
-          <div className="divide-y divide-border-subtle rounded-none">
+          <div className="divide-y divide-border-subtle">
+            <ThemeRow />
             <SettingsRow
               icon={Monitor}
               label="Switch to desktop site"
@@ -129,15 +183,6 @@ export default function MobileSettingsPage() {
               }}
             />
             <SettingsRow
-              icon={Palette}
-              label="Appearance"
-              sublabel="Theme and display options"
-              onClick={() => {
-                switchToDesktop();
-                router.push("/settings?section=appearance");
-              }}
-            />
-            <SettingsRow
               icon={Info}
               label="All settings"
               sublabel="Open full settings on desktop"
@@ -157,7 +202,7 @@ export default function MobileSettingsPage() {
           </div>
         </div>
 
-        <p className="px-4 py-6 font-ui text-xs text-text-disabled text-center">
+        <p className="px-4 py-6 text-center font-ui text-xs text-text-disabled">
           Atlas · Mobile
         </p>
       </div>
