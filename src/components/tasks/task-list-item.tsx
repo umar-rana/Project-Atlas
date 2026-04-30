@@ -24,6 +24,8 @@ interface TaskListItemProps {
   onDrop?: (targetId: string) => void;
   inTrash?: boolean;
   perspective?: string;
+  quickActionsFocused?: boolean;
+  onDismissQuickActions?: () => void;
 }
 
 function dueColorClass(due: Date | null): string {
@@ -52,6 +54,8 @@ function TaskListItemImpl({
   onDrop,
   inTrash,
   perspective,
+  quickActionsFocused,
+  onDismissQuickActions,
 }: TaskListItemProps) {
   const utils = trpc.useUtils();
   const toggleExpandedParent = useTasksStore((s) => s.toggleExpandedParent);
@@ -63,7 +67,7 @@ function TaskListItemImpl({
   const [hovered, setHovered] = React.useState(false);
   const [anyPopoverOpen, setAnyPopoverOpen] = React.useState(false);
 
-  const showQuickActions = (hovered || anyPopoverOpen) && !inTrash;
+  const showQuickActions = (hovered || anyPopoverOpen || !!quickActionsFocused) && !inTrash;
 
   React.useEffect(() => {
     setTitleDraft(task.title);
@@ -309,6 +313,8 @@ function TaskListItemImpl({
         <TaskRowQuickActions
           task={task}
           onAnyPopoverOpenChange={setAnyPopoverOpen}
+          autoFocusFirstButton={!!quickActionsFocused}
+          onDismiss={onDismissQuickActions}
         />
       ) : (
         <>

@@ -22,6 +22,8 @@ interface TaskListItemWithSubtasksProps {
   onDragOver: (id: string) => void;
   onDrop: (targetId: string) => void;
   perspective: string;
+  quickActionsFocusedTaskId: string | null;
+  onDismissQuickActions: () => void;
 }
 
 function TaskListItemWithSubtasks({
@@ -36,6 +38,8 @@ function TaskListItemWithSubtasks({
   onDragOver,
   onDrop,
   perspective,
+  quickActionsFocusedTaskId,
+  onDismissQuickActions,
 }: TaskListItemWithSubtasksProps) {
   const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
@@ -57,6 +61,8 @@ function TaskListItemWithSubtasks({
         onDrop={onDrop}
         inTrash={perspective === "trash"}
         perspective={perspective}
+        quickActionsFocused={quickActionsFocusedTaskId === task.id}
+        onDismissQuickActions={onDismissQuickActions}
       />
       {isProjectView && isExpanded && subtasks.length > 0 && subtasks.map((st) => {
         const subtaskRow: TaskRow = {
@@ -277,6 +283,7 @@ export function TaskList({
   const dropTargetId = React.useRef<string | null>(null);
 
   const [focusedIdx, setFocusedIdx] = React.useState(0);
+  const [quickActionsFocusedTaskId, setQuickActionsFocusedTaskId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -286,10 +293,23 @@ export function TaskList({
 
       if (e.key === "j") {
         e.preventDefault();
+        setQuickActionsFocusedTaskId(null);
         setFocusedIdx((i) => Math.min(tasks.length - 1, i + 1));
       } else if (e.key === "k") {
         e.preventDefault();
+        setQuickActionsFocusedTaskId(null);
         setFocusedIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === ".") {
+        const t = tasks[focusedIdx];
+        if (t) {
+          e.preventDefault();
+          setQuickActionsFocusedTaskId(t.id);
+        }
+      } else if (e.key === "Escape") {
+        if (quickActionsFocusedTaskId) {
+          e.preventDefault();
+          setQuickActionsFocusedTaskId(null);
+        }
       } else if (e.key === " " || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d")) {
         const t = tasks[focusedIdx];
         if (t) {
@@ -325,7 +345,7 @@ export function TaskList({
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [tasks, focusedIdx, utils, setSelectedTaskId]);
+  }, [tasks, focusedIdx, quickActionsFocusedTaskId, utils, setSelectedTaskId]);
 
   const handleSelect = React.useCallback((task: TaskRow) => {
     setSelectedTaskId(task.id);
@@ -381,6 +401,10 @@ export function TaskList({
   }, []);
   const handleDragOver = React.useCallback((id: string) => {
     dropTargetId.current = id;
+  }, []);
+
+  const handleDismissQuickActions = React.useCallback(() => {
+    setQuickActionsFocusedTaskId(null);
   }, []);
 
   const incompleteTasks = tasks.filter((t) => t.status !== "completed");
@@ -544,6 +568,8 @@ export function TaskList({
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 perspective={perspective}
+                quickActionsFocusedTaskId={quickActionsFocusedTaskId}
+                onDismissQuickActions={handleDismissQuickActions}
               />
             ))}
           </div>
@@ -561,6 +587,9 @@ export function TaskList({
                 <span className="mx-1">·</span>
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">f</kbd>
                 <span className="mx-1.5">flag</span>
+                <span className="mx-1">·</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">.</kbd>
+                <span className="mx-1.5">quick actions</span>
                 <span className="mx-1">·</span>
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘I</kbd>
                 <span className="mx-1.5">inspect</span>

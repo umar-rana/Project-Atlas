@@ -39,6 +39,8 @@ import type { TaskRow } from "./task-list";
 interface TaskRowQuickActionsProps {
   task: TaskRow;
   onAnyPopoverOpenChange: (open: boolean) => void;
+  autoFocusFirstButton?: boolean;
+  onDismiss?: () => void;
 }
 
 const TASK_LIST_QUERY_KEY = [["tasks", "list"]];
@@ -439,8 +441,11 @@ function MoreMenu({ task, onOpenInspector, onOpenChange }: MoreMenuProps) {
 export function TaskRowQuickActions({
   task,
   onAnyPopoverOpenChange,
+  autoFocusFirstButton,
+  onDismiss,
 }: TaskRowQuickActionsProps) {
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const openCount = React.useRef(0);
   const onAnyPopoverOpenChangeRef = React.useRef(onAnyPopoverOpenChange);
@@ -459,8 +464,47 @@ export function TaskRowQuickActions({
     };
   }, []);
 
+  React.useEffect(() => {
+    if (!autoFocusFirstButton) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const first = container.querySelector<HTMLButtonElement>("button");
+    first?.focus();
+  }, [autoFocusFirstButton]);
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const container = containerRef.current;
+    if (!container) return;
+    const buttons = Array.from(container.querySelectorAll<HTMLButtonElement>("button"));
+    const current = document.activeElement;
+    const idx = buttons.indexOf(current as HTMLButtonElement);
+
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      e.stopPropagation();
+      const next = idx < 0 ? buttons[0] : buttons[(idx + 1) % buttons.length];
+      next?.focus();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      e.stopPropagation();
+      const prev = idx < 0 ? buttons[buttons.length - 1] : buttons[(idx - 1 + buttons.length) % buttons.length];
+      prev?.focus();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      onDismiss?.();
+    }
+  }
+
   return (
-    <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+    <div
+      ref={containerRef}
+      role="toolbar"
+      aria-label="Quick actions"
+      className="flex items-center gap-0.5"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={handleKeyDown}
+    >
       <QuickDatePopover
         taskId={task.id}
         field="due_date"

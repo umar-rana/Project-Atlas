@@ -146,6 +146,33 @@ vi.mock("../task-quick-add", () => ({
   TaskQuickAdd: () => null,
 }));
 
+vi.mock("../recurrence-quick-popover", () => ({
+  RecurrenceQuickPopover: () => null,
+}));
+
+vi.mock("../task-row-quick-actions", () => ({
+  TaskRowQuickActions: ({
+    onDismiss,
+  }: {
+    task: unknown;
+    onAnyPopoverOpenChange: (b: boolean) => void;
+    autoFocusFirstButton?: boolean;
+    onDismiss?: () => void;
+  }) => (
+    <div
+      role="toolbar"
+      aria-label="Quick actions"
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === "Escape") onDismiss?.();
+      }}
+    >
+      <button type="button">Action 1</button>
+      <button type="button">Action 2</button>
+      <button type="button">Action 3</button>
+    </div>
+  ),
+}));
+
 import { TaskList } from "../task-list";
 import { useTasksStore } from "@/lib/tasks/store";
 
@@ -569,6 +596,116 @@ describe("TaskList — keyboard shortcuts", () => {
     expect(mockState.clientMutates.complete).not.toHaveBeenCalled();
     expect(mockState.clientMutates.update).not.toHaveBeenCalled();
     expect(useTasksStore.getState().selectedTaskId).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Quick-actions shortcut (.)
+// ---------------------------------------------------------------------------
+// Pressing "." while a task row is keyboard-focused should reveal the
+// quick-action toolbar for that row. Pressing j/k or Escape should dismiss it.
+// ---------------------------------------------------------------------------
+describe("TaskList — quick-actions shortcut (.)", () => {
+  beforeEach(() => {
+    mockState.clientMutates.complete?.mockClear();
+    mockState.clientMutates.update?.mockClear();
+    for (const fn of mockState.mutates.values()) fn.mockClear();
+    mockState.queries.tasksList = [
+      makeRow("q1"),
+      makeRow("q2"),
+      makeRow("q3"),
+    ];
+    resetStore();
+  });
+
+  function renderList() {
+    return render(
+      <TaskList
+        perspective="inbox"
+        title="Inbox"
+        enableQuickAdd={false}
+      />,
+    );
+  }
+
+  it("pressing '.' shows the quick-action toolbar for the focused task row", () => {
+    const { getAllByRole } = renderList();
+
+    expect(() => getAllByRole("toolbar")).toThrow();
+
+    pressKey(".");
+
+    const toolbars = getAllByRole("toolbar", { name: "Quick actions" });
+    expect(toolbars.length).toBe(1);
+  });
+
+  it("pressing '.' after 'j' shows the toolbar for the second row, not the first", () => {
+    const { container, getAllByRole } = renderList();
+
+    pressKey("j");
+    pressKey(".");
+
+    const toolbars = getAllByRole("toolbar", { name: "Quick actions" });
+    expect(toolbars.length).toBe(1);
+
+    const rows = container.querySelectorAll("[data-task-id]");
+    const toolbarRow = toolbars[0]!.closest("[data-task-id]");
+    expect(toolbarRow).toBe(rows[1]);
+  });
+
+  it("pressing 'j' after '.' dismisses the quick-action toolbar", () => {
+    const { getAllByRole, queryAllByRole } = renderList();
+
+    pressKey(".");
+    expect(getAllByRole("toolbar", { name: "Quick actions" }).length).toBe(1);
+
+    pressKey("j");
+    expect(queryAllByRole("toolbar", { name: "Quick actions" }).length).toBe(0);
+  });
+
+  it("pressing 'k' after '.' dismisses the quick-action toolbar", () => {
+    const { getAllByRole, queryAllByRole } = renderList();
+
+    pressKey("j");
+    pressKey(".");
+    expect(getAllByRole("toolbar", { name: "Quick actions" }).length).toBe(1);
+
+    pressKey("k");
+    expect(queryAllByRole("toolbar", { name: "Quick actions" }).length).toBe(0);
+  });
+
+  it("pressing 'Escape' after '.' dismisses the quick-action toolbar", () => {
+    const { getAllByRole, queryAllByRole } = renderList();
+
+    pressKey(".");
+    expect(getAllByRole("toolbar", { name: "Quick actions" }).length).toBe(1);
+
+    pressKey("Escape");
+    expect(queryAllByRole("toolbar", { name: "Quick actions" }).length).toBe(0);
+  });
+
+  it("'.' is suppressed when the event target is an INPUT element", () => {
+    const { queryAllByRole } = renderList();
+
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+
+    act(() => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: ".", bubbles: true }));
+    });
+
+    expect(queryAllByRole("toolbar", { name: "Quick actions" }).length).toBe(0);
+
+    document.body.removeChild(input);
+  });
+
+  it("'.' does nothing when the task list is empty", () => {
+    mockState.queries.tasksList = [];
+    const { queryAllByRole } = renderList();
+
+    pressKey(".");
+
+    expect(queryAllByRole("toolbar", { name: "Quick actions" }).length).toBe(0);
   });
 });
 
