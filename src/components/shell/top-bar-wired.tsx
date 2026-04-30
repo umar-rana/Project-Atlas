@@ -17,6 +17,7 @@ interface TopBarWiredProps {
     email: string;
     image: string | null;
   };
+  isAdmin?: boolean;
 }
 
 function ThemeToggle(): React.ReactElement {
@@ -53,7 +54,7 @@ function ThemeToggle(): React.ReactElement {
   );
 }
 
-export function TopBarWired({ user }: TopBarWiredProps): React.ReactElement {
+export function TopBarWired({ user, isAdmin }: TopBarWiredProps): React.ReactElement {
   const setCommandPaletteOpen = useShellStore((s) => s.setCommandPaletteOpen);
   const setCaptureModalOpen = useShellStore((s) => s.setCaptureModalOpen);
 
@@ -79,7 +80,7 @@ export function TopBarWired({ user }: TopBarWiredProps): React.ReactElement {
     <>
       <ThemeToggle />
       <SyncStatus />
-      <UserMenu name={user.name} email={user.email} image={user.image} />
+      <UserMenu name={user.name} email={user.email} image={user.image} isAdmin={isAdmin} />
     </>
   );
 

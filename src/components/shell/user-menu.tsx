@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
-import { Settings, Activity, Keyboard, LogOut, Sun, Moon, Monitor } from "lucide-react";
+import { Settings, Activity, Keyboard, LogOut, Sun, Moon, Monitor, Users } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -22,6 +22,7 @@ interface UserMenuProps {
   name: string | null;
   email: string;
   image: string | null;
+  isAdmin?: boolean;
 }
 
 const THEMES = [
@@ -30,7 +31,7 @@ const THEMES = [
   { value: "system", label: "System", icon: Monitor },
 ] as const;
 
-export function UserMenu({ name, email, image }: UserMenuProps): React.ReactElement {
+export function UserMenu({ name, email, image, isAdmin }: UserMenuProps): React.ReactElement {
   const router = useRouter();
   const { signOut } = useClerk();
   const setShortcutsOverlayOpen = useShellStore((s) => s.setShortcutsOverlayOpen);
@@ -97,9 +98,16 @@ export function UserMenu({ name, email, image }: UserMenuProps): React.ReactElem
         <DropdownMenuItem onClick={() => router.push("/settings")}>
           <Settings size={14} /> Settings
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/admin/health")}>
-          <Activity size={14} /> Health
-        </DropdownMenuItem>
+        {isAdmin && (
+          <>
+            <DropdownMenuItem onClick={() => router.push("/admin/health")}>
+              <Activity size={14} /> Health
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/admin/waitlist")}>
+              <Users size={14} /> Waitlist
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuItem onClick={() => setShortcutsOverlayOpen(true)}>
           <Keyboard size={14} /> Keyboard shortcuts
         </DropdownMenuItem>

@@ -23,6 +23,7 @@ interface AppUser {
 
 interface AppShellProviderProps {
   user: AppUser;
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
@@ -135,7 +136,7 @@ function ShellHydration(): null {
   return null;
 }
 
-function ShellInner({ user, children }: AppShellProviderProps): React.ReactElement {
+function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.ReactElement {
   return (
     <>
       <ShellHydration />
@@ -143,7 +144,7 @@ function ShellInner({ user, children }: AppShellProviderProps): React.ReactEleme
       <GlobalShortcuts />
       <AppShell
         rail={<ModuleSwitcherWired />}
-        topBar={<TopBarWired user={user} />}
+        topBar={<TopBarWired user={user} isAdmin={isAdmin} />}
       >
         <div className="flex h-full min-h-0 w-full">
           <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
@@ -158,11 +159,11 @@ function ShellInner({ user, children }: AppShellProviderProps): React.ReactEleme
   );
 }
 
-export function AppShellProvider({ user, children }: AppShellProviderProps): React.ReactElement {
+export function AppShellProvider({ user, isAdmin, children }: AppShellProviderProps): React.ReactElement {
   return (
     <CommandRegistryProvider>
       <ShortcutsRegistryProvider>
-        <ShellInner user={user}>{children}</ShellInner>
+        <ShellInner user={user} isAdmin={isAdmin}>{children}</ShellInner>
       </ShortcutsRegistryProvider>
     </CommandRegistryProvider>
   );

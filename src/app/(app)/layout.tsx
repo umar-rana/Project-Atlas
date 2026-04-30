@@ -6,6 +6,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getOrCreateUserFromClerk();
   if (!user) redirect("/sign-in");
 
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const isAdmin = Boolean(adminEmail && user.email.trim().toLowerCase() === adminEmail);
+
   return (
     <AppShellProvider
       user={{
@@ -13,6 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         email: user.email,
         image: user.image,
       }}
+      isAdmin={isAdmin}
     >
       {children}
     </AppShellProvider>
