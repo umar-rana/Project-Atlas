@@ -289,6 +289,7 @@ export function TaskList({
     function handleKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      if (target?.tagName === "BUTTON" || target?.tagName === "SELECT" || target?.tagName === "A") return;
       if (tasks.length === 0) return;
 
       if (e.key === "j") {
@@ -345,6 +346,12 @@ export function TaskList({
         e.preventDefault();
         const t = tasks[focusedIdx];
         if (t) setSelectedTaskId(t.id);
+      } else if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+        const t = tasks[focusedIdx];
+        if (t) {
+          e.preventDefault();
+          setSelectedTaskId(t.id);
+        }
       }
     }
     window.addEventListener("keydown", handleKey);
@@ -595,6 +602,8 @@ export function TaskList({
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">.</kbd>
                 <span className="mx-1.5">quick actions</span>
                 <span className="mx-1">·</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">↵</kbd>
+                <span className="mx-0.5">/</span>
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘I</kbd>
                 <span className="mx-1.5">inspect</span>
               </p>
