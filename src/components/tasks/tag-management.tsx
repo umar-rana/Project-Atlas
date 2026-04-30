@@ -11,10 +11,12 @@ import {
   X,
   AlertTriangle,
   ChevronDown,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
+import { colorDotClass } from "./folder-tree-node";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -364,6 +366,18 @@ export function TagManagement(): React.ReactElement {
   const [bulkDeleting, setBulkDeleting] = React.useState(false);
   const [bulkMerging, setBulkMerging] = React.useState(false);
   const [cleanupExpanded, setCleanupExpanded] = React.useState(true);
+  const [coloringTagId, setColoringTagId] = React.useState<string | null>(null);
+
+  const utils = trpc.useUtils();
+  const updateColor = trpc.tags.update.useMutation({
+    onSuccess: () => {
+      utils.tags.usageStats.invalidate();
+      utils.tags.list.invalidate();
+      setColoringTagId(null);
+      toast.success("Tag color updated");
+    },
+    onError: () => toast.error("Failed to update tag color"),
+  });
 
   const allTags: TagStat[] = (stats.data ?? []) as TagStat[];
 
@@ -471,7 +485,8 @@ export function TagManagement(): React.ReactElement {
                   key={t.id}
                   className="inline-flex items-center gap-1 rounded-full border border-border-default bg-surface-base px-2 py-0.5 font-ui text-xs text-text-secondary"
                 >
-                  <TagIcon size={10} className="text-text-tertiary" />#{t.name}
+                  <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.color))} aria-hidden />
+                  #{t.name}
                   <span className="font-mono text-3xs text-text-tertiary">({t.usage_count})</span>
                 </span>
               ))}
@@ -579,9 +594,46 @@ export function TagManagement(): React.ReactElement {
                   <td className="py-1.5">
                     {renamingId === tag.id ? (
                       <RenameInline tag={tag} onDone={() => setRenamingId(null)} />
+                    ) : coloringTagId === tag.id ? (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="flex items-center gap-1.5 font-ui text-sm text-text-primary">
+                          <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(tag.color))} aria-hidden />
+                          #{tag.name}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              title={c}
+                              onClick={() => updateColor.mutate({ id: tag.id, color: c })}
+                              disabled={updateColor.isPending}
+                              className={cn(
+                                "size-4 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
+                                colorDotClass(c),
+                                tag.color === c && "ring-2 ring-offset-1 ring-accent-primary",
+                              )}
+                            />
+                          ))}
+                          <button
+                            type="button"
+                            title="Remove color"
+                            onClick={() => updateColor.mutate({ id: tag.id, color: null })}
+                            disabled={updateColor.isPending}
+                            className="size-4 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setColoringTagId(null)}
+                            className="ml-1 inline-flex size-5 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      </div>
                     ) : (
                       <span className="flex items-center gap-1.5 font-ui text-sm text-text-primary">
-                        <TagIcon size={12} className="text-text-tertiary" />
+                        <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(tag.color))} aria-hidden />
                         #{tag.name}
                         {tag.usage_count === 1 ? (
                           <AlertTriangle size={11} className="text-accent-warning" aria-label="Low use" />
@@ -614,6 +666,10 @@ export function TagManagement(): React.ReactElement {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setRenamingId(tag.id)}>
                           Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setColoringTagId(tag.id)}>
+                          <Palette size={13} />
+                          Change color
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setMergingTag(tag)}>
                           <Merge size={13} />

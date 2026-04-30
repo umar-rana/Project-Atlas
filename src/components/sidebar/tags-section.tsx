@@ -3,10 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Tag as TagIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { SectionHeader, useSidebarSection } from "./section-header";
+import { colorDotClass } from "@/components/tasks/folder-tree-node";
 
 interface TagsSectionProps {
   pathname: string;
@@ -50,7 +50,7 @@ export function TagsSection({ pathname }: TagsSectionProps) {
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
                 )}
               >
-                <TagIcon size={12} className="text-text-tertiary" />
+                <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(t.color))} aria-hidden />
                 <span className="flex-1 truncate">#{t.name}</span>
                 {t.usage_count > 0 ? (
                   <span className="font-mono text-2xs text-text-tertiary tabular-nums">{t.usage_count}</span>

@@ -11,6 +11,7 @@ import type { TaskRow } from "./task-list";
 import { describeRule } from "@/core/recurrence/rrule-helpers";
 import { RecurrenceQuickPopover } from "./recurrence-quick-popover";
 import { TaskRowQuickActions } from "./task-row-quick-actions";
+import { colorDotClass } from "./folder-tree-node";
 
 interface TaskListItemProps {
   task: TaskRow;
@@ -269,7 +270,8 @@ function TaskListItemImpl({
             </span>
           ))}
           {task.tags.map((tg) => (
-            <span key={tg.tag.id} className="inline-flex items-center rounded-sm border border-border-subtle px-1 py-px">
+            <span key={tg.tag.id} className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-1 py-px">
+              <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(tg.tag.color))} aria-hidden />
               #{tg.tag.name}
             </span>
           ))}

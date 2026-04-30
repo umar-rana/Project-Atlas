@@ -78,7 +78,7 @@ function nextPosition(maxPos: Prisma.Decimal | null): string {
 // the inspector and forecast view.
 const TASK_INCLUDE = {
   contexts: { include: { context: { select: { id: true, name: true } } } },
-  tags: { include: { tag: { select: { id: true, name: true } } } },
+  tags: { include: { tag: { select: { id: true, name: true, color: true } } } },
   project: { select: { id: true, title: true, color: true } },
   parent: { select: { id: true, title: true } },
   subtasks: {

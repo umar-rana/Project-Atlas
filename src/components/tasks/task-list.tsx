@@ -120,7 +120,7 @@ export interface TaskRow {
   due_date: Date | string | null;
   estimated_minutes: number | null;
   contexts: { context: { id: string; name: string } }[];
-  tags: { tag: { id: string; name: string } }[];
+  tags: { tag: { id: string; name: string; color: string | null } }[];
   project: { id: string; title: string; color: string | null } | null;
   parent?: { id: string; title: string } | null;
   subtasks?: {
