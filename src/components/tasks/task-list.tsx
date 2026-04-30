@@ -293,17 +293,15 @@ export function TaskList({
 
       if (e.key === "j") {
         e.preventDefault();
-        const nextIdx = Math.min(tasks.length - 1, focusedIdx + 1);
         setFocusedIdx((i) => Math.min(tasks.length - 1, i + 1));
         if (quickActionsFocusedTaskId) {
-          setQuickActionsFocusedTaskId(tasks[nextIdx]?.id ?? null);
+          setQuickActionsFocusedTaskId(null);
         }
       } else if (e.key === "k") {
         e.preventDefault();
-        const prevIdx = Math.max(0, focusedIdx - 1);
         setFocusedIdx((i) => Math.max(0, i - 1));
         if (quickActionsFocusedTaskId) {
-          setQuickActionsFocusedTaskId(tasks[prevIdx]?.id ?? null);
+          setQuickActionsFocusedTaskId(null);
         }
       } else if (e.key === ".") {
         const t = tasks[focusedIdx];
