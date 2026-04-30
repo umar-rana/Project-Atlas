@@ -10,6 +10,7 @@ interface TaskQuickAddProps {
   defaultProjectId?: string | null;
   defaultContextId?: string;
   defaultTagName?: string;
+  defaultDueDate?: string;
   placeholder?: string;
 }
 
@@ -17,6 +18,7 @@ export function TaskQuickAdd({
   defaultProjectId,
   defaultContextId,
   defaultTagName,
+  defaultDueDate,
   placeholder = "Add a task — Enter to save, ⌘⏎ to open inspector",
 }: TaskQuickAddProps): React.ReactElement {
   const [value, setValue] = React.useState("");
@@ -54,6 +56,7 @@ export function TaskQuickAdd({
         project_id_override: defaultProjectId ?? undefined,
         context_id_overrides: contextIdOverrides.length > 0 ? contextIdOverrides : undefined,
         tag_id_overrides: tagIdOverrides.length > 0 ? tagIdOverrides : undefined,
+        due_date_override: defaultDueDate,
       });
 
       setValue("");

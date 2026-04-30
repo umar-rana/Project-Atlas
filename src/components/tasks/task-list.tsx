@@ -144,10 +144,11 @@ export interface TaskRow {
 }
 
 interface TaskListProps {
-  perspective: "inbox" | "today" | "flagged" | "project" | "context" | "tag" | "trash";
+  perspective: "inbox" | "today" | "tomorrow" | "flagged" | "project" | "context" | "tag" | "trash";
   projectId?: string;
   contextId?: string;
   tagName?: string;
+  defaultDueDate?: string;
   title: string;
   description?: string;
   enableQuickAdd?: boolean;
@@ -161,6 +162,7 @@ export function TaskList({
   projectId,
   contextId,
   tagName,
+  defaultDueDate,
   title,
   description,
   enableQuickAdd = true,
@@ -424,7 +426,7 @@ export function TaskList({
   const incompleteTasks = tasks.filter((t) => t.status !== "completed");
   const totalEstMins = sumEstimatedMinutes(incompleteTasks, false);
   const showTimeAggregate =
-    (perspective === "today" || perspective === "project") &&
+    (perspective === "today" || perspective === "tomorrow" || perspective === "project") &&
     incompleteTasks.some((t) => t.estimated_minutes != null && t.estimated_minutes > 0);
 
   const deferredCount = deferredCountQuery.data?.count ?? 0;
@@ -443,6 +445,12 @@ export function TaskList({
         return `${base} · ~${formatEstimatedTime(totalEstMins)} · 0 calendar events`;
       }
       return `${base} · 0 calendar events`;
+    }
+    if (perspective === "tomorrow") {
+      if (showTimeAggregate) {
+        return `${base} · ~${formatEstimatedTime(totalEstMins)} estimated`;
+      }
+      return base;
     }
     return base;
   }
@@ -483,6 +491,7 @@ export function TaskList({
           defaultProjectId={projectId ?? null}
           defaultContextId={contextId}
           defaultTagName={tagName}
+          defaultDueDate={defaultDueDate}
         />
       ) : null}
 

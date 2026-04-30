@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   CalendarRange,
   RefreshCw,
+  Sunrise,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -224,6 +225,13 @@ export function TasksSidebar(): React.ReactElement {
         icon={<CalendarDays size={14} />}
         label="Today"
         badge={counts.data?.today}
+      />
+      <NavRow
+        href="/tasks/tomorrow"
+        active={pathname === "/tasks/tomorrow"}
+        icon={<Sunrise size={14} />}
+        label="Tomorrow"
+        badge={counts.data?.tomorrow}
       />
       <NavRow
         href="/tasks/forecast"

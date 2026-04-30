@@ -17,6 +17,7 @@ export interface CaptureCreateInput {
   projectIdOverride?: string;
   contextIdOverrides?: string[];
   tagIdOverrides?: string[];
+  dueDateOverride?: Date;
 }
 
 export interface CaptureCreateResult {
@@ -257,7 +258,7 @@ async function validateOverrideOwnership(
 export async function captureAndCreate(
   input: CaptureCreateInput,
 ): Promise<CaptureCreateResult> {
-  const { rawText, userId, source, projectIdOverride, contextIdOverrides, tagIdOverrides } = input;
+  const { rawText, userId, source, projectIdOverride, contextIdOverrides, tagIdOverrides, dueDateOverride } = input;
   const start = Date.now();
 
   await validateOverrideOwnership(userId, projectIdOverride, contextIdOverrides, tagIdOverrides);
@@ -304,7 +305,7 @@ export async function captureAndCreate(
           user_id: userId,
           title: parsed.title,
           notes: parsed.notes ?? (rawText.length > 80 ? rawText : undefined),
-          due_date: parsed.due_date ?? undefined,
+          due_date: parsed.due_date ?? dueDateOverride ?? undefined,
           defer_date: parsed.defer_date ?? undefined,
           flagged: parsed.flagged,
           project_id: projectId ?? undefined,
@@ -363,6 +364,7 @@ export async function captureAndCreate(
         status: "active",
         flagged: tier1.flagged,
         project_id: projectIdOverride ?? undefined,
+        due_date: tier1.due_date ?? dueDateOverride ?? undefined,
       },
     });
   } catch (err) {
@@ -409,7 +411,7 @@ export async function captureAndCreate(
         data: {
           title: parsed.title,
           notes: parsed.notes ?? undefined,
-          due_date: parsed.due_date ?? undefined,
+          due_date: parsed.due_date ?? dueDateOverride ?? undefined,
           defer_date: parsed.defer_date ?? undefined,
           flagged: parsed.flagged,
           project_id: projectId ?? undefined,

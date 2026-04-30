@@ -96,6 +96,7 @@ export const tasksRouter = router({
             "all",
             "inbox",
             "today",
+            "tomorrow",
             "flagged",
             "project",
             "context",
@@ -153,6 +154,20 @@ export const tasksRouter = router({
               { due_date: { lt: end } },
               { defer_date: { lte: now, not: null } },
               { flagged: true, due_date: null },
+            ],
+          },
+        ];
+      } else if (input.perspective === "tomorrow") {
+        const tomorrowStart = new Date();
+        tomorrowStart.setHours(0, 0, 0, 0);
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+        const tomorrowEnd = new Date(tomorrowStart);
+        tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+        where.AND = [
+          {
+            OR: [
+              { due_date: { gte: tomorrowStart, lt: tomorrowEnd } },
+              { defer_date: { gte: tomorrowStart, lt: tomorrowEnd } },
             ],
           },
         ];
@@ -266,12 +281,15 @@ export const tasksRouter = router({
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
+    const tomorrowStart = new Date(end);
+    const tomorrowEnd = new Date(tomorrowStart);
+    tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
 
     const notDeferred: Prisma.TaskWhereInput = {
       OR: [{ defer_date: null }, { defer_date: { lte: now } }],
     };
 
-    const [inbox, today, flagged, trash] = await Promise.all([
+    const [inbox, today, tomorrow, flagged, trash] = await Promise.all([
       db.task.count({
         where: {
           user_id: ctx.user.id,
@@ -297,6 +315,16 @@ export const tasksRouter = router({
         },
       }),
       db.task.count({
+        where: {
+          user_id: ctx.user.id,
+          status: "active",
+          OR: [
+            { due_date: { gte: tomorrowStart, lt: tomorrowEnd } },
+            { defer_date: { gte: tomorrowStart, lt: tomorrowEnd } },
+          ],
+        },
+      }),
+      db.task.count({
         where: { user_id: ctx.user.id, status: "active", flagged: true },
       }),
       db.task.count({
@@ -307,7 +335,7 @@ export const tasksRouter = router({
       }),
     ]);
 
-    return { inbox, today, flagged, trash };
+    return { inbox, today, tomorrow, flagged, trash };
   }),
 
   countDeferred: protectedProcedure

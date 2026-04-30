@@ -25,6 +25,7 @@ export const captureRouter = router({
         project_id_override: z.string().uuid().optional(),
         context_id_overrides: z.array(z.string().uuid()).optional(),
         tag_id_overrides: z.array(z.string().uuid()).optional(),
+        due_date_override: z.string().datetime().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -35,6 +36,7 @@ export const captureRouter = router({
         projectIdOverride: input.project_id_override,
         contextIdOverrides: input.context_id_overrides,
         tagIdOverrides: input.tag_id_overrides,
+        dueDateOverride: input.due_date_override ? new Date(input.due_date_override) : undefined,
       });
       return { taskId, basic_parse };
     }),
