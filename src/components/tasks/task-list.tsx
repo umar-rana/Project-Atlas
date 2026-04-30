@@ -609,6 +609,9 @@ export function TaskList({
                 <span className="mx-0.5">/</span>
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘I</kbd>
                 <span className="mx-1.5">inspect</span>
+                <span className="mx-1">·</span>
+                <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">?</kbd>
+                <span className="mx-1.5">all shortcuts</span>
               </p>
               <button
                 type="button"
