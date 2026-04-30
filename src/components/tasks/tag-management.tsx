@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   ChevronDown,
   Palette,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
@@ -354,6 +355,103 @@ function BulkMergeDialog({
   );
 }
 
+const TAG_COLORS = ["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"] as const;
+
+function CreateTagDialog({ onClose }: { onClose: () => void }) {
+  const utils = trpc.useUtils();
+  const [name, setName] = React.useState("");
+  const [color, setColor] = React.useState<string | null>(null);
+
+  const create = trpc.tags.create.useMutation({
+    onSuccess: () => {
+      utils.tags.usageStats.invalidate();
+      utils.tags.list.invalidate();
+      utils.tags.count.invalidate();
+      toast.success("Tag created");
+      onClose();
+    },
+    onError: (err) => toast.error(err.message ?? "Failed to create tag"),
+  });
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    create.mutate({ name: trimmed, color: color ?? undefined });
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>Create tag</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="font-ui text-xs font-medium text-text-primary">
+              Tag name
+            </label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. urgent"
+              autoFocus
+              size="sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="font-ui text-xs font-medium text-text-primary">
+              Color <span className="font-normal text-text-tertiary">(optional)</span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              {TAG_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  title={c}
+                  onClick={() => setColor(color === c ? null : c)}
+                  className={cn(
+                    "size-5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
+                    colorDotClass(c),
+                    color === c && "ring-2 ring-offset-1 ring-accent-primary",
+                  )}
+                />
+              ))}
+              <button
+                type="button"
+                title="No color"
+                onClick={() => setColor(null)}
+                className={cn(
+                  "size-5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110",
+                  color === null && "ring-2 ring-offset-1 ring-accent-primary",
+                )}
+              />
+              {color ? (
+                <span className="ml-1 font-ui text-xs capitalize text-text-secondary">{color}</span>
+              ) : (
+                <span className="ml-1 font-ui text-xs text-text-tertiary">None</span>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="md" type="button" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              type="submit"
+              disabled={!name.trim() || create.isPending}
+            >
+              Create tag
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function TagManagement(): React.ReactElement {
   const stats = trpc.tags.usageStats.useQuery();
   const [search, setSearch] = React.useState("");
@@ -367,6 +465,7 @@ export function TagManagement(): React.ReactElement {
   const [bulkMerging, setBulkMerging] = React.useState(false);
   const [cleanupExpanded, setCleanupExpanded] = React.useState(true);
   const [coloringTagId, setColoringTagId] = React.useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = React.useState(false);
 
   const utils = trpc.useUtils();
   const updateColor = trpc.tags.update.useMutation({
@@ -456,6 +555,11 @@ export function TagManagement(): React.ReactElement {
         <span className="ml-1 rounded-full bg-surface-raised px-2 py-0.5 font-mono text-2xs text-text-secondary tabular-nums">
           {allTags.length}
         </span>
+        <div className="flex-1" />
+        <Button variant="primary" size="sm" onClick={() => setShowCreateDialog(true)}>
+          <Plus size={13} />
+          New tag
+        </Button>
       </div>
 
       {/* Cleanup candidates section */}
@@ -716,6 +820,9 @@ export function TagManagement(): React.ReactElement {
           allTags={allTags}
           onClose={() => { setBulkMerging(false); setSelected(new Set()); }}
         />
+      ) : null}
+      {showCreateDialog ? (
+        <CreateTagDialog onClose={() => setShowCreateDialog(false)} />
       ) : null}
     </div>
   );
