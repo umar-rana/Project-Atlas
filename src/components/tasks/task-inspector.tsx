@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock } from "lucide-react";
+import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock, Palette } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
@@ -109,6 +109,12 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const tagCreate = trpc.tags.create.useMutation({
     onSuccess: () => utils.tags.list.invalidate(),
   });
+  const tagUpdate = trpc.tags.update.useMutation({
+    onSuccess: () => {
+      utils.tags.list.invalidate();
+      utils.tasks.get.invalidate({ id: taskId });
+    },
+  });
   const update = trpc.tasks.update.useMutation({
     onError: () => toast.error("Save failed — try again"),
     onSettled: () => {
@@ -184,6 +190,8 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const [titleDraft, setTitleDraft] = React.useState("");
   const [notesDraft, setNotesDraft] = React.useState("");
   const [newTagInput, setNewTagInput] = React.useState("");
+  const [newTagColor, setNewTagColor] = React.useState<string | null>(null);
+  const [coloringTagId, setColoringTagId] = React.useState<string | null>(null);
   const [migrationDismissed, setMigrationDismissed] = React.useState(false);
 
   const dataId = data?.id;
@@ -294,13 +302,14 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     const existing = (tags.data ?? []).find((t) => t.name === name);
     let id = existing?.id;
     if (!id) {
-      const created = await tagCreate.mutateAsync({ name });
+      const created = await tagCreate.mutateAsync({ name, color: newTagColor ?? undefined });
       id = created.id;
     }
     if (id && !selectedTagIds.includes(id)) {
       patchTags([...selectedTagIds, id]);
     }
     setNewTagInput("");
+    setNewTagColor(null);
   }
 
   return (
@@ -522,10 +531,22 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Tags</h3>
             <div className="flex flex-wrap gap-1">
               {taskData.tags.map((t) => (
-                <Tag key={t.tag.id} family="freeform" removable onRemove={() => patchTags(selectedTagIds.filter((id) => id !== t.tag.id))}>
-                  <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.tag.color))} aria-hidden />
-                  #{t.tag.name}
-                </Tag>
+                <span key={t.tag.id} className="inline-flex items-center gap-0.5">
+                  <Tag family="freeform" removable onRemove={() => patchTags(selectedTagIds.filter((id) => id !== t.tag.id))}>
+                    <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.tag.color))} aria-hidden />
+                    #{t.tag.name}
+                  </Tag>
+                  {!inTrash && (
+                    <button
+                      type="button"
+                      aria-label={`Change color of #${t.tag.name}`}
+                      onClick={() => setColoringTagId(coloringTagId === t.tag.id ? null : t.tag.id)}
+                      className="inline-flex size-4 items-center justify-center rounded-sm text-text-disabled hover:text-text-tertiary"
+                    >
+                      <Palette size={10} />
+                    </button>
+                  )}
+                </span>
               ))}
               <input
                 value={newTagInput}
@@ -541,6 +562,69 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                 className="min-w-20 flex-1 rounded-sm border border-border-subtle bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
               />
             </div>
+            {coloringTagId && (() => {
+              const tag = taskData.tags.find((t) => t.tag.id === coloringTagId);
+              if (!tag) return null;
+              return (
+                <div className="mt-1.5 flex items-center gap-1 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5">
+                  <span className="mr-1 font-ui text-2xs text-text-tertiary">#{tag.tag.name}</span>
+                  {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      title={c}
+                      onClick={() => { tagUpdate.mutate({ id: coloringTagId, color: c }); setColoringTagId(null); }}
+                      disabled={tagUpdate.isPending}
+                      className={cn(
+                        "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
+                        colorDotClass(c),
+                        tag.tag.color === c && "ring-2 ring-offset-1 ring-accent-primary",
+                      )}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    title="Remove color"
+                    onClick={() => { tagUpdate.mutate({ id: coloringTagId, color: null }); setColoringTagId(null); }}
+                    disabled={tagUpdate.isPending}
+                    className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setColoringTagId(null)}
+                    className="ml-auto inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              );
+            })()}
+            {newTagInput.trim() && !inTrash && (
+              <div className="mt-1.5 flex items-center gap-1 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5">
+                <span className="mr-1 font-ui text-2xs text-text-tertiary">Color:</span>
+                {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    title={c}
+                    onClick={() => setNewTagColor(newTagColor === c ? null : c)}
+                    className={cn(
+                      "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
+                      colorDotClass(c),
+                      newTagColor === c && "ring-2 ring-offset-1 ring-accent-primary",
+                    )}
+                  />
+                ))}
+                {newTagColor && (
+                  <button
+                    type="button"
+                    title="No color"
+                    onClick={() => setNewTagColor(null)}
+                    className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
+                  />
+                )}
+              </div>
+            )}
           </section>
 
           <section className="mt-4">
