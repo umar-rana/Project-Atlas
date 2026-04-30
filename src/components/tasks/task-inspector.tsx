@@ -8,6 +8,7 @@ import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
 import { cn } from "@/lib/utils";
+import { colorDotClass } from "./folder-tree-node";
 import { toast } from "@/lib/toast";
 import { InboxProcessingSuggestions } from "./inbox-processing-suggestions";
 import { TaskInspectorAttachments } from "./task-inspector-attachments";
@@ -20,7 +21,7 @@ interface InspectorContextLink {
   context: { id: string; name: string };
 }
 interface InspectorTagLink {
-  tag: { id: string; name: string };
+  tag: { id: string; name: string; color: string | null };
 }
 interface InspectorSubtask {
   id: string;
@@ -522,6 +523,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             <div className="flex flex-wrap gap-1">
               {taskData.tags.map((t) => (
                 <Tag key={t.tag.id} family="freeform" removable onRemove={() => patchTags(selectedTagIds.filter((id) => id !== t.tag.id))}>
+                  <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.tag.color))} aria-hidden />
                   #{t.tag.name}
                 </Tag>
               ))}
