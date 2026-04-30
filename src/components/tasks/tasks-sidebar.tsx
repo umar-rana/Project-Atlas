@@ -8,88 +8,23 @@ import {
   CalendarDays,
   Flag,
   Folder,
-  Hash,
-  Tag as TagIcon,
   Trash2,
   Plus,
-  ChevronRight,
-  ChevronDown,
   CheckCircle2,
   CalendarRange,
   RefreshCw,
   Sunrise,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc/client";
 import { ProjectAddForm } from "./project-add-form";
-import { ContextAddForm } from "./context-add-form";
 import { toast } from "@/lib/toast";
 import { FolderTreeNode, colorDotClass, type DragItem } from "./folder-tree-node";
 import { HierarchyAuditBanner } from "./hierarchy-audit-banner";
-
-interface NavRowProps {
-  href: string;
-  active: boolean;
-  icon: React.ReactNode;
-  label: string;
-  badge?: number;
-}
-
-function NavRow({ href, active, icon, label, badge }: NavRowProps) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm transition-colors",
-        active
-          ? "bg-accent-primary-subtle text-text-primary"
-          : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
-      )}
-    >
-      <span className="shrink-0 text-text-tertiary">{icon}</span>
-      <span className="flex-1 truncate">{label}</span>
-      {badge !== undefined && badge > 0 ? (
-        <Badge variant="neutral" count={badge} />
-      ) : null}
-    </Link>
-  );
-}
-
-function SectionHeader({
-  label,
-  expanded,
-  onToggle,
-  onAdd,
-}: {
-  label: string;
-  expanded: boolean;
-  onToggle: () => void;
-  onAdd?: () => void;
-}) {
-  return (
-    <div className="mt-3 flex items-center justify-between px-2">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="inline-flex items-center gap-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary hover:text-text-secondary"
-      >
-        {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        {label}
-      </button>
-      {onAdd ? (
-        <button
-          type="button"
-          onClick={onAdd}
-          aria-label={`Add ${label.toLowerCase()}`}
-          className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-        >
-          <Plus size={11} />
-        </button>
-      ) : null}
-    </div>
-  );
-}
+import { NavRow } from "@/components/sidebar/nav-row";
+import { SectionHeader, useSidebarSection } from "@/components/sidebar/section-header";
+import { TagsSection } from "@/components/sidebar/tags-section";
+import { ContextsSection } from "@/components/sidebar/contexts-section";
 
 export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
@@ -102,8 +37,6 @@ export function TasksSidebar(): React.ReactElement {
   const reviewCount = trpc.review.overdueCount.useQuery(undefined, { refetchOnWindowFocus: false });
   const projects = trpc.projects.list.useQuery({ status: "active" });
   const foldersQuery = trpc.folders.list.useQuery(undefined, { refetchOnWindowFocus: false });
-  const contexts = trpc.contexts.list.useQuery();
-  const tags = trpc.tags.list.useQuery({ limit: 100 });
 
   const utils = trpc.useUtils();
 
@@ -113,9 +46,9 @@ export function TasksSidebar(): React.ReactElement {
 
   const createFolder = trpc.folders.create.useMutation({
     onSuccess: (folder) => {
-      utils.folders.list.invalidate();
       setAddingFolder(false);
       setFolderNameDraft("");
+      utils.folders.list.invalidate();
       router.push(`/tasks/folders/${folder.id}`);
     },
     onError: () => toast.error("Failed to create folder"),
@@ -175,19 +108,10 @@ export function TasksSidebar(): React.ReactElement {
     setDragItem(null);
   }
 
-  const [projectsOpen, setProjectsOpen] = React.useState(true);
-  const [contextsOpen, setContextsOpen] = React.useState(true);
-  const [tagsOpen, setTagsOpen] = React.useState(true);
-  const [showAllTags, setShowAllTags] = React.useState(false);
+  const [projectsOpen, setProjectsOpen] = useSidebarSection("projects", true);
   const [addingProject, setAddingProject] = React.useState(false);
-  const [addingContext, setAddingContext] = React.useState(false);
   const [addingFolder, setAddingFolder] = React.useState(false);
   const [folderNameDraft, setFolderNameDraft] = React.useState("");
-
-  const visibleTags = React.useMemo(() => {
-    const list = tags.data ?? [];
-    return showAllTags ? list : list.slice(0, 20);
-  }, [tags.data, showAllTags]);
 
   const folders = foldersQuery.data ?? [];
 
@@ -394,82 +318,9 @@ export function TasksSidebar(): React.ReactElement {
         </div>
       ) : null}
 
-      <SectionHeader
-        label="Contexts"
-        expanded={contextsOpen}
-        onToggle={() => setContextsOpen(!contextsOpen)}
-        onAdd={() => setAddingContext(true)}
-      />
-      {contextsOpen ? (
-        <div className="flex flex-col gap-px">
-          {addingContext ? (
-            <div className="px-2 py-1">
-              <ContextAddForm onDone={() => setAddingContext(false)} />
-            </div>
-          ) : null}
-          {(contexts.data ?? []).map((c) => {
-            const href = `/tasks/contexts/${c.id}`;
-            const active = pathname === href;
-            return (
-              <NavRow
-                key={c.id}
-                href={href}
-                active={active}
-                icon={<Hash size={14} />}
-                label={c.name}
-                badge={c.task_count}
-              />
-            );
-          })}
-          {contexts.data?.length === 0 && !addingContext ? (
-            <p className="px-2 py-1 font-ui text-2xs text-text-tertiary">No contexts yet</p>
-          ) : null}
-        </div>
-      ) : null}
+      <ContextsSection pathname={pathname} />
 
-      <SectionHeader
-        label="Tags"
-        expanded={tagsOpen}
-        onToggle={() => setTagsOpen(!tagsOpen)}
-      />
-      {tagsOpen ? (
-        <div className="flex flex-col gap-px">
-          {visibleTags.map((t) => {
-            const href = `/tasks/tags/${encodeURIComponent(t.name)}`;
-            const active = pathname === href;
-            return (
-              <Link
-                key={t.id}
-                href={href}
-                className={cn(
-                  "flex items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm",
-                  active
-                    ? "bg-accent-primary-subtle text-text-primary"
-                    : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
-                )}
-              >
-                <TagIcon size={12} className="text-text-tertiary" />
-                <span className="flex-1 truncate">#{t.name}</span>
-                {t.usage_count > 0 ? (
-                  <span className="font-mono text-2xs text-text-tertiary tabular-nums">{t.usage_count}</span>
-                ) : null}
-              </Link>
-            );
-          })}
-          {(tags.data?.length ?? 0) > 20 ? (
-            <button
-              type="button"
-              onClick={() => setShowAllTags(!showAllTags)}
-              className="px-2 py-1 text-left font-ui text-2xs text-text-tertiary hover:text-text-secondary"
-            >
-              {showAllTags ? "Show top 20" : "Show all tags"}
-            </button>
-          ) : null}
-          {tags.data?.length === 0 ? (
-            <p className="px-2 py-1 font-ui text-2xs text-text-tertiary">No tags yet</p>
-          ) : null}
-        </div>
-      ) : null}
+      <TagsSection pathname={pathname} />
 
       <div className="mt-3 flex flex-col gap-px border-t border-border-subtle pt-2">
         <NavRow

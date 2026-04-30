@@ -7,12 +7,12 @@ import { db, newId } from "@/core/db";
 export const contextsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const contexts = await db.context.findMany({
-      where: { user_id: ctx.user.id },
+      where: { user_id: ctx.user.id, deleted_at: null },
       orderBy: [{ position: "asc" }, { name: "asc" }],
     });
     const counts = await db.contextOnTask.groupBy({
       by: ["context_id"],
-      where: { context: { user_id: ctx.user.id } },
+      where: { context: { user_id: ctx.user.id, deleted_at: null } },
       _count: { _all: true },
     });
     const map = new Map(counts.map((c) => [c.context_id, c._count._all]));
@@ -70,6 +70,22 @@ export const contextsRouter = router({
         }
         throw err;
       }
+    }),
+
+  rename: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), new_name: z.string().min(1).max(80) }))
+    .mutation(async ({ ctx, input }) => {
+      const before = await db.context.findFirst({
+        where: { id: input.id, user_id: ctx.user.id },
+      });
+      if (!before) throw new TRPCError({ code: "NOT_FOUND" });
+      const conflict = await db.context.findFirst({
+        where: { user_id: ctx.user.id, name: input.new_name, id: { not: input.id } },
+      });
+      if (conflict) {
+        throw new TRPCError({ code: "CONFLICT", message: "A context with that name already exists" });
+      }
+      return db.context.update({ where: { id: input.id }, data: { name: input.new_name } });
     }),
 
   update: protectedProcedure
