@@ -111,6 +111,8 @@ export function TasksSidebar(): React.ReactElement {
   const createFolder = trpc.folders.create.useMutation({
     onSuccess: (folder) => {
       utils.folders.list.invalidate();
+      setAddingFolder(false);
+      setFolderNameDraft("");
       router.push(`/tasks/folders/${folder.id}`);
     },
     onError: () => toast.error("Failed to create folder"),
@@ -176,6 +178,8 @@ export function TasksSidebar(): React.ReactElement {
   const [showAllTags, setShowAllTags] = React.useState(false);
   const [addingProject, setAddingProject] = React.useState(false);
   const [addingContext, setAddingContext] = React.useState(false);
+  const [addingFolder, setAddingFolder] = React.useState(false);
+  const [folderNameDraft, setFolderNameDraft] = React.useState("");
 
   const visibleTags = React.useMemo(() => {
     const list = tags.data ?? [];
@@ -202,9 +206,20 @@ export function TasksSidebar(): React.ReactElement {
   }, [projects.data]);
 
   function handleAddFolder() {
-    const name = prompt("Folder name")?.trim();
+    setFolderNameDraft("");
+    setAddingFolder(true);
+  }
+
+  function handleSubmitFolder(e: React.FormEvent) {
+    e.preventDefault();
+    const name = folderNameDraft.trim();
     if (!name) return;
     createFolder.mutate({ name });
+  }
+
+  function handleCancelFolder() {
+    setAddingFolder(false);
+    setFolderNameDraft("");
   }
 
   function handleToggleFolder(id: string, collapsed: boolean) {
@@ -271,14 +286,41 @@ export function TasksSidebar(): React.ReactElement {
             icon={<Folder size={14} />}
             label="All projects"
           />
-          <button
-            type="button"
-            onClick={handleAddFolder}
-            className="flex items-center gap-1.5 rounded-sm px-2 py-0.5 font-ui text-2xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary"
-          >
-            <Plus size={10} />
-            Add folder
-          </button>
+          {addingFolder ? (
+            <form onSubmit={handleSubmitFolder} className="flex items-center gap-1 px-2 py-0.5">
+              <input
+                autoFocus
+                value={folderNameDraft}
+                onChange={(e) => setFolderNameDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") handleCancelFolder(); }}
+                placeholder="Folder name"
+                className="min-w-0 flex-1 rounded-sm border border-border-focus bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-primary placeholder:text-text-tertiary focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!folderNameDraft.trim() || createFolder.isPending}
+                className="rounded-sm bg-accent-primary px-1.5 py-0.5 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+              >
+                Add
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelFolder}
+                className="rounded-sm border border-border-default px-1.5 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddFolder}
+              className="flex items-center gap-1.5 rounded-sm px-2 py-0.5 font-ui text-2xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary"
+            >
+              <Plus size={10} />
+              Add folder
+            </button>
+          )}
           {addingProject ? (
             <div className="px-2 py-1">
               <ProjectAddForm onDone={() => setAddingProject(false)} />

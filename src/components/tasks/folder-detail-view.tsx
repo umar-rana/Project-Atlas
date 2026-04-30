@@ -38,6 +38,8 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   const [nameDraft, setNameDraft] = React.useState("");
   const [notesDraft, setNotesDraft] = React.useState("");
   const [editingNotes, setEditingNotes] = React.useState(false);
+  const [addingSubfolder, setAddingSubfolder] = React.useState(false);
+  const [subfolderNameDraft, setSubfolderNameDraft] = React.useState("");
 
   // Depend on the narrowed scalar fields directly so refresh of the underlying
   // query reliably resyncs the drafts without re-running on unrelated identity
@@ -74,6 +76,8 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
     onSuccess: () => {
       utils.folders.list.invalidate();
       utils.folders.byId.invalidate({ id: folderId });
+      setAddingSubfolder(false);
+      setSubfolderNameDraft("");
       toast.success("Subfolder created");
     },
     onError: () => toast.error("Failed to create subfolder"),
@@ -114,9 +118,20 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   }
 
   function handleAddSubfolder() {
-    const name = prompt("Subfolder name")?.trim();
+    setSubfolderNameDraft("");
+    setAddingSubfolder(true);
+  }
+
+  function handleSubmitSubfolder(e: React.FormEvent) {
+    e.preventDefault();
+    const name = subfolderNameDraft.trim();
     if (!name) return;
     createSubfolder.mutate({ name, parent_id: folderId });
+  }
+
+  function handleCancelSubfolder() {
+    setAddingSubfolder(false);
+    setSubfolderNameDraft("");
   }
 
   if (query.isLoading) {
@@ -136,6 +151,34 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   }
 
   const folder = query.data;
+
+  const subfolderForm = (
+    <form onSubmit={handleSubmitSubfolder} className="flex items-center gap-1.5 rounded-sm border border-border-focus px-3 py-1.5">
+      <Folder size={12} className="shrink-0 text-text-tertiary" />
+      <input
+        autoFocus
+        value={subfolderNameDraft}
+        onChange={(e) => setSubfolderNameDraft(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Escape") handleCancelSubfolder(); }}
+        placeholder="Subfolder name"
+        className="min-w-0 flex-1 bg-transparent font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
+      />
+      <button
+        type="submit"
+        disabled={!subfolderNameDraft.trim() || createSubfolder.isPending}
+        className="rounded-sm bg-accent-primary px-2 py-0.5 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        onClick={handleCancelSubfolder}
+        className="rounded-sm border border-border-default px-2 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+      >
+        Cancel
+      </button>
+    </form>
+  );
 
   return (
     <div className="flex h-full flex-col">
@@ -258,14 +301,16 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
               <h2 className="font-ui text-xs font-semibold uppercase tracking-caps text-text-tertiary">
                 Sub-folders ({folder.children.length})
               </h2>
-              <button
-                type="button"
-                onClick={handleAddSubfolder}
-                className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-              >
-                <Plus size={10} />
-                Add
-              </button>
+              {!addingSubfolder && (
+                <button
+                  type="button"
+                  onClick={handleAddSubfolder}
+                  className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  <Plus size={10} />
+                  Add
+                </button>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               {folder.children.map((child) => {
@@ -284,20 +329,23 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                   </Link>
                 );
               })}
+              {addingSubfolder && subfolderForm}
             </div>
           </section>
         )}
 
         {folder.children && folder.children.length === 0 && (
           <div className="mb-4">
-            <button
-              type="button"
-              onClick={handleAddSubfolder}
-              className="inline-flex items-center gap-1.5 rounded-sm border border-dashed border-border-default px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-            >
-              <Plus size={12} />
-              Add sub-folder
-            </button>
+            {addingSubfolder ? subfolderForm : (
+              <button
+                type="button"
+                onClick={handleAddSubfolder}
+                className="inline-flex items-center gap-1.5 rounded-sm border border-dashed border-border-default px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+              >
+                <Plus size={12} />
+                Add sub-folder
+              </button>
+            )}
           </div>
         )}
 
