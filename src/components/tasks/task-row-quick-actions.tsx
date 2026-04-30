@@ -443,10 +443,21 @@ export function TaskRowQuickActions({
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
 
   const openCount = React.useRef(0);
-  function handleChildOpenChange(open: boolean) {
+  const onAnyPopoverOpenChangeRef = React.useRef(onAnyPopoverOpenChange);
+  onAnyPopoverOpenChangeRef.current = onAnyPopoverOpenChange;
+
+  const handleChildOpenChange = React.useCallback((open: boolean) => {
     openCount.current = Math.max(0, openCount.current + (open ? 1 : -1));
-    onAnyPopoverOpenChange(openCount.current > 0);
-  }
+    onAnyPopoverOpenChangeRef.current(openCount.current > 0);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (openCount.current > 0) {
+        onAnyPopoverOpenChangeRef.current(false);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>

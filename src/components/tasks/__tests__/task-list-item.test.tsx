@@ -277,6 +277,93 @@ describe("TaskListItem", () => {
     });
   });
 
+  describe("quick-action popover pin", () => {
+    function renderItem(overrides: Partial<TaskRow> = {}) {
+      return render(
+        <TaskListItem
+          task={makeRow(overrides)}
+          selected={false}
+          isFocused={false}
+          isMultiSelected={false}
+          onSelect={vi.fn()}
+          onMultiToggle={vi.fn()}
+        />,
+      );
+    }
+
+    it("reveals quick-action icons on mouse enter", () => {
+      const { container, queryByRole } = renderItem();
+      const row = container.querySelector('[role="row"]') as HTMLElement;
+
+      expect(queryByRole("button", { name: "Set due date" })).toBeNull();
+
+      act(() => { fireEvent.mouseEnter(row); });
+
+      expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
+    });
+
+    it("hides quick-action icons on mouse leave when no popover is open", () => {
+      const { container, queryByRole } = renderItem();
+      const row = container.querySelector('[role="row"]') as HTMLElement;
+
+      act(() => { fireEvent.mouseEnter(row); });
+      expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
+
+      act(() => { fireEvent.mouseLeave(row); });
+      expect(queryByRole("button", { name: "Set due date" })).toBeNull();
+    });
+
+    it("keeps quick-action icons visible when a popover opens and the mouse leaves the row", () => {
+      const { container, queryByRole } = renderItem();
+      const row = container.querySelector('[role="row"]') as HTMLElement;
+
+      act(() => { fireEvent.mouseEnter(row); });
+
+      const dueDateBtn = queryByRole("button", { name: "Set due date" }) as HTMLElement;
+      expect(dueDateBtn).toBeInTheDocument();
+
+      act(() => { fireEvent.click(dueDateBtn); });
+
+      act(() => { fireEvent.mouseLeave(row); });
+
+      expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
+    });
+
+    it("hides quick-action icons after the popover closes and the mouse is outside the row", () => {
+      const { container, queryByRole } = renderItem();
+      const row = container.querySelector('[role="row"]') as HTMLElement;
+
+      act(() => { fireEvent.mouseEnter(row); });
+
+      const dueDateBtn = queryByRole("button", { name: "Set due date" }) as HTMLElement;
+      act(() => { fireEvent.click(dueDateBtn); });
+      act(() => { fireEvent.mouseLeave(row); });
+
+      expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
+
+      const dueDateBtnAgain = queryByRole("button", { name: "Set due date" }) as HTMLElement;
+      act(() => { fireEvent.click(dueDateBtnAgain); });
+
+      expect(queryByRole("button", { name: "Set due date" })).toBeNull();
+    });
+
+    it("re-shows quick-action icons when mouse re-enters the row after the popover closed", () => {
+      const { container, queryByRole } = renderItem();
+      const row = container.querySelector('[role="row"]') as HTMLElement;
+
+      act(() => { fireEvent.mouseEnter(row); });
+      const dueDateBtn = queryByRole("button", { name: "Set due date" }) as HTMLElement;
+      act(() => { fireEvent.click(dueDateBtn); });
+      act(() => { fireEvent.mouseLeave(row); });
+
+      const dueDateBtnAgain = queryByRole("button", { name: "Set due date" }) as HTMLElement;
+      act(() => { fireEvent.click(dueDateBtnAgain); });
+
+      act(() => { fireEvent.mouseEnter(row); });
+      expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
+    });
+  });
+
   describe("inline title edit", () => {
     function startEditing() {
       const utils = render(
