@@ -48,16 +48,20 @@ export function WorklogCreateForm({
         disabled={saving}
       />
       <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min={1}
-          max={10080}
-          value={durationRaw}
-          onChange={(e) => setDurationRaw(e.target.value)}
-          placeholder="Minutes (optional)"
-          className="w-36 rounded border border-border-subtle bg-bg-input px-2 py-1 font-ui text-xs text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus"
-          disabled={saving}
-        />
+        <label className="flex items-center gap-1.5 font-ui text-xs text-text-secondary">
+          <span className="shrink-0">Time spent (optional)</span>
+          <input
+            type="number"
+            min={1}
+            max={10080}
+            value={durationRaw}
+            onChange={(e) => setDurationRaw(e.target.value)}
+            placeholder="0"
+            className="w-16 rounded border border-border-subtle bg-bg-input px-2 py-1 font-ui text-xs text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus"
+            disabled={saving}
+          />
+          <span className="shrink-0 text-text-tertiary">minutes</span>
+        </label>
         <div className="ml-auto flex items-center gap-1.5">
           <button
             type="button"

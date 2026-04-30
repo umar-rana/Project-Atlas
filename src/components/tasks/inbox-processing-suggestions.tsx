@@ -169,12 +169,29 @@ export function InboxProcessingSuggestions({
     }
   }
 
+  function optimisticAccept(key: string) {
+    setAccepted((prev) => new Set([...prev, key]));
+  }
+
+  function rollbackAccept(key: string) {
+    setAccepted((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }
+
   async function handleAccept(s: (typeof suggestions)[number]) {
     if (disabled) return;
     if (s.type === "project" && s.projectId) {
-      updateTask.mutate({ id: taskId, project_id: s.projectId });
-      onProjectAccepted?.(s.projectId);
-      setAccepted((prev) => new Set([...prev, s.key]));
+      optimisticAccept(s.key);
+      try {
+        await updateTask.mutateAsync({ id: taskId, project_id: s.projectId });
+        onProjectAccepted?.(s.projectId);
+      } catch {
+        rollbackAccept(s.key);
+        toast.error("Could not apply project — please try again.");
+      }
     } else if (s.type === "context") {
       const createdIds: string[] = [];
       const failed: string[] = [];
@@ -189,9 +206,14 @@ export function InboxProcessingSuggestions({
       }
       const allIds = [...(s.ids ?? []), ...createdIds];
       const next = [...new Set([...currentContextIds, ...allIds])];
-      updateTask.mutate({ id: taskId, context_ids: next });
-      onContextAccepted?.(next);
-      setAccepted((prev) => new Set([...prev, s.key]));
+      optimisticAccept(s.key);
+      try {
+        await updateTask.mutateAsync({ id: taskId, context_ids: next });
+        onContextAccepted?.(next);
+      } catch {
+        rollbackAccept(s.key);
+        toast.error("Could not apply contexts — please try again.");
+      }
     } else if (s.type === "tag") {
       const createdIds: string[] = [];
       const failed: string[] = [];
@@ -206,9 +228,14 @@ export function InboxProcessingSuggestions({
       }
       const allIds = [...(s.ids ?? []), ...createdIds];
       const next = [...new Set([...currentTagIds, ...allIds])];
-      updateTask.mutate({ id: taskId, tag_ids: next });
-      onTagAccepted?.(next);
-      setAccepted((prev) => new Set([...prev, s.key]));
+      optimisticAccept(s.key);
+      try {
+        await updateTask.mutateAsync({ id: taskId, tag_ids: next });
+        onTagAccepted?.(next);
+      } catch {
+        rollbackAccept(s.key);
+        toast.error("Could not apply tags — please try again.");
+      }
     }
   }
 
@@ -222,16 +249,20 @@ export function InboxProcessingSuggestions({
   async function handleDifferentApply(s: (typeof suggestions)[number]) {
     if (disabled) return;
     if (s.type === "project" && differentProjectId) {
-      updateTask.mutate({ id: taskId, project_id: differentProjectId });
-      logOverride.mutate({
-        task_id: taskId,
-        field: "project",
-        original: s.hint,
-        new_value: (projects.data ?? []).find((p) => p.id === differentProjectId)?.title ?? differentProjectId,
-      });
-      onProjectAccepted?.(differentProjectId);
-      setAccepted((prev) => new Set([...prev, s.key]));
-      setDifferentOpen(null);
+      try {
+        await updateTask.mutateAsync({ id: taskId, project_id: differentProjectId });
+        logOverride.mutate({
+          task_id: taskId,
+          field: "project",
+          original: s.hint,
+          new_value: (projects.data ?? []).find((p) => p.id === differentProjectId)?.title ?? differentProjectId,
+        });
+        onProjectAccepted?.(differentProjectId);
+        setAccepted((prev) => new Set([...prev, s.key]));
+        setDifferentOpen(null);
+      } catch {
+        toast.error("Could not apply project — please try again.");
+      }
     } else if (s.type === "context" && differentContexts.trim()) {
       const typedNames = differentContexts.split(",").map((c) => c.trim()).filter(Boolean);
       const resolvedIds: string[] = [];
@@ -247,16 +278,20 @@ export function InboxProcessingSuggestions({
       }
       if (resolvedIds.length > 0) {
         const next = [...new Set([...currentContextIds, ...resolvedIds])];
-        updateTask.mutate({ id: taskId, context_ids: next });
-        logOverride.mutate({
-          task_id: taskId,
-          field: "contexts",
-          original: s.hint,
-          new_value: typedNames.map((n) => `@${n}`).join(", "),
-        });
-        onContextAccepted?.(next);
-        setAccepted((prev) => new Set([...prev, s.key]));
-        setDifferentOpen(null);
+        try {
+          await updateTask.mutateAsync({ id: taskId, context_ids: next });
+          logOverride.mutate({
+            task_id: taskId,
+            field: "contexts",
+            original: s.hint,
+            new_value: typedNames.map((n) => `@${n}`).join(", "),
+          });
+          onContextAccepted?.(next);
+          setAccepted((prev) => new Set([...prev, s.key]));
+          setDifferentOpen(null);
+        } catch {
+          toast.error("Could not apply contexts — please try again.");
+        }
       }
     } else if (s.type === "tag" && differentTags.trim()) {
       const typedNames = differentTags.split(",").map((t) => t.trim()).filter(Boolean);
@@ -273,16 +308,20 @@ export function InboxProcessingSuggestions({
       }
       if (resolvedIds.length > 0) {
         const next = [...new Set([...currentTagIds, ...resolvedIds])];
-        updateTask.mutate({ id: taskId, tag_ids: next });
-        logOverride.mutate({
-          task_id: taskId,
-          field: "tags",
-          original: s.hint,
-          new_value: typedNames.map((n) => `#${n}`).join(", "),
-        });
-        onTagAccepted?.(next);
-        setAccepted((prev) => new Set([...prev, s.key]));
-        setDifferentOpen(null);
+        try {
+          await updateTask.mutateAsync({ id: taskId, tag_ids: next });
+          logOverride.mutate({
+            task_id: taskId,
+            field: "tags",
+            original: s.hint,
+            new_value: typedNames.map((n) => `#${n}`).join(", "),
+          });
+          onTagAccepted?.(next);
+          setAccepted((prev) => new Set([...prev, s.key]));
+          setDifferentOpen(null);
+        } catch {
+          toast.error("Could not apply tags — please try again.");
+        }
       }
     }
   }

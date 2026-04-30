@@ -74,7 +74,8 @@ export const forecastRouter = router({
 
       const now = new Date();
 
-      const [activeScheduled, completedScheduled, overdueTasks] = await Promise.all([
+      const [activeScheduled, deferredInRange, completedScheduled, overdueTasks] = await Promise.all([
+        // Tasks with a due_date falling in the forecast range that are already available.
         db.task.findMany({
           where: {
             user_id: userId,
@@ -88,6 +89,22 @@ export const forecastRouter = router({
             contexts: { include: { context: { select: { id: true, name: true } } } },
           },
           orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
+        }),
+        // Tasks with a defer_date in the future but within the range and no due_date — show
+        // them on the day they become available so you can plan ahead.
+        db.task.findMany({
+          where: {
+            user_id: userId,
+            status: "active",
+            deleted_at: null,
+            due_date: null,
+            defer_date: { gt: now, lte: end },
+          },
+          include: {
+            project: { select: { id: true, title: true, color: true } },
+            contexts: { include: { context: { select: { id: true, name: true } } } },
+          },
+          orderBy: [{ defer_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
         }),
         db.task.findMany({
           where: {
@@ -121,7 +138,11 @@ export const forecastRouter = router({
             }),
       ]);
 
-      const scheduledTasks = [...activeScheduled, ...completedScheduled];
+      // Merge: due_date-scheduled tasks come first; then future-deferred tasks that have no
+      // due_date and aren't already in the due_date list (de-dupe by id).
+      const activeIds = new Set(activeScheduled.map((t) => t.id));
+      const uniqueDeferred = deferredInRange.filter((t) => !activeIds.has(t.id));
+      const scheduledTasks = [...activeScheduled, ...uniqueDeferred, ...completedScheduled];
 
       const [filteredScheduled, filteredOverdue] = await Promise.all([
         applySequentialFilter(scheduledTasks),
@@ -137,9 +158,13 @@ export const forecastRouter = router({
       for (let i = 0; i < input.days; i++) {
         const day = addDays(start, i);
         const key = dateKey(day);
-        const dayTasks = filteredScheduled.filter(
-          (t) => t.due_date && dateKey(new Date(t.due_date)) === key,
-        );
+        const dayTasks = filteredScheduled.filter((t) => {
+          // Primary bucket: due_date matches this day.
+          if (t.due_date && dateKey(new Date(t.due_date)) === key) return true;
+          // Secondary bucket: no due_date but defer_date makes it available on this day.
+          if (!t.due_date && t.defer_date && dateKey(new Date(t.defer_date)) === key) return true;
+          return false;
+        });
         days.push({ date: key, tasks: dayTasks, event_count: 0 });
       }
 

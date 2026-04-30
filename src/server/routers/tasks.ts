@@ -151,9 +151,9 @@ export const tasksRouter = router({
           notDeferred,
           {
             OR: [
-              { due_date: { lt: end } },
-              { defer_date: { lte: now, not: null } },
-              { flagged: true, due_date: null },
+              { due_date: { gte: start, lt: end } },
+              { due_date: { lt: start } },
+              { flagged: true },
             ],
           },
         ];
