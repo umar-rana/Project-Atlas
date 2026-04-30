@@ -472,6 +472,7 @@ export function TagManagement(): React.ReactElement {
     onSuccess: () => {
       utils.tags.usageStats.invalidate();
       utils.tags.list.invalidate();
+      utils.tasks.list.invalidate();
       setColoringTagId(null);
       toast.success("Tag color updated");
     },

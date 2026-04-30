@@ -113,6 +113,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     onSuccess: () => {
       utils.tags.list.invalidate();
       utils.tasks.get.invalidate({ id: taskId });
+      utils.tasks.list.invalidate();
     },
   });
   const update = trpc.tasks.update.useMutation({
