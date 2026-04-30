@@ -105,7 +105,7 @@ export function MediaInbox() {
           ) : items.length === 0 ? (
             <AttachmentTileEmpty />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(120px,1fr))]">
               {items.map((item) => (
                 <AttachmentTile
                   key={item.id}

@@ -44,7 +44,7 @@ function ThumbnailImg({ src, alt }: { src: string; alt: string }) {
       alt={alt}
       loading="lazy"
       onError={() => setFailed(true)}
-      className="h-full w-full object-cover"
+      className="h-full w-full object-cover object-center"
     />
   );
 }
@@ -88,7 +88,7 @@ export function AttachmentTile({
         is_orphan && "border-dashed",
       )}
     >
-      <div className="relative flex h-32 items-center justify-center overflow-hidden bg-surface-raised">
+      <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-surface-raised">
         {isImage ? (
           <ThumbnailImg src={src} alt={filename} />
         ) : (
