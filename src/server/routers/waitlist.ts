@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { router, publicProcedure } from "@/server/trpc";
+import { router, publicProcedure, adminProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { TRPCError } from "@trpc/server";
 import { createLogger } from "@/core/logging";
@@ -54,5 +54,41 @@ export const waitlistRouter = router({
       }
 
       return { success: true };
+    }),
+
+  adminList: adminProcedure.query(async () => {
+    const entries = await db.waitlistEntry.findMany({
+      orderBy: { created_at: "desc" },
+    });
+    return entries;
+  }),
+
+  adminUpdateStatus: adminProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        status: z.enum(["pending", "invited", "dismissed"]),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const entry = await db.waitlistEntry.update({
+          where: { id: input.id },
+          data: { status: input.status },
+        });
+        log.info({ id: input.id, status: input.status }, "Waitlist entry status updated");
+        return entry;
+      } catch (err) {
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === "P2025"
+        ) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Waitlist entry not found.",
+          });
+        }
+        throw err;
+      }
     }),
 });

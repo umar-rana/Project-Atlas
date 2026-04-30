@@ -475,10 +475,12 @@ model WaitlistEntry {
   name       String
   email      String   @unique
   message    String?
+  status     String   @default("pending")
   created_at DateTime @default(now()) @db.Timestamptz
 
   @@index([email])
   @@index([created_at])
+  @@index([status])
 }
 
 // ─── TaskWorkLog ──────────────────────────────────────────────────────────────

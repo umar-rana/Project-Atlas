@@ -46,3 +46,15 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   log.debug({ userId: ctx.user.id }, "tRPC protected call");
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+
+export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!adminEmail || ctx.user.email.trim().toLowerCase() !== adminEmail) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+  log.debug({ userId: ctx.user.id }, "tRPC admin call");
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
