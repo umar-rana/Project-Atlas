@@ -3,10 +3,29 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Folder, FolderOpen, Plus, Pencil, Trash2, Check, X, StickyNote } from "lucide-react";
+import { Folder, FolderOpen, Plus, Pencil, Trash2, Check, X, StickyNote, FolderInput } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+
+type FlatFolder = { id: string; name: string; depth: number };
+
+type FolderTreeNode = {
+  id: string;
+  name: string;
+  children?: FolderTreeNode[];
+};
+
+function flattenFolderTree(nodes: FolderTreeNode[], depth = 0): FlatFolder[] {
+  const result: FlatFolder[] = [];
+  for (const node of nodes) {
+    result.push({ id: node.id, name: node.name, depth });
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenFolderTree(node.children, depth + 1));
+    }
+  }
+  return result;
+}
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
   blue: "bg-cal-1-border",
@@ -40,6 +59,37 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   const [editingNotes, setEditingNotes] = React.useState(false);
   const [addingSubfolder, setAddingSubfolder] = React.useState(false);
   const [subfolderNameDraft, setSubfolderNameDraft] = React.useState("");
+  const [movingProjectId, setMovingProjectId] = React.useState<string | null>(null);
+  const pickerRef = React.useRef<HTMLDivElement>(null);
+
+  const foldersQuery = trpc.folders.list.useQuery();
+
+  const moveProject = trpc.folders.moveProject.useMutation({
+    onSuccess: () => {
+      utils.folders.byId.invalidate({ id: folderId });
+      utils.folders.list.invalidate();
+      utils.projects.list.invalidate();
+      setMovingProjectId(null);
+      toast.success("Project moved");
+    },
+    onError: () => toast.error("Failed to move project"),
+  });
+
+  React.useEffect(() => {
+    if (!movingProjectId) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setMovingProjectId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [movingProjectId]);
+
+  const destinationFolders = React.useMemo(() => {
+    const all = flattenFolderTree((foldersQuery.data ?? []) as FolderTreeNode[]);
+    return all.filter((f) => f.id !== folderId);
+  }, [foldersQuery.data, folderId]);
 
   // Depend on the narrowed scalar fields directly so refresh of the underlying
   // query reliably resyncs the drafts without re-running on unrelated identity
@@ -357,32 +407,98 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
           </div>
           {folder.projects && folder.projects.length > 0 ? (
             <div className="flex flex-col gap-1">
-              {folder.projects.map((project) => (
-                <Link
-                  key={project.id}
-                  href={`/tasks/projects/${project.id}`}
-                  className="flex items-center gap-2 rounded-sm border border-border-subtle px-3 py-2 hover:bg-surface-hover"
-                >
-                  <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(project.color))} />
-                  <span className="flex-1 truncate font-ui text-sm text-text-primary">{project.title}</span>
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full px-1.5 py-0.5 font-ui text-2xs capitalize",
-                      project.status === "active" && "bg-accent-success-muted text-accent-success",
-                      project.status === "on_hold" && "bg-accent-warning-muted text-accent-warning",
-                      project.status === "completed" && "bg-surface-raised text-text-tertiary",
-                      project.status === "dropped" && "bg-surface-raised text-text-disabled",
+              {folder.projects.map((project) => {
+                const isMoving = movingProjectId === project.id;
+                return (
+                  <div key={project.id} className="relative">
+                    <div className="flex items-center gap-2 rounded-sm border border-border-subtle px-3 py-2 hover:bg-surface-hover group">
+                      <Link
+                        href={`/tasks/projects/${project.id}`}
+                        className="flex flex-1 min-w-0 items-center gap-2"
+                      >
+                        <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(project.color))} />
+                        <span className="flex-1 truncate font-ui text-sm text-text-primary">{project.title}</span>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-1.5 py-0.5 font-ui text-2xs capitalize",
+                            project.status === "active" && "bg-accent-success-muted text-accent-success",
+                            project.status === "on_hold" && "bg-accent-warning-muted text-accent-warning",
+                            project.status === "completed" && "bg-surface-raised text-text-tertiary",
+                            project.status === "dropped" && "bg-surface-raised text-text-disabled",
+                          )}
+                        >
+                          {project.status.replace("_", " ")}
+                        </span>
+                        {"task_count" in project && (project as { task_count: number }).task_count > 0 && (
+                          <span className="font-mono text-2xs text-text-tertiary tabular-nums">
+                            {(project as { task_count: number }).task_count}
+                          </span>
+                        )}
+                      </Link>
+                      <button
+                        type="button"
+                        title="Move to folder"
+                        aria-label="Move to folder"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMovingProjectId(isMoving ? null : project.id);
+                        }}
+                        className={cn(
+                          "shrink-0 rounded-sm p-1 transition-colors",
+                          isMoving
+                            ? "text-accent-primary"
+                            : "text-text-disabled opacity-0 group-hover:opacity-100 hover:text-text-tertiary hover:bg-surface-hover",
+                        )}
+                      >
+                        <FolderInput size={13} />
+                      </button>
+                    </div>
+                    {isMoving && (
+                      <div
+                        ref={pickerRef}
+                        className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border-default bg-surface-overlay shadow-lg"
+                      >
+                        <p className="px-3 py-1.5 font-ui text-2xs font-semibold uppercase tracking-caps text-text-disabled">
+                          Move to folder
+                        </p>
+                        <div className="max-h-48 overflow-y-auto">
+                          <button
+                            type="button"
+                            disabled={moveProject.isPending}
+                            onClick={() =>
+                              moveProject.mutate({ project_id: project.id, folder_id: null })
+                            }
+                            className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Folder size={12} className="shrink-0 text-text-disabled" />
+                            <span className="truncate italic">No folder (root)</span>
+                          </button>
+                          {destinationFolders.map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              disabled={moveProject.isPending}
+                              onClick={() =>
+                                moveProject.mutate({ project_id: project.id, folder_id: f.id })
+                              }
+                              className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                              style={{ paddingLeft: `${12 + f.depth * 12}px` }}
+                            >
+                              <Folder size={12} className="shrink-0 text-text-tertiary" />
+                              <span className="truncate">{f.name}</span>
+                            </button>
+                          ))}
+                          {destinationFolders.length === 0 && (
+                            <p className="px-3 py-2 font-ui text-xs text-text-disabled">
+                              No other folders available
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     )}
-                  >
-                    {project.status.replace("_", " ")}
-                  </span>
-                  {"task_count" in project && (project as { task_count: number }).task_count > 0 && (
-                    <span className="font-mono text-2xs text-text-tertiary tabular-nums">
-                      {(project as { task_count: number }).task_count}
-                    </span>
-                  )}
-                </Link>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-md border border-dashed border-border-subtle py-6 text-center">
