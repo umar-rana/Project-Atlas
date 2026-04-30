@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight, RefreshCw, Paperclip } from "lucide-react";
-import { format, isPast, isToday, isTomorrow } from "date-fns";
+import { format, isPast, isToday, isTomorrow, addDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc/client";
@@ -417,6 +417,31 @@ function TaskListItemImpl({
               Move to Inbox
             </button>
           ) : null}
+          <div className="my-1 border-t border-border-subtle" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              const today = startOfDay(new Date());
+              update.mutate({ id: task.id, due_date: today, defer_date: null });
+              setMenu(null);
+            }}
+            className="block w-full px-3 py-1 text-left hover:bg-surface-hover"
+          >
+            Due today
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              const tomorrow = addDays(startOfDay(new Date()), 1);
+              update.mutate({ id: task.id, due_date: tomorrow, defer_date: null });
+              setMenu(null);
+            }}
+            className="block w-full px-3 py-1 text-left hover:bg-surface-hover"
+          >
+            Due tomorrow
+          </button>
           <div className="my-1 border-t border-border-subtle" />
           <label
             role="menuitem"

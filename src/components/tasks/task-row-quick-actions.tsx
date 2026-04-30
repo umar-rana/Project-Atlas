@@ -3,6 +3,8 @@
 import * as React from "react";
 import {
   CalendarDays,
+  CalendarCheck,
+  CalendarPlus,
   Clock,
   FolderOpen,
   MoreHorizontal,
@@ -438,6 +440,53 @@ function MoreMenu({ task, onOpenInspector, onOpenChange }: MoreMenuProps) {
   );
 }
 
+interface MoveToDateButtonProps {
+  taskId: string;
+  label: string;
+  date: Date;
+  icon: React.ReactNode;
+}
+
+function MoveToDateButton({ taskId, label, date, icon }: MoveToDateButtonProps) {
+  const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
+  const prevSnapshots = React.useRef<Array<[readonly unknown[], unknown]>>([]);
+
+  const update = trpc.tasks.update.useMutation({
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: TASK_LIST_QUERY_KEY });
+      prevSnapshots.current = optimisticallyUpdateTask(queryClient, taskId, {
+        due_date: date,
+        defer_date: null,
+      });
+    },
+    onSuccess: () => {
+      utils.tasks.list.invalidate();
+      utils.tasks.counts.invalidate();
+    },
+    onError: () => {
+      restoreQuerySnapshots(queryClient, prevSnapshots.current);
+      toast.error(`Failed to set due date`);
+    },
+  });
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={update.isPending}
+      onClick={(e) => {
+        e.stopPropagation();
+        update.mutate({ id: taskId, due_date: date, defer_date: null });
+      }}
+      className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
+    >
+      {icon}
+    </button>
+  );
+}
+
 export function TaskRowQuickActions({
   task,
   onAnyPopoverOpenChange,
@@ -496,6 +545,9 @@ export function TaskRowQuickActions({
     }
   }
 
+  const today = startOfDay(new Date());
+  const tomorrow = addDays(today, 1);
+
   return (
     <div
       ref={containerRef}
@@ -505,6 +557,18 @@ export function TaskRowQuickActions({
       onClick={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
     >
+      <MoveToDateButton
+        taskId={task.id}
+        label="Due today"
+        date={today}
+        icon={<CalendarCheck size={12} />}
+      />
+      <MoveToDateButton
+        taskId={task.id}
+        label="Due tomorrow"
+        date={tomorrow}
+        icon={<CalendarPlus size={12} />}
+      />
       <QuickDatePopover
         taskId={task.id}
         field="due_date"
