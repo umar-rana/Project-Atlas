@@ -18,6 +18,7 @@ const WAVE2_SHORTCUTS = [
   { id: "s-notes",     label: "Notes",               group: "Navigation", keys: ["cmd", "4"] },
   { id: "s-journals",  label: "Journals",            group: "Navigation", keys: ["cmd", "5"] },
   { id: "s-vault",     label: "Vault",               group: "Navigation", keys: ["cmd", "6"] },
+  { id: "s-media",     label: "Media inbox",         group: "Navigation", keys: ["cmd", "8"] },
   { id: "s-settings",  label: "Open Settings",       group: "Navigation", keys: ["cmd", ","] },
   { id: "s-palette",   label: "Command Palette",     group: "Global",     keys: ["cmd", "K"] },
   { id: "s-shortcuts", label: "Keyboard Shortcuts",  group: "Global",     keys: ["cmd", "/"] },

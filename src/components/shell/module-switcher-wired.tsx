@@ -11,6 +11,7 @@ import {
   BookOpen,
   Vault,
   Trash2,
+  HardDrive,
 } from "lucide-react";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -32,6 +33,7 @@ function getModuleId(pathname: string): string {
   if (pathname.startsWith("/notes"))     return "notes";
   if (pathname.startsWith("/journals"))  return "journals";
   if (pathname.startsWith("/vault"))     return "vault";
+  if (pathname.startsWith("/media"))     return "media";
   if (pathname.startsWith("/settings"))  return "settings";
   if (pathname.startsWith("/admin"))     return "health";
   if (pathname.startsWith("/usage"))     return "health";
@@ -53,6 +55,7 @@ export function ModuleSwitcherWired(): React.ReactElement {
         "4": "/notes",
         "5": "/journals",
         "6": "/vault",
+        "8": "/media",
       };
       if (map[e.key]) {
         e.preventDefault();
@@ -66,6 +69,20 @@ export function ModuleSwitcherWired(): React.ReactElement {
   const footer = (
     <>
       <div className="h-px w-6 bg-border-subtle" />
+      <Tooltip content="Media (⌘8)" side="right">
+        <Link
+          href="/media"
+          aria-label="Media inbox"
+          className={cn(
+            "relative grid size-8 place-items-center rounded-md transition-colors duration-fast ease-standard",
+            active === "media"
+              ? "bg-accent-primary-subtle text-accent-primary"
+              : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
+          )}
+        >
+          <HardDrive size={16} aria-hidden />
+        </Link>
+      </Tooltip>
       <Tooltip content="Trash" side="right">
         <Link
           href="/trash"

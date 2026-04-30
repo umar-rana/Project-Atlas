@@ -130,6 +130,7 @@ export interface TaskRow {
     completed_at: Date | string | null;
     position: string | number | { toString(): string };
   }[];
+  _count?: { attachments?: number };
   is_blocked?: boolean;
   recurrence_rule?: string | null;
   recurrence_anchor?: string | null;

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight, RefreshCw } from "lucide-react";
+import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight, RefreshCw, Paperclip } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -117,6 +117,7 @@ function TaskListItemImpl({
   const checklistTotal = checklistItems.length;
   const checklistDone = checklistItems.filter((ci) => ci.completed_at != null).length;
   const hasChecklist = checklistTotal > 0;
+  const attachmentCount = task._count?.attachments ?? 0;
 
   const isSubtask = task.parent_id != null;
   const showParentRef =
@@ -267,6 +268,20 @@ function TaskListItemImpl({
               {checklistDone}/{checklistTotal}
             </span>
           )}
+          {attachmentCount > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(task, e);
+              }}
+              title={`${attachmentCount} attachment${attachmentCount === 1 ? "" : "s"}`}
+              className="inline-flex items-center gap-0.5 hover:text-text-primary"
+            >
+              <Paperclip size={10} />
+              {attachmentCount}
+            </button>
+          )}
         </div>
       </div>
       {task.is_blocked && !task.flagged && (
@@ -380,6 +395,34 @@ function TaskListItemImpl({
               Move to Inbox
             </button>
           ) : null}
+          <div className="my-1 border-t border-border-subtle" />
+          <label
+            role="menuitem"
+            className="block w-full cursor-pointer px-3 py-1 text-left hover:bg-surface-hover"
+          >
+            Attach file…
+            <input
+              type="file"
+              multiple
+              className="sr-only"
+              onClick={(e) => e.stopPropagation()}
+              onChange={async (e) => {
+                setMenu(null);
+                const files = Array.from(e.target.files ?? []);
+                for (const file of files) {
+                  const form = new FormData();
+                  form.append("file", file);
+                  form.append("task_id", task.id);
+                  form.append("parent_type", "Task");
+                  form.append("parent_id", task.id);
+                  await fetch("/api/attachments/upload", { method: "POST", body: form });
+                }
+                utils.tasks.list.invalidate();
+                utils.attachments.byTaskId.invalidate({ task_id: task.id });
+                e.target.value = "";
+              }}
+            />
+          </label>
           <div className="my-1 border-t border-border-subtle" />
           <button
             type="button"

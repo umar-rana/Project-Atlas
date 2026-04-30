@@ -86,6 +86,31 @@ export function renderAuditEntry(entry: AuditLog): string {
   if (action === "restore") return "Restored from trash";
   if (action === "bulk_permanent_delete") return "Permanently deleted";
 
+  if (action === "attachment_uploaded") {
+    const filename = meta?.filename as string | undefined;
+    return filename ? `Attached file: ${filename}` : "Attached a file";
+  }
+  if (action === "attachment_deleted") {
+    const filename = meta?.filename as string | undefined;
+    return filename ? `Removed attachment: ${filename}` : "Removed an attachment";
+  }
+  if (action === "attachment_detached") {
+    const filename = meta?.filename as string | undefined;
+    return filename ? `Detached file: ${filename}` : "Detached a file";
+  }
+  if (action === "attachment_reattached") {
+    const filename = meta?.filename as string | undefined;
+    return filename ? `Re-attached file: ${filename}` : "Re-attached a file";
+  }
+  if (action === "attachment_marked_reviewed") {
+    const filename = meta?.filename as string | undefined;
+    return filename ? `Marked "${filename}" as reviewed` : "Marked attachment as reviewed";
+  }
+  if (action === "attachment_metadata_updated") {
+    const filename = meta?.filename as string | undefined;
+    return filename ? `Updated attachment: ${filename}` : "Updated attachment metadata";
+  }
+
   if (action === "update") {
     const diff = entry.diff as Diff | null;
     if (!diff) return "Updated this task";

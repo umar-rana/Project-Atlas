@@ -148,22 +148,49 @@ model AICallLog {
 // ─── Attachment ──────────────────────────────────────────────────────────────
 
 model Attachment {
-  id            String   @id @db.Uuid
-  user_id       String   @db.Uuid
-  task_id       String?  @db.Uuid
-  file_id       String   @unique
-  filename      String
-  content_type  String
-  size_bytes    Int
-  storage_path  String
-  deleted_at    DateTime? @db.Timestamptz
-  created_at    DateTime @default(now()) @db.Timestamptz
+  id              String    @id @db.Uuid
+  user_id         String    @db.Uuid
+  task_id         String?   @db.Uuid
+  parent_type     String?
+  parent_id       String?
+  file_id         String    @unique
+  filename        String
+  content_type    String
+  size_bytes      Int
+  storage_path    String
+  thumbnail_path  String?
+  position        Decimal   @default(0) @db.Decimal(20, 10)
+  description     String?
+  reviewed        Boolean   @default(false)
+  image_width     Int?
+  image_height    Int?
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
 
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  task            Task?             @relation("TaskAttachments", fields: [task_id], references: [id], onDelete: SetNull)
+  tags            TagOnAttachment[]
 
   @@index([user_id])
   @@index([task_id])
+  @@index([parent_type, parent_id])
+  @@index([user_id, reviewed])
   @@index([deleted_at])
+}
+
+// ─── TagOnAttachment (join) ──────────────────────────────────────────────────
+
+model TagOnAttachment {
+  attachment_id  String     @db.Uuid
+  tag_id         String     @db.Uuid
+  created_at     DateTime   @default(now()) @db.Timestamptz
+
+  attachment     Attachment @relation(fields: [attachment_id], references: [id], onDelete: Cascade)
+  tag            Tag        @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([attachment_id, tag_id])
+  @@index([tag_id])
 }
 
 // ─── Capture ─────────────────────────────────────────────────────────────────
@@ -220,6 +247,7 @@ model Tag {
 
   user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   tasks       TagOnTask[]
+  attachments TagOnAttachment[]
 
   @@unique([user_id, name])
   @@index([user_id])
@@ -343,6 +371,7 @@ model Task {
   tags             TagOnTask[]
   checklist_items  ChecklistItem[]
   work_logs        TaskWorkLog[]
+  attachments      Attachment[] @relation("TaskAttachments")
 
   @@index([user_id])
   @@index([user_id, project_id])

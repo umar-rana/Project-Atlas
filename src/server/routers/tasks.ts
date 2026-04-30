@@ -79,6 +79,9 @@ const TASK_INCLUDE = {
     orderBy: { position: "asc" },
     select: { id: true, title: true, completed_at: true, position: true },
   },
+  _count: {
+    select: { attachments: { where: { deleted_at: null } } },
+  },
 } satisfies Prisma.TaskInclude;
 
 // ── Router ───────────────────────────────────────────────────────────────────
