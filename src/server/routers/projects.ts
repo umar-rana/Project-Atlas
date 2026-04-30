@@ -81,6 +81,10 @@ export const projectsRouter = router({
         status: PROJECT_STATUS.optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
+        // Explicitly reject parent_project_id — projects cannot be nested inside other projects.
+        parent_project_id: z.undefined({
+          errorMap: () => ({ message: "Projects cannot be nested inside other projects. Use folders to organise projects." }),
+        }).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -149,6 +153,10 @@ export const projectsRouter = router({
         status: PROJECT_STATUS.optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
+        // Explicitly reject parent_project_id — projects cannot be nested inside other projects.
+        parent_project_id: z.undefined({
+          errorMap: () => ({ message: "Projects cannot be nested inside other projects. Use folders to organise projects." }),
+        }).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

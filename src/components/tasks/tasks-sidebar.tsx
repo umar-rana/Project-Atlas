@@ -26,6 +26,7 @@ import { ProjectAddForm } from "./project-add-form";
 import { ContextAddForm } from "./context-add-form";
 import { toast } from "@/lib/toast";
 import { FolderTreeNode, colorDotClass, type DragItem } from "./folder-tree-node";
+import { HierarchyAuditBanner } from "./hierarchy-audit-banner";
 
 interface NavRowProps {
   href: string;
@@ -253,6 +254,8 @@ export function TasksSidebar(): React.ReactElement {
         label="Review"
         badge={reviewCount.data?.count}
       />
+
+      <HierarchyAuditBanner />
 
       <SectionHeader
         label="Projects"

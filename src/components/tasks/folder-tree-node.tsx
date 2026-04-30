@@ -65,8 +65,12 @@ export function FolderTreeNode({
   const expandTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleDragOver(e: React.DragEvent) {
+    // Reject if no sidebar drag is active (e.g. a task being dragged from the task list).
+    // Task-list items set "text/plain" in dataTransfer but never set `dragItem`.
     if (!dragItem) return;
     if (dragItem.type === "folder" && dragItem.id === folder.id) return;
+    // Only accept folder or project drags — tasks cannot be dropped onto folders.
+    if (dragItem.type !== "folder" && dragItem.type !== "project") return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);

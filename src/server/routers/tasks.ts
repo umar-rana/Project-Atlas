@@ -384,7 +384,20 @@ export const tasksRouter = router({
           where: { id: resolvedProjectId, user_id: userId },
           select: { id: true },
         });
-        if (!owns) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        if (!owns) {
+          // Guard: check if the caller accidentally passed a folder ID instead of a project ID.
+          const isFolder = await db.projectFolder.findFirst({
+            where: { id: resolvedProjectId, user_id: userId },
+            select: { id: true },
+          });
+          if (isFolder) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Tasks cannot be added directly to a folder. Add the task to a project within the folder instead.",
+            });
+          }
+          throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        }
       } else if (input.project_title) {
         // Resolve `>>project` from quick-add: find by title, else create.
         const title = input.project_title.trim();
@@ -537,7 +550,20 @@ export const tasksRouter = router({
           where: { id: input.project_id, user_id: userId },
           select: { id: true },
         });
-        if (!owns) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        if (!owns) {
+          // Guard: check if the caller accidentally passed a folder ID instead of a project ID.
+          const isFolder = await db.projectFolder.findFirst({
+            where: { id: input.project_id, user_id: userId },
+            select: { id: true },
+          });
+          if (isFolder) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Tasks cannot be assigned directly to a folder. Assign the task to a project within the folder instead.",
+            });
+          }
+          throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        }
       }
       if (input.parent_id) {
         const parent = await db.task.findFirst({
@@ -1504,4 +1530,226 @@ export const tasksRouter = router({
 
     return { total, last_week: lastWeek, last_month: lastMonth };
   }),
+
+  // ── Hierarchy audit ───────────────────────────────────────────────────
+  // Detects structural inconsistencies in the task/project/folder hierarchy
+  // and returns grouped information so the UI can offer targeted remediation.
+  //
+  // Note: the Task schema has no folder_id field, so "tasks directly in a
+  // folder" is schema-impossible. The relevant real-world violations are:
+  //   1. Tasks whose project was soft-deleted (become invisible orphans).
+  //   2. Subtasks whose parent task was soft-deleted (become invisible orphans).
+  // Both are grouped by their associated folder (via the deleted project) so the
+  // UI can offer "Create a default project per folder" as a remediation choice.
+  auditHierarchy: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.user.id;
+
+    // Tasks whose project was soft-deleted — include the project's folder_id
+    // so we can group by folder for the "create default project per folder" remedy.
+    const orphanedTasks = await db.task.findMany({
+      where: {
+        user_id: userId,
+        deleted_at: null,
+        project_id: { not: null },
+        project: { deleted_at: { not: null } },
+      },
+      select: {
+        id: true,
+        title: true,
+        project_id: true,
+        project: {
+          select: {
+            id: true,
+            title: true,
+            folder_id: true,
+            folder: { select: { id: true, name: true } },
+          },
+        },
+      },
+      take: 200,
+    });
+
+    // Subtasks whose parent task was deleted.
+    const subtasksWithoutParent = await db.task.findMany({
+      where: {
+        user_id: userId,
+        deleted_at: null,
+        parent_id: { not: null },
+        parent: { deleted_at: { not: null } },
+      },
+      select: { id: true, title: true, parent_id: true },
+      take: 100,
+    });
+
+    // Build folder-grouped view for the orphaned tasks so the UI can show
+    // "Create default project per folder" (or "no folder" for inbox-level tasks).
+    type FolderGroup = {
+      folderId: string | null;
+      folderName: string | null;
+      taskIds: string[];
+      taskTitles: string[];
+    };
+    const byFolder = new Map<string | null, FolderGroup>();
+    for (const t of orphanedTasks) {
+      const key = t.project?.folder_id ?? null;
+      if (!byFolder.has(key)) {
+        byFolder.set(key, {
+          folderId: key,
+          folderName: t.project?.folder?.name ?? null,
+          taskIds: [],
+          taskTitles: [],
+        });
+      }
+      const g = byFolder.get(key)!;
+      g.taskIds.push(t.id);
+      g.taskTitles.push(t.title);
+    }
+
+    return {
+      orphanedTasks: orphanedTasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        project_id: t.project_id,
+        folder_id: t.project?.folder_id ?? null,
+        folder_name: t.project?.folder?.name ?? null,
+      })),
+      orphanedByFolder: [...byFolder.values()],
+      subtasksWithoutParent: subtasksWithoutParent.map((t) => ({
+        id: t.id,
+        title: t.title,
+        parent_id: t.parent_id,
+      })),
+      totalIssues: orphanedTasks.length + subtasksWithoutParent.length,
+    };
+  }),
+
+  // ── Fix hierarchy issues ──────────────────────────────────────────────
+  // Provides two remediation modes for orphaned tasks:
+  //   moveToInbox  – clears project_id/parent_id, tasks appear in inbox.
+  //   createDefaultProjects – creates one recovery project per folder group
+  //                           and assigns orphaned tasks to it.
+  fixHierarchyIssues: protectedProcedure
+    .input(
+      z.object({
+        // "Move to inbox" path: clear project/parent references on orphans.
+        moveToInbox: z.boolean().default(false),
+        // "Create default project per folder" path: create a recovery project
+        // inside each folder that had orphaned tasks, then reassign tasks.
+        createDefaultProjects: z.boolean().default(false),
+        // Always fix subtasks with deleted parents (move to inbox as top-level tasks).
+        fixSubtasksWithoutParent: z.boolean().default(false),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user.id;
+      let fixed = 0;
+
+      if (input.moveToInbox) {
+        const result = await db.task.updateMany({
+          where: {
+            user_id: userId,
+            deleted_at: null,
+            project_id: { not: null },
+            project: { deleted_at: { not: null } },
+          },
+          data: { project_id: null },
+        });
+        fixed += result.count;
+      } else if (input.createDefaultProjects) {
+        // Fetch orphaned tasks with their project/folder context.
+        const orphaned = await db.task.findMany({
+          where: {
+            user_id: userId,
+            deleted_at: null,
+            project_id: { not: null },
+            project: { deleted_at: { not: null } },
+          },
+          select: {
+            id: true,
+            project: {
+              select: { folder_id: true, folder: { select: { id: true, name: true } } },
+            },
+          },
+        });
+
+        // Group by folder.
+        const byFolder = new Map<string | null, { folderId: string | null; folderName: string | null; taskIds: string[] }>();
+        for (const t of orphaned) {
+          const key = t.project?.folder_id ?? null;
+          if (!byFolder.has(key)) {
+            byFolder.set(key, {
+              folderId: key,
+              folderName: t.project?.folder?.name ?? null,
+              taskIds: [],
+            });
+          }
+          byFolder.get(key)!.taskIds.push(t.id);
+        }
+
+        // For each folder group, find-or-create a recovery project.
+        const maxAgg = await db.project.aggregate({
+          _max: { position: true },
+          where: { user_id: userId, deleted_at: null },
+        });
+        let nextPos = maxAgg._max.position
+          ? new Prisma.Decimal(maxAgg._max.position).plus(1024)
+          : new Prisma.Decimal(1024);
+
+        for (const group of byFolder.values()) {
+          const recoveryTitle = group.folderName
+            ? `${group.folderName} — Recovered`
+            : "Recovered Tasks";
+
+          // Check if a recovery project by this name already exists in the folder.
+          const existing = await db.project.findFirst({
+            where: {
+              user_id: userId,
+              title: recoveryTitle,
+              folder_id: group.folderId,
+              deleted_at: null,
+            },
+            select: { id: true },
+          });
+
+          let recoveryProjectId: string;
+          if (existing) {
+            recoveryProjectId = existing.id;
+          } else {
+            const created = await db.project.create({
+              data: {
+                id: newId(),
+                user_id: userId,
+                title: recoveryTitle,
+                folder_id: group.folderId,
+                position: nextPos,
+              },
+            });
+            recoveryProjectId = created.id;
+            nextPos = nextPos.plus(1024);
+          }
+
+          // Reassign tasks to the recovery project.
+          const result = await db.task.updateMany({
+            where: { id: { in: group.taskIds }, user_id: userId },
+            data: { project_id: recoveryProjectId },
+          });
+          fixed += result.count;
+        }
+      }
+
+      if (input.fixSubtasksWithoutParent) {
+        const result = await db.task.updateMany({
+          where: {
+            user_id: userId,
+            deleted_at: null,
+            parent_id: { not: null },
+            parent: { deleted_at: { not: null } },
+          },
+          data: { parent_id: null },
+        });
+        fixed += result.count;
+      }
+
+      return { ok: true, fixed };
+    }),
 });
