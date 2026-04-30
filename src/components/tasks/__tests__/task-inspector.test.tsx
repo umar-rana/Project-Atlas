@@ -352,6 +352,34 @@ describe("TaskInspector", () => {
     });
   });
 
+  describe("defer date display", () => {
+    it("renders the defer date field with label 'Available from' instead of 'Defer'", () => {
+      render(<TaskInspector taskId="task-1" />);
+      expect(screen.getByText("Available from")).toBeInTheDocument();
+      expect(screen.queryByText("Defer")).not.toBeInTheDocument();
+    });
+
+    it("shows no deferred callout when defer_date is null", () => {
+      mockState.queries.taskData = makeTask({ defer_date: null });
+      render(<TaskInspector taskId="task-1" />);
+      expect(screen.queryByText(/Available from/i, { selector: "span" })).not.toBeInTheDocument();
+    });
+
+    it("shows the deferred callout with formatted date when defer_date is in the future", () => {
+      const futureDate = new Date("2099-06-15T12:00:00");
+      mockState.queries.taskData = makeTask({ defer_date: futureDate });
+      render(<TaskInspector taskId="task-1" />);
+      expect(screen.getByText("June 15, 2099")).toBeInTheDocument();
+    });
+
+    it("does not show the deferred callout when defer_date is in the past", () => {
+      const pastDate = new Date("2020-01-01");
+      mockState.queries.taskData = makeTask({ defer_date: pastDate });
+      render(<TaskInspector taskId="task-1" />);
+      expect(screen.queryByText("January 1, 2020")).not.toBeInTheDocument();
+    });
+  });
+
   describe("trash variant footer", () => {
     it("'Restore' fires tasks.restore with the task id", () => {
       const { container } = render(<TaskInspector taskId="task-1" inTrash />);

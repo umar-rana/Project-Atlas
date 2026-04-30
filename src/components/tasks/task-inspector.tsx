@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle } from "lucide-react";
+import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
@@ -441,7 +441,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               />
             </label>
             <label className="flex flex-col gap-1 font-ui text-2xs text-text-tertiary">
-              Defer
+              Available from
               <input
                 type="date"
                 value={fmtDateForInput(taskData.defer_date)}
@@ -471,6 +471,18 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               />
             </label>
           </div>
+
+          {taskData.defer_date && new Date(taskData.defer_date) > new Date() && (
+            <div className="mt-3 flex items-center gap-2 rounded-sm border border-accent-info/30 bg-accent-info/5 px-2.5 py-2">
+              <Clock size={12} className="shrink-0 text-accent-info" />
+              <p className="font-ui text-xs text-text-secondary">
+                Available from{" "}
+                <span className="font-medium text-accent-info">
+                  {format(new Date(taskData.defer_date), "MMMM d, yyyy")}
+                </span>
+              </p>
+            </div>
+          )}
 
           <section className="mt-4">
             <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Contexts</h3>
