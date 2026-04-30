@@ -36,6 +36,7 @@ type ForecastTask = {
   status: string;
   flagged: boolean;
   due_date: Date | string | null;
+  defer_date: Date | string | null;
   project: { id: string; title: string; color: string | null } | null;
   contexts: { context: { id: string; name: string } }[];
 };
@@ -78,12 +79,22 @@ function TaskCard({
         >
           {task.title}
         </p>
-        {task.project && (
-          <div className="mt-0.5 flex items-center gap-1">
-            <span className={cn("size-1.5 rounded-full", colorDotClass(task.project.color))} />
-            <span className="truncate font-ui text-2xs text-text-tertiary">{task.project.title}</span>
-          </div>
-        )}
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          {task.project && (
+            <div className="flex items-center gap-1">
+              <span className={cn("size-1.5 rounded-full", colorDotClass(task.project.color))} />
+              <span className="truncate font-ui text-2xs text-text-tertiary">{task.project.title}</span>
+            </div>
+          )}
+          {!task.due_date && task.defer_date && (
+            <span
+              title={`Available from ${format(new Date(task.defer_date), "MMM d, yyyy")}`}
+              className="inline-flex items-center rounded px-1 py-px font-ui text-3xs font-medium text-accent-info bg-accent-info/10 leading-none cursor-default"
+            >
+              Available
+            </span>
+          )}
+        </div>
       </div>
       {task.flagged && (
         <span className="shrink-0 text-accent-warning" aria-label="Flagged">
