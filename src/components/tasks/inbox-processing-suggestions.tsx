@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { Sparkles, Check, ChevronDown, ChevronRight, Tag } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
@@ -58,6 +58,8 @@ export function InboxProcessingSuggestions({
   const [differentProjectId, setDifferentProjectId] = React.useState("");
   const [differentContexts, setDifferentContexts] = React.useState("");
   const [differentTags, setDifferentTags] = React.useState("");
+  const [pickWhichOpen, setPickWhichOpen] = React.useState(false);
+  const [pickedNewTags, setPickedNewTags] = React.useState<Set<string>>(new Set());
 
   if (!parseLog) return null;
 
@@ -65,7 +67,7 @@ export function InboxProcessingSuggestions({
     key: string;
     label: string;
     hint: string;
-    type: "project" | "context" | "tag";
+    type: "project" | "context" | "tag" | "new_tag";
     ids?: string[];
     newNames?: string[];
     projectId?: string;
@@ -113,20 +115,40 @@ export function InboxProcessingSuggestions({
       return !t || !currentTagIds.includes(t.id);
     });
     if (pendingTagNames.length > 0) {
-      const existingIds = pendingTagNames
-        .map((tName: string) => (tags.data ?? []).find((tag) => tag.name.toLowerCase() === tName.toLowerCase())?.id)
-        .filter((id): id is string => !!id);
-      const newNames = pendingTagNames.filter(
+      // Split into: already-existing (unapplied) vs brand-new (AI-suggested, never created)
+      const existingUnappliedNames = pendingTagNames.filter(
+        (tName: string) => (tags.data ?? []).some((t) => t.name.toLowerCase() === tName.toLowerCase()),
+      );
+      const brandNewNames = pendingTagNames.filter(
         (tName: string) => !(tags.data ?? []).some((t) => t.name.toLowerCase() === tName.toLowerCase()),
       );
-      suggestions.push({
-        key: "tags",
-        label: "Tags",
-        hint: pendingTagNames.map((n: string) => `#${n}`).join(", "),
-        type: "tag",
-        ids: existingIds,
-        newNames,
-      });
+
+      // Existing but unapplied: show as normal "Apply tags" suggestion
+      if (existingUnappliedNames.length > 0) {
+        const existingIds = existingUnappliedNames
+          .map((tName: string) => (tags.data ?? []).find((tag) => tag.name.toLowerCase() === tName.toLowerCase())?.id)
+          .filter((id): id is string => !!id);
+        suggestions.push({
+          key: "tags",
+          label: "Tags",
+          hint: existingUnappliedNames.map((n: string) => `#${n}`).join(", "),
+          type: "tag",
+          ids: existingIds,
+          newNames: [],
+        });
+      }
+
+      // Brand-new AI-suggested tags: show as "Create new tags" suggestion
+      if (brandNewNames.length > 0) {
+        suggestions.push({
+          key: "new_tags",
+          label: "Create new tags",
+          hint: brandNewNames.map((n: string) => `#${n}`).join(" "),
+          type: "new_tag",
+          ids: [],
+          newNames: brandNewNames,
+        });
+      }
     }
   }
 
@@ -236,6 +258,58 @@ export function InboxProcessingSuggestions({
         rollbackAccept(s.key);
         toast.error("Could not apply tags — please try again.");
       }
+    } else if (s.type === "new_tag") {
+      // Accept all: create every suggested new tag and apply to the task
+      const namesToCreate = s.newNames ?? [];
+      const createdIds: string[] = [];
+      const failed: string[] = [];
+      for (const name of namesToCreate) {
+        const id = await resolveOrCreateTag(name);
+        if (id) createdIds.push(id);
+        else failed.push(name);
+      }
+      if (failed.length > 0) {
+        toast.error(`Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`);
+        return;
+      }
+      const newTagsNext = [...new Set([...currentTagIds, ...createdIds])];
+      optimisticAccept(s.key);
+      try {
+        await updateTask.mutateAsync({ id: taskId, tag_ids: newTagsNext });
+        onTagAccepted?.(newTagsNext);
+        setPickWhichOpen(false);
+      } catch {
+        rollbackAccept(s.key);
+        toast.error("Could not create tags — please try again.");
+      }
+    }
+  }
+
+  async function handleAcceptPickedNewTags(s: (typeof suggestions)[number]) {
+    if (disabled || s.type !== "new_tag") return;
+    const namesToCreate = (s.newNames ?? []).filter((n) => pickedNewTags.has(n));
+    if (namesToCreate.length === 0) return;
+    const createdIds: string[] = [];
+    const failed: string[] = [];
+    for (const name of namesToCreate) {
+      const id = await resolveOrCreateTag(name);
+      if (id) createdIds.push(id);
+      else failed.push(name);
+    }
+    if (failed.length > 0) {
+      toast.error(`Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`);
+      return;
+    }
+    const next = [...new Set([...currentTagIds, ...createdIds])];
+    optimisticAccept(s.key);
+    try {
+      await updateTask.mutateAsync({ id: taskId, tag_ids: next });
+      onTagAccepted?.(next);
+      setPickWhichOpen(false);
+      setPickedNewTags(new Set());
+    } catch {
+      rollbackAccept(s.key);
+      toast.error("Could not create tags — please try again.");
     }
   }
 
@@ -350,50 +424,147 @@ export function InboxProcessingSuggestions({
         <div className="mt-1.5 flex flex-col gap-1.5">
           {activeSuggestions.map((s) => (
             <div key={s.key} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-2 rounded-sm bg-surface-base px-2 py-1.5">
-                <div className="min-w-0">
-                  <span className="font-ui text-2xs text-text-tertiary">{s.label}: </span>
-                  <span className="truncate font-ui text-2xs font-medium text-text-primary">{s.hint}</span>
+              {s.type === "new_tag" ? (
+                // Special rendering for AI-suggested new tags
+                <div className="flex flex-col gap-1 rounded-sm bg-surface-base px-2 py-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-1">
+                      <Tag size={9} className="shrink-0 text-accent-info" aria-hidden />
+                      <span className="font-ui text-2xs text-text-tertiary">Create new tags: </span>
+                      <span className="truncate font-ui text-2xs font-medium text-text-primary">{s.hint}</span>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => { void handleAccept(s); }}
+                        disabled={disabled || updateTask.isPending || tagCreate.isPending}
+                        className={cn(
+                          "flex items-center gap-0.5 rounded-sm border border-accent-success/40 bg-accent-success/10 px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
+                          "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
+                        )}
+                      >
+                        <Check size={9} />
+                        Accept all
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPickWhichOpen((v) => !v);
+                          setPickedNewTags(new Set());
+                        }}
+                        disabled={disabled}
+                        className={cn(
+                          "rounded-sm border px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:text-text-secondary",
+                          pickWhichOpen
+                            ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary"
+                            : "border-border-subtle hover:border-border-default",
+                        )}
+                      >
+                        Pick which
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDismiss(s.key)}
+                        disabled={disabled}
+                        className="rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:border-border-default hover:text-text-secondary"
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                  {pickWhichOpen && (
+                    <div className="mt-0.5 flex flex-col gap-1 rounded border border-border-subtle bg-surface-overlay px-2 py-1.5">
+                      <div className="flex flex-wrap gap-1">
+                        {(s.newNames ?? []).map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() =>
+                              setPickedNewTags((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(name)) next.delete(name);
+                                else next.add(name);
+                                return next;
+                              })
+                            }
+                            className={cn(
+                              "rounded-sm border px-1.5 py-0.5 font-ui text-2xs transition-colors",
+                              pickedNewTags.has(name)
+                                ? "border-accent-primary/50 bg-accent-primary/15 font-medium text-accent-primary"
+                                : "border-border-subtle text-text-tertiary hover:border-border-default hover:text-text-secondary",
+                            )}
+                          >
+                            #{name}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => { void handleAcceptPickedNewTags(s); }}
+                          disabled={pickedNewTags.size === 0 || disabled || updateTask.isPending || tagCreate.isPending}
+                          className="rounded-sm bg-accent-primary px-2 py-0.5 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+                        >
+                          Add selected
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setPickWhichOpen(false); setPickedNewTags(new Set()); }}
+                          className="rounded-sm border border-border-subtle px-2 py-0.5 font-ui text-2xs text-text-tertiary hover:border-border-default"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => { void handleAccept(s); }}
-                    disabled={disabled || updateTask.isPending || (s.type === "project" && !s.projectId)}
-                    title={s.type === "project" && !s.projectId ? `No project matches "${s.hint}" — use Different… to choose one` : undefined}
-                    className={cn(
-                      "flex items-center gap-0.5 rounded-sm border border-accent-success/40 bg-accent-success/10 px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
-                      "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
-                    )}
-                  >
-                    <Check size={9} />
-                    Accept
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDifferentOpen(s)}
-                    disabled={disabled}
-                    className={cn(
-                      "rounded-sm border px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:text-text-secondary",
-                      differentOpen === s.key
-                        ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary"
-                        : "border-border-subtle hover:border-border-default",
-                    )}
-                  >
-                    Different…
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDismiss(s.key)}
-                    disabled={disabled}
-                    className="rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:border-border-default hover:text-text-secondary"
-                  >
-                    Skip
-                  </button>
+              ) : (
+                // Standard rendering for project, context, and existing-tag suggestions
+                <div className="flex items-center justify-between gap-2 rounded-sm bg-surface-base px-2 py-1.5">
+                  <div className="min-w-0">
+                    <span className="font-ui text-2xs text-text-tertiary">{s.label}: </span>
+                    <span className="truncate font-ui text-2xs font-medium text-text-primary">{s.hint}</span>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => { void handleAccept(s); }}
+                      disabled={disabled || updateTask.isPending || (s.type === "project" && !s.projectId)}
+                      title={s.type === "project" && !s.projectId ? `No project matches "${s.hint}" — use Different… to choose one` : undefined}
+                      className={cn(
+                        "flex items-center gap-0.5 rounded-sm border border-accent-success/40 bg-accent-success/10 px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
+                        "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
+                      )}
+                    >
+                      <Check size={9} />
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDifferentOpen(s)}
+                      disabled={disabled}
+                      className={cn(
+                        "rounded-sm border px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:text-text-secondary",
+                        differentOpen === s.key
+                          ? "border-accent-primary/40 bg-accent-primary/10 text-accent-primary"
+                          : "border-border-subtle hover:border-border-default",
+                      )}
+                    >
+                      Different…
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDismiss(s.key)}
+                      disabled={disabled}
+                      className="rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:border-border-default hover:text-text-secondary"
+                    >
+                      Skip
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {differentOpen === s.key && (
+              {differentOpen === s.key && s.type !== "new_tag" && (
                 <div className="rounded-sm border border-border-subtle bg-surface-overlay px-2 py-2">
                   {s.type === "project" && (
                     <div className="flex items-center gap-2">

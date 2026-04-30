@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
+import { analyseCleanupCandidates } from "@/core/tags/cleanup";
 
 export const tagsRouter = router({
   list: protectedProcedure
@@ -120,4 +121,8 @@ export const tagsRouter = router({
       ]);
       return { ok: true };
     }),
+
+  cleanupCandidates: protectedProcedure.query(async ({ ctx }) => {
+    return analyseCleanupCandidates(ctx.user.id);
+  }),
 });

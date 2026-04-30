@@ -89,6 +89,35 @@ async function resolveProjectId(
   }
 }
 
+/**
+ * Given all parsed tag names (from Tier1 + AI), the set of explicit #tag names
+ * (Tier1 only), and the set of tag names that already exist in the user's library,
+ * returns:
+ *   - autoApply: tags to immediately create/link (explicit + AI-matched existing)
+ *   - suggestedNew: tags NOT to auto-create; surface as inbox suggestions instead
+ */
+export function classifyParsedTags(
+  allParsedTagNames: string[],
+  explicitTagNames: ReadonlySet<string>,
+  existingTagNames: ReadonlySet<string>,
+): { autoApply: string[]; suggestedNew: string[] } {
+  const autoApply: string[] = [];
+  const suggestedNew: string[] = [];
+
+  for (const tag of allParsedTagNames) {
+    const lower = tag.toLowerCase();
+    if (explicitTagNames.has(lower)) {
+      autoApply.push(lower);
+    } else if (existingTagNames.has(lower)) {
+      autoApply.push(lower);
+    } else {
+      suggestedNew.push(lower);
+    }
+  }
+
+  return { autoApply: [...new Set(autoApply)], suggestedNew: [...new Set(suggestedNew)] };
+}
+
 async function linkTagsAndContexts(
   taskId: string,
   userId: string,
@@ -418,10 +447,36 @@ export async function captureAndCreate(
         },
       });
 
+      // Gate tag creation: only auto-create/apply explicit #tag syntax tags and
+      // AI-suggested tags that already exist in the user's library.
+      // AI-suggested tags that would require creating a new tag are stored in the
+      // parse log only — the user can accept them via the suggestion UI.
+      const explicitTagNames = new Set(tier1.tags.map((t) => t.toLowerCase()));
+      const allParsedTagNames = parsed.tags; // explicit + AI-suggested combined
+
+      // Load existing tag names for classification
+      const aiOnlyTagNames = allParsedTagNames.filter((t) => !explicitTagNames.has(t.toLowerCase()));
+      let existingTagNames = new Set<string>();
+
+      if (aiOnlyTagNames.length > 0) {
+        const existingUserTags = await db.tag.findMany({
+          where: {
+            user_id: userId,
+            name: { in: aiOnlyTagNames.map((t) => t.toLowerCase()) },
+            deleted_at: null,
+          },
+          select: { name: true },
+        });
+        existingTagNames = new Set(existingUserTags.map((t) => t.name.toLowerCase()));
+      }
+
+      const { autoApply: autoApplyTagNames, suggestedNew: suggestedNewTagNames } =
+        classifyParsedTags(allParsedTagNames, explicitTagNames, existingTagNames);
+
       await linkTagsAndContexts(
         taskId,
         userId,
-        parsed.tags,
+        autoApplyTagNames,
         parsed.contexts,
         contextIdOverrides ?? [],
         tagIdOverrides ?? [],
@@ -429,6 +484,9 @@ export async function captureAndCreate(
 
       const durationMs = Date.now() - enrichStart + (Date.now() - start);
 
+      // Store ALL tags (including suggested-new) in parse log so the suggestion UI
+      // can display them. suggestedNewTagNames will appear as tags that don't yet
+      // exist in the library — the UI will offer [Accept all] [Pick which] [Skip].
       await db.captureParseLog.create({
         data: {
           id: newId(),
@@ -445,7 +503,7 @@ export async function captureAndCreate(
           parse_duration_ms: durationMs,
           title: parsed.title,
           due_date: parsed.due_date ?? null,
-          tags: parsed.tags,
+          tags: [...autoApplyTagNames, ...suggestedNewTagNames],
           contexts: parsed.contexts,
           project_hint: parsed.project_hint ?? null,
           ai_error: tier2Result.error ?? null,
