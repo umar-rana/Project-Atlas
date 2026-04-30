@@ -330,7 +330,7 @@ function ProjectPickerPopover({
             className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-left text-sm text-accent-info hover:bg-accent-primary-subtle disabled:opacity-50"
           >
             <Plus size={10} />
-            Create "{search.trim()}"
+            {`Create "${search.trim()}"`}
           </button>
         ) : (
           <p className="flex items-center gap-1.5 px-2 py-1 text-xs text-text-disabled">

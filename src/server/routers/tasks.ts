@@ -701,7 +701,7 @@ export const tasksRouter = router({
       let newId_: string | null = null;
       let childRule: string | null = null;
       let chainAnchorId: string | null = null;
-      let position: number | null = null;
+      let position: string | null = null;
 
       if (task.recurrence_rule) {
         nextOccurrenceDate = computeNextOccurrence(
