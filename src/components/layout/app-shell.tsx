@@ -42,7 +42,7 @@ export function AppShell({
     >
       <div className="row-span-2 max-mobile:hidden">{rail}</div>
       <div className="col-start-2 row-start-1">{topBar}</div>
-      <main className="col-start-2 row-start-2 min-h-0 overflow-hidden">{children}</main>
+      <main id="main-content" className="col-start-2 row-start-2 min-h-0 overflow-hidden">{children}</main>
       {toaster}
     </div>
   );

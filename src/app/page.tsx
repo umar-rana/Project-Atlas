@@ -21,7 +21,7 @@ export default async function RootPage() {
   return (
     <div className="min-h-screen bg-surface-base text-text-primary font-ui">
       <Header />
-      <main>
+      <main id="main-content">
         <Hero />
         <GettingStarted />
         <WhatAtlasIs />

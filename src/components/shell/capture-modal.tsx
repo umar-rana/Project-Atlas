@@ -229,10 +229,11 @@ export function CaptureModal(): React.ReactElement {
                     <span className="truncate font-ui text-xs text-text-secondary">{f.name}</span>
                     <button
                       type="button"
+                      aria-label={`Remove ${f.name}`}
                       onClick={() => setStagedFiles((prev) => prev.filter((_, j) => j !== i))}
                       className="shrink-0 text-text-tertiary hover:text-accent-danger"
                     >
-                      <XIcon size={12} />
+                      <XIcon size={12} aria-hidden />
                     </button>
                   </li>
                 ))}

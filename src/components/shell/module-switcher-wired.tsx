@@ -104,6 +104,7 @@ export function ModuleSwitcherWired(): React.ReactElement {
         id: m.id,
         label: m.label,
         icon: m.icon,
+        href: m.href,
         shortcut: m.shortcut,
       }))}
       active={active}

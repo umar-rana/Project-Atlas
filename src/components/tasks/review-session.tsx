@@ -284,7 +284,7 @@ export function ReviewSession(): React.ReactElement {
         <div className="flex-1 mx-4">
           <div className="h-1 overflow-hidden rounded-full bg-surface-raised">
             <div
-              className="h-full rounded-full bg-accent-primary transition-all duration-300"
+              className="h-full rounded-full bg-accent-primary transition-[width] duration-300 motion-reduce:transition-none"
               style={{ width: `${progress}%` }}
             />
           </div>

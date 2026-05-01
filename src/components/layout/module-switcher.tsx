@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ export interface ModuleSwitcherItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  href?: string;
   shortcut?: string[];
   badgeCount?: number;
 }
@@ -41,33 +43,49 @@ export function ModuleSwitcher({
     >
       {brand ? <div className="mb-2 grid size-8 place-items-center">{brand}</div> : null}
       <ul className="flex flex-1 flex-col items-center gap-1">
-        {items.map(({ id, label, icon: Icon, shortcut, badgeCount }) => {
+        {items.map(({ id, label, icon: Icon, href, shortcut, badgeCount }) => {
           const isActive = active === id;
+          const sharedClass = cn(
+            "relative grid size-8 place-items-center rounded-md text-text-tertiary transition-colors duration-fast ease-standard",
+            "hover:bg-surface-hover hover:text-text-primary",
+            "focus-visible:focus-ring",
+            isActive && "bg-accent-primary-subtle text-accent-primary",
+          );
+          const badge =
+            badgeCount && badgeCount > 0 ? (
+              <span
+                aria-hidden
+                className="absolute -right-0.5 -top-0.5 inline-flex h-3 min-w-3 items-center justify-center rounded-full bg-accent-danger px-px font-mono text-4xs font-semibold leading-none text-text-on-accent"
+              >
+                {badgeCount > 99 ? "99+" : badgeCount}
+              </span>
+            ) : null;
+
           return (
             <li key={id}>
               <Tooltip content={label} shortcut={shortcut} side="right">
-                <button
-                  type="button"
-                  aria-label={label}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={() => onChange(id)}
-                  className={cn(
-                    "relative grid size-8 place-items-center rounded-md text-text-tertiary transition-colors duration-fast ease-standard",
-                    "hover:bg-surface-hover hover:text-text-primary",
-                    "focus-visible:focus-ring",
-                    isActive && "bg-accent-primary-subtle text-accent-primary",
-                  )}
-                >
-                  <Icon size={16} aria-hidden />
-                  {badgeCount && badgeCount > 0 ? (
-                    <span
-                      aria-hidden
-                      className="absolute -right-0.5 -top-0.5 inline-flex h-3 min-w-3 items-center justify-center rounded-full bg-accent-danger px-px font-mono text-4xs font-semibold leading-none text-text-on-accent"
-                    >
-                      {badgeCount > 99 ? "99+" : badgeCount}
-                    </span>
-                  ) : null}
-                </button>
+                {href ? (
+                  <Link
+                    href={href}
+                    aria-label={label}
+                    aria-current={isActive ? "page" : undefined}
+                    className={sharedClass}
+                  >
+                    <Icon size={16} aria-hidden />
+                    {badge}
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={label}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => onChange(id)}
+                    className={sharedClass}
+                  >
+                    <Icon size={16} aria-hidden />
+                    {badge}
+                  </button>
+                )}
               </Tooltip>
             </li>
           );

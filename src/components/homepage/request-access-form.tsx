@@ -59,6 +59,9 @@ export function RequestAccessForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {fieldErrors.name ?? fieldErrors.email ?? serverError ?? ""}
+      </div>
       <div className="grid gap-4 tablet:grid-cols-2">
         <div>
           <label htmlFor="waitlist-name" className="mb-1.5 block text-sm font-medium text-text-primary">
@@ -68,7 +71,7 @@ export function RequestAccessForm() {
             id="waitlist-name"
             type="text"
             autoComplete="name"
-            placeholder="Your name"
+            placeholder="Your name…"
             maxLength={100}
             value={name}
             onChange={(e) => {
@@ -77,12 +80,12 @@ export function RequestAccessForm() {
             }}
             className={[
               "w-full rounded-lg border bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary",
-              "outline-none transition-colors focus:ring-2 focus:ring-accent-primary/30",
-              fieldErrors.name ? "border-red-500" : "border-border-default focus:border-accent-primary",
+              "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent-primary/30",
+              fieldErrors.name ? "border-red-500" : "border-border-default focus-visible:border-accent-primary",
             ].join(" ")}
           />
           {fieldErrors.name && (
-            <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>
+            <p className="mt-1 text-xs text-red-500" role="alert">{fieldErrors.name}</p>
           )}
         </div>
         <div>
@@ -93,7 +96,7 @@ export function RequestAccessForm() {
             id="waitlist-email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder="you@example.com…"
             maxLength={200}
             value={email}
             onChange={(e) => {
@@ -102,12 +105,12 @@ export function RequestAccessForm() {
             }}
             className={[
               "w-full rounded-lg border bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary",
-              "outline-none transition-colors focus:ring-2 focus:ring-accent-primary/30",
-              fieldErrors.email ? "border-red-500" : "border-border-default focus:border-accent-primary",
+              "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent-primary/30",
+              fieldErrors.email ? "border-red-500" : "border-border-default focus-visible:border-accent-primary",
             ].join(" ")}
           />
           {fieldErrors.email && (
-            <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>
+            <p className="mt-1 text-xs text-red-500" role="alert">{fieldErrors.email}</p>
           )}
         </div>
       </div>
@@ -120,15 +123,15 @@ export function RequestAccessForm() {
           id="waitlist-message"
           rows={3}
           maxLength={500}
-          placeholder="How do you currently manage your tasks and notes?"
+          placeholder="How do you currently manage your tasks and notes…"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="w-full resize-none rounded-lg border border-border-default bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors focus:border-accent-primary focus:ring-2 focus:ring-accent-primary/30"
+          className="w-full resize-none rounded-lg border border-border-default bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors focus-visible:border-accent-primary focus-visible:ring-2 focus-visible:ring-accent-primary/30"
         />
       </div>
 
       {serverError && (
-        <p className="text-sm text-red-500">{serverError}</p>
+        <p className="text-sm text-red-500" role="alert">{serverError}</p>
       )}
 
       <button

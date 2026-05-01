@@ -69,7 +69,7 @@ export function ContextDetailHeader({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none"
+        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-border-focus rounded-sm"
       />
       <span className="font-mono text-2xs text-text-tertiary tabular-nums">
         {ctx.task_count} {ctx.task_count === 1 ? "task" : "tasks"}

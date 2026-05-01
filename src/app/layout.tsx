@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -25,6 +25,13 @@ const fontMono = JetBrains_Mono({
   display: "swap",
   variable: "--font-mono",
 });
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1c1c22" },
+    { media: "(prefers-color-scheme: light)", color: "#fafafc" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "Atlas",
@@ -66,6 +73,12 @@ export default async function RootLayout({
         className={`${fontUi.variable} ${fontReading.variable} ${fontMono.variable}`}
       >
         <body className="bg-surface-base text-text-primary font-ui">
+          <a
+            href="#main-content"
+            className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-2 focus-visible:top-2 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-surface-base focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus"
+          >
+            Skip to main content
+          </a>
           <ThemeProvider
             attribute="data-theme"
             defaultTheme={defaultTheme}

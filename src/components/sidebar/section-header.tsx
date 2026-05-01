@@ -24,6 +24,7 @@ export function SectionHeader({
       <button
         type="button"
         onClick={onToggle}
+        aria-expanded={expanded}
         className="inline-flex items-center gap-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary hover:text-text-secondary"
       >
         {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
