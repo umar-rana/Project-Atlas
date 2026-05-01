@@ -67,6 +67,8 @@ function TaskListItemImpl({
   const [titleDraft, setTitleDraft] = React.useState(task.title);
   const [hovered, setHovered] = React.useState(false);
   const [anyPopoverOpen, setAnyPopoverOpen] = React.useState(false);
+  const [fileDragOver, setFileDragOver] = React.useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = React.useState(false);
 
   const showQuickActions = (hovered || anyPopoverOpen || !!quickActionsFocused) && !inTrash;
 
@@ -156,12 +158,46 @@ function TaskListItemImpl({
         onDragStart?.(task.id);
       }}
       onDragOver={(e) => {
-        e.preventDefault();
-        onDragOver?.(task.id);
+        if (!inTrash && e.dataTransfer.types.includes("Files")) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setFileDragOver(true);
+        } else {
+          e.preventDefault();
+          onDragOver?.(task.id);
+        }
       }}
-      onDrop={(e) => {
-        e.preventDefault();
-        onDrop?.(task.id);
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setFileDragOver(false);
+        }
+      }}
+      onDrop={async (e) => {
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          setFileDragOver(false);
+          if (inTrash) return;
+          const files = Array.from(e.dataTransfer.files);
+          setIsUploadingFiles(true);
+          try {
+            for (const file of files) {
+              const form = new FormData();
+              form.append("file", file);
+              form.append("task_id", task.id);
+              form.append("parent_type", "Task");
+              form.append("parent_id", task.id);
+              await fetch("/api/attachments/upload", { method: "POST", body: form });
+            }
+            utils.tasks.list.invalidate();
+            utils.attachments.byTaskId.invalidate({ task_id: task.id });
+          } finally {
+            setIsUploadingFiles(false);
+          }
+        } else {
+          e.preventDefault();
+          onDrop?.(task.id);
+        }
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -177,15 +213,27 @@ function TaskListItemImpl({
         }
       }}
       className={cn(
-        "group flex cursor-pointer items-center gap-2 border-b border-border-subtle px-3 py-2 transition-colors",
+        "group relative flex cursor-pointer items-center gap-2 border-b border-border-subtle px-3 py-2 transition-colors",
         "hover:bg-surface-hover",
         selected && "bg-accent-primary-subtle",
         isMultiSelected && "bg-accent-primary-subtle",
         isFocused && "ring-1 ring-inset ring-border-focus",
         task.is_blocked && "opacity-50",
         isSubtask && "pl-6",
+        fileDragOver && "ring-2 ring-inset ring-accent-info bg-accent-info-muted",
       )}
     >
+      {fileDragOver && (
+        <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-accent-info-muted/60 font-ui text-xs font-medium text-accent-info">
+          <Paperclip size={12} className="mr-1" />
+          Drop to attach
+        </span>
+      )}
+      {isUploadingFiles && !fileDragOver && (
+        <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-surface-base/70 font-ui text-xs text-text-tertiary">
+          Attaching…
+        </span>
+      )}
       <span className="cursor-grab text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
         <GripVertical size={12} aria-hidden />
       </span>
