@@ -144,11 +144,19 @@ export const worklogsRouter = router({
             duration_minutes: number | null;
           };
 
+      const userLocale = {
+        date_format: ctx.user.date_format ?? "DD/MM/YYYY",
+        time_format: (ctx.user.time_format as "12h" | "24h") ?? "12h",
+        number_format: ctx.user.number_format ?? "1,234.56",
+        currency_code: ctx.user.currency_code ?? "PKR",
+        currency_symbol: ctx.user.currency_symbol ?? "₨",
+      };
+
       const auditItems: FeedItem[] = auditLogs.map((entry) => ({
         type: "audit" as const,
         id: entry.id,
         created_at: entry.created_at,
-        sentence: renderAuditEntry(entry),
+        sentence: renderAuditEntry(entry, userLocale),
       }));
 
       const worklogItems: FeedItem[] = workLogs.map((entry) => ({

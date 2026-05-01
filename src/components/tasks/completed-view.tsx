@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
 import { CheckCircle2, RotateCcw, Trash2, Flame } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/lib/toast";
 import { useTasksStore } from "@/lib/tasks/store";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDateTime as localeFormatDateTime } from "@/core/locale/formatters";
 
 type DateRange = "today" | "week" | "month" | "year" | "all" | "custom";
 type SortBy = "completed_at" | "title" | "due_date";
@@ -32,6 +33,7 @@ const DATE_RANGE_LABELS: Record<DateRange, string> = {
 };
 
 export function CompletedView(): React.ReactElement {
+  const locale = useLocale();
   const utils = trpc.useUtils();
   const [dateRange, setDateRange] = React.useState<DateRange>("week");
   const [customFrom, setCustomFrom] = React.useState<string>("");
@@ -292,7 +294,7 @@ export function CompletedView(): React.ReactElement {
                 <div className="flex shrink-0 items-center gap-2">
                   {completedAt && (
                     <span className="font-ui text-2xs text-text-disabled tabular-nums">
-                      {format(completedAt, "MMM d, HH:mm")}
+                      {localeFormatDateTime(completedAt, locale)}
                     </span>
                   )}
                   <button

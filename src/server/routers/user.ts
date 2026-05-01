@@ -3,6 +3,8 @@ import { db } from "@/core/db";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { logActivity } from "@/core/audit";
+import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS } from "@/core/locale/presets";
 
 const EMAIL_OR_DOMAIN_RE = /^([^\s@]+@[^\s@]+\.[^\s@]+|(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+)$/;
 
@@ -84,6 +86,71 @@ export const userRouter = router({
         where: { id: ctx.user.id },
         data: coreFields,
       });
+      return updated;
+    }),
+
+  updateLocale: protectedProcedure
+    .input(
+      z.union([
+        z.object({
+          preset: z.enum(["pakistan", "us", "uk"]),
+        }),
+        z.object({
+          preset: z.literal("custom"),
+          date_format: z.enum(DATE_FORMAT_OPTIONS as [string, ...string[]]).optional(),
+          time_format: z.enum(["12h", "24h"]).optional(),
+          number_format: z.enum(
+            NUMBER_FORMAT_OPTIONS.map((o) => o.value) as [string, ...string[]],
+          ).optional(),
+          currency_code: z.string().max(10).optional(),
+          currency_symbol: z.string().max(5).optional(),
+        }),
+      ]),
+    )
+    .mutation(async ({ ctx, input }) => {
+      let data: Record<string, string>;
+
+      if (input.preset !== "custom") {
+        const preset = LOCALE_PRESETS.find((p) => p.key === input.preset);
+        if (!preset) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown preset" });
+        data = {
+          locale_preset: preset.key,
+          date_format: preset.settings.date_format,
+          time_format: preset.settings.time_format,
+          number_format: preset.settings.number_format,
+          currency_code: preset.settings.currency_code,
+          currency_symbol: preset.settings.currency_symbol,
+        };
+      } else {
+        const customInput = input as {
+          preset: "custom";
+          date_format?: string;
+          time_format?: string;
+          number_format?: string;
+          currency_code?: string;
+          currency_symbol?: string;
+        };
+        data = { locale_preset: "custom" };
+        if (customInput.date_format) data.date_format = customInput.date_format;
+        if (customInput.time_format) data.time_format = customInput.time_format;
+        if (customInput.number_format) data.number_format = customInput.number_format;
+        if (customInput.currency_code) data.currency_code = customInput.currency_code;
+        if (customInput.currency_symbol) data.currency_symbol = customInput.currency_symbol;
+      }
+
+      const updated = await db.user.update({
+        where: { id: ctx.user.id },
+        data,
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "user",
+        entity_id: ctx.user.id,
+        action: "locale_changed",
+        meta: { preset: input.preset },
+      });
+
       return updated;
     }),
 });

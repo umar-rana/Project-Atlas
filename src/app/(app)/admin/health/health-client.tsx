@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { useLocale } from "@/core/locale/hooks";
+import { formatTime } from "@/core/locale/formatters";
 
 const CHECK_LABELS: Record<string, string> = {
   database: "Database",
@@ -56,6 +58,7 @@ function StatusIcon({ ok }: { ok: boolean }) {
 }
 
 export function HealthClient({ userId: _userId }: { userId: string }) {
+  const locale = useLocale();
   const { data, isLoading, refetch, isFetching } = trpc.health.full.useQuery(undefined, {
     refetchOnWindowFocus: false,
     staleTime: 0,
@@ -72,7 +75,7 @@ export function HealthClient({ userId: _userId }: { userId: string }) {
             <h1 className="text-2xl font-semibold tracking-tight text-text-primary">System Health</h1>
             {data?.checkedAt && (
               <p className="mt-1 text-xs text-text-tertiary">
-                Last checked: {new Date(data.checkedAt as string).toLocaleTimeString()}
+                Last checked: {formatTime(new Date(data.checkedAt as string), locale)}
               </p>
             )}
           </div>

@@ -5,8 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, RefreshCw } from "lucide-react";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 
 export function CaptureLogsClient(): React.ReactElement {
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const filterOverrides = searchParams.get("filter") === "overrides";
   const [overridesOnly, setOverridesOnly] = React.useState(filterOverrides);
@@ -173,7 +176,7 @@ export function CaptureLogsClient(): React.ReactElement {
                   </td>
                   <td className="px-4 py-2 capitalize text-text-secondary">{entry.source}</td>
                   <td className="whitespace-nowrap px-4 py-2 text-text-tertiary">
-                    {new Date(entry.created_at).toLocaleDateString()}
+                    {localeFormatDate(entry.created_at, locale)}
                   </td>
                 </tr>
               ))}

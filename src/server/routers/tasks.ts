@@ -893,13 +893,8 @@ export const tasksRouter = router({
 
       const auditMeta: Record<string, unknown> = {};
       if (nextOccurrenceId && nextOccurrenceDate) {
-        const dateStr = nextOccurrenceDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
         auditMeta.next_occurrence_id = nextOccurrenceId;
-        auditMeta.message = `Completed; next occurrence created for ${dateStr}`;
+        auditMeta.next_occurrence_date = nextOccurrenceDate.toISOString();
       }
 
       await logActivity({

@@ -20,8 +20,8 @@ import {
   startOfDay,
   isFriday,
   isMonday,
-  format,
 } from "date-fns";
+import { formatWeekdayAbbrev } from "@/core/locale/formatters";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
@@ -157,7 +157,7 @@ function QuickDatePopover({
             className="flex w-full items-center justify-between rounded-sm px-2 py-1 text-left text-sm text-text-primary hover:bg-accent-primary-subtle disabled:opacity-50"
           >
             <span>{opt.label}</span>
-            <span className="text-xs text-text-tertiary">{format(opt.date, "EEE")}</span>
+            <span className="text-xs text-text-tertiary">{formatWeekdayAbbrev(opt.date)}</span>
           </button>
         ))}
         {showCustom ? (

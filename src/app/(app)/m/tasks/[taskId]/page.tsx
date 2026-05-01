@@ -4,9 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ChevronLeft, Flag } from "lucide-react";
-import { format } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 
 interface TaskDetailData {
   id: string;
@@ -24,6 +25,7 @@ interface TaskDetailData {
 }
 
 export default function MobileTaskDetailPage() {
+  const locale = useLocale();
   const { taskId } = useParams<{ taskId: string }>();
   const utils = trpc.useUtils();
 
@@ -142,7 +144,7 @@ export default function MobileTaskDetailPage() {
               <div className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2.5">
                 <span className="font-ui text-sm text-text-secondary">Due</span>
                 <span className="font-ui text-sm font-medium text-text-primary">
-                  {format(dueDate, "MMMM d, yyyy")}
+                  {localeFormatDate(dueDate, locale)}
                 </span>
               </div>
             ) : null}
@@ -151,7 +153,7 @@ export default function MobileTaskDetailPage() {
               <div className="flex items-center justify-between rounded-lg bg-surface-raised px-3 py-2.5">
                 <span className="font-ui text-sm text-text-secondary">Deferred until</span>
                 <span className="font-ui text-sm font-medium text-text-primary">
-                  {format(deferDate, "MMMM d, yyyy")}
+                  {localeFormatDate(deferDate, locale)}
                 </span>
               </div>
             ) : null}

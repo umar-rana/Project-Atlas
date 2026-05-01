@@ -6,6 +6,8 @@ import { trpc } from "@/lib/trpc/client";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { useLocale } from "@/core/locale/hooks";
+import { formatTime } from "@/core/locale/formatters";
 
 type SyncState = "synced" | "syncing" | "error" | "idle";
 
@@ -44,6 +46,7 @@ const STATE_LABELS: Record<SyncState, string> = {
 
 
 export function SyncStatus(): React.ReactElement {
+  const locale = useLocale();
   const { data, state, refetch, isFetching, isError } = useSyncStatus();
   const [open, setOpen] = React.useState(false);
 
@@ -103,7 +106,7 @@ export function SyncStatus(): React.ReactElement {
         </div>
         {data?.ts && (
           <p className="mt-2 font-ui text-2xs text-text-tertiary">
-            Last checked {new Date(data.ts).toLocaleTimeString()}
+            Last checked {formatTime(new Date(data.ts), locale)}
           </p>
         )}
         <a

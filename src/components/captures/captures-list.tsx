@@ -4,6 +4,8 @@ import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
 import { Search, X, Tag, Inbox, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = React.useState(value);
@@ -12,12 +14,6 @@ function useDebounce<T>(value: T, delay: number): T {
     return () => clearTimeout(id);
   }, [value, delay]);
   return debounced;
-}
-
-function formatDate(date: Date | string | null | undefined): string {
-  if (!date) return "";
-  const d = new Date(date);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 interface CaptureRow {
@@ -45,6 +41,7 @@ function CaptureCard({
   activeTag,
   onTagClick,
 }: CaptureCardProps) {
+  const locale = useLocale();
   const displayTitle = title ?? raw_text;
   const isRawFallback = !title;
 
@@ -70,14 +67,14 @@ function CaptureCard({
               AI
             </span>
           )}
-          <span className="font-ui text-xs text-text-tertiary">{formatDate(created_at)}</span>
+          <span className="font-ui text-xs text-text-tertiary">{localeFormatDate(created_at, locale)}</span>
         </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {due_date && (
           <span className="font-ui text-xs text-text-secondary">
-            Due {formatDate(due_date)}
+            Due {localeFormatDate(due_date, locale)}
           </span>
         )}
         {tags.map((tag) => (

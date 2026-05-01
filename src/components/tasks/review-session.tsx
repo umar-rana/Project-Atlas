@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 import {
   CheckCircle2,
   PauseCircle,
@@ -28,6 +30,7 @@ type SessionSummary = {
 };
 
 export function ReviewSession(): React.ReactElement {
+  const locale = useLocale();
   const router = useRouter();
   const utils = trpc.useUtils();
 
@@ -416,7 +419,7 @@ export function ReviewSession(): React.ReactElement {
                             {t.title}
                             {t.due_date && (
                               <span className="ml-auto font-ui text-2xs text-text-tertiary">
-                                {format(new Date(t.due_date), "MMM d")}
+                                {localeFormatDate(t.due_date, locale)}
                               </span>
                             )}
                           </li>

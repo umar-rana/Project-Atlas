@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 
 type Step =
   | "loading"
@@ -20,6 +22,7 @@ interface FolderItem {
 }
 
 export function DriveWizard({ onClose }: { onClose: () => void }) {
+  const locale = useLocale();
   const [step, setStep] = useState<Step>("loading");
   const [driveType, setDriveType] = useState<"personal" | "shared">("personal");
   const [selectedSharedDrive, setSelectedSharedDrive] = useState<{ id: string; name: string } | null>(null);
@@ -129,11 +132,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
             {linkStatus?.config?.verified_at ? (
               <span>
                 Last verified{" "}
-                {new Date(linkStatus.config.verified_at).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+                {localeFormatDate(linkStatus.config.verified_at, locale)}
               </span>
             ) : linkStatus?.config?.verified ? (
               <span className="text-accent-success">Verified</span>

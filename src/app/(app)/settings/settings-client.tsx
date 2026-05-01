@@ -24,7 +24,12 @@ import {
   X,
   Info,
   Package,
+  Sliders,
 } from "lucide-react";
+import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS } from "@/core/locale/presets";
+import type { LocalePresetKey } from "@/core/locale/presets";
+import { formatDate, formatTime, formatNumber, formatCurrency } from "@/core/locale/formatters";
+import type { LocaleSettings } from "@/core/locale/formatters";
 import { cn } from "@/lib/utils";
 
 const DriveWizard = dynamic(
@@ -42,6 +47,7 @@ const DriveWizard = dynamic(
 type Section =
   | "profile"
   | "appearance"
+  | "preferences"
   | "capture"
   | "tasks"
   | "integrations"
@@ -54,6 +60,7 @@ type Section =
 const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: UserIcon },
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "preferences", label: "Preferences", icon: Sliders },
   { id: "capture", label: "Capture", icon: Inbox },
   { id: "tasks", label: "Tasks", icon: CheckSquare },
   { id: "integrations", label: "Integrations", icon: Link2 },
@@ -1842,6 +1849,228 @@ function TasksSection() {
   );
 }
 
+function LocalePreviewBlock({ locale }: { locale: LocaleSettings }) {
+  const sampleDate = new Date(2025, 11, 31, 14, 5, 0);
+  const sampleNumber = 1234567.89;
+  const sampleCurrency = 9999.5;
+
+  return (
+    <div className="grid grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-surface-sunken p-4">
+      <div>
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Date</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatDate(sampleDate, locale)}</p>
+      </div>
+      <div>
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Time</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatTime(sampleDate, locale)}</p>
+      </div>
+      <div>
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Number</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatNumber(sampleNumber, locale)}</p>
+      </div>
+      <div>
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Currency</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatCurrency(sampleCurrency, locale)}</p>
+      </div>
+    </div>
+  );
+}
+
+function PreferencesSection({ initialUser }: { initialUser: User }) {
+  const utils = trpc.useUtils();
+  const { data: rawUserData } = trpc.user.me.useQuery(undefined, { refetchOnWindowFocus: false });
+  const user = (rawUserData as User | undefined) ?? initialUser;
+
+  const serverPreset = (user.locale_preset ?? "pakistan") as LocalePresetKey;
+
+  const [localPreset, setLocalPreset] = useState<LocalePresetKey>(serverPreset);
+  const [localLocale, setLocalLocale] = useState<LocaleSettings>({
+    date_format: user.date_format ?? "DD/MM/YYYY",
+    time_format: (user.time_format as "12h" | "24h") ?? "12h",
+    number_format: user.number_format ?? "1,234.56",
+    currency_code: user.currency_code ?? "PKR",
+    currency_symbol: user.currency_symbol ?? "₨",
+  });
+
+  const [showCustom, setShowCustom] = useState(serverPreset === "custom");
+  const [saved, setSaved] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalPreset(serverPreset);
+    setLocalLocale({
+      date_format: user.date_format ?? "DD/MM/YYYY",
+      time_format: (user.time_format as "12h" | "24h") ?? "12h",
+      number_format: user.number_format ?? "1,234.56",
+      currency_code: user.currency_code ?? "PKR",
+      currency_symbol: user.currency_symbol ?? "₨",
+    });
+    setShowCustom(serverPreset === "custom");
+  }, [serverPreset, user.date_format, user.time_format, user.number_format, user.currency_code, user.currency_symbol]);
+
+  const updateLocale = trpc.user.updateLocale.useMutation({
+    onSuccess: () => {
+      utils.user.me.invalidate();
+      setSaved("Saved");
+      setTimeout(() => setSaved(null), 2000);
+    },
+  });
+
+  function handlePresetChange(preset: LocalePresetKey) {
+    setLocalPreset(preset);
+    if (preset === "custom") {
+      setShowCustom(true);
+      return;
+    }
+    const p = LOCALE_PRESETS.find((lp) => lp.key === preset);
+    if (!p) return;
+    setLocalLocale(p.settings);
+    setShowCustom(false);
+    updateLocale.mutate({ preset: preset as "pakistan" | "us" | "uk" });
+  }
+
+  function handleCustomSave() {
+    updateLocale.mutate({
+      preset: "custom",
+      date_format: localLocale.date_format,
+      time_format: localLocale.time_format as "12h" | "24h",
+      number_format: localLocale.number_format,
+      currency_code: localLocale.currency_code,
+      currency_symbol: localLocale.currency_symbol,
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <SectionHeader
+        title="Preferences"
+        description="Control how dates, numbers, and currencies are displayed throughout Atlas."
+      />
+
+      {saved && (
+        <div className="rounded-lg bg-accent-success-muted px-4 py-2 font-ui text-sm text-accent-success">
+          {saved}
+        </div>
+      )}
+
+      <div>
+        <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Locale preset</label>
+        <select
+          className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+          value={localPreset}
+          onChange={(e) => handlePresetChange(e.target.value as LocalePresetKey)}
+        >
+          {LOCALE_PRESETS.map((p) => (
+            <option key={p.key} value={p.key}>{p.label}</option>
+          ))}
+        </select>
+        <p className="mt-1 font-ui text-xs text-text-tertiary">
+          Choose a preset to apply locale defaults automatically, or select Custom to configure each setting individually.
+        </p>
+      </div>
+
+      <div>
+        <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Live preview</p>
+        <LocalePreviewBlock locale={localLocale} />
+      </div>
+
+      {(showCustom || localPreset === "custom") && (
+        <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
+          <h3 className="mb-4 font-ui text-sm font-semibold text-text-primary">Custom locale settings</h3>
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Date format</label>
+                <select
+                  className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+                  value={localLocale.date_format}
+                  onChange={(e) => setLocalLocale((l) => ({ ...l, date_format: e.target.value }))}
+                >
+                  {DATE_FORMAT_OPTIONS.map((f) => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Time format</label>
+                <div className="flex gap-2">
+                  {TIME_FORMAT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setLocalLocale((l) => ({ ...l, time_format: opt.value as "12h" | "24h" }))}
+                      className={cn(
+                        "flex-1 rounded-md border px-3 py-2 font-ui text-sm font-medium transition-colors",
+                        localLocale.time_format === opt.value
+                          ? "border-accent-primary bg-accent-primary-muted text-accent-primary"
+                          : "border-border-default bg-surface-overlay text-text-secondary hover:bg-surface-hover",
+                      )}
+                    >
+                      {opt.value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Number format</label>
+              <select
+                className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+                value={localLocale.number_format}
+                onChange={(e) => setLocalLocale((l) => ({ ...l, number_format: e.target.value }))}
+              >
+                {NUMBER_FORMAT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Currency code</label>
+                <input
+                  className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-mono text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+                  value={localLocale.currency_code}
+                  maxLength={10}
+                  onChange={(e) => setLocalLocale((l) => ({ ...l, currency_code: e.target.value }))}
+                  placeholder="PKR"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Currency symbol</label>
+                <input
+                  className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-mono text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+                  value={localLocale.currency_symbol}
+                  maxLength={5}
+                  onChange={(e) => setLocalLocale((l) => ({ ...l, currency_symbol: e.target.value }))}
+                  placeholder="₨"
+                />
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Preview with custom settings</p>
+              <LocalePreviewBlock locale={localLocale} />
+            </div>
+            <button
+              onClick={handleCustomSave}
+              disabled={updateLocale.isPending}
+              className="self-start rounded-md bg-accent-primary px-4 py-2 font-ui text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {updateLocale.isPending ? "Saving…" : "Save custom locale"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!showCustom && localPreset !== "custom" && (
+        <button
+          onClick={() => setShowCustom(true)}
+          className="self-start rounded-md border border-border-default px-4 py-2 font-ui text-sm text-text-secondary hover:bg-surface-hover"
+        >
+          Custom…
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface SettingsClientProps {
   user: User;
   initialSection?: string;
@@ -1850,7 +2079,7 @@ interface SettingsClientProps {
   driveError?: string;
 }
 
-const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "capture", "tasks", "integrations", "ai", "backups", "storage", "data", "account"]);
+const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "preferences", "capture", "tasks", "integrations", "ai", "backups", "storage", "data", "account"]);
 
 function resolveSection(raw: string | undefined, fallback: Section): Section {
   if (raw && VALID_SECTIONS.has(raw as Section)) return raw as Section;
@@ -1997,6 +2226,7 @@ export function SettingsClient({
     <div className="h-full overflow-y-auto p-6">
       {section === "profile" && <ProfileSection initialUser={user} />}
       {section === "appearance" && <AppearanceSection />}
+      {section === "preferences" && <PreferencesSection initialUser={user} />}
       {section === "capture" && <CaptureSection userId={user.id} userEmail={user.email} />}
       {section === "tasks" && <TasksSection />}
       {section === "integrations" && (

@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@/lib/trpc/client";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDateTime } from "@/core/locale/formatters";
 
 type WaitlistStatus = "pending" | "invited" | "dismissed";
 
@@ -26,6 +28,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function WaitlistClient() {
+  const locale = useLocale();
   const { data: entries, isLoading, refetch } = trpc.waitlist.adminList.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
@@ -91,7 +94,7 @@ export function WaitlistClient() {
                       <p className="mt-2 text-sm text-text-tertiary line-clamp-2">{entry.message}</p>
                     )}
                     <p className="mt-2 text-xs text-text-tertiary">
-                      {new Date(entry.created_at).toLocaleString()}
+                      {formatDateTime(new Date(entry.created_at), locale)}
                     </p>
                   </div>
 

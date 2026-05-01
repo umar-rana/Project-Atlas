@@ -1,4 +1,13 @@
 import { RRule, Options as RRuleOptions } from "rrule";
+import { formatDateUTCSafe, type LocaleSettings } from "@/core/locale/formatters";
+
+const RRULE_FALLBACK_LOCALE: LocaleSettings = {
+  date_format: "MMM D, YYYY",
+  time_format: "12h",
+  number_format: "1,234.56",
+  currency_code: "USD",
+  currency_symbol: "$",
+};
 
 export type RecurrenceAnchor = "due_date" | "completion_date";
 
@@ -79,7 +88,7 @@ const FREQ_LABEL: Record<number, string> = {
  *   "Daily · From completion date · No end"
  *   "Weekly on Mon, Wed, Fri · From due date · Ends Jan 1, 2026"
  */
-export function describeRule(rule: string, anchor: RecurrenceAnchor): string {
+export function describeRule(rule: string, anchor: RecurrenceAnchor, locale?: LocaleSettings): string {
   try {
     const rruleStr = rule.startsWith("RRULE:") ? rule : `RRULE:${rule}`;
     const rrule = RRule.fromString(rruleStr);
@@ -117,7 +126,7 @@ export function describeRule(rule: string, anchor: RecurrenceAnchor): string {
       endDesc = `After ${opts.count} time${opts.count === 1 ? "" : "s"}`;
     } else if (opts.until) {
       const d = opts.until instanceof Date ? opts.until : new Date(opts.until as string);
-      endDesc = `Until ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+      endDesc = `Until ${formatDateUTCSafe(d, locale ?? RRULE_FALLBACK_LOCALE)}`;
     }
 
     return `${freqDesc} · ${anchorDesc} · ${endDesc}`;

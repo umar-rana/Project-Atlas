@@ -2,21 +2,22 @@
 
 import * as React from "react";
 import { TaskList } from "./task-list";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate, formatWeekdayFull } from "@/core/locale/formatters";
 
-function getTomorrowDate(): { iso: string; label: string } {
+function getTomorrowDate(): { iso: string; d: Date } {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   d.setHours(12, 0, 0, 0);
-  const label = d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-  return { iso: d.toISOString(), label };
+  return { iso: d.toISOString(), d };
 }
 
 export function TomorrowPerspective(): React.ReactElement {
-  const { iso, label } = getTomorrowDate();
+  const locale = useLocale();
+  const { iso, d } = getTomorrowDate();
+  const weekday = formatWeekdayFull(d);
+  const datePart = formatDate(d, locale);
+  const label = `${weekday}, ${datePart}`;
 
   return (
     <TaskList

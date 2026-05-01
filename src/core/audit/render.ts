@@ -1,13 +1,21 @@
-import { format } from "date-fns";
 import type { AuditLog } from "@prisma/client";
+import { formatDateUTCSafe, type LocaleSettings } from "@/core/locale/formatters";
 
 type DiffEntry = { from: unknown; to: unknown };
 type Diff = Record<string, DiffEntry>;
 
-function fmtDate(val: unknown): string {
+const FALLBACK_LOCALE: LocaleSettings = {
+  date_format: "DD/MM/YYYY",
+  time_format: "12h",
+  number_format: "1,234.56",
+  currency_code: "PKR",
+  currency_symbol: "₨",
+};
+
+function fmtDate(val: unknown, locale: LocaleSettings): string {
   if (!val) return "none";
   try {
-    return format(new Date(val as string), "MMM d, yyyy");
+    return formatDateUTCSafe(new Date(val as string), locale);
   } catch {
     return String(val);
   }
@@ -22,7 +30,7 @@ function fmtMinutes(val: unknown): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
-function renderDiffField(field: string, entry: DiffEntry): string | null {
+function renderDiffField(field: string, entry: DiffEntry, locale: LocaleSettings): string | null {
   const { from, to } = entry;
 
   switch (field) {
@@ -41,9 +49,9 @@ function renderDiffField(field: string, entry: DiffEntry): string | null {
     case "flagged":
       return to ? "Flagged this task" : "Unflagged this task";
     case "due_date":
-      return to ? `Set due date to ${fmtDate(to)}` : "Removed due date";
+      return to ? `Set due date to ${fmtDate(to, locale)}` : "Removed due date";
     case "defer_date":
-      return to ? `Set defer date to ${fmtDate(to)}` : "Removed defer date";
+      return to ? `Set defer date to ${fmtDate(to, locale)}` : "Removed defer date";
     case "estimated_minutes":
       return to ? `Set estimate to ${fmtMinutes(to)}` : "Removed estimate";
     case "project_id":
@@ -67,7 +75,8 @@ function renderDiffField(field: string, entry: DiffEntry): string | null {
   }
 }
 
-export function renderAuditEntry(entry: AuditLog): string {
+export function renderAuditEntry(entry: AuditLog, locale?: LocaleSettings): string {
+  const loc = locale ?? FALLBACK_LOCALE;
   const action = entry.action;
   const meta = entry.meta as Record<string, unknown> | null;
 
@@ -77,6 +86,10 @@ export function renderAuditEntry(entry: AuditLog): string {
   }
 
   if (action === "complete") {
+    const nextDate = meta?.next_occurrence_date as string | undefined;
+    if (nextDate) {
+      return `Completed; next occurrence created for ${fmtDate(nextDate, loc)}`;
+    }
     const msg = meta?.message as string | undefined;
     if (msg) return msg;
     return "Marked as completed";
@@ -117,7 +130,7 @@ export function renderAuditEntry(entry: AuditLog): string {
 
     const sentences: string[] = [];
     for (const [field, change] of Object.entries(diff)) {
-      const sentence = renderDiffField(field, change);
+      const sentence = renderDiffField(field, change, loc);
       if (sentence) sentences.push(sentence);
     }
 

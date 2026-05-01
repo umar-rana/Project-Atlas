@@ -5,8 +5,10 @@ import { trpc } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@/lib/trpc/types";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Pencil, Trash2, X, Check, Plus, Loader2 } from "lucide-react";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate, formatDateUTCSafe } from "@/core/locale/formatters";
 
-type Capture = RouterOutputs["capture"]["list"][number];
+type Capture = RouterOutputs["capture"]["list"]["captures"][number];
 
 function formatDateForInput(value: Date | string | null): string {
   if (!value) return "";
@@ -17,13 +19,6 @@ function formatDateForInput(value: Date | string | null): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function formatDateForDisplay(value: Date | string | null): string {
-  if (!value) return "";
-  const d = new Date(value);
-  return new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-  ).toLocaleDateString(undefined, { timeZone: "UTC" });
-}
 
 function CaptureEditForm({
   capture,
@@ -194,6 +189,7 @@ function CaptureEditForm({
 }
 
 function CaptureCard({ capture: initialCapture }: { capture: Capture }) {
+  const locale = useLocale();
   const [capture, setCapture] = React.useState(initialCapture);
   const [editing, setEditing] = React.useState(false);
   const [deleted, setDeleted] = React.useState(false);
@@ -242,11 +238,11 @@ function CaptureCard({ capture: initialCapture }: { capture: Capture }) {
             )}
             {capture.due_date && (
               <span className="font-ui text-xs text-text-tertiary">
-                Due {formatDateForDisplay(capture.due_date)}
+                Due {formatDateUTCSafe(capture.due_date, locale)}
               </span>
             )}
             <span className="font-ui text-xs text-text-tertiary">
-              {new Date(capture.created_at).toLocaleDateString()}
+              {localeFormatDate(capture.created_at, locale)}
             </span>
           </div>
 
@@ -327,7 +323,7 @@ export function SavedCapturesClient(): React.ReactElement {
           <Loader2 size={14} className="animate-spin" />
           Loading captures…
         </div>
-      ) : !captures.data || captures.data.length === 0 ? (
+      ) : !captures.data || captures.data.captures.length === 0 ? (
         <div className="rounded-xl border border-border-default bg-surface-raised p-8 text-center">
           <p className="font-ui text-sm text-text-tertiary">No saved captures yet.</p>
           <p className="mt-1 font-ui text-xs text-text-tertiary">
@@ -336,7 +332,7 @@ export function SavedCapturesClient(): React.ReactElement {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {captures.data.map((capture) => (
+          {captures.data.captures.map((capture) => (
             <CaptureCard key={capture.id} capture={capture} />
           ))}
         </div>

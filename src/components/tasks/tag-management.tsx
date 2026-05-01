@@ -34,6 +34,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 
 type SortKey = "usage" | "name" | "last_used";
 type SortDir = "asc" | "desc";
@@ -458,6 +460,7 @@ function CreateTagDialog({ onClose }: { onClose: () => void }) {
 }
 
 export function TagManagement(): React.ReactElement {
+  const locale = useLocale();
   const stats = trpc.tags.usageStats.useQuery();
   const [search, setSearch] = React.useState("");
   const [sortKey, setSortKey] = React.useState<SortKey>("usage");
@@ -755,13 +758,7 @@ export function TagManagement(): React.ReactElement {
                     {tag.usage_count}
                   </td>
                   <td className="py-1.5 pl-4 text-right font-ui text-xs text-text-tertiary">
-                    {tag.last_used_at
-                      ? new Date(tag.last_used_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })
-                      : "—"}
+                    {tag.last_used_at ? localeFormatDate(tag.last_used_at, locale) : "—"}
                   </td>
                   <td className="py-1.5 pl-3 text-right">
                     <DropdownMenu>

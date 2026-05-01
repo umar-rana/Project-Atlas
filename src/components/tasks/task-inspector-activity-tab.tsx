@@ -1,23 +1,28 @@
 "use client";
 
 import * as React from "react";
-import { isToday, isYesterday, format } from "date-fns";
+import { isToday, isYesterday } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
 import { WorklogEntry } from "./worklog-entry";
 import { WorklogCreateForm } from "./worklog-create-form";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate, formatTime } from "@/core/locale/formatters";
+import type { LocaleSettings } from "@/core/locale/formatters";
 
 interface TaskInspectorActivityTabProps {
   taskId: string;
 }
 
-function formatTimestamp(date: Date | string): string {
+function formatTimestamp(date: Date | string, locale: LocaleSettings): string {
   const d = new Date(date);
-  if (isToday(d)) return `Today ${format(d, "h:mm a")}`;
-  if (isYesterday(d)) return `Yesterday ${format(d, "h:mm a")}`;
-  return format(d, "MMM d h:mm a");
+  const timePart = formatTime(d, locale);
+  if (isToday(d)) return `Today ${timePart}`;
+  if (isYesterday(d)) return `Yesterday ${timePart}`;
+  return `${formatDate(d, locale)} ${timePart}`;
 }
 
 export function TaskInspectorActivityTab({ taskId }: TaskInspectorActivityTabProps) {
+  const locale = useLocale();
   const utils = trpc.useUtils();
 
   const feed = trpc.worklogs.feed.useQuery({ task_id: taskId, limit: 100 });
@@ -113,7 +118,7 @@ export function TaskInspectorActivityTab({ taskId }: TaskInspectorActivityTabPro
                 return (
                   <li key={item.id}>
                     <div className="mb-0.5 font-ui text-2xs text-text-tertiary">
-                      {formatTimestamp(item.created_at)}
+                      {formatTimestamp(item.created_at, locale)}
                     </div>
                     <WorklogEntry
                       id={item.id}
@@ -139,7 +144,7 @@ export function TaskInspectorActivityTab({ taskId }: TaskInspectorActivityTabPro
                   <div className="min-w-0 flex-1">
                     <p className="font-ui text-xs text-text-secondary">{item.sentence}</p>
                     <p className="mt-0.5 font-ui text-2xs text-text-tertiary">
-                      {formatTimestamp(item.created_at)}
+                      {formatTimestamp(item.created_at, locale)}
                     </p>
                   </div>
                 </li>

@@ -12,6 +12,7 @@ import {
   type PresetName,
 } from "@/core/recurrence/preset-rules";
 import { buildRRule, describeRule, parseRuleToFormState } from "@/core/recurrence/rrule-helpers";
+import { useLocale } from "@/core/locale/hooks";
 
 interface RecurrenceFormProps {
   taskId: string;
@@ -51,6 +52,7 @@ export function RecurrenceForm({
   disabled,
   onChanged,
 }: RecurrenceFormProps) {
+  const locale = useLocale();
   const utils = trpc.useUtils();
 
   const setRecurrence = trpc.tasks.setRecurrence.useMutation({
@@ -148,7 +150,7 @@ export function RecurrenceForm({
 
   const summary =
     recurrenceRule
-      ? describeRule(recurrenceRule, currentAnchor)
+      ? describeRule(recurrenceRule, currentAnchor, locale)
       : null;
 
   const isPending = setRecurrence.isPending || removeRecurrence.isPending;

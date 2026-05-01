@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight, RefreshCw, Paperclip } from "lucide-react";
-import { format, isPast, isToday, isTomorrow, addDays, startOfDay } from "date-fns";
+import { isPast, isToday, isTomorrow, addDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc/client";
@@ -12,6 +12,9 @@ import { describeRule } from "@/core/recurrence/rrule-helpers";
 import { RecurrenceQuickPopover } from "./recurrence-quick-popover";
 import { TaskRowQuickActions } from "./task-row-quick-actions";
 import { colorDotClass } from "./folder-tree-node";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate } from "@/core/locale/formatters";
+import type { LocaleSettings } from "@/core/locale/formatters";
 
 interface TaskListItemProps {
   task: TaskRow;
@@ -36,11 +39,11 @@ function dueColorClass(due: Date | null): string {
   return "text-text-tertiary";
 }
 
-function dueLabel(due: Date | null): string | null {
+function dueLabel(due: Date | null, locale: LocaleSettings): string | null {
   if (!due) return null;
   if (isToday(due)) return "Today";
   if (isTomorrow(due)) return "Tomorrow";
-  return format(due, "MMM d");
+  return formatDate(due, locale);
 }
 
 function TaskListItemImpl({
@@ -59,6 +62,7 @@ function TaskListItemImpl({
   onDismissQuickActions,
 }: TaskListItemProps) {
   const utils = trpc.useUtils();
+  const locale = useLocale();
   const toggleExpandedParent = useTasksStore((s) => s.toggleExpandedParent);
   const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
@@ -373,6 +377,7 @@ function TaskListItemImpl({
               title={describeRule(
                 task.recurrence_rule,
                 (task.recurrence_anchor ?? "due_date") as "due_date" | "completion_date",
+                locale,
               )}
               className="shrink-0 text-accent-info"
               aria-label="Recurring task"
@@ -382,7 +387,7 @@ function TaskListItemImpl({
           )}
           {due ? (
             <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
-              {dueLabel(due)}
+              {dueLabel(due, locale)}
             </span>
           ) : null}
           {!inTrash && (

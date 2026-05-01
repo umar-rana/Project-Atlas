@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { format, isToday, addDays, startOfDay, isBefore } from "date-fns";
+import { isToday, addDays, startOfDay, isBefore } from "date-fns";
+import { useLocale } from "@/core/locale/hooks";
+import {
+  formatDate as localeFormatDate,
+  formatWeekdayAbbrev,
+  formatDayOfMonth,
+  formatMonthAbbrev,
+} from "@/core/locale/formatters";
 import {
   CalendarDays,
   AlertCircle,
@@ -50,6 +57,7 @@ function TaskCard({
   onComplete: (id: string) => void;
   isPast?: boolean;
 }) {
+  const locale = useLocale();
   const isCompleted = task.status === "completed";
 
   return (
@@ -88,7 +96,7 @@ function TaskCard({
           )}
           {!task.due_date && task.defer_date && (
             <span
-              title={`Available from ${format(new Date(task.defer_date), "MMM d, yyyy")}`}
+              title={`Available from ${localeFormatDate(task.defer_date, locale)}`}
               className="inline-flex items-center rounded px-1 py-px font-ui text-3xs font-medium text-accent-info bg-accent-info/10 leading-none cursor-default"
             >
               Available
@@ -150,12 +158,12 @@ function DayColumn({
         )}
       >
         <p className={cn("font-ui text-2xs font-semibold uppercase tracking-caps", today ? "text-accent-primary" : "text-text-tertiary")}>
-          {format(d, "EEE")}
+          {formatWeekdayAbbrev(d)}
         </p>
         <p className={cn("font-display text-lg font-bold", today ? "text-accent-primary" : "text-text-primary")}>
-          {format(d, "d")}
+          {formatDayOfMonth(d)}
         </p>
-        <p className="font-ui text-3xs text-text-tertiary">{format(d, "MMM")}</p>
+        <p className="font-ui text-3xs text-text-tertiary">{formatMonthAbbrev(d)}</p>
         {tasks.length > 0 && (() => {
           const active = tasks.filter((t) => t.status !== "completed").length;
           const flagged = tasks.filter((t) => t.flagged).length;
@@ -188,6 +196,7 @@ function DayColumn({
 }
 
 export function ForecastView(): React.ReactElement {
+  const locale = useLocale();
   const utils = trpc.useUtils();
   const { data: meData } = trpc.user.me.useQuery(undefined, { staleTime: 5 * 60_000 });
 
@@ -391,7 +400,7 @@ export function ForecastView(): React.ReactElement {
                       <span className="font-ui text-2xs text-text-primary">{task.title}</span>
                       {task.due_date && (
                         <span className="font-ui text-2xs text-accent-danger">
-                          {format(new Date(task.due_date), "MMM d")}
+                          {localeFormatDate(task.due_date, locale)}
                         </span>
                       )}
                     </div>

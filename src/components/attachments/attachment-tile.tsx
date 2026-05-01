@@ -4,7 +4,8 @@ import * as React from "react";
 import { Paperclip, FileText, Film, Music, File } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { classifyContentType, formatBytes } from "@/core/attachments/validators";
-import { format } from "date-fns";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 
 interface AttachmentTileProps {
   id: string;
@@ -63,6 +64,7 @@ export function AttachmentTile({
   onSelect,
   onClick,
 }: AttachmentTileProps) {
+  const locale = useLocale();
   const isImage = content_type.startsWith("image/");
   const src = `/api/attachments/${file_id}`;
   const date = typeof created_at === "string" ? new Date(created_at) : created_at;
@@ -123,7 +125,7 @@ export function AttachmentTile({
         </p>
         <div className="mt-1 flex items-center justify-between">
           <span className="font-ui text-2xs text-text-disabled">{formatBytes(size_bytes)}</span>
-          <span className="font-ui text-2xs text-text-disabled">{format(date, "MMM d")}</span>
+          <span className="font-ui text-2xs text-text-disabled">{localeFormatDate(date, locale)}</span>
         </div>
       </div>
     </div>

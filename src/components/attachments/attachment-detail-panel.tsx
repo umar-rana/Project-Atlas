@@ -4,8 +4,9 @@ import * as React from "react";
 import { X, Download, Trash2, Link2, Eye, CheckSquare, Square } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { classifyContentType, formatBytes } from "@/core/attachments/validators";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDateTime as localeFormatDateTime } from "@/core/locale/formatters";
 import { AttachmentLightbox } from "./attachment-lightbox";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ interface AttachmentDetailPanelProps {
 }
 
 export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: AttachmentDetailPanelProps) {
+  const locale = useLocale();
   const utils = trpc.useUtils();
   const { data: att, isLoading } = trpc.attachments.byId.useQuery(
     { id: attachmentId },
@@ -150,7 +152,7 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
             <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
               Added
             </label>
-            <p className="font-ui text-xs text-text-secondary">{format(date, "MMM d, yyyy 'at' h:mm a")}</p>
+            <p className="font-ui text-xs text-text-secondary">{localeFormatDateTime(date, locale)}</p>
           </div>
 
           <div>

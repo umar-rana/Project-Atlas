@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { format } from "date-fns";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock, Palette } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
@@ -93,6 +95,7 @@ function fmtDateForInput(d: Date | string | null | undefined): string {
 }
 
 export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.ReactElement {
+  const locale = useLocale();
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
   const breadcrumb = useTasksStore((s) => s.inspectorBreadcrumb);
   const setInspectorBreadcrumb = useTasksStore((s) => s.setInspectorBreadcrumb);
@@ -489,7 +492,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               <p className="font-ui text-xs text-text-secondary">
                 Available from{" "}
                 <span className="font-medium text-accent-info">
-                  {format(new Date(taskData.defer_date), "MMMM d, yyyy")}
+                  {localeFormatDate(taskData.defer_date, locale)}
                 </span>
               </p>
             </div>

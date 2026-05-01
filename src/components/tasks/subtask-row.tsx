@@ -2,11 +2,17 @@
 
 import * as React from "react";
 import { ChevronRight, Flag, Trash2 } from "lucide-react";
-import { format, isPast, isToday, isTomorrow } from "date-fns";
+import { isPast, isToday, isTomorrow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc/client";
+import type { RouterOutputs } from "@/lib/trpc/types";
 import { useTasksStore } from "@/lib/tasks/store";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
+import type { LocaleSettings } from "@/core/locale/formatters";
+
+type TaskDetail = NonNullable<RouterOutputs["tasks"]["get"]>;
 
 interface SubtaskRowSubtask {
   id: string;
@@ -32,14 +38,15 @@ function dueColorClass(due: Date | null): string {
   return "text-text-tertiary";
 }
 
-function dueLabel(due: Date | null): string | null {
+function dueLabel(due: Date | null, locale: LocaleSettings): string | null {
   if (!due) return null;
   if (isToday(due)) return "Today";
   if (isTomorrow(due)) return "Tomorrow";
-  return format(due, "MMM d");
+  return localeFormatDate(due, locale);
 }
 
 export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalidate }: SubtaskRowProps) {
+  const locale = useLocale();
   const navigateToSubtask = useTasksStore((s) => s.navigateToSubtask);
   const utils = trpc.useUtils();
 
@@ -50,7 +57,7 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
     onMutate: async () => {
       await utils.tasks.get.cancel({ id: parentId });
       const prev = utils.tasks.get.getData({ id: parentId });
-      utils.tasks.get.setData({ id: parentId }, (old) => {
+      utils.tasks.get.setData({ id: parentId }, (old: TaskDetail | undefined): TaskDetail | undefined => {
         if (!old) return old;
         return { ...old, subtasks: old.subtasks.filter((s) => s.id !== subtask.id) };
       });
@@ -137,7 +144,7 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
 
       {due && (
         <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
-          {dueLabel(due)}
+          {dueLabel(due, locale)}
         </span>
       )}
 

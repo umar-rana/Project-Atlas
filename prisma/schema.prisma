@@ -22,7 +22,7 @@ model User {
   locale_preset           String    @default("pakistan")
   currency_code           String    @default("PKR")
   currency_symbol         String    @default("₨")
-  date_format             String    @default("dd-mm-yyyy")
+  date_format             String    @default("DD/MM/YYYY")
   number_format           String    @default("1,234.56")
   time_format             String    @default("12h")
   week_start              String    @default("monday")

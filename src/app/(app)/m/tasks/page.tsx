@@ -3,10 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { Flag, Inbox, CheckSquare } from "lucide-react";
-import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { isToday, isTomorrow, isPast } from "date-fns";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import type { TaskRow } from "@/components/tasks/task-list";
+import { useLocale } from "@/core/locale/hooks";
+import { formatDate as localeFormatDate } from "@/core/locale/formatters";
+import type { LocaleSettings } from "@/core/locale/formatters";
 
 type Perspective = "inbox" | "today" | "flagged";
 
@@ -16,13 +19,13 @@ const CHIPS: { id: Perspective; label: string; icon: React.ElementType }[] = [
   { id: "flagged", label: "Flagged", icon: Flag },
 ];
 
-function dueBadge(due: Date | string | null): { label: string; className: string } | null {
+function dueBadge(due: Date | string | null, locale: LocaleSettings): { label: string; className: string } | null {
   if (!due) return null;
   const d = typeof due === "string" ? new Date(due) : due;
   let label: string;
   let className: string;
   if (isPast(d) && !isToday(d)) {
-    label = format(d, "MMM d");
+    label = localeFormatDate(d, locale);
     className = "text-accent-danger";
   } else if (isToday(d)) {
     label = "Today";
@@ -31,13 +34,14 @@ function dueBadge(due: Date | string | null): { label: string; className: string
     label = "Tomorrow";
     className = "text-text-tertiary";
   } else {
-    label = format(d, "MMM d");
+    label = localeFormatDate(d, locale);
     className = "text-text-tertiary";
   }
   return { label, className };
 }
 
 export default function MobileTasksPage() {
+  const locale = useLocale();
   const [perspective, setPerspective] = React.useState<Perspective>("inbox");
 
   const query = trpc.tasks.list.useQuery({
@@ -92,7 +96,7 @@ export default function MobileTasksPage() {
         ) : (
           <ul role="list">
             {tasks.map((task) => {
-              const badge = dueBadge(task.due_date);
+              const badge = dueBadge(task.due_date, locale);
               return (
                 <li key={task.id}>
                   <Link
