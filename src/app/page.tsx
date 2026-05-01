@@ -98,7 +98,13 @@ function Hero() {
           </a>
         </div>
         <p className="mt-6 text-sm text-text-tertiary">
-          Currently in private use among family and friends. By invitation only.
+          Currently in private use among family and friends. By invitation only.{" "}
+          <Link
+            href="/welcome"
+            className="underline underline-offset-2 hover:text-text-secondary transition-colors"
+          >
+            Just been invited? See how to get started →
+          </Link>
         </p>
       </div>
     </section>
