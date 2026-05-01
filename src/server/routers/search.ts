@@ -11,6 +11,16 @@ interface TaskSearchHit {
   perspective: string;
 }
 
+type Row = {
+  id: string;
+  title: string;
+  notes: string | null;
+  project_id: string | null;
+  flagged: boolean;
+  due_date: Date | null;
+  defer_date: Date | null;
+};
+
 export const searchRouter = router({
   tasks: protectedProcedure
     .input(
@@ -23,36 +33,66 @@ export const searchRouter = router({
       const q = input.query.trim();
       if (!q) return [];
 
-      // Full-text search via Postgres `to_tsvector` over title+notes,
-      // combined with an ILIKE fallback so prefix and partial-word
-      // matches still surface useful hits.
-      const ilike = `%${q}%`;
       const userId = ctx.user.id;
       const limit = input.limit;
-      type Row = {
-        id: string;
-        title: string;
-        notes: string | null;
-        project_id: string | null;
-        flagged: boolean;
-        due_date: Date | null;
-        defer_date: Date | null;
-      };
-      const rows = await db.$queryRaw<Row[]>(Prisma.sql`
+
+      // ── Primary pass: GIN-indexed full-text search ──────────────────────────
+      // The trigger (task_search_vector_trigger) keeps Task.search_vector in sync
+      // with title + notes on every INSERT/UPDATE. The GIN index expression
+      //   gin(to_tsvector('english', COALESCE(search_vector,'')))
+      // matches the predicate below exactly, so Postgres uses the index instead
+      // of scanning the whole table. This is a standalone query with no OR
+      // clauses so the planner cannot short-circuit to a seq scan.
+      const ftsRows = await db.$queryRaw<Row[]>(Prisma.sql`
         SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
                t.due_date, t.defer_date
         FROM "Task" t
         WHERE t.user_id = ${userId}
           AND t.deleted_at IS NULL
-          AND (
-            to_tsvector('english', coalesce(t.title, '') || ' ' || coalesce(t.notes, ''))
-              @@ websearch_to_tsquery('english', ${q})
-            OR t.title ILIKE ${ilike}
-            OR t.notes ILIKE ${ilike}
-          )
+          AND to_tsvector('english', COALESCE(t.search_vector, ''))
+                @@ websearch_to_tsquery('english', ${q})
         ORDER BY t.flagged DESC, t.updated_at DESC
         LIMIT ${limit}
       `);
+
+      // ── Secondary pass: ILIKE fallback ──────────────────────────────────────
+      // Only runs when the FTS pass returned fewer results than the limit. This
+      // catches prefix/partial-word matches that the stemmed tsvector misses
+      // (e.g. searching "proj" won't match the stem "project"). Results already
+      // found by FTS are excluded so there are no duplicates.
+      let rows: Row[] = ftsRows;
+      const remaining = limit - ftsRows.length;
+      if (remaining > 0) {
+        const ilike = `%${q}%`;
+        const ftsIds = ftsRows.map((r) => r.id);
+
+        const ilikeRows = await db.$queryRaw<Row[]>(
+          ftsIds.length > 0
+            ? Prisma.sql`
+                SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
+                       t.due_date, t.defer_date
+                FROM "Task" t
+                WHERE t.user_id = ${userId}
+                  AND t.deleted_at IS NULL
+                  AND t.id != ALL(${ftsIds}::uuid[])
+                  AND (t.title ILIKE ${ilike} OR t.notes ILIKE ${ilike})
+                ORDER BY t.flagged DESC, t.updated_at DESC
+                LIMIT ${remaining}
+              `
+            : Prisma.sql`
+                SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
+                       t.due_date, t.defer_date
+                FROM "Task" t
+                WHERE t.user_id = ${userId}
+                  AND t.deleted_at IS NULL
+                  AND (t.title ILIKE ${ilike} OR t.notes ILIKE ${ilike})
+                ORDER BY t.flagged DESC, t.updated_at DESC
+                LIMIT ${remaining}
+              `,
+        );
+
+        rows = [...ftsRows, ...ilikeRows];
+      }
 
       const projectIds = Array.from(
         new Set(rows.map((r) => r.project_id).filter((id): id is string => Boolean(id))),

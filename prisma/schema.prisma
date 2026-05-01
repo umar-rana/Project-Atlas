@@ -359,7 +359,7 @@ model Task {
   referenced_tag_ids     String[] @default([])
   referenced_entity_refs Json?
 
-  search_vector String?  // populated by triggers; ILIKE fallback for now
+  search_vector String?  // kept in sync by task_search_vector_trigger (title || ' ' || notes)
 
   deleted_at  DateTime? @db.Timestamptz
   created_at  DateTime  @default(now()) @db.Timestamptz
