@@ -143,6 +143,7 @@ model AICallLog {
 
   @@index([user_id])
   @@index([created_at])
+  @@index([user_id, created_at])
 }
 
 // ─── Attachment ──────────────────────────────────────────────────────────────
@@ -211,6 +212,7 @@ model Capture {
   user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
+  @@index([user_id, created_at])
   @@index([deleted_at])
 }
 
@@ -377,9 +379,11 @@ model Task {
   @@index([user_id, project_id])
   @@index([user_id, status])
   @@index([user_id, due_date])
+  @@index([user_id, defer_date])
   @@index([user_id, flagged])
   @@index([user_id, parent_id])
   @@index([project_id, position])
+  @@index([recurrence_parent_id])
   @@index([deleted_at])
 }
 
