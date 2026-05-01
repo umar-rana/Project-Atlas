@@ -72,10 +72,8 @@ function nextPosition(maxPos: Prisma.Decimal | null): string {
   return base.plus(1024).toString();
 }
 
-// Narrowed projection: only the fields the UI actually reads. Smaller payloads
-// over the wire and — just as important — a flatter Prisma return type, which
-// keeps tsc out of TS2589 ("excessively deep") territory in consumers like
-// the inspector and forecast view.
+// Full projection for the inspector's `get` endpoint — includes every field
+// the detail panel needs (including `notes`, references, recurrence, etc.).
 const TASK_INCLUDE = {
   contexts: { include: { context: { select: { id: true, name: true } } } },
   tags: { include: { tag: { select: { id: true, name: true, color: true } } } },
@@ -102,6 +100,50 @@ const TASK_INCLUDE = {
     select: { attachments: { where: { deleted_at: null } } },
   },
 } satisfies Prisma.TaskInclude;
+
+// Narrowed projection for list endpoints — omits `notes` (up to 50 KB per task)
+// and other fields not rendered in list rows, keeping payloads small.
+// The inspector's `get` endpoint still uses TASK_INCLUDE for the full record.
+const TASK_LIST_SELECT = {
+  id: true,
+  title: true,
+  notes: true, // kept so duplicate-task quick action preserves content
+  status: true,
+  flagged: true,
+  project_id: true,
+  parent_id: true,
+  defer_date: true,
+  due_date: true,
+  estimated_minutes: true,
+  position: true,
+  deleted_at: true,
+  recurrence_rule: true,
+  recurrence_anchor: true,
+  contexts: { select: { context: { select: { id: true, name: true } } } },
+  tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+  project: { select: { id: true, title: true, color: true } },
+  parent: { select: { id: true, title: true } },
+  subtasks: {
+    where: { deleted_at: null },
+    orderBy: { position: "asc" as const },
+    select: {
+      id: true,
+      status: true,
+      title: true,
+      due_date: true,
+      flagged: true,
+      estimated_minutes: true,
+    },
+  },
+  checklist_items: {
+    where: { deleted_at: null },
+    orderBy: { position: "asc" as const },
+    select: { id: true, title: true, completed_at: true, position: true },
+  },
+  _count: {
+    select: { attachments: { where: { deleted_at: null } } },
+  },
+} satisfies Prisma.TaskSelect;
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
@@ -144,7 +186,7 @@ export const tasksRouter = router({
             NOT: { deleted_at: null },
           }),
           orderBy: { deleted_at: "desc" },
-          include: TASK_INCLUDE,
+          select: TASK_LIST_SELECT,
           take: input.limit,
         });
         return items;
@@ -222,7 +264,7 @@ export const tasksRouter = router({
           { position: "asc" },
           { created_at: "desc" },
         ],
-        include: TASK_INCLUDE,
+        select: TASK_LIST_SELECT,
         take: input.limit,
       });
 
@@ -246,16 +288,24 @@ export const tasksRouter = router({
         const sequentialProjectIds = new Set(sequentialProjects.map((p) => p.id));
 
         if (sequentialProjectIds.size > 0) {
-          // For each sequential project, find the first active task id by position
+          // Batch: one query for all sequential projects instead of N+1 findFirst calls.
+          // We fetch candidates ordered by position then created_at, then pick the first
+          // per project in memory — equivalent to N individual findFirst calls.
           const firstAvailableByProject = new Map<string, string>();
-          for (const pid of sequentialProjectIds) {
-            const first = await db.task.findFirst({
-              where: { project_id: pid, status: "active", parent_id: null, deleted_at: null },
-              orderBy: [{ position: "asc" }, { created_at: "asc" }],
-              select: { id: true },
-            });
-            if (first) {
-              firstAvailableByProject.set(pid, first.id);
+          const firstCandidates = await db.task.findMany({
+            where: {
+              project_id: { in: [...sequentialProjectIds] },
+              status: "active",
+              parent_id: null,
+              deleted_at: null,
+            },
+            orderBy: [{ position: "asc" }, { created_at: "asc" }],
+            select: { id: true, project_id: true },
+          });
+          for (const candidate of firstCandidates) {
+            if (!candidate.project_id) continue;
+            if (!firstAvailableByProject.has(candidate.project_id)) {
+              firstAvailableByProject.set(candidate.project_id, candidate.id);
             }
           }
 

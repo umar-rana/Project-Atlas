@@ -1,6 +1,25 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "@/server/trpc";
 import { db } from "@/core/db";
+import type { Prisma } from "@prisma/client";
+
+// Narrow projection for forecast queries — includes only fields rendered in the
+// forecast view. Excludes notes, subtasks, checklist_items, tags, and other heavy
+// fields that the inspector handles via the separate tasks.get endpoint.
+const FORECAST_TASK_SELECT = {
+  id: true,
+  title: true,
+  status: true,
+  flagged: true,
+  project_id: true,
+  parent_id: true,
+  defer_date: true,
+  due_date: true,
+  estimated_minutes: true,
+  deleted_at: true,
+  project: { select: { id: true, title: true, color: true } },
+  contexts: { select: { context: { select: { id: true, name: true } } } },
+} satisfies Prisma.TaskSelect;
 
 async function applySequentialFilter<T extends { id: string; project_id: string | null; status: string; flagged: boolean }>(
   tasks: T[],
@@ -15,14 +34,23 @@ async function applySequentialFilter<T extends { id: string; project_id: string 
   const seqIds = new Set(sequentialProjects.map((p) => p.id));
   if (!seqIds.size) return tasks;
 
+  // Batch: one query for all sequential projects instead of N+1 findFirst calls.
   const firstByProject = new Map<string, string>();
-  for (const pid of seqIds) {
-    const first = await db.task.findFirst({
-      where: { project_id: pid, status: "active", parent_id: null, deleted_at: null },
-      orderBy: [{ position: "asc" }, { created_at: "asc" }],
-      select: { id: true },
-    });
-    if (first) firstByProject.set(pid, first.id);
+  const firstCandidates = await db.task.findMany({
+    where: {
+      project_id: { in: [...seqIds] },
+      status: "active",
+      parent_id: null,
+      deleted_at: null,
+    },
+    orderBy: [{ position: "asc" }, { created_at: "asc" }],
+    select: { id: true, project_id: true },
+  });
+  for (const candidate of firstCandidates) {
+    if (!candidate.project_id) continue;
+    if (!firstByProject.has(candidate.project_id)) {
+      firstByProject.set(candidate.project_id, candidate.id);
+    }
   }
 
   return tasks.filter((t) => {
@@ -84,10 +112,7 @@ export const forecastRouter = router({
             due_date: { gte: start, lte: end },
             OR: [{ defer_date: null }, { defer_date: { lte: now } }],
           },
-          include: {
-            project: { select: { id: true, title: true, color: true } },
-            contexts: { include: { context: { select: { id: true, name: true } } } },
-          },
+          select: FORECAST_TASK_SELECT,
           orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
         }),
         // Tasks with a defer_date in the future but within the range and no due_date — show
@@ -100,10 +125,7 @@ export const forecastRouter = router({
             due_date: null,
             defer_date: { gt: now, lte: end },
           },
-          include: {
-            project: { select: { id: true, title: true, color: true } },
-            contexts: { include: { context: { select: { id: true, name: true } } } },
-          },
+          select: FORECAST_TASK_SELECT,
           orderBy: [{ defer_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
         }),
         db.task.findMany({
@@ -113,10 +135,7 @@ export const forecastRouter = router({
             deleted_at: null,
             due_date: { gte: start, lt: today },
           },
-          include: {
-            project: { select: { id: true, title: true, color: true } },
-            contexts: { include: { context: { select: { id: true, name: true } } } },
-          },
+          select: FORECAST_TASK_SELECT,
           orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
         }),
         isPastRange
@@ -129,10 +148,7 @@ export const forecastRouter = router({
                 due_date: { lt: today },
                 OR: [{ defer_date: null }, { defer_date: { lte: now } }],
               },
-              include: {
-                project: { select: { id: true, title: true, color: true } },
-                contexts: { include: { context: { select: { id: true, name: true } } } },
-              },
+              select: FORECAST_TASK_SELECT,
               orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
               take: 100,
             }),
@@ -196,10 +212,7 @@ export const forecastRouter = router({
             due_date: { gte: day, lte: end },
             OR: [{ defer_date: null }, { defer_date: { lte: now } }],
           },
-          include: {
-            project: { select: { id: true, title: true, color: true } },
-            contexts: { include: { context: { select: { id: true, name: true } } } },
-          },
+          select: FORECAST_TASK_SELECT,
           orderBy: [{ flagged: "desc" }, { position: "asc" }],
         }),
         isPast
@@ -210,10 +223,7 @@ export const forecastRouter = router({
                 deleted_at: null,
                 due_date: { gte: day, lte: end },
               },
-              include: {
-                project: { select: { id: true, title: true, color: true } },
-                contexts: { include: { context: { select: { id: true, name: true } } } },
-              },
+              select: FORECAST_TASK_SELECT,
               orderBy: [{ flagged: "desc" }, { position: "asc" }],
             })
           : Promise.resolve([]),
@@ -227,10 +237,7 @@ export const forecastRouter = router({
                 due_date: { lt: day },
                 OR: [{ defer_date: null }, { defer_date: { lte: now } }],
               },
-              include: {
-                project: { select: { id: true, title: true, color: true } },
-                contexts: { include: { context: { select: { id: true, name: true } } } },
-              },
+              select: FORECAST_TASK_SELECT,
               orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
               take: 50,
             }),

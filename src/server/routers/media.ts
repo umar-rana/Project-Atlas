@@ -4,6 +4,55 @@ import { z } from "zod";
 import { classifyContentType } from "@/core/attachments/validators";
 import type { Prisma } from "@prisma/client";
 
+type FileTypeCategory = "image" | "pdf" | "video" | "audio" | "doc" | "other";
+
+/**
+ * Returns a Prisma `content_type` filter clause for a given category.
+ * Mirrors the runtime logic in `classifyContentType` so counts are accurate.
+ */
+function fileTypeToPrismaFilter(
+  fileType: FileTypeCategory,
+): Prisma.AttachmentWhereInput {
+  switch (fileType) {
+    case "image":
+      return { content_type: { startsWith: "image/" } };
+    case "pdf":
+      return { content_type: "application/pdf" };
+    case "video":
+      return { content_type: { startsWith: "video/" } };
+    case "audio":
+      return { content_type: { startsWith: "audio/" } };
+    case "doc":
+      return {
+        OR: [
+          { content_type: { contains: "word" } },
+          { content_type: { contains: "spreadsheet" } },
+          { content_type: { contains: "presentation" } },
+          { content_type: "text/plain" },
+          { content_type: "text/markdown" },
+          { content_type: "text/csv" },
+        ],
+      };
+    case "other":
+      return {
+        NOT: {
+          OR: [
+            { content_type: { startsWith: "image/" } },
+            { content_type: "application/pdf" },
+            { content_type: { startsWith: "video/" } },
+            { content_type: { startsWith: "audio/" } },
+            { content_type: { contains: "word" } },
+            { content_type: { contains: "spreadsheet" } },
+            { content_type: { contains: "presentation" } },
+            { content_type: "text/plain" },
+            { content_type: "text/markdown" },
+            { content_type: "text/csv" },
+          ],
+        },
+      };
+  }
+}
+
 const attachmentSelect = {
   id: true,
   file_id: true,
@@ -89,6 +138,13 @@ export const mediaRouter = router({
         input.sort === "name_desc" ? { filename: "desc" } :
         { created_at: "desc" };
 
+      // Push file_type filter into the DB where clause so the count() is accurate
+      // and we avoid fetching rows only to discard them in JS.
+      if (input.file_type) {
+        const typeFilter = fileTypeToPrismaFilter(input.file_type);
+        where.AND = [typeFilter];
+      }
+
       const skip = (input.page - 1) * input.per_page;
 
       const [rawItems, total] = await Promise.all([
@@ -105,9 +161,7 @@ export const mediaRouter = router({
         db.attachment.count({ where }),
       ]);
 
-      const items = input.file_type
-        ? rawItems.filter((a) => classifyContentType(a.content_type) === input.file_type)
-        : rawItems;
+      const items = rawItems;
 
       const taskIds = items
         .filter((a) => a.task_id)
@@ -162,32 +216,41 @@ export const mediaRouter = router({
 
   stats: protectedProcedure
     .query(async ({ ctx }) => {
-      const attachments = await db.attachment.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
-        select: { content_type: true, size_bytes: true, reviewed: true, parent_type: true, task_id: true },
+      const baseWhere = { user_id: ctx.user.id, deleted_at: null };
+
+      const FILE_TYPES: FileTypeCategory[] = ["image", "pdf", "video", "audio", "doc", "other"];
+
+      // Use DB aggregates instead of fetching all rows into JS.
+      const [totals, unreviewedCount, orphanCount, ...typeAggs] = await Promise.all([
+        db.attachment.aggregate({
+          _count: { id: true },
+          _sum: { size_bytes: true },
+          where: baseWhere,
+        }),
+        db.attachment.count({ where: { ...baseWhere, reviewed: false } }),
+        db.attachment.count({ where: { ...baseWhere, parent_type: null } }),
+        ...FILE_TYPES.map((ft) =>
+          db.attachment.aggregate({
+            _count: { id: true },
+            _sum: { size_bytes: true },
+            where: { ...baseWhere, ...fileTypeToPrismaFilter(ft) },
+          }),
+        ),
+      ]);
+
+      const total_count = totals._count.id;
+      const total_bytes = totals._sum.size_bytes ?? 0;
+      const unreviewed_count = unreviewedCount;
+      const orphan_count = orphanCount;
+
+      const by_type: Record<string, { count: number; bytes: number }> = {};
+      FILE_TYPES.forEach((ft, i) => {
+        const agg = typeAggs[i]!;
+        by_type[ft] = {
+          count: agg._count.id,
+          bytes: agg._sum.size_bytes ?? 0,
+        };
       });
-
-      const total_count = attachments.length;
-      const total_bytes = attachments.reduce((sum, a) => sum + a.size_bytes, 0);
-      const unreviewed_count = attachments.filter((a) => !a.reviewed).length;
-      const orphan_count = attachments.filter((a) => !a.parent_type).length;
-
-      const by_type: Record<string, { count: number; bytes: number }> = {
-        image: { count: 0, bytes: 0 },
-        pdf: { count: 0, bytes: 0 },
-        video: { count: 0, bytes: 0 },
-        audio: { count: 0, bytes: 0 },
-        doc: { count: 0, bytes: 0 },
-        other: { count: 0, bytes: 0 },
-      };
-
-      for (const att of attachments) {
-        const type = classifyContentType(att.content_type);
-        if (by_type[type]) {
-          by_type[type]!.count++;
-          by_type[type]!.bytes += att.size_bytes;
-        }
-      }
 
       return { total_count, total_bytes, unreviewed_count, orphan_count, by_type };
     }),

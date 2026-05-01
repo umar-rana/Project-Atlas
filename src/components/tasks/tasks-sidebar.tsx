@@ -30,8 +30,11 @@ export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Stable value — inline new Date().getTimezoneOffset() creates a new object
+  // on every render, making the cache key unstable.
+  const timezoneOffset = React.useMemo(() => new Date().getTimezoneOffset(), []);
   const counts = trpc.tasks.counts.useQuery(
-    { timezoneOffset: new Date().getTimezoneOffset() },
+    { timezoneOffset },
     { refetchOnWindowFocus: false },
   );
   const reviewCount = trpc.review.overdueCount.useQuery(undefined, { refetchOnWindowFocus: false });

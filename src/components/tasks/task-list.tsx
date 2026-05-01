@@ -27,7 +27,7 @@ interface TaskListItemWithSubtasksProps {
   onDismissQuickActions: () => void;
 }
 
-function TaskListItemWithSubtasks({
+const TaskListItemWithSubtasks = React.memo(function TaskListItemWithSubtasks({
   task,
   idx,
   selectedTaskId,
@@ -106,7 +106,7 @@ function TaskListItemWithSubtasks({
       })}
     </>
   );
-}
+});
 
 export interface TaskRow {
   id: string;
@@ -172,6 +172,10 @@ export function TaskList({
 }: TaskListProps): React.ReactElement {
   const [showDeferred, setShowDeferred] = React.useState(false);
 
+  // Compute once — calling new Date().getTimezoneOffset() inline creates a new
+  // object on every render, making the React Query cache key unstable.
+  const timezoneOffset = React.useMemo(() => new Date().getTimezoneOffset(), []);
+
   const query = trpc.tasks.list.useQuery({
     perspective,
     project_id: projectId,
@@ -179,7 +183,7 @@ export function TaskList({
     tag_name: tagName,
     include_completed: false,
     include_deferred: perspective === "project" ? showDeferred : undefined,
-    timezoneOffset: new Date().getTimezoneOffset(),
+    timezoneOffset,
   });
 
   const deferredCountQuery = trpc.tasks.countDeferred.useQuery(
@@ -291,42 +295,53 @@ export function TaskList({
   const [focusedIdx, setFocusedIdx] = React.useState(0);
   const [quickActionsFocusedTaskId, setQuickActionsFocusedTaskId] = React.useState<string | null>(null);
 
+  // Keep mutable refs so the keyboard handler always reads the latest values
+  // without being torn down and re-registered on every data refresh.
+  const focusedIdxRef = React.useRef(focusedIdx);
+  focusedIdxRef.current = focusedIdx;
+  const quickActionsFocusedTaskIdRef = React.useRef(quickActionsFocusedTaskId);
+  quickActionsFocusedTaskIdRef.current = quickActionsFocusedTaskId;
+
   React.useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
       if (target?.tagName === "BUTTON" || target?.tagName === "SELECT" || target?.tagName === "A") return;
-      if (tasks.length === 0) return;
+
+      const currentTasks = tasksRef.current;
+      const currentFocusedIdx = focusedIdxRef.current;
+      const currentQuickActionsId = quickActionsFocusedTaskIdRef.current;
+
+      if (currentTasks.length === 0) return;
 
       if (e.key === "j") {
         e.preventDefault();
-        setFocusedIdx((i) => Math.min(tasks.length - 1, i + 1));
-        if (quickActionsFocusedTaskId) {
+        setFocusedIdx((i) => Math.min(currentTasks.length - 1, i + 1));
+        if (currentQuickActionsId) {
           setQuickActionsFocusedTaskId(null);
         }
       } else if (e.key === "k") {
         e.preventDefault();
         setFocusedIdx((i) => Math.max(0, i - 1));
-        if (quickActionsFocusedTaskId) {
+        if (currentQuickActionsId) {
           setQuickActionsFocusedTaskId(null);
         }
       } else if (e.key === ".") {
-        const t = tasks[focusedIdx];
+        const t = currentTasks[currentFocusedIdx];
         if (t) {
           e.preventDefault();
           setQuickActionsFocusedTaskId(t.id);
         }
       } else if (e.key === "Escape") {
-        if (quickActionsFocusedTaskId) {
+        if (currentQuickActionsId) {
           e.preventDefault();
           setQuickActionsFocusedTaskId(null);
         }
       } else if (e.key === " " || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d")) {
-        const t = tasks[focusedIdx];
+        const t = currentTasks[currentFocusedIdx];
         if (t) {
           e.preventDefault();
           if (t.status === "completed") {
-            // uncomplete via mutate from item — keep simple via direct call
             void utils.client.tasks.uncomplete.mutate({ id: t.id }).then(() => {
               utils.tasks.list.invalidate();
               utils.tasks.counts.invalidate();
@@ -341,7 +356,7 @@ export function TaskList({
           }
         }
       } else if (e.key.toLowerCase() === "f") {
-        const t = tasks[focusedIdx];
+        const t = currentTasks[currentFocusedIdx];
         if (t) {
           e.preventDefault();
           void utils.client.tasks.update.mutate({ id: t.id, flagged: !t.flagged }).then(() => {
@@ -350,10 +365,10 @@ export function TaskList({
         }
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
         e.preventDefault();
-        const t = tasks[focusedIdx];
+        const t = currentTasks[currentFocusedIdx];
         if (t) setSelectedTaskId(t.id);
       } else if (e.key === "Enter" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
-        const t = tasks[focusedIdx];
+        const t = currentTasks[currentFocusedIdx];
         if (t) {
           e.preventDefault();
           setSelectedTaskId(t.id);
@@ -362,7 +377,10 @@ export function TaskList({
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [tasks, focusedIdx, quickActionsFocusedTaskId, utils, setSelectedTaskId]);
+    // Intentionally empty deps: handler reads all dynamic values via refs.
+    // Re-registering only happens on mount/unmount, not on every data refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelect = React.useCallback((task: TaskRow) => {
     setSelectedTaskId(task.id);
