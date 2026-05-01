@@ -101,6 +101,23 @@ export function UsageClient() {
 
       {data && (
         <>
+          {data.budgetUsd != null && (() => {
+            const pct = data.monthly.costUsd / data.budgetUsd;
+            if (pct < 0.8) return null;
+            const exceeded = pct >= 1;
+            return (
+              <div className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
+                exceeded
+                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                  : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+              }`}>
+                {exceeded
+                  ? `Monthly budget exceeded — ${formatCost(data.monthly.costUsd)} spent of ${formatCost(data.budgetUsd)} limit.`
+                  : `You've used ${(pct * 100).toFixed(0)}% of your ${formatCost(data.budgetUsd)} monthly budget — ${formatCost(data.monthly.costUsd)} spent so far.`}
+              </div>
+            );
+          })()}
+
           <section className="mb-8">
             <h2 className="mb-3 text-sm font-semibold text-text-secondary">Overview</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

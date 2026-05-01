@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "ai_budget_usd" DOUBLE PRECISION;

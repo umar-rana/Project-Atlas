@@ -28,6 +28,7 @@ export const userRouter = router({
         email_filter_auto_replies: z.boolean().optional(),
         email_filter_calendar: z.boolean().optional(),
         email_blocklist: z.union([z.string(), z.array(z.string())]).optional(),
+        ai_budget_usd: z.number().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

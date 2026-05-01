@@ -1518,6 +1518,7 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
 }
 
 function AISection({ userData }: { userData?: User }) {
+  const utils = trpc.useUtils();
   const { data: stats, isLoading } = trpc.ai.usageStats.useQuery();
   const { data: rawUserData } = trpc.user.me.useQuery(undefined, { refetchOnWindowFocus: false });
   const user = (rawUserData as User | undefined) ?? userData;
@@ -1528,6 +1529,32 @@ function AISection({ userData }: { userData?: User }) {
     return stored !== "false";
   });
 
+  const [budgetInput, setBudgetInput] = useState<string>(() => {
+    const v = (userData as (User & { ai_budget_usd?: number | null }) | undefined)?.ai_budget_usd;
+    return v != null ? String(v) : "";
+  });
+  const [budgetSaved, setBudgetSaved] = useState(false);
+
+  useEffect(() => {
+    const v = (user as (User & { ai_budget_usd?: number | null }) | undefined)?.ai_budget_usd;
+    setBudgetInput(v != null ? String(v) : "");
+  }, [user]);
+
+  const updateBudgetMutation = trpc.user.updatePreferences.useMutation({
+    onSuccess: () => {
+      utils.user.me.invalidate();
+      utils.ai.usageStats.invalidate();
+      setBudgetSaved(true);
+      setTimeout(() => setBudgetSaved(false), 2000);
+    },
+  });
+
+  function handleBudgetSave() {
+    const parsed = budgetInput.trim() === "" ? null : parseFloat(budgetInput);
+    if (parsed !== null && (isNaN(parsed) || parsed <= 0)) return;
+    updateBudgetMutation.mutate({ ai_budget_usd: parsed });
+  }
+
   function handleToggle() {
     const next = !aiEnabled;
     setAiEnabled(next);
@@ -1535,6 +1562,8 @@ function AISection({ userData }: { userData?: User }) {
   }
 
   const monthlyUsd = stats?.monthly.costUsd ?? 0;
+  const budgetUsd = stats?.budgetUsd ?? null;
+  const budgetPct = budgetUsd != null && budgetUsd > 0 ? monthlyUsd / budgetUsd : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -1553,6 +1582,56 @@ function AISection({ userData }: { userData?: User }) {
         <p className="mt-2 font-ui text-2xs text-text-tertiary">
           Preference saved locally — full profile sync coming in a future wave.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Monthly AI Budget</h3>
+        <p className="mb-3 font-ui text-xs text-text-secondary">
+          Set a monthly spending limit. You will see a warning on the usage page when you reach 80% of your budget.
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="font-ui text-sm text-text-secondary">$</span>
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder="No limit"
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleBudgetSave()}
+            className="w-32 rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+          />
+          <button
+            type="button"
+            onClick={handleBudgetSave}
+            disabled={updateBudgetMutation.isPending}
+            className="rounded-md bg-accent-primary px-3 py-2 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+          >
+            {updateBudgetMutation.isPending ? "Saving…" : "Save"}
+          </button>
+          {budgetInput !== "" && (
+            <button
+              type="button"
+              onClick={() => { setBudgetInput(""); updateBudgetMutation.mutate({ ai_budget_usd: null }); }}
+              className="font-ui text-xs text-text-tertiary hover:text-text-secondary"
+            >
+              Clear
+            </button>
+          )}
+          {budgetSaved && <span className="font-ui text-xs text-accent-success">Saved</span>}
+        </div>
+        {budgetUsd != null && budgetPct != null && budgetPct >= 0.8 && (
+          <div className={cn(
+            "mt-3 rounded-lg px-3 py-2 font-ui text-xs font-medium",
+            budgetPct >= 1
+              ? "bg-accent-danger-muted text-accent-danger"
+              : "bg-accent-warning-muted text-accent-warning",
+          )}>
+            {budgetPct >= 1
+              ? `Budget exceeded — $${monthlyUsd.toFixed(4)} spent of $${budgetUsd.toFixed(2)} limit.`
+              : `Heads up — you've used ${(budgetPct * 100).toFixed(0)}% of your $${budgetUsd.toFixed(2)} monthly budget.`}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">

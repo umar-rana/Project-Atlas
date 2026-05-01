@@ -67,6 +67,7 @@ export const aiRouter = router({
     ]);
 
     return {
+      budgetUsd: ctx.user.ai_budget_usd ?? null,
       allTime: {
         calls: allTime._count.id,
         inputTokens: allTime._sum.input_tokens ?? 0,
