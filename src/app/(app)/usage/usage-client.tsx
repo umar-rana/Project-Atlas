@@ -1,6 +1,31 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { trpc } from "@/lib/trpc/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function ChartSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 py-2">
+      <div className="flex items-end gap-2 h-[180px]">
+        {[60, 90, 45, 75, 110, 55, 80].map((h, i) => (
+          <Skeleton
+            key={i}
+            variant="block"
+            className="flex-1 rounded"
+            style={{ height: `${h}px` }}
+          />
+        ))}
+      </div>
+      <Skeleton variant="line" width="100%" />
+    </div>
+  );
+}
+
+const UsageChart = dynamic(
+  () => import("./usage-chart").then((m) => m.UsageChart),
+  { loading: () => <ChartSkeleton />, ssr: false },
+);
 
 function formatCost(usd: number): string {
   if (usd === 0) return "$0.00";
@@ -97,6 +122,15 @@ export function UsageClient() {
                 tokens={data.allTime.inputTokens + data.allTime.outputTokens}
                 cost={data.allTime.costUsd}
               />
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="mb-3 text-sm font-semibold text-text-secondary">
+              Cost by task type
+            </h2>
+            <div className="rounded-xl border border-border-default bg-surface-raised p-4 shadow-1">
+              <UsageChart data={data.byTask} />
             </div>
           </section>
 
