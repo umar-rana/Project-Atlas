@@ -116,6 +116,7 @@ function MergeDialog({
       utils.tags.usageStats.invalidate();
       utils.tags.list.invalidate();
       utils.tags.count.invalidate();
+      utils.tasks.list.invalidate();
       toast.success(`Merged #${source.name} into selected tag`);
       onClose();
     },
@@ -182,6 +183,7 @@ function DeleteDialog({
       utils.tags.usageStats.invalidate();
       utils.tags.list.invalidate();
       utils.tags.count.invalidate();
+      utils.tasks.list.invalidate();
       toast.success(`Deleted #${tag.name}`);
       onClose();
     },
@@ -232,6 +234,7 @@ function BulkDeleteDialog({
       utils.tags.usageStats.invalidate();
       utils.tags.list.invalidate();
       utils.tags.count.invalidate();
+      utils.tasks.list.invalidate();
       toast.success(`Deleted ${res.deleted} tag${res.deleted !== 1 ? "s" : ""}`);
       onClose();
     },
@@ -299,6 +302,7 @@ function BulkMergeDialog({
     utils.tags.usageStats.invalidate();
     utils.tags.list.invalidate();
     utils.tags.count.invalidate();
+    utils.tasks.list.invalidate();
     if (errors.length === 0) {
       toast.success(`Merged ${succeeded} tag${succeeded !== 1 ? "s" : ""}`);
       onClose();
