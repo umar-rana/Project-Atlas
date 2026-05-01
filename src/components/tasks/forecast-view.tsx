@@ -126,6 +126,7 @@ function DayColumn({
   onComplete: (id: string) => void;
   onDrop: (taskId: string, date: string) => void;
 }) {
+  const locale = useLocale();
   const d = new Date(date + "T00:00:00");
   const today = isToday(d);
   const isPast = isBefore(d, startOfDay(new Date())) && !today;
@@ -158,12 +159,12 @@ function DayColumn({
         )}
       >
         <p className={cn("font-ui text-2xs font-semibold uppercase tracking-caps", today ? "text-accent-primary" : "text-text-tertiary")}>
-          {formatWeekdayAbbrev(d)}
+          {formatWeekdayAbbrev(d, locale.language)}
         </p>
         <p className={cn("font-display text-lg font-bold", today ? "text-accent-primary" : "text-text-primary")}>
           {formatDayOfMonth(d)}
         </p>
-        <p className="font-ui text-3xs text-text-tertiary">{formatMonthAbbrev(d)}</p>
+        <p className="font-ui text-3xs text-text-tertiary">{formatMonthAbbrev(d, locale.language)}</p>
         {tasks.length > 0 && (() => {
           const active = tasks.filter((t) => t.status !== "completed").length;
           const flagged = tasks.filter((t) => t.flagged).length;

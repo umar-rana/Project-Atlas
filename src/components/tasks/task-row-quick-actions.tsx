@@ -22,6 +22,7 @@ import {
   isMonday,
 } from "date-fns";
 import { formatWeekdayAbbrev } from "@/core/locale/formatters";
+import { useLocale } from "@/core/locale/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
@@ -92,6 +93,7 @@ function QuickDatePopover({
   currentValue,
   onOpenChange,
 }: QuickDatePopoverProps) {
+  const locale = useLocale();
   const [open, setOpen] = React.useState(false);
   const [showCustom, setShowCustom] = React.useState(false);
   const [customVal, setCustomVal] = React.useState("");
@@ -157,7 +159,7 @@ function QuickDatePopover({
             className="flex w-full items-center justify-between rounded-sm px-2 py-1 text-left text-sm text-text-primary hover:bg-accent-primary-subtle disabled:opacity-50"
           >
             <span>{opt.label}</span>
-            <span className="text-xs text-text-tertiary">{formatWeekdayAbbrev(opt.date)}</span>
+            <span className="text-xs text-text-tertiary">{formatWeekdayAbbrev(opt.date, locale.language)}</span>
           </button>
         ))}
         {showCustom ? (

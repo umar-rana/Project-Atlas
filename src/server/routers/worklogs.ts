@@ -150,6 +150,7 @@ export const worklogsRouter = router({
         number_format: ctx.user.number_format ?? "1,234.56",
         currency_code: ctx.user.currency_code ?? "PKR",
         currency_symbol: ctx.user.currency_symbol ?? "₨",
+        language: ctx.user.language ?? "en",
       };
 
       const auditItems: FeedItem[] = auditLogs.map((entry) => ({

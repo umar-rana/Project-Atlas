@@ -26,9 +26,9 @@ import {
   Package,
   Sliders,
 } from "lucide-react";
-import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES } from "@/core/locale/presets";
+import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES, LANGUAGE_OPTIONS } from "@/core/locale/presets";
 import type { LocalePresetKey } from "@/core/locale/presets";
-import { formatDate, formatTime, formatNumber, formatCurrency } from "@/core/locale/formatters";
+import { formatDate, formatTime, formatNumber, formatCurrency, formatWeekdayFull } from "@/core/locale/formatters";
 import type { LocaleSettings } from "@/core/locale/formatters";
 import { cn } from "@/lib/utils";
 
@@ -1865,6 +1865,10 @@ function LocalePreviewBlock({ locale }: { locale: LocaleSettings }) {
         <p className="mt-0.5 font-mono text-sm text-text-primary">{formatTime(sampleDate, locale)}</p>
       </div>
       <div>
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Weekday</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatWeekdayFull(sampleDate, locale.language)}</p>
+      </div>
+      <div>
         <p className="font-ui text-2xs font-medium text-text-tertiary">Number</p>
         <p className="mt-0.5 font-mono text-sm text-text-primary">{formatNumber(sampleNumber, locale)}</p>
       </div>
@@ -1890,6 +1894,7 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
     number_format: user.number_format ?? "1,234.56",
     currency_code: user.currency_code ?? "PKR",
     currency_symbol: user.currency_symbol ?? "₨",
+    language: user.language ?? "ur",
   });
 
   const [showCustom, setShowCustom] = useState(serverPreset === "custom");
@@ -1904,9 +1909,10 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
       number_format: user.number_format ?? "1,234.56",
       currency_code: user.currency_code ?? "PKR",
       currency_symbol: user.currency_symbol ?? "₨",
+      language: user.language ?? "ur",
     });
     setShowCustom(serverPreset === "custom");
-  }, [serverPreset, user.date_format, user.time_format, user.number_format, user.currency_code, user.currency_symbol]);
+  }, [serverPreset, user.date_format, user.time_format, user.number_format, user.currency_code, user.currency_symbol, user.language]);
 
   const updateLocale = trpc.user.updateLocale.useMutation({
     onSuccess: () => {
@@ -1930,7 +1936,14 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
     if (!p) return;
     setLocalLocale(p.settings);
     setShowCustom(false);
-    updateLocale.mutate({ preset: preset as "pakistan" | "us" | "uk" });
+    updateLocale.mutate({ preset: preset as "pakistan" | "us" | "uk", language: p.settings.language });
+  }
+
+  function handleLanguageChange(language: string) {
+    setLocalLocale((prev) => ({ ...prev, language }));
+    if (localPreset !== "custom") {
+      updateLocale.mutate({ preset: localPreset as "pakistan" | "us" | "uk", language });
+    }
   }
 
   function handleCustomSave() {
@@ -1954,8 +1967,14 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
       date_format: localLocale.date_format,
       time_format: localLocale.time_format as "12h" | "24h",
       number_format: localLocale.number_format,
+<<<<<<< HEAD
       currency_code: code,
       currency_symbol: symbol,
+=======
+      currency_code: localLocale.currency_code,
+      currency_symbol: localLocale.currency_symbol,
+      language: localLocale.language,
+>>>>>>> 19c3cbc (feat: Add language/locale selector for weekday and month name translation)
     });
   }
 
@@ -1972,20 +1991,38 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
         </div>
       )}
 
-      <div>
-        <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Locale preset</label>
-        <select
-          className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
-          value={localPreset}
-          onChange={(e) => handlePresetChange(e.target.value as LocalePresetKey)}
-        >
-          {LOCALE_PRESETS.map((p) => (
-            <option key={p.key} value={p.key}>{p.label}</option>
-          ))}
-        </select>
-        <p className="mt-1 font-ui text-xs text-text-tertiary">
-          Choose a preset to apply locale defaults automatically, or select Custom to configure each setting individually.
-        </p>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Locale preset</label>
+          <select
+            className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+            value={localPreset}
+            onChange={(e) => handlePresetChange(e.target.value as LocalePresetKey)}
+          >
+            {LOCALE_PRESETS.map((p) => (
+              <option key={p.key} value={p.key}>{p.label}</option>
+            ))}
+          </select>
+          <p className="mt-1 font-ui text-xs text-text-tertiary">
+            Choose a preset to apply locale defaults, or select Custom to configure each setting individually.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Language</label>
+          <select
+            className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+            value={localLocale.language}
+            onChange={(e) => handleLanguageChange(e.target.value)}
+          >
+            {LANGUAGE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <p className="mt-1 font-ui text-xs text-text-tertiary">
+            Controls weekday and month names throughout Atlas.
+          </p>
+        </div>
       </div>
 
       <div>

@@ -20,6 +20,7 @@ model User {
   image                   String?
   timezone                String    @default("UTC")
   locale_preset           String    @default("pakistan")
+  language                String    @default("ur")
   currency_code           String    @default("PKR")
   currency_symbol         String    @default("₨")
   date_format             String    @default("DD/MM/YYYY")

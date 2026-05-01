@@ -1,4 +1,25 @@
 import { format as dateFnsFormat } from "date-fns";
+import type { Locale } from "date-fns";
+import { enUS } from "date-fns/locale/en-US";
+import { ar } from "date-fns/locale/ar";
+import { arSA } from "date-fns/locale/ar-SA";
+import { hi } from "date-fns/locale/hi";
+import { faIR } from "date-fns/locale/fa-IR";
+import { fr } from "date-fns/locale/fr";
+import { de } from "date-fns/locale/de";
+import { es } from "date-fns/locale/es";
+import { tr } from "date-fns/locale/tr";
+import { zhCN } from "date-fns/locale/zh-CN";
+import { ja } from "date-fns/locale/ja";
+import { ko } from "date-fns/locale/ko";
+import { ru } from "date-fns/locale/ru";
+import { ptBR } from "date-fns/locale/pt-BR";
+import { it } from "date-fns/locale/it";
+import { nl } from "date-fns/locale/nl";
+import { pl } from "date-fns/locale/pl";
+import { uk } from "date-fns/locale/uk";
+import { id } from "date-fns/locale/id";
+import { ms } from "date-fns/locale/ms";
 
 export interface LocaleSettings {
   date_format: string;
@@ -6,6 +27,59 @@ export interface LocaleSettings {
   number_format: string;
   currency_code: string;
   currency_symbol: string;
+  language: string;
+}
+
+const LANGUAGE_TO_DATE_FNS_LOCALE: Record<string, Locale> = {
+  en: enUS,
+  "en-US": enUS,
+  ar: ar,
+  "ar-SA": arSA,
+  hi: hi,
+  "fa-IR": faIR,
+  fr: fr,
+  de: de,
+  es: es,
+  tr: tr,
+  "zh-CN": zhCN,
+  ja: ja,
+  ko: ko,
+  ru: ru,
+  "pt-BR": ptBR,
+  it: it,
+  nl: nl,
+  pl: pl,
+  uk: uk,
+  id: id,
+  ms: ms,
+};
+
+export function getDateFnsLocale(language: string | undefined): Locale | undefined {
+  if (!language) return enUS;
+  return LANGUAGE_TO_DATE_FNS_LOCALE[language];
+}
+
+/**
+ * Format a date string using date-fns, with Intl.DateTimeFormat fallback for
+ * languages that do not have a date-fns locale (e.g. Urdu "ur").
+ * For formats that contain a text month token (MMM), the month name is
+ * injected via Intl when no date-fns locale exists.
+ */
+function dateFnsFormatWithFallback(d: Date, dfFmt: string, language: string): string {
+  const locale = LANGUAGE_TO_DATE_FNS_LOCALE[language];
+  if (locale) {
+    return dateFnsFormat(d, dfFmt, { locale });
+  }
+  if (dfFmt.includes("MMM")) {
+    try {
+      const monthName = new Intl.DateTimeFormat(language, { month: "short" }).format(d);
+      const tempFmt = dfFmt.replace("MMM", "'__MONTH__'");
+      return dateFnsFormat(d, tempFmt).replace("__MONTH__", monthName);
+    } catch {
+      return dateFnsFormat(d, dfFmt);
+    }
+  }
+  return dateFnsFormat(d, dfFmt);
 }
 
 const FORMAT_MAP: Record<string, string> = {
@@ -29,7 +103,7 @@ export function formatDate(value: Date | string | null | undefined, locale: Loca
     const d = value instanceof Date ? value : new Date(value);
     if (isNaN(d.getTime())) return "";
     const dfFmt = toDateFnsFormat(locale.date_format);
-    return dateFnsFormat(d, dfFmt);
+    return dateFnsFormatWithFallback(d, dfFmt, locale.language);
   } catch {
     return "";
   }
@@ -49,7 +123,7 @@ export function formatDateUTCSafe(value: Date | string | null | undefined, local
     // values are displayed as the intended calendar day everywhere.
     const d = new Date(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate(), 12, 0, 0);
     const dfFmt = toDateFnsFormat(locale.date_format);
-    return dateFnsFormat(d, dfFmt);
+    return dateFnsFormatWithFallback(d, dfFmt, locale.language);
   } catch {
     return "";
   }
@@ -61,7 +135,8 @@ export function formatTime(value: Date | string | null | undefined, locale: Loca
     const d = value instanceof Date ? value : new Date(value);
     if (isNaN(d.getTime())) return "";
     const fmt = locale.time_format === "24h" ? "HH:mm" : "h:mm a";
-    return dateFnsFormat(d, fmt);
+    const dfLocale = getDateFnsLocale(locale.language);
+    return dateFnsFormat(d, fmt, dfLocale ? { locale: dfLocale } : undefined);
   } catch {
     return "";
   }
@@ -98,19 +173,29 @@ export function formatCurrency(value: number, locale: LocaleSettings): string {
   return `${locale.currency_symbol}${numStr}`;
 }
 
-export function formatWeekdayFull(value: Date | string): string {
+export function formatWeekdayFull(value: Date | string, language?: string): string {
   try {
     const d = value instanceof Date ? value : new Date(value);
-    return dateFnsFormat(d, "EEEE");
+    const lang = language ?? "en";
+    const dfLocale = LANGUAGE_TO_DATE_FNS_LOCALE[lang];
+    if (dfLocale) {
+      return dateFnsFormat(d, "EEEE", { locale: dfLocale });
+    }
+    return new Intl.DateTimeFormat(lang, { weekday: "long" }).format(d);
   } catch {
     return "";
   }
 }
 
-export function formatWeekdayAbbrev(value: Date | string): string {
+export function formatWeekdayAbbrev(value: Date | string, language?: string): string {
   try {
     const d = value instanceof Date ? value : new Date(value);
-    return dateFnsFormat(d, "EEE");
+    const lang = language ?? "en";
+    const dfLocale = LANGUAGE_TO_DATE_FNS_LOCALE[lang];
+    if (dfLocale) {
+      return dateFnsFormat(d, "EEE", { locale: dfLocale });
+    }
+    return new Intl.DateTimeFormat(lang, { weekday: "short" }).format(d);
   } catch {
     return "";
   }
@@ -125,10 +210,15 @@ export function formatDayOfMonth(value: Date | string): string {
   }
 }
 
-export function formatMonthAbbrev(value: Date | string): string {
+export function formatMonthAbbrev(value: Date | string, language?: string): string {
   try {
     const d = value instanceof Date ? value : new Date(value);
-    return dateFnsFormat(d, "MMM");
+    const lang = language ?? "en";
+    const dfLocale = LANGUAGE_TO_DATE_FNS_LOCALE[lang];
+    if (dfLocale) {
+      return dateFnsFormat(d, "MMM", { locale: dfLocale });
+    }
+    return new Intl.DateTimeFormat(lang, { month: "short" }).format(d);
   } catch {
     return "";
   }

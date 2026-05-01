@@ -18,6 +18,7 @@ export const LOCALE_PRESETS: LocalePreset[] = [
       number_format: "1,234.56",
       currency_code: "PKR",
       currency_symbol: "₨",
+      language: "ur",
     },
   },
   {
@@ -29,6 +30,7 @@ export const LOCALE_PRESETS: LocalePreset[] = [
       number_format: "1,234.56",
       currency_code: "USD",
       currency_symbol: "$",
+      language: "en",
     },
   },
   {
@@ -40,6 +42,7 @@ export const LOCALE_PRESETS: LocalePreset[] = [
       number_format: "1,234.56",
       currency_code: "GBP",
       currency_symbol: "£",
+      language: "en",
     },
   },
   {
@@ -51,6 +54,7 @@ export const LOCALE_PRESETS: LocalePreset[] = [
       number_format: "1,234.56",
       currency_code: "USD",
       currency_symbol: "$",
+      language: "en",
     },
   },
 ];
@@ -92,4 +96,28 @@ export const NUMBER_FORMAT_OPTIONS = [
 export const TIME_FORMAT_OPTIONS = [
   { value: "12h", label: "12-hour (e.g. 3:45 PM)" },
   { value: "24h", label: "24-hour (e.g. 15:45)" },
+];
+
+export const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "ur", label: "Urdu (اردو)" },
+  { value: "ar", label: "Arabic (عربي)" },
+  { value: "ar-SA", label: "Arabic, Saudi (عربي)" },
+  { value: "fa-IR", label: "Persian / Farsi (فارسی)" },
+  { value: "hi", label: "Hindi (हिन्दी)" },
+  { value: "ms", label: "Malay (Melayu)" },
+  { value: "id", label: "Indonesian (Bahasa Indonesia)" },
+  { value: "tr", label: "Turkish (Türkçe)" },
+  { value: "fr", label: "French (Français)" },
+  { value: "de", label: "German (Deutsch)" },
+  { value: "es", label: "Spanish (Español)" },
+  { value: "it", label: "Italian (Italiano)" },
+  { value: "nl", label: "Dutch (Nederlands)" },
+  { value: "pl", label: "Polish (Polski)" },
+  { value: "pt-BR", label: "Portuguese, Brazil (Português)" },
+  { value: "ru", label: "Russian (Русский)" },
+  { value: "uk", label: "Ukrainian (Українська)" },
+  { value: "zh-CN", label: "Chinese, Simplified (中文)" },
+  { value: "ja", label: "Japanese (日本語)" },
+  { value: "ko", label: "Korean (한국어)" },
 ];

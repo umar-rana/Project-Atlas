@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { logActivity } from "@/core/audit";
-import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES } from "@/core/locale/presets";
+import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES, LANGUAGE_OPTIONS } from "@/core/locale/presets";
 
 const EMAIL_OR_DOMAIN_RE = /^([^\s@]+@[^\s@]+\.[^\s@]+|(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+)$/;
 
@@ -94,6 +94,7 @@ export const userRouter = router({
       z.union([
         z.object({
           preset: z.enum(["pakistan", "us", "uk"]),
+          language: z.enum(LANGUAGE_OPTIONS.map((o) => o.value) as [string, ...string[]]).optional(),
         }),
         z.object({
           preset: z.literal("custom"),
@@ -111,6 +112,7 @@ export const userRouter = router({
             })
             .optional(),
           currency_symbol: z.string().trim().min(1, "Currency symbol is required").max(5, "Currency symbol must be 5 characters or fewer").optional(),
+          language: z.enum(LANGUAGE_OPTIONS.map((o) => o.value) as [string, ...string[]]).optional(),
         }),
       ]),
     )
@@ -128,6 +130,7 @@ export const userRouter = router({
           currency_code: preset.settings.currency_code,
           currency_symbol: preset.settings.currency_symbol,
         };
+        if (input.language) data.language = input.language;
       } else {
         const customInput = input as {
           preset: "custom";
@@ -136,6 +139,7 @@ export const userRouter = router({
           number_format?: string;
           currency_code?: string;
           currency_symbol?: string;
+          language?: string;
         };
         data = { locale_preset: "custom" };
         if (customInput.date_format) data.date_format = customInput.date_format;
@@ -143,6 +147,7 @@ export const userRouter = router({
         if (customInput.number_format) data.number_format = customInput.number_format;
         if (customInput.currency_code) data.currency_code = customInput.currency_code;
         if (customInput.currency_symbol) data.currency_symbol = customInput.currency_symbol;
+        if (customInput.language) data.language = customInput.language;
       }
 
       const updated = await db.user.update({

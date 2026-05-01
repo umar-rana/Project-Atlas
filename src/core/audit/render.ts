@@ -10,6 +10,7 @@ const FALLBACK_LOCALE: LocaleSettings = {
   number_format: "1,234.56",
   currency_code: "PKR",
   currency_symbol: "₨",
+  language: "en",
 };
 
 function fmtDate(val: unknown, locale: LocaleSettings): string {

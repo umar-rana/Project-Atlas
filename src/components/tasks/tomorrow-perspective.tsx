@@ -15,7 +15,7 @@ function getTomorrowDate(): { iso: string; d: Date } {
 export function TomorrowPerspective(): React.ReactElement {
   const locale = useLocale();
   const { iso, d } = getTomorrowDate();
-  const weekday = formatWeekdayFull(d);
+  const weekday = formatWeekdayFull(d, locale.language);
   const datePart = formatDate(d, locale);
   const label = `${weekday}, ${datePart}`;
 

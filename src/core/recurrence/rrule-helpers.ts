@@ -7,6 +7,7 @@ const RRULE_FALLBACK_LOCALE: LocaleSettings = {
   number_format: "1,234.56",
   currency_code: "USD",
   currency_symbol: "$",
+  language: "en",
 };
 
 export type RecurrenceAnchor = "due_date" | "completion_date";
