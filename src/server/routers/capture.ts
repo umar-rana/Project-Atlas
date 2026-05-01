@@ -748,6 +748,35 @@ export const captureRouter = router({
       return capture;
     }),
 
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        title: z.string().min(1).max(500).optional(),
+        tags: z.array(z.string().max(100)).optional(),
+        due_date: z.string().datetime().nullable().optional(),
+        action_items: z.array(z.string().max(1000)).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existing = await db.capture.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+      });
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found" });
+
+      const data: Record<string, unknown> = {};
+      if (input.title !== undefined) data.title = input.title;
+      if (input.tags !== undefined) data.tags = input.tags;
+      if (input.due_date !== undefined) data.due_date = input.due_date ? new Date(input.due_date) : null;
+      if (input.action_items !== undefined) data.action_items = input.action_items;
+
+      const updated = await db.capture.update({
+        where: { id: input.id },
+        data,
+      });
+      return updated;
+    }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {

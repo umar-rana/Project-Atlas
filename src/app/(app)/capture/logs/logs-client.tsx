@@ -24,13 +24,19 @@ export function CaptureLogsClient(): React.ReactElement {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex items-center justify-between gap-3">
         <a
           href="/settings?section=ai"
           className="flex items-center gap-1.5 font-ui text-sm text-text-tertiary hover:text-text-secondary"
         >
           <ArrowLeft size={14} />
           Back to AI Settings
+        </a>
+        <a
+          href="/capture/saved"
+          className="rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary hover:bg-surface-hover"
+        >
+          View saved captures →
         </a>
       </div>
 
