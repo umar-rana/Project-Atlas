@@ -1,8 +1,9 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
+import { useTheme } from "next-themes";
 
-const darkAppearance = {
+const clerkAppearance = {
   variables: {
     colorBackground: "var(--surface-raised)",
     colorInputBackground: "var(--surface-sunken)",
@@ -21,6 +22,8 @@ const darkAppearance = {
 };
 
 export default function SignUpPage() {
+  const { resolvedTheme } = useTheme();
+
   return (
     <div className="font-ui flex min-h-screen items-center justify-center bg-surface-base px-6">
       <div className="flex flex-col items-center gap-8">
@@ -36,7 +39,8 @@ export default function SignUpPage() {
           </p>
         </div>
         <SignUp
-          appearance={darkAppearance}
+          key={resolvedTheme}
+          appearance={clerkAppearance}
           fallbackRedirectUrl="/tasks"
         />
       </div>
