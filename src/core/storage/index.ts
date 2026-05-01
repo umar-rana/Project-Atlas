@@ -64,7 +64,29 @@ export async function uploadFile(params: {
   contentType: string;
   data: Buffer | Uint8Array;
   taskId?: string;
-}): Promise<{ fileId: string; path: string }> {
+  parentType?: string | null;
+  parentId?: string | null;
+  thumbnailPath?: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
+  fileId?: string;
+}): Promise<{
+  fileId: string;
+  path: string;
+  attachmentId: string;
+  attachment: {
+    id: string;
+    file_id: string;
+    filename: string;
+    content_type: string;
+    size_bytes: number;
+    storage_path: string;
+    thumbnail_path: string | null;
+    parent_type: string | null;
+    parent_id: string | null;
+    created_at: Date;
+  };
+}> {
   const sizeBytes = params.data.byteLength;
   if (sizeBytes > MAX_FILE_SIZE_BYTES) {
     const limitMB = (MAX_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0);
@@ -74,28 +96,48 @@ export async function uploadFile(params: {
     );
   }
 
-  const fileId = newId();
+  const fileId = params.fileId ?? newId();
   const path = storagePath(params.userId, fileId, params.filename);
 
   const data = Buffer.isBuffer(params.data) ? params.data : Buffer.from(params.data);
 
   await storage.upload({ path, data, contentType: params.contentType });
 
-  await db.attachment.create({
+  const parentType = params.parentType ?? (params.taskId ? "Task" : null);
+  const parentId = params.parentId ?? params.taskId ?? null;
+
+  const attachment = await db.attachment.create({
     data: {
       id: newId(),
       file_id: fileId,
       user_id: params.userId,
       task_id: params.taskId ?? null,
+      parent_type: parentType,
+      parent_id: parentId,
       filename: params.filename,
       content_type: params.contentType,
       size_bytes: params.data.byteLength,
       storage_path: path,
+      thumbnail_path: params.thumbnailPath ?? null,
+      image_width: params.imageWidth ?? null,
+      image_height: params.imageHeight ?? null,
+    },
+    select: {
+      id: true,
+      file_id: true,
+      filename: true,
+      content_type: true,
+      size_bytes: true,
+      storage_path: true,
+      thumbnail_path: true,
+      parent_type: true,
+      parent_id: true,
+      created_at: true,
     },
   });
 
   log.info({ path, userId: params.userId, taskId: params.taskId }, "File uploaded");
-  return { fileId, path };
+  return { fileId, path, attachmentId: attachment.id, attachment };
 }
 
 export async function getFile(params: {

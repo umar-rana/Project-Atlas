@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db, newId } from "@/core/db";
-import { storage } from "@/core/storage";
-import { storagePath } from "@/core/storage/paths";
+import { uploadFile } from "@/core/storage";
 import { storeThumbnail } from "@/core/attachments/thumbnail";
 import { validateFile } from "@/core/attachments/validators";
 import { createLogger } from "@/core/logging";
@@ -42,17 +41,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
-  const fileId = newId();
-  const path = storagePath(user.id, fileId, file.name);
   const data = Buffer.from(await file.arrayBuffer());
   const contentType = file.type || "application/octet-stream";
 
-  try {
-    await storage.upload({ path, data, contentType });
-  } catch (err) {
-    log.error({ err, path }, "Storage upload failed");
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-  }
+  const fileId = newId();
 
   let thumbnailPath: string | null = null;
   let imageWidth: number | null = null;
@@ -71,28 +63,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     imageHeight = thumbResult.height;
   }
 
-  const attachment = await db.attachment.create({
-    data: {
-      id: newId(),
-      file_id: fileId,
-      user_id: user.id,
-      task_id: taskId ?? null,
-      parent_type: parentType ?? (taskId ? "Task" : null),
-      parent_id: parentId ?? taskId ?? null,
+  let result: Awaited<ReturnType<typeof uploadFile>>;
+  try {
+    result = await uploadFile({
+      userId: user.id,
       filename: file.name,
-      content_type: contentType,
-      size_bytes: file.size,
-      storage_path: path,
-      thumbnail_path: thumbnailPath,
-      image_width: imageWidth,
-      image_height: imageHeight,
-    },
-  });
+      contentType,
+      data,
+      taskId: taskId ?? undefined,
+      parentType,
+      parentId,
+      thumbnailPath,
+      imageWidth,
+      imageHeight,
+      fileId,
+    });
+  } catch (err) {
+    log.error({ err }, "Storage upload failed");
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+  }
 
   await logActivity({
     user_id: user.id,
     entity_type: "Attachment",
-    entity_id: attachment.id,
+    entity_id: result.attachmentId,
     action: "attachment_uploaded",
     meta: {
       filename: file.name,
@@ -108,22 +102,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       entity_type: "Task",
       entity_id: taskId,
       action: "attachment_uploaded",
-      meta: { filename: file.name, attachment_id: attachment.id },
+      meta: { filename: file.name, attachment_id: result.attachmentId },
     });
   }
 
-  log.info({ path, userId: user.id, taskId, attachmentId: attachment.id }, "File uploaded via API");
+  log.info({ path: result.path, userId: user.id, taskId, attachmentId: result.attachmentId }, "File uploaded via API");
 
-  return NextResponse.json({
-    id: attachment.id,
-    file_id: fileId,
-    filename: file.name,
-    content_type: contentType,
-    size_bytes: file.size,
-    storage_path: path,
-    thumbnail_path: thumbnailPath,
-    parent_type: attachment.parent_type,
-    parent_id: attachment.parent_id,
-    created_at: attachment.created_at,
-  });
+  return NextResponse.json(result.attachment);
 }
