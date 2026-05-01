@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { logActivity } from "@/core/audit";
-import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS } from "@/core/locale/presets";
+import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES } from "@/core/locale/presets";
 
 const EMAIL_OR_DOMAIN_RE = /^([^\s@]+@[^\s@]+\.[^\s@]+|(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+)$/;
 
@@ -102,8 +102,15 @@ export const userRouter = router({
           number_format: z.enum(
             NUMBER_FORMAT_OPTIONS.map((o) => o.value) as [string, ...string[]],
           ).optional(),
-          currency_code: z.string().max(10).optional(),
-          currency_symbol: z.string().max(5).optional(),
+          currency_code: z
+            .string()
+            .trim()
+            .transform((v) => v.toUpperCase())
+            .refine((v) => ISO_4217_CURRENCY_CODES.has(v), {
+              message: "Currency code must be a valid ISO 4217 code (e.g. USD, EUR, PKR)",
+            })
+            .optional(),
+          currency_symbol: z.string().trim().min(1, "Currency symbol is required").max(5, "Currency symbol must be 5 characters or fewer").optional(),
         }),
       ]),
     )
