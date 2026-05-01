@@ -890,6 +890,39 @@ function IntegrationsSection({
     onSuccess: () => utils.drive.linkStatus.invalidate(),
   });
 
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const testTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { refetch: runVerify } = trpc.drive.verify.useQuery(undefined, { enabled: false });
+
+  useEffect(() => {
+    return () => {
+      if (testTimerRef.current) clearTimeout(testTimerRef.current);
+    };
+  }, []);
+
+  const handleTestConnection = useCallback(async () => {
+    if (isTesting) return;
+    setIsTesting(true);
+    setTestResult(null);
+    if (testTimerRef.current) clearTimeout(testTimerRef.current);
+    try {
+      const { data, error } = await runVerify();
+      if (error) {
+        setTestResult({ ok: false, message: error.message || "Connection check failed." });
+      } else if (data?.ok) {
+        setTestResult({ ok: true, message: "Connection is working." });
+      } else {
+        setTestResult({ ok: false, message: data?.reason ?? "Drive access could not be verified." });
+      }
+    } catch {
+      setTestResult({ ok: false, message: "Connection check failed." });
+    } finally {
+      setIsTesting(false);
+      testTimerRef.current = setTimeout(() => setTestResult(null), 5000);
+    }
+  }, [isTesting, runVerify]);
+
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader title="Integrations" description="Connect external services to Atlas." />
@@ -930,6 +963,13 @@ function IntegrationsSection({
               </div>
               <div className="flex flex-shrink-0 gap-2">
                 <button
+                  onClick={handleTestConnection}
+                  disabled={isTesting}
+                  className="rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+                >
+                  {isTesting ? "Testing…" : "Test connection"}
+                </button>
+                <button
                   onClick={() => setShowWizard(true)}
                   className="rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary hover:bg-surface-hover"
                 >
@@ -943,6 +983,16 @@ function IntegrationsSection({
                 </button>
               </div>
             </div>
+            {testResult && (
+              <div className={cn(
+                "border-t px-4 py-2 font-ui text-xs",
+                testResult.ok
+                  ? "border-accent-success bg-accent-success-muted text-accent-success"
+                  : "border-accent-danger bg-accent-danger-muted text-accent-danger",
+              )}>
+                {testResult.message}
+              </div>
+            )}
           </div>
         ) : (
           <button
