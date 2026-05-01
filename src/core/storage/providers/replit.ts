@@ -1,3 +1,4 @@
+import 'server-only';
 import { Client } from "@replit/object-storage";
 import type { StorageProvider, StorageProviderName } from "../types";
 import { createLogger } from "@/core/logging";

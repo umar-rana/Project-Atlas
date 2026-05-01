@@ -1,11 +1,15 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { getOrCreateUserFromClerk } from "@/lib/auth";
-import { SettingsClient } from "./settings-client";
 
 export const metadata: Metadata = {
   title: "Settings — Atlas",
 };
+
+const SettingsClient = dynamic(() =>
+  import("./settings-client").then((m) => m.SettingsClient),
+);
 
 export default async function SettingsPage({
   searchParams,

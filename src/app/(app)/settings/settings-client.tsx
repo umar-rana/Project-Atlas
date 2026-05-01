@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { trpc } from "@/lib/trpc/client";
 import type { User } from "@prisma/client";
-import { DriveWizard } from "./drive-wizard";
 import { TwoPaneLayout } from "@/components/layout/two-pane-layout";
+
 import {
   User as UserIcon,
   Palette,
@@ -25,6 +26,18 @@ import {
   Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const DriveWizard = dynamic(
+  () => import("./drive-wizard").then((m) => m.DriveWizard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-24 items-center justify-center rounded-lg border border-border-default bg-surface-overlay">
+        <span className="font-ui text-sm text-text-tertiary">Loading…</span>
+      </div>
+    ),
+  },
+);
 
 type Section =
   | "profile"

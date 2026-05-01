@@ -1,3 +1,4 @@
+import 'server-only';
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { storagePath } from "./paths";

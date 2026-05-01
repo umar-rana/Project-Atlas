@@ -7,13 +7,21 @@ import { ModuleSwitcherWired } from "@/components/shell/module-switcher-wired";
 import { TopBarWired } from "@/components/shell/top-bar-wired";
 import { CommandPaletteWired } from "@/components/shell/command-palette-wired";
 import { KeyboardShortcutsOverlay } from "@/components/shell/keyboard-shortcuts-overlay";
-import { CaptureModal } from "@/components/shell/capture-modal";
 import { TasksCommands } from "@/components/tasks/tasks-commands";
 import { CommandRegistryProvider } from "@/core/commands/registry";
 import { ShortcutsRegistryProvider } from "@/core/shortcuts/registry";
 import { useShellStore } from "@/lib/shell/store";
 import { InspectorPanel } from "@/components/composed/inspector-panel";
 import { toast } from "@/lib/toast";
+import dynamic from "next/dynamic";
+
+const CaptureModal = dynamic(
+  () => import("@/components/shell/capture-modal").then((m) => m.CaptureModal),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 
 interface AppUser {
   name: string | null;
@@ -146,6 +154,20 @@ function ShellHydration(): null {
   return null;
 }
 
+function LazyCapture(): React.ReactElement | null {
+  const captureModalOpen = useShellStore((s) => s.captureModalOpen);
+  const [everOpened, setEverOpened] = React.useState(false);
+
+  React.useEffect(() => {
+    if (captureModalOpen && !everOpened) {
+      setEverOpened(true);
+    }
+  }, [captureModalOpen, everOpened]);
+
+  if (!everOpened) return null;
+  return <CaptureModal />;
+}
+
 function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.ReactElement {
   return (
     <>
@@ -164,7 +186,7 @@ function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.R
       <CommandPaletteWired />
       <TasksCommands />
       <KeyboardShortcutsOverlay />
-      <CaptureModal />
+      <LazyCapture />
     </>
   );
 }

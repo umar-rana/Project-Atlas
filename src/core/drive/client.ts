@@ -1,3 +1,4 @@
+import 'server-only';
 import { google } from "googleapis";
 import { db, newId } from "@/core/db";
 import { decryptToken, encryptToken } from "./encrypt";

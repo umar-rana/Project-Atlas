@@ -1,3 +1,4 @@
+import 'server-only';
 import { PrismaClient, Prisma } from "@prisma/client";
 import { createLogger } from "@/core/logging";
 import { uuidv7 } from "uuidv7";
