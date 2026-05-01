@@ -869,6 +869,7 @@ function IntegrationsSection({
   driveError?: string;
 }) {
   const utils = trpc.useUtils();
+  const router = useRouter();
   const [showWizard, setShowWizard] = useState(autoOpenWizard ?? false);
   const [driveBanner, setDriveBanner] = useState<{ type: "success" | "error"; message: string } | null>(() => {
     if (driveLinked) return { type: "success", message: "Google Drive connected successfully." };
@@ -878,6 +879,12 @@ function IntegrationsSection({
     }
     return null;
   });
+
+  useEffect(() => {
+    if (driveLinked || driveError) {
+      router.replace("/settings");
+    }
+  }, [router, driveLinked, driveError]);
 
   useEffect(() => {
     if (!driveBanner || driveBanner.type !== "success") return;
