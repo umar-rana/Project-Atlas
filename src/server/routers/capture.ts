@@ -617,6 +617,57 @@ export const captureRouter = router({
       };
     }),
 
+  list: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(100).default(50),
+        cursor: z.string().uuid().optional(),
+        search: z.string().max(500).optional(),
+        tag: z.string().max(200).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Prisma.CaptureWhereInput = {
+        user_id: ctx.user.id,
+        deleted_at: null,
+        ...(input.search
+          ? {
+              OR: [
+                { title: { contains: input.search, mode: "insensitive" } },
+                { raw_text: { contains: input.search, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+        ...(input.tag ? { tags: { has: input.tag } } : {}),
+      };
+
+      const captures = await db.capture.findMany({
+        where,
+        orderBy: [{ created_at: "desc" }, { id: "desc" }],
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0,
+        take: input.limit + 1,
+        select: {
+          id: true,
+          raw_text: true,
+          title: true,
+          tags: true,
+          due_date: true,
+          action_items: true,
+          ai_parsed: true,
+          created_at: true,
+        },
+      });
+
+      let nextCursor: string | undefined;
+      if (captures.length > input.limit) {
+        captures.pop();
+        nextCursor = captures[captures.length - 1]?.id;
+      }
+
+      return { captures, nextCursor };
+    }),
+
   exportStats: protectedProcedure
     .input(
       z.object({
@@ -681,26 +732,6 @@ export const captureRouter = router({
         },
       });
       return capture;
-    }),
-
-  list: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(100).default(50),
-        cursor: z.string().uuid().optional(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const captures = await db.capture.findMany({
-        where: {
-          user_id: ctx.user.id,
-          deleted_at: null,
-          ...(input.cursor ? { id: { lt: input.cursor } } : {}),
-        },
-        orderBy: { id: "desc" },
-        take: input.limit,
-      });
-      return captures;
     }),
 
   get: protectedProcedure
