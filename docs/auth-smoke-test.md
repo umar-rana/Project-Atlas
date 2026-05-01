@@ -1,48 +1,72 @@
 # Auth Login Flow — Smoke Test Results
 
-Verified: 2026-04-27 against live Replit dev domain.
+Verified: 2026-05-01 against live Replit dev domain.
 
 ## Test Environment
 
 - App URL: `https://<repl-id>.sisko.replit.dev`
-- Auth provider: Replit OIDC (`https://replit.com/oidc`)
+- Auth provider: Clerk (`@clerk/nextjs`)
 - Database: PostgreSQL (Replit-managed), migrations applied
 
-## Results
+## How Auth Works (Clerk)
+
+Authentication is handled entirely by Clerk. There are no manual OIDC state cookies, no token-exchange callbacks, and no custom session writes. The flow is:
+
+1. **Sign-in / Sign-up** — Clerk's hosted UI is embedded at `/sign-in` and `/sign-up`. All credential handling (password, OAuth, magic link, etc.) happens inside Clerk's component.
+2. **Session management** — Clerk sets its own secure, HttpOnly session cookie after a successful sign-in. The app never touches this cookie directly.
+3. **Middleware protection** — `src/middleware.ts` runs `clerkMiddleware` on every request (excluding `_next/static`, `_next/image`, `favicon.ico`, and `storybook`). For any route that is not in the public allow-list, the middleware calls `auth()` to retrieve the Clerk `userId`. If `userId` is absent, the request is redirected to `/sign-in?from=<original-path>`.
+4. **User record sync** — When a server component or API route needs the app's own `User` row, it calls `getOrCreateUserFromClerk()` (`src/lib/auth.ts`). This function calls Clerk's `currentUser()`, then either finds an existing `User` by `clerk_id`, links an existing `User` by email and stamps `clerk_id` onto it, or creates a new `User` row.
+
+### Public routes (no auth required)
+
+| Path pattern | Reason |
+|---|---|
+| `/` | Landing / welcome page |
+| `/welcome(.*)` | Onboarding flow |
+| `/privacy(.*)` | Legal |
+| `/terms(.*)` | Legal |
+| `/sign-in(.*)` | Clerk sign-in widget |
+| `/sign-up(.*)` | Clerk sign-up widget |
+| `/api/auth/test-login(.*)` | Dev-only test helper |
+| `/api/drive/connect(.*)` | Google Drive OAuth initiation |
+| `/api/drive/oauth-callback(.*)` | Google Drive OAuth callback |
+| `/api/health(.*)` | Health check |
+| `/api/trpc/health.ping(.*)` | tRPC health ping |
+| `/api/trpc/waitlist.submit(.*)` | Waitlist submission |
+| `/api/cron/(.*)` | Cron job endpoints |
+
+All other routes are protected and redirect unauthenticated users to `/sign-in`.
+
+## Smoke Test Results
 
 | # | Route | Expected | Actual | Status |
 |---|-------|----------|--------|--------|
-| 1 | `GET /sign-in` | HTTP 200, renders sign-in page | HTTP 200 | PASS |
-| 2 | `GET /api/auth/login?method=google` | HTTP 307 → Replit OIDC auth endpoint with correct `redirect_uri`, `scope`, `state`, `client_id` | HTTP 307 → `https://replit.com/oidc/auth?redirect_uri=…/api/auth/callback&scope=openid+email+profile+offline_access&state=<hex>&client_id=<repl_id>` | PASS |
-| 3 | `GET /` (no session) | HTTP 307 → `/sign-in?from=%2F` | HTTP 307 → `/sign-in?from=%2F` | PASS |
-| 4 | `GET /admin/health` (no session) | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | PASS |
-| 5 | `GET /settings` (no session) | HTTP 307 → `/sign-in?from=%2Fsettings` | HTTP 307 → `/sign-in?from=%2Fsettings` | PASS |
-| 6 | `GET /api/auth/logout` (no session) | HTTP 307 → `/sign-in` | HTTP 307 → `/sign-in` | PASS |
-| 7 | `GET /api/auth/callback?code=fake&state=wrong` (no OIDC state cookie) | HTTP 307 → `/sign-in?error=state_missing` | HTTP 307 → `/sign-in?error=state_missing` | PASS |
+| 1 | `GET /sign-in` | HTTP 200, renders Clerk sign-in widget | HTTP 200 | PASS |
+| 2 | `GET /` (no session) | HTTP 200 (public route, no redirect) | HTTP 200 | PASS |
+| 3 | `GET /tasks` (no session) | HTTP 307 → `/sign-in?from=%2Ftasks` | HTTP 307 → `/sign-in?from=%2Ftasks` | PASS |
+| 4 | `GET /settings` (no session) | HTTP 307 → `/sign-in?from=%2Fsettings` | HTTP 307 → `/sign-in?from=%2Fsettings` | PASS |
+| 5 | `GET /admin/health` (no session) | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | PASS |
+| 6 | `GET /api/health` (no session) | HTTP 200 (public route) | HTTP 200 | PASS |
+| 7 | `GET /api/cron/nightly-cleanup` (no session) | HTTP 200 (public route) | HTTP 200 | PASS |
 
 ## Notes
 
-- Test 2 confirms the full OIDC authorization URL is correctly formed, including:
-  - `redirect_uri` pointing back to the live app's `/api/auth/callback`
-  - `scope` includes `openid email profile offline_access`
-  - `state` is a fresh random 32-char hex string per request
-- Tests 3–5 confirm the Edge middleware correctly blocks unauthenticated access and preserves the `from` redirect parameter
-- Test 7 confirms the callback route's state validation works: missing OIDC cookie → safe redirect to sign-in
+- Tests 3–5 confirm that `clerkMiddleware` correctly blocks unauthenticated access to protected routes and preserves the `from` redirect parameter so the user lands back on the right page after signing in.
+- Tests 2, 6, and 7 confirm that routes in the `isPublicRoute` allow-list pass through without any auth check.
+- The `from` parameter on the redirect URL is set from `req.nextUrl.pathname` (not the full URL) to avoid leaking query strings into the sign-in page.
 
 ## What requires a live browser session to verify
 
-The OIDC callback loop (Replit IdP → authorization code → token exchange → User/Session DB write → session cookie set → redirect to `/`) requires a real user browser session with Replit's identity provider. This cannot be simulated in a headless curl test.
+The full Clerk sign-in loop (credential entry → Clerk session cookie set → redirect back to app → `userId` present in middleware → access granted) must be verified in a real browser. Clerk's session token is an HttpOnly cookie that cannot be fabricated in a headless curl test.
 
-The callback code path (`src/app/api/auth/callback/route.ts`) was verified by code review against the openid-client v6 API:
-- State cookie validation (line 14–17)
-- `handleCallback` exchanges authorization code for tokens (line 21)
-- User is upserted in DB (lines 27–62)
-- Session is created and signed (line 64–67)
-- Cookie is set with `httpOnly`, `secure`, `sameSite: lax` (lines 70–76)
-- State cookie is deleted after use (line 77)
+The user-sync path (`getOrCreateUserFromClerk()` in `src/lib/auth.ts`) was verified by code review:
+- `currentUser()` retrieves the authenticated Clerk user (lines 7–8)
+- Primary lookup is by `clerk_id` (line 13)
+- Fallback lookup by email links legacy records and stamps `clerk_id` (lines 18–28)
+- New users are created with sensible defaults and an audit log entry (lines 30–52)
 
 ## Fixes applied during this verification
 
-1. **Applied pending Prisma migrations** (`20260427043022_wave1_foundation`, `20260427050511_wave1_uuidv7_pks`) — User, Session, and all Wave 1 tables now exist in the database.
-2. **Added `serverExternalPackages: ['pino', 'pino-pretty']` to `next.config.mjs`** — Prevents Next.js from bundling pino's worker-thread-dependent transport, eliminating uncaughtException errors in dev mode.
-3. **Updated `scripts/post-merge.sh`** to run `prisma generate` and `prisma migrate deploy` — ensures the Prisma client and DB schema are always ready after merges.
+1. **Migrated auth from Replit OIDC to Clerk** — Removed `openid-client`, state cookies, `/api/auth/callback`, and custom session handling. Replaced with `@clerk/nextjs` (`clerkMiddleware`, `currentUser`).
+2. **Updated `src/middleware.ts`** to use `clerkMiddleware` and `createRouteMatcher` for the public route allow-list.
+3. **Updated `src/lib/auth.ts`** to use `currentUser()` from Clerk and sync the result into the app's own `User` table via `getOrCreateUserFromClerk()`.
