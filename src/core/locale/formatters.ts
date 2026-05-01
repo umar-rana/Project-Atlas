@@ -224,6 +224,33 @@ export function formatMonthAbbrev(value: Date | string, language?: string): stri
   }
 }
 
+const RELATIVE_DATE_LABELS: Record<string, { today: string; tomorrow: string; yesterday: string }> = {
+  en:      { today: "Today",      tomorrow: "Tomorrow", yesterday: "Yesterday"   },
+  "en-US": { today: "Today",      tomorrow: "Tomorrow", yesterday: "Yesterday"   },
+  ur:      { today: "آج",         tomorrow: "کل",       yesterday: "گزشتہ کل"   },
+  ar:      { today: "اليوم",      tomorrow: "غداً",     yesterday: "أمس"         },
+  "ar-SA": { today: "اليوم",      tomorrow: "غداً",     yesterday: "أمس"         },
+  "fa-IR": { today: "امروز",      tomorrow: "فردا",     yesterday: "دیروز"       },
+  hi:      { today: "आज",         tomorrow: "कल",       yesterday: "बीता कल"    },
+  ms:      { today: "Hari ini",   tomorrow: "Esok",     yesterday: "Semalam"     },
+  id:      { today: "Hari ini",   tomorrow: "Besok",    yesterday: "Kemarin"     },
+  tr:      { today: "Bugün",      tomorrow: "Yarın",    yesterday: "Dün"         },
+  fr:      { today: "Aujourd'hui",tomorrow: "Demain",   yesterday: "Hier"        },
+  de:      { today: "Heute",      tomorrow: "Morgen",   yesterday: "Gestern"     },
+  es:      { today: "Hoy",        tomorrow: "Mañana",   yesterday: "Ayer"        },
+  it:      { today: "Oggi",       tomorrow: "Domani",   yesterday: "Ieri"        },
+  nl:      { today: "Vandaag",    tomorrow: "Morgen",   yesterday: "Gisteren"    },
+  pl:      { today: "Dzisiaj",    tomorrow: "Jutro",    yesterday: "Wczoraj"     },
+  "pt-BR": { today: "Hoje",       tomorrow: "Amanhã",   yesterday: "Ontem"       },
+  ru:      { today: "Сегодня",    tomorrow: "Завтра",   yesterday: "Вчера"       },
+  uk:      { today: "Сьогодні",   tomorrow: "Завтра",   yesterday: "Вчора"       },
+  "zh-CN": { today: "今天",       tomorrow: "明天",     yesterday: "昨天"         },
+  ja:      { today: "今日",       tomorrow: "明日",     yesterday: "昨日"         },
+  ko:      { today: "오늘",       tomorrow: "내일",     yesterday: "어제"         },
+};
+
+const RELATIVE_DATE_FALLBACK = RELATIVE_DATE_LABELS["en"]!;
+
 export function formatRelativeDate(
   value: Date | string | null | undefined,
   locale: LocaleSettings,
@@ -244,9 +271,10 @@ export function formatRelativeDate(
     const targetMs = Date.UTC(targetY, targetM, targetD);
     const todayMs = Date.UTC(todayY, todayM, todayDN);
     const diff = Math.round((targetMs - todayMs) / 86_400_000);
-    if (diff === 0) return "Today";
-    if (diff === 1) return "Tomorrow";
-    if (diff === -1) return "Yesterday";
+    const labels = RELATIVE_DATE_LABELS[locale.language] ?? RELATIVE_DATE_FALLBACK;
+    if (diff === 0) return labels.today;
+    if (diff === 1) return labels.tomorrow;
+    if (diff === -1) return labels.yesterday;
     return formatDateUTCSafe(raw, locale);
   } catch {
     return "";
