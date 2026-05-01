@@ -31,7 +31,7 @@ This pattern lets `prisma migrate deploy` run the file normally — Prisma never
 
 ### Prerequisites
 
-- You have `DIRECT_DATABASE_URL` (the non-pooled Neon connection string) available as an environment variable. This is already configured in Replit Secrets.
+- You have access to the Neon direct (non-pooled) connection string, available via the `NEON_DATABASE_URL_DIRECT` secret in Replit Secrets.
 - The app can remain running throughout — no maintenance window is needed.
 
 ### Step-by-step procedure
@@ -96,7 +96,7 @@ This pattern lets `prisma migrate deploy` run the file normally — Prisma never
 Prisma marks a migration applied when the SQL file executes without error. If the process was interrupted mid-build, some indexes may be missing. Because all statements use `IF NOT EXISTS`, you can safely run the migration SQL again manually:
 
 ```bash
-psql "$DIRECT_DATABASE_URL" -f prisma/migrations/20260430181042_add_raw_perf_indexes/migration.sql
+psql "$NEON_DATABASE_URL_DIRECT" -f prisma/migrations/20260430181042_add_raw_perf_indexes/migration.sql
 ```
 
 Note: When running manually outside Prisma, the `COMMIT` / `BEGIN` sentinels at the top and bottom are harmless no-ops (the session is already in autocommit mode in psql).
@@ -167,7 +167,7 @@ The GitHub Actions workflow at `.github/workflows/ci.yml` already runs `npx pris
 - **CI databases are throwaway.** Both jobs spin up a fresh local Postgres 16 container. There is no live user traffic, so the "no exclusive lock" concern does not apply in CI — the migration completes quickly on an empty schema.
 - **The transaction-escape pattern is self-contained.** The `COMMIT` / `BEGIN` sentinels in the SQL file work correctly regardless of whether Postgres is local or remote. CI has been validating this migration on every push since the migration was added.
 
-There is no automated **production** deploy pipeline at this time. When a production pipeline is added, the only requirement is that the deploy step runs `npx prisma migrate deploy` with `DIRECT_DATABASE_URL` pointing to the non-pooled Neon connection. The transaction-escape pattern in the SQL file handles the rest — no extra flags or custom scripts are needed.
+There is no automated **production** deploy pipeline at this time. When a production pipeline is added, `npx prisma migrate deploy` can run using `DATABASE_URL` pointing to the pooled Neon connection. The transaction-escape pattern in the SQL file handles the rest — no extra flags or custom scripts are needed.
 
 ---
 

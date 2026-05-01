@@ -337,15 +337,14 @@ export const prisma = new PrismaClient({
 })
 ```
 
-For Prisma's `directUrl` (used by migrations only), the schema file's `directUrl` field reads from a specific env var. Since we can't conditionally pick env vars in the schema, set `DIRECT_DATABASE_URL` env var in Replit Secrets to the Neon direct URL when migration happens, and revert it for rollback.
+For Prisma's `directUrl` (used by migrations only), the schema file's `directUrl` field can point to the non-pooled connection. In practice this was subsequently removed (task #184) as migrations work correctly through the pooled connection. No extra env var is needed.
 
 In `prisma/schema.prisma`:
 
 ```prisma
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")  // Overridden at runtime by getDatabaseUrl() when DATABASE_URL_NEON is set
-  directUrl = env("DIRECT_DATABASE_URL")  // For Prisma migrations
+  provider = "postgresql"
+  url      = env("DATABASE_URL")  // Overridden at runtime by getDatabaseUrl() when DATABASE_URL_NEON is set
 }
 ```
 
@@ -355,7 +354,6 @@ In Replit Secrets, the user creates these new secrets:
 
 - `DATABASE_URL_NEON` = value of `NEON_DATABASE_URL_POOLED`
 - `DIRECT_DATABASE_URL_NEON` = value of `NEON_DATABASE_URL_DIRECT`
-- `DIRECT_DATABASE_URL` = value of `NEON_DATABASE_URL_DIRECT` (for Prisma migrations)
 
 The auto-injected `DATABASE_URL` remains pointing to Replit Postgres — that's fine; the runtime helper now ignores it because `DATABASE_URL_NEON` is set.
 
@@ -438,7 +436,6 @@ Create `/docs/migrations/2026-XX-XX-database-to-neon.md` (or appropriate path):
 
 ## Connection strings
 - Runtime: `DATABASE_URL` env var → Neon pooled connection
-- Migrations: `DIRECT_DATABASE_URL` env var → Neon direct connection
 - Old Replit Postgres connection: preserved as `REPLIT_DATABASE_URL_BACKUP` until [date + 7 days]
 
 ## Rollback procedure (if needed within first 7 days)
@@ -447,10 +444,9 @@ The env var precedence approach makes rollback cleaner than the original plan:
 
 1. In Replit Secrets, **delete** the `DATABASE_URL_NEON` secret (or rename it temporarily to disable it)
 2. The runtime helper `getDatabaseUrl()` will now fall back to `DATABASE_URL` (Replit Postgres, still auto-injected and intact)
-3. Set `DIRECT_DATABASE_URL` back to whatever value Replit Postgres uses (it's the same as `DATABASE_URL` for Replit's managed instance — refer to `REPLIT_DATABASE_URL_BACKUP` if needed)
-4. Restart application
-5. Verify /admin/health shows database connected to Replit Postgres
-6. Investigate the issue that caused rollback before re-attempting Neon migration
+3. Restart application
+4. Verify /admin/health shows database connected to Replit Postgres
+5. Investigate the issue that caused rollback before re-attempting Neon migration
 
 `REPLIT_DATABASE_URL_BACKUP` is preserved as the source of truth for the original connection string in case Replit's auto-injection ever needs to be manually reconstructed.
 
@@ -498,7 +494,7 @@ If issues surface, the rollback path is open. Don't decommission Replit Postgres
 ### 12.2 Connection string discipline
 
 - **Pooled** connection (`-pooler` in hostname) → application runtime via `DATABASE_URL`
-- **Direct** connection (no `-pooler`) → migrations and pg_restore via `DIRECT_DATABASE_URL`
+- **Direct** connection (no `-pooler`) → pg_restore and manual psql operations via `NEON_DATABASE_URL_DIRECT`
 - Confusing these causes intermittent failures that are hard to diagnose
 
 ### 12.3 Don't break Clerk integration

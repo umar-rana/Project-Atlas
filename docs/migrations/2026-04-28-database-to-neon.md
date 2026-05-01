@@ -19,12 +19,10 @@ Object Storage (Cloudflare R2) was explicitly out of scope and was not touched.
 | Variable | Purpose | Notes |
 |---|---|---|
 | `DATABASE_URL_NEON` | Runtime connection (pooled) | Used by Prisma at app runtime via `resolveDbUrl()` |
-| `DIRECT_DATABASE_URL` | Prisma migrations (direct) | Used by `directUrl` in `prisma/schema.prisma` |
-| `DIRECT_DATABASE_URL_NEON` | Alias for direct connection | Kept for reference |
 | `DATABASE_URL` | Replit Postgres (original) | Unchanged; fallback if `DATABASE_URL_NEON` is removed |
 | `REPLIT_DATABASE_URL_BACKUP` | Replit Postgres backup reference | Keep until 2026-05-05 at minimum |
 | `NEON_DATABASE_URL_POOLED` | Original Neon pooled secret | Source of truth for `DATABASE_URL_NEON` |
-| `NEON_DATABASE_URL_DIRECT` | Original Neon direct secret | Source of truth for `DIRECT_DATABASE_URL` |
+| `NEON_DATABASE_URL_DIRECT` | Original Neon direct secret | Kept for reference (non-pooled connection) |
 
 ---
 
@@ -35,7 +33,7 @@ Object Storage (Cloudflare R2) was explicitly out of scope and was not touched.
 - Updated `createPrismaClient()` to pass `datasources.db.url` explicitly using `resolveDbUrl()`. Removing `DATABASE_URL_NEON` from Secrets instantly reverts the app to Replit Postgres.
 
 ### `prisma/schema.prisma`
-- Added `directUrl = env("DIRECT_DATABASE_URL")` to the datasource block to support Prisma migrations against Neon's direct (non-pooled) connection.
+- Added a `directUrl` to the datasource block to support Prisma migrations against Neon's direct (non-pooled) connection. This `directUrl` was subsequently removed (task #184) as migrations run cleanly through the pooled connection.
 
 ---
 
