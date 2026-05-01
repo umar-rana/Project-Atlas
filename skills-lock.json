@@ -6,6 +6,12 @@
       "sourceType": "github",
       "skillPath": "skills/next-best-practices/SKILL.md",
       "computedHash": "db85045827ebeb83ac8dbc992b69188755eeb74dcf01cbf5e694d58aa494a106"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
     }
   }
 }
