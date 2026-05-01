@@ -1,4 +1,4 @@
-# Atlas — Wave 4a Phase 2: Locale Formatters & Settings UI
+# Atlas — Wave 4a Phase 3: TipTap Editor Core
 
 ## Overview
 Atlas is a desktop-first personal productivity command center designed as a local-first capture intelligence system. It efficiently processes user input by prioritizing cost-effective local parsing methods and using AI services like Claude Haiku only as a fallback for ambiguous cases, significantly reducing AI costs. The project includes a comprehensive captures tRPC router for parsing, previewing, logging, and statistical analysis, a re-engineered capture modal, email-to-inbox functionality, and a robust, authenticated application shell focused on user experience. It aims to be a command center for personal productivity.
@@ -27,6 +27,7 @@ The application is built on Next.js 15 (App Router) + React 19 with TypeScript. 
 - **Extensible Command and Shortcut Registries**: Context-based registries for managing application commands and keyboard shortcuts.
 - **UI/UX Decisions**: Desktop-first design, component splitting, `React.memo` for performance, and narrowed Prisma `select` statements for efficiency.
 - **Tasks Features**: Includes `ChecklistItem` model, `Checklist tRPC router`, `ChecklistSection` component, `SubtaskSection` and `SubtaskRow` components, updated task inspector with breadcrumbs, checklist progress badges in task list items, and enforced task depth.
+- **Notes Editor Infrastructure (Wave 4a Phase 3)**: TipTap (ProseMirror) editor core built in `src/core/editor/` and `src/components/notes/`. Includes: `tiptap-config.ts` (extensions: StarterKit, Link, CodeBlockLowlight/lowlight, TaskList, Underline, Strike, Placeholder), `reference-extension.ts` (custom ProseMirror plugin for `[[note]]`, `#tag`, `@context` triggers), `slash-command-extension.ts` (`/` block-type command menu), `markdown-export.ts` (TipTap JSON→Markdown), `markdown-import.ts` (Markdown→TipTap JSON), `text-extraction.ts` (JSON→plain text for FTS). Components: `reference-picker.tsx` (searchable tRPC-backed dropdown with create-note option), `slash-command-menu.tsx` (10 block commands), `note-editor.tsx` (full editor wrapper with 1s debounced auto-save, Cmd+S, save status indicator, image-paste upload, URL-paste-as-link). Notes tRPC router at `src/server/routers/notes.ts` (list, get, create, update, delete, search).
 
 ## External Dependencies
 - **Next.js**: Application framework
@@ -49,3 +50,5 @@ The application is built on Next.js 15 (App Router) + React 19 with TypeScript. 
 - **Resend**: Email service for inbound webhooks and outbound verification emails
 - **chrono-node, compromise.js**: For local-first capture parsing
 - **pg-boss**: PostgreSQL-backed durable job queue and scheduler (v10)
+- **TipTap**: Rich-text editor framework (ProseMirror-based) for the Notes module
+- **lowlight**: Syntax highlighting for code blocks (via highlight.js)

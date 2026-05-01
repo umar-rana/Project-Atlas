@@ -1,0 +1,476 @@
+"use client";
+
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useEditor, EditorContent, Editor } from "@tiptap/react";
+import { buildExtensions } from "@/core/editor/tiptap-config";
+import {
+  ReferenceNode,
+  ReferencePickerExtension,
+  REFERENCE_PICKER_PLUGIN_KEY,
+  type ReferencePickerType,
+} from "@/core/editor/reference-extension";
+import {
+  SlashCommandExtension,
+  SLASH_COMMAND_PLUGIN_KEY,
+} from "@/core/editor/slash-command-extension";
+import { ReferencePicker, type ReferenceItem } from "./reference-picker";
+import { SlashCommandMenu } from "./slash-command-menu";
+import { tiptapToMarkdown } from "@/core/editor/markdown-export";
+import { extractPlainText } from "@/core/editor/text-extraction";
+import { trpc } from "@/lib/trpc/client";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { ReferenceTooltipLayer } from "./reference-tooltip";
+
+type SaveStatus = "saved" | "saving" | "error" | "idle";
+
+type Props = {
+  noteId: string;
+  initialJson?: string;
+  initialTitle?: string;
+  placeholder?: string;
+  className?: string;
+  readOnly?: boolean;
+};
+
+type PickerPosition = { top: number; left: number };
+
+function useDebouncedCallback<T extends (...args: never[]) => void>(
+  fn: T,
+  delay: number,
+): T {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
+
+  return useCallback(
+    (...args: Parameters<T>) => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        fnRef.current(...args);
+      }, delay);
+    },
+    [delay],
+  ) as T;
+}
+
+function getCaretPosition(editor: Editor): PickerPosition {
+  const { view } = editor;
+  const { from } = view.state.selection;
+  const coords = view.coordsAtPos(from);
+  return {
+    top: coords.bottom + 4,
+    left: coords.left,
+  };
+}
+
+export function NoteEditor({
+  noteId,
+  initialJson,
+  initialTitle,
+  placeholder,
+  className,
+  readOnly = false,
+}: Props) {
+  const router = useRouter();
+  const updateMutation = trpc.notes.update.useMutation();
+  const createNoteMutation = trpc.notes.create.useMutation();
+  const utils = trpc.useUtils();
+
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [title, setTitle] = useState(initialTitle ?? "");
+
+  const [referencePickerState, setReferencePickerState] = useState<{
+    active: boolean;
+    trigger: ReferencePickerType;
+    query: string;
+    from: number;
+    to: number;
+    position: PickerPosition;
+  } | null>(null);
+
+  const [slashMenuState, setSlashMenuState] = useState<{
+    active: boolean;
+    query: string;
+    from: number;
+    position: PickerPosition;
+  } | null>(null);
+
+  const saveNote = useCallback(
+    async (editor: Editor, overrideTitle?: string) => {
+      const json = JSON.stringify(editor.getJSON());
+      const text = extractPlainText(editor.getJSON() as Parameters<typeof extractPlainText>[0]);
+      const markdown = tiptapToMarkdown(editor.getJSON() as Parameters<typeof tiptapToMarkdown>[0]);
+      const currentTitle = overrideTitle !== undefined ? overrideTitle : title;
+
+      setSaveStatus("saving");
+      try {
+        await updateMutation.mutateAsync({
+          id: noteId,
+          title: currentTitle,
+          body_json: json,
+          body_text: text,
+          body_markdown: markdown,
+        });
+        await utils.notes.get.invalidate({ id: noteId });
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("error");
+      }
+    },
+    [noteId, title, updateMutation, utils],
+  );
+
+  const debouncedSave = useDebouncedCallback(
+    (editor: Editor, overrideTitle?: string) => {
+      void saveNote(editor, overrideTitle);
+    },
+    1000,
+  );
+
+  const editor = useEditor({
+    extensions: [
+      ...buildExtensions(placeholder),
+      ReferenceNode,
+      ReferencePickerExtension,
+      SlashCommandExtension,
+    ],
+    content: (() => {
+      if (!initialJson || initialJson === "{}") {
+        return { type: "doc", content: [{ type: "paragraph" }] };
+      }
+      try {
+        return JSON.parse(initialJson);
+      } catch {
+        return { type: "doc", content: [{ type: "paragraph" }] };
+      }
+    })(),
+    editable: !readOnly,
+
+    onUpdate({ editor }) {
+      setSaveStatus("idle");
+      debouncedSave(editor);
+
+      const pickerPluginState = REFERENCE_PICKER_PLUGIN_KEY.getState(editor.state);
+      const slashPluginState = SLASH_COMMAND_PLUGIN_KEY.getState(editor.state);
+
+      if (pickerPluginState?.active) {
+        setReferencePickerState({
+          ...pickerPluginState,
+          position: getCaretPosition(editor),
+        });
+      } else {
+        setReferencePickerState(null);
+      }
+
+      if (slashPluginState?.active) {
+        setSlashMenuState({
+          ...slashPluginState,
+          position: getCaretPosition(editor),
+        });
+      } else {
+        setSlashMenuState(null);
+      }
+    },
+
+    onTransaction({ editor }) {
+      const pickerPluginState = REFERENCE_PICKER_PLUGIN_KEY.getState(editor.state);
+      const slashPluginState = SLASH_COMMAND_PLUGIN_KEY.getState(editor.state);
+
+      if (pickerPluginState?.active) {
+        setReferencePickerState((prev) => ({
+          ...pickerPluginState,
+          position: prev?.position ?? getCaretPosition(editor),
+        }));
+      } else {
+        setReferencePickerState(null);
+      }
+
+      if (slashPluginState?.active) {
+        setSlashMenuState((prev) => ({
+          ...slashPluginState,
+          position: prev?.position ?? getCaretPosition(editor),
+        }));
+      } else {
+        setSlashMenuState(null);
+      }
+    },
+
+    editorProps: {
+      handlePaste(view, event) {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item?.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (!file) continue;
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("parent_type", "Note");
+            formData.append("parent_id", noteId);
+
+            fetch("/api/attachments/upload", {
+              method: "POST",
+              body: formData,
+            })
+              .then((res) => res.json())
+              .then((data: unknown) => {
+                if (data && typeof data === "object" && "file_id" in data) {
+                  const fileId = (data as { file_id: string }).file_id;
+                  const imgUrl = `/api/attachments/${fileId}`;
+                  view.dispatch(
+                    view.state.tr.replaceSelectionWith(
+                      view.state.schema.nodes.image!.create({ src: imgUrl }),
+                    ),
+                  );
+                } else {
+                  setSaveStatus("error");
+                }
+              })
+              .catch(() => {
+                setSaveStatus("error");
+              });
+
+            return true;
+          }
+        }
+
+        const text = event.clipboardData?.getData("text/plain") ?? "";
+        const { selection } = view.state;
+        if (!selection.empty && /^https?:\/\//.test(text.trim())) {
+          const { from, to } = selection;
+          const selectedText = view.state.doc.textBetween(from, to);
+          if (selectedText) {
+            event.preventDefault();
+            view.dispatch(
+              view.state.tr.addMark(
+                from,
+                to,
+                view.state.schema.marks.link!.create({ href: text.trim() }),
+              ),
+            );
+            return true;
+          }
+        }
+
+        return false;
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (!editor) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        void saveNote(editor);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [editor, saveNote]);
+
+  const handleReferenceSelect = useCallback(
+    (item: ReferenceItem) => {
+      if (!editor || !referencePickerState) return;
+
+      const { from } = referencePickerState;
+      const triggerLength =
+        referencePickerState.trigger === "note"
+          ? 2 + referencePickerState.query.length
+          : 1 + referencePickerState.query.length;
+
+      editor
+        .chain()
+        .focus()
+        .deleteRange({ from, to: from + triggerLength })
+        .insertContent({
+          type: "reference",
+          attrs: {
+            target_type: item.target_type,
+            target_id: item.id,
+            display_text: item.display_text,
+          },
+        })
+        .run();
+
+      setReferencePickerState(null);
+    },
+    [editor, referencePickerState],
+  );
+
+  const handleCreateNote = useCallback(
+    async (titleText: string) => {
+      if (!editor || !referencePickerState) return;
+
+      try {
+        const newNote = await createNoteMutation.mutateAsync({
+          title: titleText || "Untitled",
+        });
+        await utils.notes.list.invalidate();
+
+        const { from } = referencePickerState;
+        const triggerLength = 2 + referencePickerState.query.length;
+
+        editor
+          .chain()
+          .focus()
+          .deleteRange({ from, to: from + triggerLength })
+          .insertContent({
+            type: "reference",
+            attrs: {
+              target_type: "note",
+              target_id: newNote.id,
+              display_text: newNote.title || "Untitled",
+            },
+          })
+          .run();
+
+        setReferencePickerState(null);
+      } catch {
+        setReferencePickerState(null);
+      }
+    },
+    [editor, referencePickerState, createNoteMutation, utils],
+  );
+
+  const handleReferenceClose = useCallback(() => {
+    setReferencePickerState(null);
+    if (editor) {
+      editor.view.dispatch(
+        editor.view.state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {
+          active: false,
+          trigger: "note",
+          query: "",
+          from: 0,
+          to: 0,
+        }),
+      );
+    }
+  }, [editor]);
+
+  const handleSlashClose = useCallback(() => {
+    setSlashMenuState(null);
+    if (editor) {
+      editor.view.dispatch(
+        editor.view.state.tr.setMeta(SLASH_COMMAND_PLUGIN_KEY, {
+          active: false,
+          query: "",
+          from: 0,
+        }),
+      );
+    }
+  }, [editor]);
+
+  const handleReferenceNodeClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement;
+      const refNode = target.closest("[data-reference]") as HTMLElement | null;
+      if (!refNode) return;
+
+      const targetType = refNode.dataset["targetType"];
+      const targetId = refNode.dataset["targetId"];
+      if (!targetType || !targetId) return;
+
+      if (targetType === "note") {
+        router.push(`/notes/${targetId}`);
+      } else if (targetType === "task") {
+        router.push(`/tasks?selected=${targetId}`);
+      } else if (targetType === "project") {
+        router.push(`/projects/${targetId}`);
+      } else if (targetType === "context") {
+        router.push(`/tasks?context=${targetId}`);
+      } else if (targetType === "tag") {
+        const displayText = refNode.dataset["displayText"] ?? "";
+        router.push(`/tasks?tag=${encodeURIComponent(displayText)}`);
+      }
+    },
+    [router],
+  );
+
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newTitle = e.target.value;
+      setTitle(newTitle);
+      if (editor) {
+        debouncedSave(editor, newTitle);
+      }
+    },
+    [editor, debouncedSave],
+  );
+
+  return (
+    <div className={cn("flex flex-col h-full", className)}>
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border flex-shrink-0">
+        <input
+          type="text"
+          value={title}
+          onChange={handleTitleChange}
+          placeholder="Note title…"
+          className="flex-1 text-xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground"
+          disabled={readOnly}
+        />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-4 flex-shrink-0">
+          {saveStatus === "saving" && (
+            <span className="flex items-center gap-1">
+              <span className="animate-spin">⟳</span>
+              saving…
+            </span>
+          )}
+          {saveStatus === "saved" && (
+            <span className="text-green-600 dark:text-green-400">✓ saved</span>
+          )}
+          {saveStatus === "error" && (
+            <span className="text-destructive">⚠ error saving</span>
+          )}
+        </div>
+      </div>
+
+      <div
+        ref={editorContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-4"
+        onClick={handleReferenceNodeClick}
+      >
+        <EditorContent
+          editor={editor}
+          className="note-editor-content prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-full"
+        />
+      </div>
+
+      {referencePickerState?.active && editor && (
+        <ReferencePicker
+          trigger={referencePickerState.trigger}
+          query={referencePickerState.query}
+          position={referencePickerState.position}
+          onSelect={handleReferenceSelect}
+          onCreateNote={
+            referencePickerState.trigger === "note" ? handleCreateNote : undefined
+          }
+          onClose={handleReferenceClose}
+        />
+      )}
+
+      {slashMenuState?.active && editor && (
+        <SlashCommandMenu
+          query={slashMenuState.query}
+          position={slashMenuState.position}
+          editor={editor}
+          from={slashMenuState.from}
+          onClose={handleSlashClose}
+        />
+      )}
+
+      <ReferenceTooltipLayer containerRef={editorContainerRef} />
+    </div>
+  );
+}
