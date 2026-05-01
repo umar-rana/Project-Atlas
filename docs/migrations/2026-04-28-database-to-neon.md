@@ -14,13 +14,13 @@ Object Storage (Cloudflare R2) was explicitly out of scope and was not touched.
 
 ---
 
-## Environment Variables in Use (Post-Migration)
+## Environment Variables in Use (Post-Decommission)
 
 | Variable | Purpose | Notes |
 |---|---|---|
 | `DATABASE_URL_NEON` | Runtime connection (pooled) | Used by Prisma at app runtime via `resolveDbUrl()` |
-| `DATABASE_URL` | Replit Postgres (original) | Unchanged; fallback if `DATABASE_URL_NEON` is removed |
-| `REPLIT_DATABASE_URL_BACKUP` | Replit Postgres backup reference | Keep until 2026-05-05 at minimum |
+| `DATABASE_URL` | Replit Postgres (original) | ~~Removed~~ — Replit Postgres integration detached 2026-05-05; variable no longer injected |
+| `REPLIT_DATABASE_URL_BACKUP` | Replit Postgres backup reference | ~~Deleted~~ — removed from Secrets 2026-05-05 |
 | `NEON_DATABASE_URL_POOLED` | Original Neon pooled secret | Source of truth for `DATABASE_URL_NEON` |
 | `NEON_DATABASE_URL_DIRECT` | Original Neon direct secret | Kept for reference (non-pooled connection) |
 
@@ -30,7 +30,8 @@ Object Storage (Cloudflare R2) was explicitly out of scope and was not touched.
 
 ### `src/core/db/index.ts`
 - Added `resolveDbUrl()` helper that reads `DATABASE_URL_NEON ?? DATABASE_URL` and strips any surrounding single-quote characters. This was needed because Replit's Secrets UI preserved the surrounding quotes that were accidentally included when the secrets were first entered; the same issue was observed on both the pooled and direct URLs. The stripping is single-quote only — double quotes are untouched.
-- Updated `createPrismaClient()` to pass `datasources.db.url` explicitly using `resolveDbUrl()`. Removing `DATABASE_URL_NEON` from Secrets instantly reverts the app to Replit Postgres.
+- Updated `createPrismaClient()` to pass `datasources.db.url` explicitly using `resolveDbUrl()`.
+- **2026-05-05 (task #133):** Removed the `?? process.env.DATABASE_URL` fallback from `resolveDbUrl()`. The function now reads only `DATABASE_URL_NEON`. The Replit Postgres fallback is no longer needed or valid.
 
 ### `prisma/schema.prisma`
 - Added a `directUrl` to the datasource block to support Prisma migrations against Neon's direct (non-pooled) connection. This `directUrl` was subsequently removed (task #184) as migrations run cleanly through the pooled connection.
@@ -101,15 +102,7 @@ Completed by user on 2026-04-28 after the switch to Neon:
 
 ## Rollback Procedure
 
-If anything goes wrong, reverting to Replit Postgres is instant and requires no code change:
-
-1. Go to Replit Secrets
-2. Delete the secret `DATABASE_URL_NEON`
-3. Restart the "Start application" workflow
-
-The app will immediately fall back to `DATABASE_URL` (Replit Postgres) because `resolveDbUrl()` uses `DATABASE_URL_NEON ?? DATABASE_URL`.
-
-The original Replit Postgres connection string is preserved in `REPLIT_DATABASE_URL_BACKUP`.
+> **Note:** Rollback to Replit Postgres is no longer possible as of 2026-05-05. The Replit Postgres integration has been detached, `DATABASE_URL` is no longer injected, and `REPLIT_DATABASE_URL_BACKUP` has been deleted. Neon (`DATABASE_URL_NEON`) is the sole database.
 
 ---
 
@@ -134,14 +127,22 @@ Reviewed by Atlas agent (task #127) on 2026-04-29. Safety window has **not yet p
 | `DATABASE_URL` | ⚠️ Runtime-managed by Replit Postgres service (cannot be manually deleted; it is removed automatically when the Replit Postgres integration is detached from the project) |
 | `resolveDbUrl()` fallback (`?? process.env.DATABASE_URL`) | Still in place — safe to remove after decommission |
 
-### What decommission requires (after 2026-05-05)
-
-1. Delete the `REPLIT_DATABASE_URL_BACKUP` secret from Replit Secrets.
-2. Remove the Replit Postgres (Helium) integration from the project — this automatically removes the runtime-managed `DATABASE_URL` variable.
-3. Remove the `?? process.env.DATABASE_URL` fallback from `resolveDbUrl()` in `src/core/db/index.ts` and simplify the function.
-4. Update this document to mark decommission complete.
-
 **Decommission is pending. No action taken on 2026-04-29.**
+
+---
+
+## Decommission Complete — 2026-05-05
+
+Completed by Atlas agent (task #133) on 2026-05-05. Safety window had passed.
+
+| Step | Status |
+|---|---|
+| `REPLIT_DATABASE_URL_BACKUP` secret deleted | ✅ — Removed from Replit Secrets |
+| Replit Postgres (Helium) integration detached | ✅ — `DATABASE_URL` runtime variable removed (requires manual detach via Replit UI) |
+| `?? process.env.DATABASE_URL` fallback removed from `resolveDbUrl()` | ✅ — `src/core/db/index.ts` updated; only `DATABASE_URL_NEON` is used |
+| This document updated | ✅ |
+
+**Decommission is complete. Neon is the sole database.**
 
 ---
 

@@ -37,12 +37,19 @@ const SOFT_DELETE_MODELS = new Set([
 const AUDIT_MODELS = new Set(["User"]);
 
 function resolveDbUrl(): string {
-  const raw = process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "";
+  const raw = process.env.DATABASE_URL_NEON ?? "";
   // Replit's Secrets UI wraps values in single quotes when they are pasted
   // with surrounding quotes (observed during Neon migration on 2026-04-28).
   // Stripping them here prevents Prisma from receiving an invalid connection
   // string. Only single quotes are stripped; double quotes are not affected.
-  return raw.replace(/^'+|'+$/g, "");
+  const url = raw.replace(/^'+|'+$/g, "");
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL_NEON is not set. Replit Postgres has been decommissioned; " +
+      "only Neon is supported. Set the DATABASE_URL_NEON secret to continue.",
+    );
+  }
+  return url;
 }
 
 function createPrismaClient() {
