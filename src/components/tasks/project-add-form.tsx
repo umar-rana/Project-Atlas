@@ -47,6 +47,10 @@ export function ProjectAddForm({ onDone }: { onDone?: () => void }): React.React
               "size-4 rounded-full border-2 transition",
               color === c ? "border-text-primary" : "border-transparent",
             )}
+            /* WCAG exemption: decorative color-swatch only — no text or icon sits on top.
+               "amber" is not a CSS named colour, so a literal hex is required.
+               WCAG 1.4.3 (text contrast) does not apply; WCAG 1.4.11 exempts
+               colour-sample graphics where colour itself is the conveyed information. */
             style={{ backgroundColor: c === "amber" ? "#d97706" : c }}
           />
         ))}
