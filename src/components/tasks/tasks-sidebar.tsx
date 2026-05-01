@@ -25,6 +25,7 @@ import { NavRow } from "@/components/sidebar/nav-row";
 import { SectionHeader, useSidebarSection } from "@/components/sidebar/section-header";
 import { TagsSection } from "@/components/sidebar/tags-section";
 import { ContextsSection } from "@/components/sidebar/contexts-section";
+import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
 
 export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
@@ -42,6 +43,11 @@ export function TasksSidebar(): React.ReactElement {
   const foldersQuery = trpc.folders.list.useQuery(undefined, { refetchOnWindowFocus: false });
 
   const utils = trpc.useUtils();
+
+  const handleMidnight = React.useCallback(() => {
+    utils.tasks.counts.invalidate();
+  }, [utils]);
+  useMidnightRefresh(handleMidnight);
 
   const toggleCollapsed = trpc.folders.toggleCollapsed.useMutation({
     onSuccess: () => utils.folders.list.invalidate(),

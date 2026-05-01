@@ -10,6 +10,7 @@ import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
 import { EmptyState } from "@/components/composed/empty-state";
 import { formatEstimatedTime, sumEstimatedMinutes } from "@/core/aggregation/time-format";
+import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
 
 interface TaskListItemWithSubtasksProps {
   task: TaskRow;
@@ -192,6 +193,13 @@ export function TaskList({
   );
 
   const utils = trpc.useUtils();
+
+  const isMidnightPerspective = perspective === "today" || perspective === "tomorrow";
+  const handleMidnight = React.useCallback(() => {
+    utils.tasks.list.invalidate();
+  }, [utils]);
+  useMidnightRefresh(handleMidnight, isMidnightPerspective);
+
   const moveMut = trpc.tasks.move.useMutation({
     onSettled: () => utils.tasks.list.invalidate(),
   });
