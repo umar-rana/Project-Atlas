@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Folder, FolderOpen, Plus, Pencil, Trash2, Check, X, StickyNote, FolderInput } from "lucide-react";
+import { Folder, FolderOpen, Plus, Pencil, Trash2, Check, X, StickyNote, FolderInput, ClipboardList } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
@@ -61,6 +61,9 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   const [subfolderNameDraft, setSubfolderNameDraft] = React.useState("");
   const [movingProjectId, setMovingProjectId] = React.useState<string | null>(null);
   const pickerRef = React.useRef<HTMLDivElement>(null);
+  const [addingProject, setAddingProject] = React.useState(false);
+  const [projectNameDraft, setProjectNameDraft] = React.useState("");
+  const newProjectInputRef = React.useRef<HTMLInputElement>(null);
 
   const foldersQuery = trpc.folders.list.useQuery();
 
@@ -120,6 +123,17 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
       router.push("/tasks/projects");
     },
     onError: () => toast.error("Failed to delete folder"),
+  });
+
+  const createProject = trpc.projects.create.useMutation({
+    onSuccess: () => {
+      utils.folders.byId.invalidate({ id: folderId });
+      utils.projects.list.invalidate();
+      setAddingProject(false);
+      setProjectNameDraft("");
+      toast.success("Project created");
+    },
+    onError: () => toast.error("Failed to create project"),
   });
 
   const createSubfolder = trpc.folders.create.useMutation({
@@ -182,6 +196,24 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   function handleCancelSubfolder() {
     setAddingSubfolder(false);
     setSubfolderNameDraft("");
+  }
+
+  function handleAddProject() {
+    setProjectNameDraft("");
+    setAddingProject(true);
+    setTimeout(() => newProjectInputRef.current?.focus(), 0);
+  }
+
+  function handleSubmitProject(e: React.FormEvent) {
+    e.preventDefault();
+    const title = projectNameDraft.trim();
+    if (!title) return;
+    createProject.mutate({ title, folder_id: folderId });
+  }
+
+  function handleCancelProject() {
+    setAddingProject(false);
+    setProjectNameDraft("");
   }
 
   if (query.isLoading) {
@@ -404,7 +436,44 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
             <h2 className="font-ui text-xs font-semibold uppercase tracking-caps text-text-tertiary">
               Projects ({folder.projects?.length ?? 0})
             </h2>
+            {!addingProject && (
+              <button
+                type="button"
+                onClick={handleAddProject}
+                className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+              >
+                <Plus size={10} />
+                New project
+              </button>
+            )}
           </div>
+          {addingProject && (
+            <form onSubmit={handleSubmitProject} className="mb-2 flex items-center gap-1.5 rounded-sm border border-border-focus px-3 py-1.5">
+              <ClipboardList size={12} className="shrink-0 text-text-tertiary" />
+              <input
+                ref={newProjectInputRef}
+                value={projectNameDraft}
+                onChange={(e) => setProjectNameDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") handleCancelProject(); }}
+                placeholder="Project name"
+                className="min-w-0 flex-1 bg-transparent font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!projectNameDraft.trim() || createProject.isPending}
+                className="rounded-sm bg-accent-primary px-2 py-0.5 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+              >
+                Add
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelProject}
+                className="rounded-sm border border-border-default px-2 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+              >
+                Cancel
+              </button>
+            </form>
+          )}
           {folder.projects && folder.projects.length > 0 ? (
             <div className="flex flex-col gap-1">
               {folder.projects.map((project) => {
@@ -500,14 +569,22 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                 );
               })}
             </div>
-          ) : (
+          ) : !addingProject ? (
             <div className="rounded-md border border-dashed border-border-subtle py-6 text-center">
               <p className="font-ui text-sm text-text-tertiary">No projects in this folder</p>
-              <p className="font-ui text-2xs text-text-disabled">
-                Drag projects here from the sidebar, or move them from a project&apos;s settings.
+              <p className="mb-3 font-ui text-2xs text-text-disabled">
+                Create one here, or move an existing project via its settings menu.
               </p>
+              <button
+                type="button"
+                onClick={handleAddProject}
+                className="inline-flex items-center gap-1.5 rounded-sm border border-border-default px-3 py-1.5 font-ui text-xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+              >
+                <Plus size={12} />
+                New project
+              </button>
             </div>
-          )}
+          ) : null}
         </section>
       </div>
     </div>

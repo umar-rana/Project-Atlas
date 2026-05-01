@@ -11,8 +11,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, RefreshCw } from "lucide-react";
+import { MoreHorizontal, RefreshCw, Folder } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +74,30 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
       utils.tasks.counts.invalidate();
     },
   });
+
+  const foldersQuery = trpc.folders.list.useQuery();
+  const moveToFolder = trpc.projects.update.useMutation({
+    onSuccess: () => {
+      utils.projects.get.invalidate({ id: projectId });
+      utils.projects.list.invalidate();
+      utils.folders.list.invalidate();
+      toast.success("Project moved");
+    },
+    onError: () => toast.error("Failed to move project"),
+  });
+
+  const flatFolders = React.useMemo(() => {
+    type FolderNode = { id: string; name: string; children?: FolderNode[] };
+    function flatten(nodes: FolderNode[], depth = 0): { id: string; name: string; depth: number }[] {
+      const out: { id: string; name: string; depth: number }[] = [];
+      for (const n of nodes) {
+        out.push({ id: n.id, name: n.name, depth });
+        if (n.children?.length) out.push(...flatten(n.children, depth + 1));
+      }
+      return out;
+    }
+    return flatten((foldersQuery.data ?? []) as FolderNode[]);
+  }, [foldersQuery.data]);
 
   const [titleDraft, setTitleDraft] = React.useState("");
   React.useEffect(() => {
@@ -166,6 +193,37 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
                 {c.charAt(0).toUpperCase() + c.slice(1)}
               </DropdownMenuItem>
             ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Folder</DropdownMenuLabel>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Folder size={12} className="mr-1.5 shrink-0" />
+                Move to folder
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem
+                  onSelect={() => moveToFolder.mutate({ id: data.id, folder_id: null })}
+                  className={(data as typeof data & { folder_id?: string | null }).folder_id == null ? "font-semibold text-accent-primary" : ""}
+                >
+                  <Folder size={12} className="mr-1.5 shrink-0 text-text-disabled" />
+                  <span className="italic">No folder (root)</span>
+                </DropdownMenuItem>
+                {flatFolders.map((f) => (
+                  <DropdownMenuItem
+                    key={f.id}
+                    onSelect={() => moveToFolder.mutate({ id: data.id, folder_id: f.id })}
+                    style={{ paddingLeft: `${12 + f.depth * 12}px` }}
+                    className={(data as typeof data & { folder_id?: string | null }).folder_id === f.id ? "font-semibold text-accent-primary" : ""}
+                  >
+                    <Folder size={12} className="mr-1.5 shrink-0 text-text-tertiary" />
+                    {f.name}
+                  </DropdownMenuItem>
+                ))}
+                {flatFolders.length === 0 && (
+                  <DropdownMenuItem disabled>No folders created yet</DropdownMenuItem>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               destructive
