@@ -9,6 +9,7 @@ import { TaskListItem } from "./task-list-item";
 import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
 import { EmptyState } from "@/components/composed/empty-state";
+import { InboxWelcomeBanner } from "./inbox-welcome-banner";
 import { formatEstimatedTime, sumEstimatedMinutes } from "@/core/aggregation/time-format";
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
 
@@ -598,8 +599,11 @@ export function TaskList({
           <p className="font-ui text-2xs text-text-tertiary">Loading…</p>
         </div>
       ) : tasks.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center">
-          <EmptyState icon={<Inbox size={28} aria-hidden />} title={emptyTitle} body={emptyBody} />
+        <div className="flex flex-1 flex-col">
+          {perspective === "inbox" && <InboxWelcomeBanner />}
+          <div className="flex flex-1 items-center justify-center">
+            <EmptyState icon={<Inbox size={28} aria-hidden />} title={emptyTitle} body={emptyBody} />
+          </div>
         </div>
       ) : (
         <>
