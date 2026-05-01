@@ -76,7 +76,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
   });
 
   const foldersQuery = trpc.folders.list.useQuery();
-  const moveToFolder = trpc.projects.update.useMutation({
+  const moveToFolder = trpc.folders.moveProject.useMutation({
     onSuccess: () => {
       utils.projects.get.invalidate({ id: projectId });
       utils.projects.list.invalidate();
@@ -106,6 +106,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
 
   if (!project.data) return null;
   const data = project.data;
+  const currentFolder = flatFolders.find((f) => f.id === (data as typeof data & { folder_id?: string | null }).folder_id);
 
   function commitTitle() {
     const next = titleDraft.trim();
@@ -202,7 +203,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 <DropdownMenuItem
-                  onSelect={() => moveToFolder.mutate({ id: data.id, folder_id: null })}
+                  onSelect={() => moveToFolder.mutate({ project_id: data.id, folder_id: null })}
                   className={(data as typeof data & { folder_id?: string | null }).folder_id == null ? "font-semibold text-accent-primary" : ""}
                 >
                   <Folder size={12} className="mr-1.5 shrink-0 text-text-disabled" />
@@ -211,7 +212,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
                 {flatFolders.map((f) => (
                   <DropdownMenuItem
                     key={f.id}
-                    onSelect={() => moveToFolder.mutate({ id: data.id, folder_id: f.id })}
+                    onSelect={() => moveToFolder.mutate({ project_id: data.id, folder_id: f.id })}
                     style={{ paddingLeft: `${12 + f.depth * 12}px` }}
                     className={(data as typeof data & { folder_id?: string | null }).folder_id === f.id ? "font-semibold text-accent-primary" : ""}
                   >
@@ -248,6 +249,10 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
             Sequential
           </span>
         )}
+        <span className="inline-flex items-center gap-1">
+          <Folder size={9} />
+          {currentFolder ? currentFolder.name : <span className="italic">No folder</span>}
+        </span>
       </div>
     </div>
   );
