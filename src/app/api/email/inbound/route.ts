@@ -4,7 +4,7 @@ import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { parseEmail, buildCaptureText } from "@/core/capture/email-parser";
 import { captureAndCreate } from "@/core/capture/service";
-import { uploadFile } from "@/core/storage";
+import { uploadFile, MAX_FILE_SIZE_BYTES } from "@/core/storage";
 import { logActivity } from "@/core/audit";
 
 const log = createLogger({ module: "email/inbound" });
@@ -358,6 +358,16 @@ export async function POST(req: NextRequest) {
   let uploadedCount = 0;
   if (emailAttachments.length > 0 && taskId) {
     for (const att of emailAttachments.slice(0, 10)) {
+      const attSizeBytes = att.content.byteLength;
+      if (attSizeBytes > MAX_FILE_SIZE_BYTES) {
+        const limitMB = (MAX_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0);
+        const actualMB = (attSizeBytes / (1024 * 1024)).toFixed(2);
+        log.warn(
+          { filename: att.filename, actualMB, limitMB, captureId },
+          "Skipping email attachment — exceeds maximum file size limit",
+        );
+        continue;
+      }
       try {
         await uploadFile({
           userId: user.id,

@@ -11,6 +11,17 @@ export { storagePath };
 
 const log = createLogger({ module: "storage" });
 
+const DEFAULT_MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+
+export const MAX_FILE_SIZE_BYTES = (() => {
+  const envVal = process.env["MAX_FILE_SIZE_BYTES"];
+  if (envVal) {
+    const parsed = parseInt(envVal, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return DEFAULT_MAX_FILE_SIZE_BYTES;
+})();
+
 function createProvider(): StorageProvider {
   const name = (process.env["STORAGE_PROVIDER"] ?? "r2") as StorageProviderName;
   switch (name) {
@@ -54,6 +65,15 @@ export async function uploadFile(params: {
   data: Buffer | Uint8Array;
   taskId?: string;
 }): Promise<{ fileId: string; path: string }> {
+  const sizeBytes = params.data.byteLength;
+  if (sizeBytes > MAX_FILE_SIZE_BYTES) {
+    const limitMB = (MAX_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0);
+    const actualMB = (sizeBytes / (1024 * 1024)).toFixed(2);
+    throw new Error(
+      `File "${params.filename}" is too large (${actualMB} MB). Maximum allowed size is ${limitMB} MB.`,
+    );
+  }
+
   const fileId = newId();
   const path = storagePath(params.userId, fileId, params.filename);
 
