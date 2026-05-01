@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { checkStorageHealth } from "@/core/storage";
 import Anthropic from "@anthropic-ai/sdk";
+import { fireHealthAlert } from "@/core/alerts";
 
 async function checkDb(): Promise<{ ok: boolean }> {
   try {
@@ -83,6 +84,20 @@ export async function GET() {
   ]);
 
   const criticalOk = dbResult.ok && storageResult.ok && aiResult.ok;
+  const ts = new Date().toISOString();
+
+  const failedChecks = [
+    !dbResult.ok && "database",
+    !storageResult.ok && "storage",
+    !aiResult.ok && "AI",
+  ].filter(Boolean);
+
+  void fireHealthAlert({
+    ok: criticalOk,
+    db: dbResult.ok,
+    ts,
+    reason: failedChecks.length > 0 ? `Failed checks: ${failedChecks.join(", ")}` : undefined,
+  });
 
   const body = {
     ok: criticalOk,
@@ -90,7 +105,7 @@ export async function GET() {
     storage: storageResult,
     ai: aiResult,
     drive: driveResult,
-    ts: new Date().toISOString(),
+    ts,
   };
 
   return NextResponse.json(body, { status: criticalOk ? 200 : 503 });
