@@ -17,7 +17,7 @@ const devOrigins = (() => {
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['uuidv7'],
-  serverExternalPackages: ['pino', 'pino-pretty'],
+  serverExternalPackages: ['pino', 'pino-pretty', 'pg-boss', 'pg'],
   devIndicators: false,
   ...(devOrigins ? { allowedDevOrigins: devOrigins } : {}),
   experimental: {

@@ -1,4 +1,4 @@
-# Atlas — Wave 3c Capture Intelligence
+# Atlas — Wave 4a Phase 1: Schema & Infrastructure
 
 ## Overview
 Atlas is a desktop-first personal productivity command center designed as a local-first capture intelligence system. It aims to efficiently process user input by prioritizing cost-effective local parsing methods (`chrono-node`, regex, `compromise.js`) and using more expensive AI services like Claude Haiku only as a fallback for ambiguous cases. This hybrid approach significantly reduces AI costs while maintaining high accuracy. The project features a comprehensive captures tRPC router for parsing, previewing, logging, and statistical analysis, alongside a re-engineered capture modal, email-to-inbox functionality, and a robust, authenticated application shell focused on user experience.
@@ -22,7 +22,7 @@ The application is built on Next.js 15 (App Router) + React 19 with TypeScript. 
 - **Date Handling**: Timezone-aware date utilities using `date-fns-tz`.
 - **Session Management**: DB-backed sessions with opportunistic and cron-based cleanup of expired sessions, and a UI for users to view and revoke active sessions. (Note: Session model removed in favor of Clerk).
 - **Google Drive Integration**: Utilizes the Google Drive API for linking and encrypting Drive tokens, featuring a 4-step wizard for OAuth.
-- **Queueing**: A priority-aware in-memory dispatch queue with DB-backed rate limiting.
+- **Queueing**: A priority-aware in-memory dispatch queue with DB-backed rate limiting. pg-boss (v10) provides a durable scheduled-job runner initialized via Next.js instrumentation (`src/instrumentation.ts`). Five cron jobs registered: `drive-sync-notes`, `drive-sync-tables`, `session-cleanup`, `trash-retention`, `attachment-cleanup`.
 - **Error Handling & Logging**: Comprehensive audit logging and Pino for structured logging.
 - **Extensible Command and Shortcut Registries**: Context-based registries for managing application commands and keyboard shortcuts.
 - **UI/UX Decisions**:
@@ -51,6 +51,7 @@ The application is built on Next.js 15 (App Router) + React 19 with TypeScript. 
 - **mailparser**: For parsing email content
 - **Resend**: Email service for inbound webhooks and outbound verification emails
 - **chrono-node, compromise.js**: For local-first capture parsing
+- **pg-boss**: PostgreSQL-backed durable job queue and scheduler (v10)
 
 ## End-to-End Tests
 Playwright-based scripts in `e2e/` run against a live server. Shared auth/browser helpers live in `e2e/helpers.mjs`. Each scenario is a standalone `.e2e.mjs` file:
@@ -122,7 +123,16 @@ Added split between lightweight checklist items and full subtask Tasks (Task #12
 - **TASK_INCLUDE** extended: includes `parent`, richer `subtasks` (due_date, flagged, estimated_minutes), and `checklist_items`.
 - Inbox shows only top-level tasks (`parent_id = null AND project_id = null`).
 
+## Wave 4a Phase 1 Changes (2026-05-01)
+- **Note & NotesFolder models**: Full schema with self-referential `FolderHierarchy`, partial unique index for `is_project_brief` (raw SQL), Drive sync fields, word_count, pinned. Tables: `Note`, `NotesFolder`.
+- **Link model**: Generic link graph table (`source_type/id`, `target_type/id`, `relation`) with composite unique index and source/target indexes. Table: `Link`.
+- **Project enhancements**: Added `type` (default 'project'), `target_date` (optional), and the `note_refs` back-relation. New index on `user_id, type`.
+- **User locale fields**: Added `locale_preset` (default 'pakistan'), `currency_code` (default 'PKR'), `currency_symbol` (default '₨'), `number_format` (default '1,234.56'). Updated `date_format` default to 'dd-mm-yyyy' and `time_format` to '12h'.
+- **pg-boss job runner**: `src/core/jobs/runner.ts` — pg-boss v10 instance initialized via Next.js instrumentation (`src/instrumentation.ts`). `src/core/jobs/registry.ts` — five cron jobs with stub handlers in `src/core/jobs/handlers/`.
+- **Migration**: `prisma/migrations/20260501100000_wave4a_notes_link_locale_project/` — applied via `prisma db execute` + `prisma migrate resolve`.
+
 ## Recent Changes
+- 2026-05-01: Wave 4a Phase 1 — Notes/Link schema, Project/User enhancements, pg-boss job runner (Task #255).
 - 2026-04-29: Checklist & subtask split (Task #123).
 - 2026-04-28: Migrated auth from Replit OIDC to Clerk (Task #74).
 - 2026-04-28: Linter migration to direct ESLint CLI (Task #73).

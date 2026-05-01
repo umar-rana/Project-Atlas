@@ -19,8 +19,12 @@ model User {
   name                    String?
   image                   String?
   timezone                String    @default("UTC")
-  date_format             String    @default("DD/MM/YYYY")
-  time_format             String    @default("24h")
+  locale_preset           String    @default("pakistan")
+  currency_code           String    @default("PKR")
+  currency_symbol         String    @default("₨")
+  date_format             String    @default("dd-mm-yyyy")
+  number_format           String    @default("1,234.56")
+  time_format             String    @default("12h")
   week_start              String    @default("monday")
   theme                   String    @default("dark")
   tasks_prefs             Json?
@@ -47,6 +51,9 @@ model User {
   people             Person[]
   checklist_items    ChecklistItem[]
   work_logs          TaskWorkLog[]
+  notes              Note[]
+  notes_folders      NotesFolder[]
+  links              Link[]
 
   @@index([clerk_id])
   @@index([email])
@@ -310,7 +317,9 @@ model Project {
   folder_id            String?   @db.Uuid
   title                String
   notes                String?
+  type                 String    @default("project") // project | area
   status               String    @default("active") // active | on_hold | completed | dropped
+  target_date          DateTime? @db.Timestamptz
   color                String?
   sequential           Boolean   @default(false)
   position             Decimal   @default(0) @db.Decimal(20, 10)
@@ -324,8 +333,10 @@ model Project {
   user        User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   folder      ProjectFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   tasks       Task[]
+  note_refs   Note[]
 
   @@index([user_id])
+  @@index([user_id, type])
   @@index([user_id, status])
   @@index([user_id, position])
   @@index([user_id, folder_id])
@@ -550,4 +561,84 @@ model ChecklistItem {
   @@index([task_id, position])
   @@index([user_id])
   @@index([deleted_at])
+}
+
+// ─── NotesFolder ─────────────────────────────────────────────────────────────
+
+model NotesFolder {
+  id         String    @id @db.Uuid
+  user_id    String    @db.Uuid
+  parent_id  String?   @db.Uuid
+  name       String
+  position   Decimal   @default(0) @db.Decimal(20, 10)
+  deleted_at DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+
+  user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent     NotesFolder?  @relation("FolderHierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  children   NotesFolder[] @relation("FolderHierarchy")
+  notes      Note[]
+
+  @@index([user_id])
+  @@index([user_id, parent_id])
+  @@index([deleted_at])
+}
+
+// ─── Note ────────────────────────────────────────────────────────────────────
+
+model Note {
+  id                String    @id @db.Uuid
+  user_id           String    @db.Uuid
+  folder_id         String?   @db.Uuid
+  project_id        String?   @db.Uuid
+  title             String    @default("")
+  body_json         String    @default("{}") // TipTap document JSON serialised as text
+  body_text         String    @default("")   // Plain text extracted from body_json for FTS
+  body_markdown     String    @default("")   // Markdown representation for Drive export
+  purpose           String    @default("note") // note | meeting_note | project_brief | reading_note
+  is_project_brief  Boolean   @default(false)
+  pinned            Boolean   @default(false)
+  position          Decimal   @default(0) @db.Decimal(20, 10)
+  word_count        Int       @default(0)
+  drive_file_id     String?
+  drive_synced_at   DateTime? @db.Timestamptz
+  drive_sync_error  String?
+  deleted_at        DateTime? @db.Timestamptz
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+
+  user              User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder            NotesFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
+  project           Project?     @relation(fields: [project_id], references: [id], onDelete: SetNull)
+
+  // Partial unique index (only one brief per project) is enforced via raw SQL:
+  // CREATE UNIQUE INDEX note_project_brief_unique ON "Note" (project_id) WHERE is_project_brief = true;
+  @@index([user_id])
+  @@index([user_id, folder_id])
+  @@index([user_id, project_id])
+  @@index([user_id, purpose])
+  @@index([user_id, pinned])
+  @@index([deleted_at])
+}
+
+// ─── Link ────────────────────────────────────────────────────────────────────
+
+model Link {
+  id              String   @id @db.Uuid
+  user_id         String   @db.Uuid
+  source_type     String
+  source_id       String   @db.Uuid
+  target_type     String
+  target_id       String   @db.Uuid
+  relation        String   @default("reference") // reference | blocks | related
+  source_excerpt  String?  // Short text snippet surrounding the reference in the source
+  created_at      DateTime @default(now()) @db.Timestamptz
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([source_type, source_id, target_type, target_id])
+  @@index([user_id])
+  @@index([source_type, source_id])
+  @@index([target_type, target_id])
 }
