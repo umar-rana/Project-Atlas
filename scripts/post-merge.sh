@@ -27,4 +27,16 @@ fi
 
 export DATABASE_URL="$RESOLVED_URL"
 
-npx prisma migrate deploy
+# Retry prisma migrate deploy up to 3 times to handle transient Neon advisory
+# lock timeouts (pg_advisory_lock contention on the pooler connection).
+MAX_RETRIES=3
+ATTEMPT=0
+until npx prisma migrate deploy; do
+  ATTEMPT=$((ATTEMPT + 1))
+  if [ "$ATTEMPT" -ge "$MAX_RETRIES" ]; then
+    echo "ERROR: prisma migrate deploy failed after $MAX_RETRIES attempts." >&2
+    exit 1
+  fi
+  echo "prisma migrate deploy failed (attempt $ATTEMPT/$MAX_RETRIES), retrying in 10s..." >&2
+  sleep 10
+done
