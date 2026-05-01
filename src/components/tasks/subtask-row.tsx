@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, Flag } from "lucide-react";
+import { ChevronRight, Flag, Trash2 } from "lucide-react";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -46,6 +46,23 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
   const completeMut = trpc.tasks.complete.useMutation({ onSettled: onInvalidate });
   const uncompleteMut = trpc.tasks.uncomplete.useMutation({ onSettled: onInvalidate });
   const updateMut = trpc.tasks.update.useMutation({ onSettled: onInvalidate });
+  const deleteMut = trpc.tasks.delete.useMutation({
+    onMutate: async () => {
+      await utils.tasks.get.cancel({ id: parentId });
+      const prev = utils.tasks.get.getData({ id: parentId });
+      utils.tasks.get.setData({ id: parentId }, (old) => {
+        if (!old) return old;
+        return { ...old, subtasks: old.subtasks.filter((s) => s.id !== subtask.id) };
+      });
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev !== undefined) {
+        utils.tasks.get.setData({ id: parentId }, ctx.prev);
+      }
+    },
+    onSettled: onInvalidate,
+  });
 
   const [editing, setEditing] = React.useState(false);
   const [titleDraft, setTitleDraft] = React.useState(subtask.title);
@@ -122,6 +139,17 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
         <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
           {dueLabel(due)}
         </span>
+      )}
+
+      {!inTrash && (
+        <button
+          type="button"
+          onClick={() => deleteMut.mutate({ id: subtask.id })}
+          aria-label="Delete subtask"
+          className="shrink-0 text-text-tertiary opacity-0 transition-opacity hover:text-accent-danger group-hover:opacity-100"
+        >
+          <Trash2 size={11} />
+        </button>
       )}
 
       <button
