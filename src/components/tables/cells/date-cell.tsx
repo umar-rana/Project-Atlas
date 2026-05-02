@@ -35,7 +35,7 @@ export function DateCell({ value, isSelected, isEditing, onStartEdit, onCommit, 
           if (e.key === "Enter") { e.preventDefault(); onCommit(draft || null); }
           if (e.key === "Escape") { e.preventDefault(); onCancel(); }
         }}
-        className="absolute inset-0 w-full bg-surface-base px-2 py-1 font-ui text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+        className="absolute inset-0 w-full bg-surface-base px-2 py-1 font-ui text-sm text-text-primary focus:outline-none ring-2 ring-inset ring-accent-primary"
       />
     );
   }
@@ -49,7 +49,7 @@ export function DateCell({ value, isSelected, isEditing, onStartEdit, onCommit, 
       onClick={onStartEdit}
       className={cn(
         "flex h-full w-full cursor-pointer items-center px-2 font-ui text-sm",
-        isSelected ? "ring-1 ring-inset ring-accent-primary" : "",
+        isSelected ? "bg-accent-primary-subtle ring-1 ring-inset ring-accent-primary" : "",
         value ? "text-text-primary" : "text-text-disabled",
       )}
     >

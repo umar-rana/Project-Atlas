@@ -7,9 +7,6 @@ import {
   Table2,
   SlidersHorizontal,
   Filter,
-  Plus,
-  X,
-  RefreshCw,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { NotesShell } from "@/components/notes/notes-shell";
@@ -87,10 +84,6 @@ export default function TableEditorPage() {
     handleFilterChange(null);
     setShowFilterPanel(false);
   }
-
-  const addRow = trpc.tables.addRow.useMutation({
-    onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-  });
 
   if (tableQuery.isLoading) {
     return (
@@ -235,7 +228,9 @@ export default function TableEditorPage() {
               )}
             >
               <Filter size={12} />
-              Filter{filter ? ` (active)` : ""}
+              {filter
+                ? `Filter: ${table.columns.find((c) => c.id === filter.column_id)?.name ?? "…"}`
+                : "Filter"}
             </button>
 
             {showFilterPanel && (
@@ -302,18 +297,6 @@ export default function TableEditorPage() {
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="ml-auto">
-            <button
-              type="button"
-              onClick={() => addRow.mutate({ table_id: tableId })}
-              disabled={addRow.isPending}
-              className="flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
-            >
-              <Plus size={12} />
-              Add row
-            </button>
           </div>
         </div>
 

@@ -196,7 +196,7 @@ export function TableGrid({
 
       if (e.key === "Enter" && !isEditing) {
         e.preventDefault();
-        setEditingCell(selectedCell);
+        moveSelection(1, 0);
         return;
       }
 
@@ -374,9 +374,12 @@ export function TableGrid({
                     <button
                       type="button"
                       onClick={() => handleColumnSort(col.id)}
-                      className="flex min-w-0 flex-1 items-center gap-1 font-ui text-xs font-medium text-text-secondary hover:text-text-primary"
+                      className="flex min-w-0 flex-1 items-center gap-1 font-ui text-xs hover:text-text-primary"
                     >
-                      <span className="truncate">{col.name}</span>
+                      <span className="truncate font-semibold text-text-primary">{col.name}</span>
+                      <span className="shrink-0 text-2xs text-text-disabled capitalize">
+                        {COLUMN_TYPES.find((t) => t.value === col.type)?.label ?? col.type}
+                      </span>
                       {sort.column_id === col.id && (
                         sort.direction === "asc"
                           ? <ChevronUp size={10} className="shrink-0 text-accent-primary" />
@@ -484,6 +487,41 @@ export function TableGrid({
 
         {/* Body */}
         <tbody>
+          {visibleRows.length === 0 && rows.length === 0 && (
+            <tr>
+              <td />
+              <td colSpan={columns.length + 1}>
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <p className="font-ui text-sm text-text-disabled">No rows yet</p>
+                  <button
+                    type="button"
+                    onClick={() => addRow.mutate({ table_id: tableId })}
+                    disabled={addRow.isPending}
+                    className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    <Plus size={12} /> Add row
+                  </button>
+                </div>
+              </td>
+            </tr>
+          )}
+          {visibleRows.length === 0 && rows.length > 0 && (
+            <tr>
+              <td />
+              <td colSpan={columns.length + 1}>
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <p className="font-ui text-sm text-text-disabled">No rows match the current filter</p>
+                  <button
+                    type="button"
+                    onClick={() => onFilterChange(null)}
+                    className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    Clear filter
+                  </button>
+                </div>
+              </td>
+            </tr>
+          )}
           {visibleRows.map((row, rowIdx) => (
             <tr
               key={row.id}
@@ -518,7 +556,7 @@ export function TableGrid({
                       <button
                         type="button"
                         className="text-text-disabled opacity-0 hover:text-text-tertiary group-hover:opacity-100"
-                        title="Row options"
+                        title={sort.column_id ? "Reorder disabled while sorted" : "Row options"}
                       >
                         <GripVertical size={12} />
                       </button>
@@ -562,25 +600,27 @@ export function TableGrid({
             </tr>
           ))}
 
-          {/* Add row */}
-          <tr>
-            <td className="border-b border-r border-border-subtle bg-surface-sunken" />
-            <td colSpan={columns.length + 1} className="border-b border-border-subtle">
-              <button
-                type="button"
-                onClick={() => addRow.mutate({ table_id: tableId })}
-                disabled={addRow.isPending}
-                className="flex w-full items-center gap-1.5 px-3 py-2 font-ui text-xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary"
-              >
-                <Plus size={12} />
-                Add row
-              </button>
-            </td>
-          </tr>
+          {/* Add row — only when there are visible rows (empty state has its own add button) */}
+          {visibleRows.length > 0 && (
+            <tr>
+              <td className="border-b border-r border-border-subtle bg-surface-sunken" />
+              <td colSpan={columns.length + 1} className="border-b border-border-subtle">
+                <button
+                  type="button"
+                  onClick={() => addRow.mutate({ table_id: tableId })}
+                  disabled={addRow.isPending}
+                  className="flex w-full items-center gap-1.5 px-3 py-2 font-ui text-xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary"
+                >
+                  <Plus size={12} />
+                  Add row
+                </button>
+              </td>
+            </tr>
+          )}
         </tbody>
 
         {/* Footer */}
-        <tfoot>
+        <tfoot className="sticky bottom-0 z-10">
           <tr style={{ height: FOOTER_HEIGHT }}>
             <td className="border-t border-r border-border-subtle bg-surface-sunken" />
             {columns.map((col) => {

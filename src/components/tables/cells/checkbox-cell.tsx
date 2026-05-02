@@ -21,7 +21,7 @@ export function CheckboxCell({ value, isSelected, onCommit }: CheckboxCellProps)
       onClick={() => onCommit(!checked)}
       className={cn(
         "flex h-full w-full cursor-pointer items-center justify-center",
-        isSelected ? "ring-1 ring-inset ring-accent-primary" : "",
+        isSelected ? "bg-accent-primary-subtle ring-1 ring-inset ring-accent-primary" : "",
       )}
     >
       <div className={cn(

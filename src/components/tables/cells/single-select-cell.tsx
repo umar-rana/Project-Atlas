@@ -70,7 +70,7 @@ export function SingleSelectCell({ value, options, isSelected, isEditing, onStar
       onClick={onStartEdit}
       className={cn(
         "flex h-full w-full cursor-pointer items-center gap-1.5 px-2",
-        isSelected ? "ring-1 ring-inset ring-accent-primary" : "",
+        isSelected ? "bg-accent-primary-subtle ring-1 ring-inset ring-accent-primary" : "",
       )}
     >
       {selectedOption ? (

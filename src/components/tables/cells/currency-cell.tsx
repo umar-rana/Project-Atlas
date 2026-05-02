@@ -32,7 +32,7 @@ export function CurrencyCell({ value, currencySymbol = "$", decimalPlaces = 2, i
 
   if (isEditing) {
     return (
-      <div className="absolute inset-0 flex items-center">
+      <div className="absolute inset-0 flex items-center ring-2 ring-inset ring-accent-primary bg-surface-base">
         <span className="pl-2 font-ui text-sm text-text-tertiary">{currencySymbol}</span>
         <input
           ref={inputRef}
@@ -44,7 +44,7 @@ export function CurrencyCell({ value, currencySymbol = "$", decimalPlaces = 2, i
             if (e.key === "Enter") { e.preventDefault(); commit(); }
             if (e.key === "Escape") { e.preventDefault(); onCancel(); }
           }}
-          className="flex-1 bg-surface-base px-1 py-1 font-ui text-sm text-right text-text-primary focus:outline-none"
+          className="flex-1 bg-transparent px-1 py-1 font-ui text-sm text-right text-text-primary focus:outline-none"
         />
       </div>
     );
@@ -59,7 +59,7 @@ export function CurrencyCell({ value, currencySymbol = "$", decimalPlaces = 2, i
       onClick={onStartEdit}
       className={cn(
         "flex h-full w-full cursor-pointer items-center justify-end px-2 font-ui text-sm tabular-nums",
-        isSelected ? "ring-1 ring-inset ring-accent-primary" : "",
+        isSelected ? "bg-accent-primary-subtle ring-1 ring-inset ring-accent-primary" : "",
         value !== null ? "text-text-primary" : "text-text-disabled",
       )}
     >
