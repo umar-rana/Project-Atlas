@@ -105,6 +105,8 @@ export function TableGrid({
     onError: (err) => toast.error(err.message),
   });
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore -- TS2589: tRPC type inference depth; safe at runtime
   const addColumn = trpc.tables.addColumn.useMutation({
     onSuccess: () => {
       setAddingColumn(false);
