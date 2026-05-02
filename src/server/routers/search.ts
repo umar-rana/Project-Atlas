@@ -181,17 +181,19 @@ export const searchRouter = router({
       // ── Primary pass: GIN-indexed full-text search ──────────────────────────
       // The trigger (task_search_vector_trigger) keeps Task.search_vector in sync
       // with title + notes on every INSERT/UPDATE. The GIN index expression
-      //   gin(to_tsvector('english', COALESCE(search_vector,'')))
+      //   gin(to_tsvector('english', search_vector))
       // matches the predicate below exactly, so Postgres uses the index instead
       // of scanning the whole table. This is a standalone query with no OR
       // clauses so the planner cannot short-circuit to a seq scan.
+      // Note: tasks where search_vector IS NULL are excluded (acceptable —
+      // the trigger + backfill ensure it is always populated).
       const ftsRows = await db.$queryRaw<Row[]>(Prisma.sql`
         SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
                t.due_date, t.defer_date
         FROM "Task" t
         WHERE t.user_id = ${userId}
           AND t.deleted_at IS NULL
-          AND to_tsvector('english', COALESCE(t.search_vector, ''))
+          AND to_tsvector('english', t.search_vector)
                 @@ websearch_to_tsquery('english', ${q})
         ORDER BY t.flagged DESC, t.updated_at DESC
         LIMIT ${limit}
