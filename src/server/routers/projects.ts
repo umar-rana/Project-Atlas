@@ -399,6 +399,14 @@ export const projectsRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (input.from === input.to) return { count: 0 };
 
+      const BUILT_IN_TYPES = ["project", "goal"];
+      if (BUILT_IN_TYPES.includes(input.from)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `"${input.from}" is a built-in type and cannot be renamed`,
+        });
+      }
+
       const projects = await db.project.findMany({
         where: { user_id: ctx.user.id, type: input.from, deleted_at: null },
         select: { id: true, type: true },
@@ -437,6 +445,14 @@ export const projectsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       if (input.source === input.target) return { count: 0 };
+
+      const BUILT_IN_TYPES = ["project", "goal"];
+      if (BUILT_IN_TYPES.includes(input.source)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `"${input.source}" is a built-in type and cannot be merged`,
+        });
+      }
 
       const projects = await db.project.findMany({
         where: { user_id: ctx.user.id, type: input.source, deleted_at: null },

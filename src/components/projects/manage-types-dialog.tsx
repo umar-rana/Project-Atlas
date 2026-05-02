@@ -119,6 +119,8 @@ export function ManageTypesDialog({
               const isRenaming = mode.kind === "rename" && mode.type === type;
               const isMerging = mode.kind === "merge" && mode.source === type;
 
+              const isBuiltIn = type === "project" || type === "goal";
+
               return (
                 <li key={type} className="px-3 py-2">
                   {isRenaming ? (
@@ -222,26 +224,36 @@ export function ManageTypesDialog({
                       <span className="font-mono text-2xs text-text-disabled tabular-nums">
                         {count}
                       </span>
-                      <div className={cn("flex items-center gap-1", mode.kind !== "idle" && "opacity-30 pointer-events-none")}>
-                        <button
-                          type="button"
-                          onClick={() => startRename(type)}
-                          disabled={mode.kind !== "idle"}
-                          className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none"
-                          title="Rename type"
+                      <div className={cn("flex items-center gap-1", mode.kind !== "idle" && !isBuiltIn && "opacity-30 pointer-events-none")}>
+                        <span
+                          title={isBuiltIn ? `"${type}" is a built-in type and cannot be renamed` : undefined}
+                          className={cn(isBuiltIn && "cursor-default")}
                         >
-                          <Pencil size={12} />
-                        </button>
-                        {typeCounts.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => startMerge(type)}
-                            disabled={mode.kind !== "idle"}
-                            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none"
-                            title="Merge into another type"
+                            onClick={() => startRename(type)}
+                            disabled={mode.kind !== "idle" || isBuiltIn}
+                            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none disabled:opacity-30"
+                            title={isBuiltIn ? undefined : "Rename type"}
                           >
-                            <GitMerge size={12} />
+                            <Pencil size={12} />
                           </button>
+                        </span>
+                        {typeCounts.length > 1 && (
+                          <span
+                            title={isBuiltIn ? `"${type}" is a built-in type and cannot be merged` : undefined}
+                            className={cn(isBuiltIn && "cursor-default")}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => startMerge(type)}
+                              disabled={mode.kind !== "idle" || isBuiltIn}
+                              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none disabled:opacity-30"
+                              title={isBuiltIn ? undefined : "Merge into another type"}
+                            >
+                              <GitMerge size={12} />
+                            </button>
+                          </span>
                         )}
                       </div>
                     </div>
