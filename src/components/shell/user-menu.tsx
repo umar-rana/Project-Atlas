@@ -100,6 +100,9 @@ export function UserMenu({ name, email, image, isAdmin }: UserMenuProps): React.
         </DropdownMenuItem>
         {isAdmin && (
           <>
+            <DropdownMenuItem onClick={() => router.push("/admin")}>
+              <Activity size={14} /> Admin Panel
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/admin/health")}>
               <Activity size={14} /> Health
             </DropdownMenuItem>

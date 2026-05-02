@@ -6,8 +6,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getOrCreateUserFromClerk();
   if (!user) redirect("/sign-in");
 
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const isAdmin = Boolean(adminEmail && user.email.trim().toLowerCase() === adminEmail);
+  const { isAdmin: checkAdmin } = await import("@/lib/admin-gate");
+  const isAdmin = checkAdmin(user);
 
   return (
     <AppShellProvider

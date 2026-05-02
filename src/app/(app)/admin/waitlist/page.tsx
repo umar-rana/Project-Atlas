@@ -12,13 +12,10 @@ const WaitlistClient = dynamic(() =>
 );
 
 export default async function WaitlistPage() {
+  const { notFound } = await import("next/navigation");
   const user = await getOrCreateUserFromClerk();
-  if (!user) redirect("/sign-in");
-
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (!adminEmail || user.email.trim().toLowerCase() !== adminEmail) {
-    redirect("/");
-  }
+  const { isAdmin } = await import("@/lib/admin-gate");
+  if (!user || !isAdmin(user)) notFound();
 
   return <WaitlistClient />;
 }

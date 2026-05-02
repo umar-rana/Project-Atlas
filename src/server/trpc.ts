@@ -49,12 +49,9 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  if (!adminEmail || ctx.user.email.trim().toLowerCase() !== adminEmail) {
-    throw new TRPCError({ code: "FORBIDDEN" });
+  const { isAdmin } = await import("@/lib/admin-gate");
+  if (!ctx.user || !isAdmin(ctx.user)) {
+    throw new TRPCError({ code: "NOT_FOUND" });
   }
   log.debug({ userId: ctx.user.id }, "tRPC admin call");
   return next({ ctx: { ...ctx, user: ctx.user } });

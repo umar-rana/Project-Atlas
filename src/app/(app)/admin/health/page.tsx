@@ -12,7 +12,9 @@ const HealthClient = dynamic(() =>
 );
 
 export default async function HealthPage() {
+  const { notFound } = await import("next/navigation");
   const user = await getOrCreateUserFromClerk();
-  if (!user) redirect("/sign-in");
-  return <HealthClient userId={user.id} />;
+  const { isAdmin } = await import("@/lib/admin-gate");
+  if (!user || !isAdmin(user)) notFound();
+  return <HealthClient userId={user!.id} />;
 }
