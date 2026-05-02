@@ -4,27 +4,37 @@ import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
-import type { ProjectType } from "@/components/projects/project-type-selector";
-import { PROJECT_TYPE_LABELS, PROJECT_TYPE_ICONS } from "@/components/projects/project-type-selector";
+import { displayType } from "@/core/projects/type-suggestions";
+import { getSuggestedTypes } from "@/core/projects/type-suggestions";
+import { CustomTypeDialog } from "@/components/projects/custom-type-dialog";
 
 const COLORS = ["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"];
+
+const CORE_TYPES = ["project", "goal"];
 
 export function ProjectAddForm({
   onDone,
   defaultType = "project",
 }: {
   onDone?: () => void;
-  defaultType?: ProjectType;
+  defaultType?: string;
 }): React.ReactElement {
   const [title, setTitle] = React.useState("");
   const [color, setColor] = React.useState<string>("blue");
   const [sequential, setSequential] = React.useState(false);
-  const [type, setType] = React.useState<ProjectType>(defaultType);
+  const [type, setType] = React.useState<string>(defaultType);
+  const [showCustom, setShowCustom] = React.useState(false);
   const utils = trpc.useUtils();
+
+  const typesQuery = trpc.projects.distinctTypes.useQuery(undefined, { staleTime: 30_000 });
+  const existingTypes = (typesQuery.data ?? []).map((t) => t.type);
+  const suggestions = getSuggestedTypes(typesQuery.data ?? []);
+
   const create = trpc.projects.create.useMutation({
     onSuccess: () => {
       utils.projects.list.invalidate();
-      toast.success(`${PROJECT_TYPE_LABELS[type]} created`);
+      utils.projects.distinctTypes.invalidate();
+      toast.success(`${displayType(type)} created`);
       onDone?.();
     },
   });
@@ -40,10 +50,15 @@ export function ProjectAddForm({
     create.mutate({ title: t, color, sequential, status: "active", type });
   }
 
+  const allTypeOptions = [
+    ...CORE_TYPES,
+    ...suggestions.filter((s) => !CORE_TYPES.includes(s)),
+  ];
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex items-center gap-1 mb-0.5">
-        {(["project", "goal", "habit"] as ProjectType[]).map((t) => (
+      <div className="relative flex flex-wrap items-center gap-1 mb-0.5">
+        {allTypeOptions.map((t) => (
           <button
             key={t}
             type="button"
@@ -55,16 +70,39 @@ export function ProjectAddForm({
                 : "text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
             )}
           >
-            <span>{PROJECT_TYPE_ICONS[t]}</span>
-            {PROJECT_TYPE_LABELS[t]}
+            {displayType(t)}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setShowCustom(true)}
+          className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary transition-colors"
+        >
+          Custom…
+        </button>
+        {showCustom && (
+          <CustomTypeDialog
+            existingTypes={existingTypes}
+            onConfirm={(t) => { setType(t); setShowCustom(false); }}
+            onCancel={() => setShowCustom(false)}
+          />
+        )}
       </div>
+
+      {type && !allTypeOptions.includes(type) && (
+        <div className="flex items-center gap-1">
+          <span className="font-ui text-2xs text-text-tertiary">Type:</span>
+          <span className="rounded-sm bg-accent-primary-subtle px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-primary">
+            {displayType(type)}
+          </span>
+        </div>
+      )}
+
       <input
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder={`${PROJECT_TYPE_LABELS[type]} title`}
+        placeholder={`${displayType(type)} title`}
         className="rounded-sm border border-border-default bg-surface-base px-2 py-1 font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
       />
       <div className="flex flex-wrap gap-1">
@@ -78,7 +116,6 @@ export function ProjectAddForm({
               "size-4 rounded-full border-2 transition",
               color === c ? "border-text-primary" : "border-transparent",
             )}
-            /* WCAG exemption: decorative colour-swatch only — WCAG 1.4.11 applies, not 1.4.3. */
             style={{ backgroundColor: c === "amber" ? "#d97706" : c }}
           />
         ))}

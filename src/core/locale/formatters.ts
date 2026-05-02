@@ -160,6 +160,13 @@ function parseNumberFormat(numberFormat: string): { thousands: string; decimal: 
   return { thousands: ",", decimal: "." };
 }
 
+export function formatInt(value: number, locale: LocaleSettings): string {
+  const { thousands } = parseNumberFormat(locale.number_format);
+  const abs = Math.abs(Math.round(value));
+  const formatted = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+  return value < 0 ? `-${formatted}` : formatted;
+}
+
 export function formatNumber(value: number, locale: LocaleSettings): string {
   const { thousands, decimal } = parseNumberFormat(locale.number_format);
   const [intPart, fracPart] = Math.abs(value).toFixed(2).split(".");

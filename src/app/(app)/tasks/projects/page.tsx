@@ -6,8 +6,11 @@ import { Folder, Plus } from "lucide-react";
 import { TasksShell } from "@/components/tasks/tasks-shell";
 import { trpc } from "@/lib/trpc/client";
 import { ProjectAddForm } from "@/components/tasks/project-add-form";
+import { ProjectTypeFilterPills } from "@/components/projects/project-type-filter-pills";
 import { EmptyState } from "@/components/composed/empty-state";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
+import { displayType } from "@/core/projects/type-suggestions";
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
   blue: "bg-cal-1-border",
@@ -21,8 +24,22 @@ const PROJECT_COLOR_DOTS: Record<string, string> = {
 };
 
 export default function ProjectsIndexPage() {
-  const projects = trpc.projects.list.useQuery({});
+  const searchParams = useSearchParams();
+  const activeType = searchParams.get("type") ?? undefined;
+
+  const projects = trpc.projects.list.useQuery({ type: activeType });
+  const distinctTypes = trpc.projects.distinctTypes.useQuery();
   const [adding, setAdding] = React.useState(false);
+
+  const typeCounts = distinctTypes.data ?? [];
+
+  const emptyTitle = activeType
+    ? `No ${displayType(activeType)} projects yet`
+    : "No projects yet";
+
+  const emptyBody = activeType
+    ? `You don't have any ${displayType(activeType).toLowerCase()} projects. Create one to get started.`
+    : "Group related tasks into projects (sequential or parallel).";
 
   return (
     <TasksShell>
@@ -38,9 +55,13 @@ export default function ProjectsIndexPage() {
           </button>
         </header>
 
+        {typeCounts.length > 0 && (
+          <ProjectTypeFilterPills typeCounts={typeCounts} />
+        )}
+
         {adding ? (
           <div className="border-b border-border-subtle bg-surface-raised p-3">
-            <ProjectAddForm onDone={() => setAdding(false)} />
+            <ProjectAddForm defaultType={activeType ?? "project"} onDone={() => setAdding(false)} />
           </div>
         ) : null}
 
@@ -48,8 +69,8 @@ export default function ProjectsIndexPage() {
           <div className="flex flex-1 items-center justify-center">
             <EmptyState
               icon={<Folder size={28} />}
-              title="No projects yet"
-              body="Group related tasks into projects (sequential or parallel)."
+              title={emptyTitle}
+              body={emptyBody}
             />
           </div>
         ) : (
@@ -65,6 +86,9 @@ export default function ProjectsIndexPage() {
                     aria-hidden
                   />
                   <span className="flex-1 truncate font-ui text-sm text-text-primary">{p.title}</span>
+                  <span className="font-ui text-2xs uppercase tracking-caps text-text-tertiary">
+                    {displayType(p.type ?? "project")}
+                  </span>
                   <span className="font-ui text-2xs uppercase tracking-caps text-text-tertiary">{p.status.replace("_", " ")}</span>
                   <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
                 </Link>

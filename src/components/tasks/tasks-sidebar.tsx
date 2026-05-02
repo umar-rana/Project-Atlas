@@ -28,31 +28,17 @@ import { SectionHeader, useSidebarSection } from "@/components/sidebar/section-h
 import { TagsSection } from "@/components/sidebar/tags-section";
 import { ContextsSection } from "@/components/sidebar/contexts-section";
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { ProjectType } from "@/components/projects/project-type-selector";
-import { PROJECT_TYPE_LABELS, PROJECT_TYPE_ICONS } from "@/components/projects/project-type-selector";
-
-const TYPE_GROUPS: { type: ProjectType; label: string }[] = [
-  { type: "project", label: "Projects" },
-  { type: "goal", label: "Goals" },
-  { type: "habit", label: "Habits" },
-];
+import { displayType, getSuggestedTypes } from "@/core/projects/type-suggestions";
+import { CustomTypeDialog } from "@/components/projects/custom-type-dialog";
 
 function ProjectSubGroup({
   groupType,
-  label,
   projects,
   pathname,
   dragItem,
   onDragStart,
 }: {
-  groupType: ProjectType;
-  label: string;
+  groupType: string;
   projects: { id: string; title: string; color: string | null; task_count: number }[];
   pathname: string;
   dragItem: DragItem | null;
@@ -71,8 +57,7 @@ function ProjectSubGroup({
         className="flex items-center gap-1 px-2 py-0.5 font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled hover:text-text-tertiary"
       >
         {open ? <ChevronDown size={9} /> : <ChevronRight size={9} />}
-        <span>{PROJECT_TYPE_ICONS[groupType]}</span>
-        <span>{label}</span>
+        <span>{displayType(groupType)}</span>
         <span className="ml-0.5 font-mono text-3xs tabular-nums">({projects.length})</span>
       </button>
       {open && projects.map((p) => {
@@ -117,6 +102,7 @@ export function TasksSidebar(): React.ReactElement {
   );
   const reviewCount = trpc.review.overdueCount.useQuery(undefined, { refetchOnWindowFocus: false });
   const projects = trpc.projects.list.useQuery({ status: "active" });
+  const distinctTypes = trpc.projects.distinctTypes.useQuery(undefined, { refetchOnWindowFocus: false });
   const foldersQuery = trpc.folders.list.useQuery(undefined, { refetchOnWindowFocus: false });
 
   const utils = trpc.useUtils();
@@ -196,11 +182,14 @@ export function TasksSidebar(): React.ReactElement {
 
   const [projectsOpen, setProjectsOpen] = useSidebarSection("projects", true);
   const [addingProject, setAddingProject] = React.useState(false);
-  const [addingProjectType, setAddingProjectType] = React.useState<ProjectType>("project");
+  const [addingProjectType, setAddingProjectType] = React.useState<string>("project");
   const [addingFolder, setAddingFolder] = React.useState(false);
   const [folderNameDraft, setFolderNameDraft] = React.useState("");
+  const [showAddMenu, setShowAddMenu] = React.useState(false);
+  const [showCustomTypeInput, setShowCustomTypeInput] = React.useState(false);
 
   const folders = foldersQuery.data ?? [];
+  const existingTypes = (distinctTypes.data ?? []).map((t) => t.type);
 
   const projectsByFolder = React.useMemo(() => {
     const map = new Map<string, { id: string; title: string; color: string | null; task_count: number }[]>();
@@ -215,24 +204,32 @@ export function TasksSidebar(): React.ReactElement {
     return map;
   }, [projects.data]);
 
+  // Group root projects by type dynamically; order groups most-used first then alpha.
+  // Within each group, projects are sorted alphabetically by title.
   const rootProjectsByType = React.useMemo(() => {
-    const byType: Record<ProjectType, { id: string; title: string; color: string | null; task_count: number }[]> = {
-      project: [],
-      goal: [],
-      habit: [],
-    };
+    const map = new Map<string, { id: string; title: string; color: string | null; task_count: number }[]>();
     for (const p of (projects.data ?? [])) {
       if (!p.folder_id) {
-        const t = ((p as typeof p & { type?: string }).type ?? "project") as ProjectType;
-        if (t in byType) {
-          byType[t].push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
-        } else {
-          byType.project.push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
-        }
+        const t = ((p as typeof p & { type?: string }).type ?? "project");
+        const existing = map.get(t) ?? [];
+        existing.push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
+        map.set(t, existing);
       }
     }
-    return byType;
+    for (const [t, list] of map) {
+      map.set(t, list.slice().sort((a, b) => a.title.localeCompare(b.title)));
+    }
+    return map;
   }, [projects.data]);
+
+  // Ordered type keys: most-used first (from distinctTypes), then alpha
+  const orderedTypeKeys = React.useMemo(() => {
+    const usageOrder = (distinctTypes.data ?? []).map((t) => t.type);
+    const rootKeys = Array.from(rootProjectsByType.keys());
+    const inUsage = usageOrder.filter((t) => rootKeys.includes(t));
+    const notInUsage = rootKeys.filter((t) => !usageOrder.includes(t)).sort();
+    return [...inUsage, ...notInUsage];
+  }, [distinctTypes.data, rootProjectsByType]);
 
   function handleAddFolder() {
     setFolderNameDraft("");
@@ -255,7 +252,7 @@ export function TasksSidebar(): React.ReactElement {
     toggleCollapsed.mutate({ id, collapsed });
   }
 
-  function handleOpenAddProject(type: ProjectType) {
+  function handleOpenAddProject(type: string) {
     setAddingProjectType(type);
     setAddingProject(true);
     if (!projectsOpen) setProjectsOpen(true);
@@ -263,27 +260,104 @@ export function TasksSidebar(): React.ReactElement {
 
   const totalRootProjects = (projects.data ?? []).filter((p) => !p.folder_id).length;
 
+  const coreSet = new Set(["project", "goal"]);
+
+  // Adaptive suggested types using the same logic as the type picker
+  const adaptiveSuggested = React.useMemo(
+    () => getSuggestedTypes(distinctTypes.data ?? []),
+    [distinctTypes.data],
+  );
+  const suggestedSet = new Set(adaptiveSuggested);
+
+  // User-defined types that are neither core nor in the suggested list
+  const userOnlyTypes = existingTypes.filter((t) => !coreSet.has(t) && !suggestedSet.has(t));
+
   const projectAddDropdown = (
-    <DropdownMenu>
-      <DropdownMenuTrigger
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => { setShowAddMenu((v) => !v); setShowCustomTypeInput(false); }}
         className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-        aria-label="Add project, goal, or habit"
+        aria-label="Add project"
       >
         <Plus size={11} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {TYPE_GROUPS.map(({ type, label }) => (
-          <DropdownMenuItem key={type} onSelect={() => handleOpenAddProject(type)}>
-            <span className="mr-2">{PROJECT_TYPE_ICONS[type]}</span>
-            New {PROJECT_TYPE_LABELS[type]}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </button>
+      {showAddMenu && !showCustomTypeInput && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border-default bg-surface-overlay shadow-lg py-1">
+          <div className="px-2 pb-1 pt-0.5">
+            <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">Core</p>
+          </div>
+          {["project", "goal"].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
+              className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+            >
+              {t === "project" ? "📁" : "🎯"} New {displayType(t)}
+            </button>
+          ))}
+          <div className="mx-2 my-1 border-t border-border-subtle" />
+          <div className="px-2 pb-1 pt-0.5">
+            <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">Suggested</p>
+          </div>
+          {adaptiveSuggested.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
+              className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+            >
+              📂 New {displayType(t)}
+            </button>
+          ))}
+          {userOnlyTypes.length > 0 && (
+            <>
+              <div className="mx-2 my-1 border-t border-border-subtle" />
+              <div className="px-2 pb-1 pt-0.5">
+                <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">Your types</p>
+              </div>
+              {userOnlyTypes.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                >
+                  📂 New {displayType(t)}
+                </button>
+              ))}
+            </>
+          )}
+          <div className="mx-2 my-1 border-t border-border-subtle" />
+          <button
+            type="button"
+            onClick={() => { setShowCustomTypeInput(true); }}
+            className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+          >
+            ✏️ Custom type…
+          </button>
+        </div>
+      )}
+      {showCustomTypeInput && (
+        <CustomTypeDialog
+          existingTypes={existingTypes}
+          onConfirm={(type) => {
+            setShowCustomTypeInput(false);
+            setShowAddMenu(false);
+            handleOpenAddProject(type);
+          }}
+          onCancel={() => { setShowCustomTypeInput(false); setShowAddMenu(false); }}
+        />
+      )}
+    </div>
   );
 
   return (
     <nav aria-label="Task perspectives" className="flex h-full flex-col gap-px overflow-y-auto p-2" onDragEnd={() => { setDragItem(null); setIsRootDragOver(false); }}>
+      {(showAddMenu || showCustomTypeInput) && (
+        <div className="fixed inset-0 z-40" onClick={() => { setShowAddMenu(false); setShowCustomTypeInput(false); }} />
+      )}
       <NavRow
         href="/tasks/inbox"
         active={pathname === "/tasks/inbox"}
@@ -415,12 +489,11 @@ export function TasksSidebar(): React.ReactElement {
             </div>
           )}
 
-          {TYPE_GROUPS.map(({ type, label }) => (
+          {orderedTypeKeys.map((type) => (
             <ProjectSubGroup
               key={type}
               groupType={type}
-              label={label}
-              projects={rootProjectsByType[type]}
+              projects={rootProjectsByType.get(type) ?? []}
               pathname={pathname}
               dragItem={dragItem}
               onDragStart={handleDragStart}

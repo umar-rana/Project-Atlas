@@ -4,9 +4,17 @@ import { z } from "zod";
 import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
+import { normalizeProjectType, validateProjectType } from "@/core/projects/type-validation";
 
 const PROJECT_STATUS = z.enum(["active", "on_hold", "completed", "dropped"]);
-const PROJECT_TYPE = z.enum(["project", "goal", "habit"]);
+const PROJECT_TYPE_STRING = z
+  .string()
+  .min(1)
+  .max(32)
+  .transform((v) => normalizeProjectType(v))
+  .refine((v) => validateProjectType(v).valid, {
+    message: "Invalid project type: only letters, numbers, spaces, and hyphens allowed",
+  });
 
 export const projectsRouter = router({
   list: protectedProcedure
@@ -16,6 +24,7 @@ export const projectsRouter = router({
           status: PROJECT_STATUS.optional(),
           folder_id: z.string().uuid().nullable().optional(),
           include_all_statuses: z.boolean().optional(),
+          type: z.string().optional(),
         })
         .default({}),
     )
@@ -33,6 +42,10 @@ export const projectsRouter = router({
 
       if (input.folder_id !== undefined) {
         where.folder_id = input.folder_id;
+      }
+
+      if (input.type) {
+        where.type = normalizeProjectType(input.type);
       }
 
       const projects = await db.project.findMany({
@@ -59,6 +72,20 @@ export const projectsRouter = router({
       }));
     }),
 
+  distinctTypes: protectedProcedure.query(async ({ ctx }) => {
+    const result = await db.project.groupBy({
+      by: ["type"],
+      where: {
+        user_id: ctx.user.id,
+        deleted_at: null,
+      },
+      _count: { _all: true },
+    });
+    return result
+      .map((r) => ({ type: r.type, count: r._count._all }))
+      .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+  }),
+
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
@@ -67,50 +94,50 @@ export const projectsRouter = router({
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
-      const [task_count, total_tasks, completed_tasks] = await Promise.all([
+      const now = new Date();
+      const [activeTasks, totalTasks, completedTasks, lastActivity] = await Promise.all([
         db.task.count({
-          where: { project_id: project.id, status: "active", deleted_at: null },
+          where: {
+            project_id: project.id,
+            user_id: ctx.user.id,
+            status: "active",
+            parent_id: null,
+            deleted_at: null,
+            OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+          },
         }),
         db.task.count({
-          where: { project_id: project.id, deleted_at: null, parent_id: null },
+          where: { project_id: project.id, user_id: ctx.user.id, deleted_at: null, parent_id: null },
         }),
         db.task.count({
-          where: { project_id: project.id, status: "completed", deleted_at: null, parent_id: null },
+          where: { project_id: project.id, user_id: ctx.user.id, status: "completed", deleted_at: null, parent_id: null },
+        }),
+        db.task.findFirst({
+          where: { project_id: project.id, user_id: ctx.user.id, deleted_at: null },
+          orderBy: { updated_at: "desc" },
+          select: { updated_at: true },
         }),
       ]);
 
-      // Compute habit streak: consecutive days (ending today) with ≥1 completed task.
-      let habit_streak = 0;
-      if (project.type === "habit") {
-        const completedDates = await db.task.findMany({
-          where: {
-            project_id: project.id,
-            status: "completed",
-            deleted_at: null,
-            completed_at: { not: null },
-          },
-          select: { completed_at: true },
-          orderBy: { completed_at: "desc" },
-        });
+      const metrics = {
+        task_counts: {
+          total: totalTasks,
+          active: activeTasks,
+          completed: completedTasks,
+        },
+        days_to_target: project.target_date
+          ? Math.round((project.target_date.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : undefined,
+        last_activity_at: lastActivity?.updated_at ?? null,
+      };
 
-        // Collect unique calendar dates (UTC) that had completions.
-        const dateSet = new Set<string>();
-        for (const t of completedDates) {
-          if (t.completed_at) {
-            dateSet.add(t.completed_at.toISOString().slice(0, 10));
-          }
-        }
-
-        // Walk backwards from today counting consecutive days.
-        const today = new Date();
-        let cursor = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-        while (dateSet.has(cursor.toISOString().slice(0, 10))) {
-          habit_streak++;
-          cursor.setUTCDate(cursor.getUTCDate() - 1);
-        }
-      }
-
-      return { ...project, task_count, total_tasks, completed_tasks, habit_streak };
+      return {
+        ...project,
+        task_count: activeTasks,
+        total_tasks: totalTasks,
+        completed_tasks: completedTasks,
+        metrics,
+      };
     }),
 
   create: protectedProcedure
@@ -121,11 +148,10 @@ export const projectsRouter = router({
         color: z.string().max(40).optional(),
         sequential: z.boolean().optional(),
         status: PROJECT_STATUS.optional(),
-        type: PROJECT_TYPE.optional(),
+        type: PROJECT_TYPE_STRING.optional(),
         target_date: z.string().datetime({ offset: true }).nullable().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
-        // Explicitly reject parent_project_id — projects cannot be nested inside other projects.
         parent_project_id: z.undefined({
           errorMap: () => ({ message: "Projects cannot be nested inside other projects. Use folders to organise projects." }),
         }).optional(),
@@ -161,6 +187,8 @@ export const projectsRouter = router({
         : new Prisma.Decimal(1024)
       ).toString();
 
+      const typeValue = input.type ?? "project";
+
       const project = await db.project.create({
         data: {
           id: newId(),
@@ -170,7 +198,7 @@ export const projectsRouter = router({
           color: input.color ?? null,
           sequential: input.sequential ?? defaultSequential,
           status: input.status ?? "active",
-          type: input.type ?? "project",
+          type: typeValue,
           target_date: input.target_date ? new Date(input.target_date) : null,
           position: new Prisma.Decimal(position),
           folder_id: input.folder_id ?? null,
@@ -197,11 +225,10 @@ export const projectsRouter = router({
         color: z.string().max(40).nullable().optional(),
         sequential: z.boolean().optional(),
         status: PROJECT_STATUS.optional(),
-        type: PROJECT_TYPE.optional(),
+        type: PROJECT_TYPE_STRING.optional(),
         target_date: z.string().datetime({ offset: true }).nullable().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
-        // Explicitly reject parent_project_id — projects cannot be nested inside other projects.
         parent_project_id: z.undefined({
           errorMap: () => ({ message: "Projects cannot be nested inside other projects. Use folders to organise projects." }),
         }).optional(),

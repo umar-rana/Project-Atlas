@@ -14,12 +14,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, RefreshCw, Folder, Flame, CheckCircle2 } from "lucide-react";
+import { MoreHorizontal, RefreshCw, Folder } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { ProjectTypeSelector, type ProjectType, PROJECT_TYPE_LABELS, PROJECT_TYPE_ICONS } from "@/components/projects/project-type-selector";
+import { ProjectTypePicker } from "@/components/projects/project-type-picker";
 import { ProjectStatusSelector, type ProjectStatus } from "@/components/projects/project-status-selector";
 import { ProjectTargetDatePicker } from "@/components/projects/project-target-date-picker";
+import { ProjectHeaderMetrics } from "@/components/projects/project-header-metrics";
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
   blue: "bg-cal-1-border",
@@ -43,6 +44,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
     onSettled: () => {
       utils.projects.get.invalidate({ id: projectId });
       utils.projects.list.invalidate();
+      utils.projects.distinctTypes.invalidate();
     },
   });
   const del = trpc.projects.delete.useMutation({
@@ -94,14 +96,11 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
   if (!project.data) return null;
   const data = project.data;
   const currentFolder = flatFolders.find((f) => f.id === (data as typeof data & { folder_id?: string | null }).folder_id);
-  const projectType = ((data as typeof data & { type?: string }).type ?? "project") as ProjectType;
+  const projectType = ((data as typeof data & { type?: string }).type ?? "project");
   const projectStatus = data.status as ProjectStatus;
   const targetDate = (data as typeof data & { target_date?: string | null }).target_date;
   const isInactive = INACTIVE_STATUSES.has(projectStatus);
-  const totalTasks = (data as typeof data & { total_tasks?: number }).total_tasks ?? 0;
-  const completedTasks = (data as typeof data & { completed_tasks?: number }).completed_tasks ?? 0;
-  const habitStreak = (data as typeof data & { habit_streak?: number }).habit_streak ?? 0;
-  const goalPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const metrics = (data as typeof data & { metrics?: { task_counts: { total: number; active: number; completed: number }; days_to_target?: number; last_activity_at?: Date | string | null } }).metrics;
 
   function commitTitle() {
     const next = titleDraft.trim();
@@ -149,18 +148,6 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
             <MoreHorizontal size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Type</DropdownMenuLabel>
-            {(["project", "goal", "habit"] as ProjectType[]).map((t) => (
-              <DropdownMenuItem
-                key={t}
-                onSelect={() => update.mutate({ id: data.id, type: t })}
-                className={t === projectType ? "font-semibold text-accent-primary" : ""}
-              >
-                <span className="mr-2">{PROJECT_TYPE_ICONS[t]}</span>
-                {PROJECT_TYPE_LABELS[t]}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
             <DropdownMenuLabel>Status</DropdownMenuLabel>
             <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "active" })}
               className={projectStatus === "active" ? "font-semibold text-accent-primary" : ""}
@@ -257,7 +244,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
       </div>
 
       <div className="flex flex-wrap items-center gap-1 pl-5">
-        <ProjectTypeSelector
+        <ProjectTypePicker
           value={projectType}
           onChange={(t) => update.mutate({ id: data.id, type: t })}
           disabled={update.isPending}
@@ -290,45 +277,11 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
         </span>
       </div>
 
-      {projectType === "goal" && (
-        <div className="flex items-center gap-2 pl-5 pb-0.5">
-          <div className="h-1.5 w-28 rounded-full bg-surface-raised overflow-hidden">
-            <div
-              className="h-full rounded-full bg-accent-primary transition-all"
-              style={{ width: totalTasks > 0 ? `${goalPercent}%` : "0%" }}
-            />
-          </div>
-          <span className="font-ui text-2xs text-text-secondary">
-            {totalTasks > 0
-              ? `${completedTasks} / ${totalTasks} tasks done — ${goalPercent}%`
-              : "No tasks yet — 0%"}
-          </span>
-        </div>
-      )}
-
-      {projectType === "habit" && (
-        <div className="flex items-center gap-3 pl-5 pb-0.5">
-          {habitStreak > 0 ? (
-            <span className="inline-flex items-center gap-1 font-ui text-2xs text-accent-warning font-medium">
-              <Flame size={10} />
-              {habitStreak}-day streak
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary">
-              <Flame size={10} />
-              No streak yet
-            </span>
-          )}
-          {completedTasks > 0 && (
-            <>
-              <span className="text-text-disabled font-ui text-2xs">·</span>
-              <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-secondary">
-                <CheckCircle2 size={10} />
-                {completedTasks} {completedTasks === 1 ? "completion" : "completions"}
-              </span>
-            </>
-          )}
-        </div>
+      {metrics && (
+        <ProjectHeaderMetrics
+          metrics={metrics}
+          targetDate={targetDate}
+        />
       )}
     </div>
   );
