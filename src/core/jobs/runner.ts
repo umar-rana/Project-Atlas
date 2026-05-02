@@ -2,6 +2,7 @@ import "server-only";
 import PgBoss from "pg-boss";
 import { createLogger } from "@/core/logging";
 import { JOB_REGISTRY } from "./registry";
+import { writeJobAuditLog } from "./audit";
 
 const log = createLogger({ module: "jobs/runner" });
 
@@ -49,12 +50,24 @@ export async function startJobRunner(): Promise<void> {
 
     await boss.work(job.name, async () => {
       log.info({ job: job.name }, "running job");
+      const startedAt = Date.now();
       try {
         const output = await job.handler();
         log.info({ job: job.name, output }, "job completed");
+        await writeJobAuditLog(null, "job_run_completed", job.name, {
+          outcome: "completed",
+          duration_ms: Date.now() - startedAt,
+          result: output,
+        });
         return output;
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         log.error({ err, job: job.name }, "job failed");
+        await writeJobAuditLog(null, "job_run_completed", job.name, {
+          outcome: "failed",
+          duration_ms: Date.now() - startedAt,
+          error: message,
+        });
         throw err;
       }
     });

@@ -22,6 +22,7 @@ import { mediaRouter } from "./media";
 import { notesRouter } from "./notes";
 import { notesFolderRouter } from "./notesFolder";
 import { linksRouter } from "./links";
+import { jobsRouter } from "./jobs";
 
 export const appRouter = router({
   health: healthRouter,
@@ -47,6 +48,7 @@ export const appRouter = router({
   notes: notesRouter,
   notesFolder: notesFolderRouter,
   links: linksRouter,
+  jobs: jobsRouter,
 });
 
 export type AppRouter = typeof appRouter;

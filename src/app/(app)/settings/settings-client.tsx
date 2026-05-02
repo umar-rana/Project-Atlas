@@ -25,7 +25,9 @@ import {
   Info,
   Package,
   Sliders,
+  Settings2,
 } from "lucide-react";
+import { JobsManagement } from "@/components/settings/jobs-management";
 import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES, LANGUAGE_OPTIONS } from "@/core/locale/presets";
 import type { LocalePresetKey } from "@/core/locale/presets";
 import { formatDate, formatTime, formatNumber, formatCurrency, formatWeekdayAbbrev, formatMonthAbbrev } from "@/core/locale/formatters";
@@ -55,7 +57,8 @@ type Section =
   | "backups"
   | "storage"
   | "data"
-  | "account";
+  | "account"
+  | "system";
 
 const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: UserIcon },
@@ -69,6 +72,7 @@ const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "storage", label: "Storage", icon: Package },
   { id: "data", label: "Data", icon: Database },
   { id: "account", label: "Account", icon: LogOut },
+  { id: "system", label: "System", icon: Settings2 },
 ];
 
 const DRIVE_ERROR_MESSAGES: Record<string, string> = {
@@ -2159,7 +2163,7 @@ interface SettingsClientProps {
   driveError?: string;
 }
 
-const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "preferences", "capture", "tasks", "integrations", "ai", "backups", "storage", "data", "account"]);
+const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "preferences", "capture", "tasks", "integrations", "ai", "backups", "storage", "data", "account", "system"]);
 
 function resolveSection(raw: string | undefined, fallback: Section): Section {
   if (raw && VALID_SECTIONS.has(raw as Section)) return raw as Section;
@@ -2345,6 +2349,15 @@ export function SettingsClient({
         </div>
       )}
       {section === "account" && <AccountSection />}
+      {section === "system" && (
+        <div className="flex flex-col gap-6">
+          <SectionHeader
+            title="System"
+            description="Monitor and manage background jobs that keep Atlas running smoothly."
+          />
+          <JobsManagement />
+        </div>
+      )}
     </div>
   );
 
