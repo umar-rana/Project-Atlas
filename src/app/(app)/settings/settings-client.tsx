@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES, LANGUAGE_OPTIONS } from "@/core/locale/presets";
 import type { LocalePresetKey } from "@/core/locale/presets";
-import { formatDate, formatTime, formatNumber, formatCurrency, formatWeekdayFull } from "@/core/locale/formatters";
+import { formatDate, formatTime, formatNumber, formatCurrency, formatWeekdayAbbrev, formatMonthAbbrev } from "@/core/locale/formatters";
 import type { LocaleSettings } from "@/core/locale/formatters";
 import { cn } from "@/lib/utils";
 
@@ -1854,6 +1854,16 @@ function LocalePreviewBlock({ locale }: { locale: LocaleSettings }) {
   const sampleNumber = 1234567.89;
   const sampleCurrency = 9999.5;
 
+  // Dec 28, 2025 is a Sunday — gives us Sun–Sat for the full 7-day row
+  const weekdays = Array.from({ length: 7 }, (_, i) => new Date(2025, 11, 28 + i));
+
+  // Previous, current, and next month relative to sampleDate (Nov, Dec, Jan)
+  const months = [
+    new Date(2025, 10, 1),
+    new Date(2025, 11, 1),
+    new Date(2026, 0, 1),
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-surface-sunken p-4">
       <div>
@@ -1864,9 +1874,21 @@ function LocalePreviewBlock({ locale }: { locale: LocaleSettings }) {
         <p className="font-ui text-2xs font-medium text-text-tertiary">Time</p>
         <p className="mt-0.5 font-mono text-sm text-text-primary">{formatTime(sampleDate, locale)}</p>
       </div>
-      <div>
-        <p className="font-ui text-2xs font-medium text-text-tertiary">Weekday</p>
-        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatWeekdayFull(sampleDate, locale.language)}</p>
+      <div className="col-span-2">
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Weekdays</p>
+        <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+          {weekdays.map((d, i) => (
+            <span key={i} className="font-mono text-sm text-text-primary">{formatWeekdayAbbrev(d, locale.language)}</span>
+          ))}
+        </div>
+      </div>
+      <div className="col-span-2">
+        <p className="font-ui text-2xs font-medium text-text-tertiary">Months</p>
+        <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+          {months.map((d, i) => (
+            <span key={i} className="font-mono text-sm text-text-primary">{formatMonthAbbrev(d, locale.language)}</span>
+          ))}
+        </div>
       </div>
       <div>
         <p className="font-ui text-2xs font-medium text-text-tertiary">Number</p>
@@ -1967,14 +1989,9 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
       date_format: localLocale.date_format,
       time_format: localLocale.time_format as "12h" | "24h",
       number_format: localLocale.number_format,
-<<<<<<< HEAD
       currency_code: code,
       currency_symbol: symbol,
-=======
-      currency_code: localLocale.currency_code,
-      currency_symbol: localLocale.currency_symbol,
       language: localLocale.language,
->>>>>>> 19c3cbc (feat: Add language/locale selector for weekday and month name translation)
     });
   }
 
