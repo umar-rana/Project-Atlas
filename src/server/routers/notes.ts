@@ -16,6 +16,7 @@ export const notesRouter = router({
         purpose: z
           .enum(["note", "meeting_note", "project_brief", "reading_note"])
           .optional(),
+        is_project_brief: z.boolean().optional(),
         limit: z.number().int().min(1).max(200).default(50),
         cursor: z.string().uuid().optional(),
       }),
@@ -27,6 +28,7 @@ export const notesRouter = router({
         ...(input.folder_id !== undefined ? { folder_id: input.folder_id } : {}),
         ...(input.project_id !== undefined ? { project_id: input.project_id } : {}),
         ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
+        ...(input.is_project_brief !== undefined ? { is_project_brief: input.is_project_brief } : {}),
       };
 
       const notes = await db.note.findMany({

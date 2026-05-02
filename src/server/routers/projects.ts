@@ -6,6 +6,7 @@ import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 
 const PROJECT_STATUS = z.enum(["active", "on_hold", "completed", "dropped"]);
+const PROJECT_TYPE = z.enum(["project", "goal", "habit"]);
 
 export const projectsRouter = router({
   list: protectedProcedure
@@ -79,6 +80,8 @@ export const projectsRouter = router({
         color: z.string().max(40).optional(),
         sequential: z.boolean().optional(),
         status: PROJECT_STATUS.optional(),
+        type: PROJECT_TYPE.optional(),
+        target_date: z.string().datetime({ offset: true }).nullable().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
         // Explicitly reject parent_project_id — projects cannot be nested inside other projects.
@@ -126,6 +129,8 @@ export const projectsRouter = router({
           color: input.color ?? null,
           sequential: input.sequential ?? defaultSequential,
           status: input.status ?? "active",
+          type: input.type ?? "project",
+          target_date: input.target_date ? new Date(input.target_date) : null,
           position: new Prisma.Decimal(position),
           folder_id: input.folder_id ?? null,
           review_interval_days: input.review_interval_days ?? defaultReviewInterval,
@@ -151,6 +156,8 @@ export const projectsRouter = router({
         color: z.string().max(40).nullable().optional(),
         sequential: z.boolean().optional(),
         status: PROJECT_STATUS.optional(),
+        type: PROJECT_TYPE.optional(),
+        target_date: z.string().datetime({ offset: true }).nullable().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
         // Explicitly reject parent_project_id — projects cannot be nested inside other projects.
@@ -187,17 +194,30 @@ export const projectsRouter = router({
         data.completed_at =
           input.status === "completed" ? new Date() : null;
       }
+      if (input.type !== undefined) {
+        data.type = input.type;
+      }
+      if (input.target_date !== undefined) {
+        data.target_date = input.target_date ? new Date(input.target_date) : null;
+      }
 
       const updated = await db.project.update({
         where: { id: input.id },
         data,
       });
 
+      const statusChanged = input.status !== undefined && input.status !== before.status;
+      const typeChanged = input.type !== undefined && input.type !== before.type;
+
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Project",
         entity_id: updated.id,
-        action: input.status && input.status !== before.status ? "status_change" : "update",
+        action: typeChanged
+          ? "project_type_changed"
+          : statusChanged
+            ? "project_status_changed"
+            : "update",
         before: before as unknown as Record<string, unknown>,
         after: updated as unknown as Record<string, unknown>,
       });

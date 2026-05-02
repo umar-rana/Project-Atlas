@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
-import { StatusPill } from "@/components/ui/status-pill";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +17,9 @@ import {
 import { MoreHorizontal, RefreshCw, Folder } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { ProjectTypeSelector, type ProjectType, PROJECT_TYPE_LABELS, PROJECT_TYPE_ICONS } from "@/components/projects/project-type-selector";
+import { ProjectStatusSelector, type ProjectStatus } from "@/components/projects/project-status-selector";
+import { ProjectTargetDatePicker } from "@/components/projects/project-target-date-picker";
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
   blue: "bg-cal-1-border",
@@ -31,22 +33,7 @@ const PROJECT_COLOR_DOTS: Record<string, string> = {
 };
 const COLORS = Object.keys(PROJECT_COLOR_DOTS);
 
-const STATUS_TO_PILL: Record<
-  string,
-  React.ComponentProps<typeof StatusPill>["status"]
-> = {
-  active: "active",
-  on_hold: "on-hold",
-  completed: "complete",
-  dropped: "cancelled",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  active: "Active",
-  on_hold: "On hold",
-  completed: "Completed",
-  dropped: "Dropped",
-};
+const INACTIVE_STATUSES = new Set(["completed", "dropped"]);
 
 export function ProjectDetailHeader({ projectId }: { projectId: string }): React.ReactElement | null {
   const router = useRouter();
@@ -107,6 +94,10 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
   if (!project.data) return null;
   const data = project.data;
   const currentFolder = flatFolders.find((f) => f.id === (data as typeof data & { folder_id?: string | null }).folder_id);
+  const projectType = ((data as typeof data & { type?: string }).type ?? "project") as ProjectType;
+  const projectStatus = data.status as ProjectStatus;
+  const targetDate = (data as typeof data & { target_date?: string | null }).target_date;
+  const isInactive = INACTIVE_STATUSES.has(projectStatus);
 
   function commitTitle() {
     const next = titleDraft.trim();
@@ -131,7 +122,10 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
               : `Every ${data.review_interval_days} days`;
 
   return (
-    <div className="flex flex-col gap-1 border-b border-border-subtle px-3 py-2">
+    <div className={cn(
+      "flex flex-col gap-1 border-b border-border-subtle px-3 py-2",
+      isInactive && "opacity-60",
+    )}>
       <div className="flex items-center gap-3">
         <span className={cn("size-3 shrink-0 rounded-full", PROJECT_COLOR_DOTS[data.color ?? ""] ?? "bg-text-disabled")} aria-hidden />
         <input
@@ -146,15 +140,30 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
           }}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-border-focus rounded-sm"
         />
-        <StatusPill status={STATUS_TO_PILL[data.status] ?? "active"} label={STATUS_LABEL[data.status] ?? data.status} />
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary" aria-label="Project actions">
             <MoreHorizontal size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Type</DropdownMenuLabel>
+            {(["project", "goal", "habit"] as ProjectType[]).map((t) => (
+              <DropdownMenuItem
+                key={t}
+                onSelect={() => update.mutate({ id: data.id, type: t })}
+                className={t === projectType ? "font-semibold text-accent-primary" : ""}
+              >
+                <span className="mr-2">{PROJECT_TYPE_ICONS[t]}</span>
+                {PROJECT_TYPE_LABELS[t]}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
             <DropdownMenuLabel>Status</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "active" })}>Set active</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "on_hold" })}>Put on hold</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "active" })}
+              className={projectStatus === "active" ? "font-semibold text-accent-primary" : ""}
+            >Set active</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "on_hold" })}
+              className={projectStatus === "on_hold" ? "font-semibold text-accent-primary" : ""}
+            >Pause</DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 if (confirm("Mark all tasks complete and complete the project?")) {
@@ -162,10 +171,13 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
                   update.mutate({ id: data.id, status: "completed" });
                 }
               }}
+              className={projectStatus === "completed" ? "font-semibold text-accent-primary" : ""}
             >
               Mark complete
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "dropped" })}>Drop</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "dropped" })}
+              className={projectStatus === "dropped" ? "font-semibold text-accent-primary" : ""}
+            >Abandon</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Review interval</DropdownMenuLabel>
             {([null, 3, 7, 14, 30] as (number | null)[]).map((days) => {
@@ -239,17 +251,36 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex items-center gap-3 pl-5 font-ui text-2xs text-text-tertiary">
-        <span className="inline-flex items-center gap-1">
+
+      <div className="flex flex-wrap items-center gap-1 pl-5">
+        <ProjectTypeSelector
+          value={projectType}
+          onChange={(t) => update.mutate({ id: data.id, type: t })}
+          disabled={update.isPending}
+        />
+        <span className="text-text-disabled font-ui text-2xs">·</span>
+        <ProjectStatusSelector
+          value={projectStatus}
+          onChange={(s) => update.mutate({ id: data.id, status: s })}
+          disabled={update.isPending}
+        />
+        <span className="text-text-disabled font-ui text-2xs">·</span>
+        <ProjectTargetDatePicker
+          value={targetDate}
+          onChange={(d) => update.mutate({ id: data.id, target_date: d })}
+          disabled={update.isPending}
+        />
+        <span className="text-text-disabled font-ui text-2xs ml-1">·</span>
+        <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary px-1.5 py-0.5">
           <RefreshCw size={9} />
-          Review: {reviewIntervalLabel}
+          {reviewIntervalLabel}
         </span>
         {data.sequential && (
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary px-1.5 py-0.5">
             Sequential
           </span>
         )}
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary px-1.5 py-0.5">
           <Folder size={9} />
           {currentFolder ? currentFolder.name : <span className="italic">No folder</span>}
         </span>

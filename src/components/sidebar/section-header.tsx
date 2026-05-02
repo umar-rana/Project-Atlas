@@ -11,6 +11,7 @@ export function SectionHeader({
   onAdd,
   onManage,
   count,
+  addElement,
 }: {
   label: string;
   expanded: boolean;
@@ -18,6 +19,7 @@ export function SectionHeader({
   onAdd?: () => void;
   onManage?: () => void;
   count?: number;
+  addElement?: React.ReactNode;
 }) {
   return (
     <div className="mt-3 flex items-center justify-between px-2">
@@ -44,7 +46,7 @@ export function SectionHeader({
             <Settings2 size={11} />
           </button>
         ) : null}
-        {onAdd ? (
+        {addElement ?? (onAdd ? (
           <button
             type="button"
             onClick={onAdd}
@@ -53,7 +55,7 @@ export function SectionHeader({
           >
             <Plus size={11} />
           </button>
-        ) : null}
+        ) : null)}
       </div>
     </div>
   );

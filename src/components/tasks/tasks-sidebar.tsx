@@ -14,6 +14,8 @@ import {
   CalendarRange,
   RefreshCw,
   Sunrise,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
@@ -26,13 +28,88 @@ import { SectionHeader, useSidebarSection } from "@/components/sidebar/section-h
 import { TagsSection } from "@/components/sidebar/tags-section";
 import { ContextsSection } from "@/components/sidebar/contexts-section";
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { ProjectType } from "@/components/projects/project-type-selector";
+import { PROJECT_TYPE_LABELS, PROJECT_TYPE_ICONS } from "@/components/projects/project-type-selector";
+
+const TYPE_GROUPS: { type: ProjectType; label: string }[] = [
+  { type: "project", label: "Projects" },
+  { type: "goal", label: "Goals" },
+  { type: "habit", label: "Habits" },
+];
+
+function ProjectSubGroup({
+  groupType,
+  label,
+  projects,
+  pathname,
+  dragItem,
+  onDragStart,
+}: {
+  groupType: ProjectType;
+  label: string;
+  projects: { id: string; title: string; color: string | null; task_count: number }[];
+  pathname: string;
+  dragItem: DragItem | null;
+  onDragStart: (item: DragItem) => void;
+}) {
+  const [open, setOpen] = useSidebarSection(`projects-type-${groupType}`, true);
+
+  if (projects.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-px">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex items-center gap-1 px-2 py-0.5 font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled hover:text-text-tertiary"
+      >
+        {open ? <ChevronDown size={9} /> : <ChevronRight size={9} />}
+        <span>{PROJECT_TYPE_ICONS[groupType]}</span>
+        <span>{label}</span>
+        <span className="ml-0.5 font-mono text-3xs tabular-nums">({projects.length})</span>
+      </button>
+      {open && projects.map((p) => {
+        const href = `/tasks/projects/${p.id}`;
+        const active = pathname === href;
+        return (
+          <Link
+            key={p.id}
+            href={href}
+            draggable
+            onDragStart={(e) => {
+              e.stopPropagation();
+              onDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: null });
+            }}
+            className={cn(
+              "flex cursor-grab items-center gap-2 rounded-sm px-2 py-1 pl-6 font-ui text-sm active:cursor-grabbing",
+              active
+                ? "bg-accent-primary-subtle text-text-primary"
+                : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+            )}
+          >
+            <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(p.color))} aria-hidden />
+            <span className="flex-1 truncate">{p.title}</span>
+            {p.task_count > 0 ? (
+              <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
+            ) : null}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Stable value — inline new Date().getTimezoneOffset() creates a new object
-  // on every render, making the cache key unstable.
   const timezoneOffset = React.useMemo(() => new Date().getTimezoneOffset(), []);
   const counts = trpc.tasks.counts.useQuery(
     { timezoneOffset },
@@ -119,6 +196,7 @@ export function TasksSidebar(): React.ReactElement {
 
   const [projectsOpen, setProjectsOpen] = useSidebarSection("projects", true);
   const [addingProject, setAddingProject] = React.useState(false);
+  const [addingProjectType, setAddingProjectType] = React.useState<ProjectType>("project");
   const [addingFolder, setAddingFolder] = React.useState(false);
   const [folderNameDraft, setFolderNameDraft] = React.useState("");
 
@@ -137,8 +215,23 @@ export function TasksSidebar(): React.ReactElement {
     return map;
   }, [projects.data]);
 
-  const rootProjects = React.useMemo(() => {
-    return (projects.data ?? []).filter((p) => !p.folder_id);
+  const rootProjectsByType = React.useMemo(() => {
+    const byType: Record<ProjectType, { id: string; title: string; color: string | null; task_count: number }[]> = {
+      project: [],
+      goal: [],
+      habit: [],
+    };
+    for (const p of (projects.data ?? [])) {
+      if (!p.folder_id) {
+        const t = ((p as typeof p & { type?: string }).type ?? "project") as ProjectType;
+        if (t in byType) {
+          byType[t].push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
+        } else {
+          byType.project.push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
+        }
+      }
+    }
+    return byType;
   }, [projects.data]);
 
   function handleAddFolder() {
@@ -161,6 +254,33 @@ export function TasksSidebar(): React.ReactElement {
   function handleToggleFolder(id: string, collapsed: boolean) {
     toggleCollapsed.mutate({ id, collapsed });
   }
+
+  function handleOpenAddProject(type: ProjectType) {
+    setAddingProjectType(type);
+    setAddingProject(true);
+    if (!projectsOpen) setProjectsOpen(true);
+  }
+
+  const totalRootProjects = (projects.data ?? []).filter((p) => !p.folder_id).length;
+
+  const projectAddDropdown = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+        aria-label="Add project, goal, or habit"
+      >
+        <Plus size={11} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {TYPE_GROUPS.map(({ type, label }) => (
+          <DropdownMenuItem key={type} onSelect={() => handleOpenAddProject(type)}>
+            <span className="mr-2">{PROJECT_TYPE_ICONS[type]}</span>
+            New {PROJECT_TYPE_LABELS[type]}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <nav aria-label="Task perspectives" className="flex h-full flex-col gap-px overflow-y-auto p-2" onDragEnd={() => { setDragItem(null); setIsRootDragOver(false); }}>
@@ -212,7 +332,8 @@ export function TasksSidebar(): React.ReactElement {
         label="Projects"
         expanded={projectsOpen}
         onToggle={() => setProjectsOpen(!projectsOpen)}
-        onAdd={() => setAddingProject(true)}
+        count={totalRootProjects}
+        addElement={projectAddDropdown}
       />
       {projectsOpen ? (
         <div className="flex flex-col gap-px">
@@ -259,7 +380,7 @@ export function TasksSidebar(): React.ReactElement {
           )}
           {addingProject ? (
             <div className="px-2 py-1">
-              <ProjectAddForm onDone={() => setAddingProject(false)} />
+              <ProjectAddForm defaultType={addingProjectType} onDone={() => setAddingProject(false)} />
             </div>
           ) : null}
 
@@ -294,34 +415,19 @@ export function TasksSidebar(): React.ReactElement {
             </div>
           )}
 
-          {rootProjects.map((p) => {
-            const href = `/tasks/projects/${p.id}`;
-            const active = pathname === href;
-            return (
-              <Link
-                key={p.id}
-                href={href}
-                draggable
-                onDragStart={(e) => {
-                  e.stopPropagation();
-                  handleDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: null });
-                }}
-                className={cn(
-                  "flex cursor-grab items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm active:cursor-grabbing",
-                  active
-                    ? "bg-accent-primary-subtle text-text-primary"
-                    : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
-                )}
-              >
-                <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(p.color))} aria-hidden />
-                <span className="flex-1 truncate">{p.title}</span>
-                {p.task_count > 0 ? (
-                  <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
-                ) : null}
-              </Link>
-            );
-          })}
-          {projects.data?.length === 0 && !addingProject ? (
+          {TYPE_GROUPS.map(({ type, label }) => (
+            <ProjectSubGroup
+              key={type}
+              groupType={type}
+              label={label}
+              projects={rootProjectsByType[type]}
+              pathname={pathname}
+              dragItem={dragItem}
+              onDragStart={handleDragStart}
+            />
+          ))}
+
+          {totalRootProjects === 0 && !addingProject ? (
             <p className="px-2 py-1 font-ui text-2xs text-text-tertiary">No projects yet</p>
           ) : null}
         </div>
