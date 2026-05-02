@@ -66,10 +66,51 @@ export const projectsRouter = router({
         where: { id: input.id, user_id: ctx.user.id },
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
-      const task_count = await db.task.count({
-        where: { project_id: project.id, status: "active" },
-      });
-      return { ...project, task_count };
+
+      const [task_count, total_tasks, completed_tasks] = await Promise.all([
+        db.task.count({
+          where: { project_id: project.id, status: "active", deleted_at: null },
+        }),
+        db.task.count({
+          where: { project_id: project.id, deleted_at: null, parent_id: null },
+        }),
+        db.task.count({
+          where: { project_id: project.id, status: "completed", deleted_at: null, parent_id: null },
+        }),
+      ]);
+
+      // Compute habit streak: consecutive days (ending today) with ≥1 completed task.
+      let habit_streak = 0;
+      if (project.type === "habit") {
+        const completedDates = await db.task.findMany({
+          where: {
+            project_id: project.id,
+            status: "completed",
+            deleted_at: null,
+            completed_at: { not: null },
+          },
+          select: { completed_at: true },
+          orderBy: { completed_at: "desc" },
+        });
+
+        // Collect unique calendar dates (UTC) that had completions.
+        const dateSet = new Set<string>();
+        for (const t of completedDates) {
+          if (t.completed_at) {
+            dateSet.add(t.completed_at.toISOString().slice(0, 10));
+          }
+        }
+
+        // Walk backwards from today counting consecutive days.
+        const today = new Date();
+        let cursor = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        while (dateSet.has(cursor.toISOString().slice(0, 10))) {
+          habit_streak++;
+          cursor.setUTCDate(cursor.getUTCDate() - 1);
+        }
+      }
+
+      return { ...project, task_count, total_tasks, completed_tasks, habit_streak };
     }),
 
   create: protectedProcedure

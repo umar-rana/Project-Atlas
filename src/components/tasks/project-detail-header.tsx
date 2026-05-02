@@ -14,7 +14,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, RefreshCw, Folder } from "lucide-react";
+import { MoreHorizontal, RefreshCw, Folder, Flame, CheckCircle2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { ProjectTypeSelector, type ProjectType, PROJECT_TYPE_LABELS, PROJECT_TYPE_ICONS } from "@/components/projects/project-type-selector";
@@ -98,6 +98,10 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
   const projectStatus = data.status as ProjectStatus;
   const targetDate = (data as typeof data & { target_date?: string | null }).target_date;
   const isInactive = INACTIVE_STATUSES.has(projectStatus);
+  const totalTasks = (data as typeof data & { total_tasks?: number }).total_tasks ?? 0;
+  const completedTasks = (data as typeof data & { completed_tasks?: number }).completed_tasks ?? 0;
+  const habitStreak = (data as typeof data & { habit_streak?: number }).habit_streak ?? 0;
+  const goalPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   function commitTitle() {
     const next = titleDraft.trim();
@@ -285,6 +289,47 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
           {currentFolder ? currentFolder.name : <span className="italic">No folder</span>}
         </span>
       </div>
+
+      {projectType === "goal" && (
+        <div className="flex items-center gap-2 pl-5 pb-0.5">
+          <div className="h-1.5 w-28 rounded-full bg-surface-raised overflow-hidden">
+            <div
+              className="h-full rounded-full bg-accent-primary transition-all"
+              style={{ width: totalTasks > 0 ? `${goalPercent}%` : "0%" }}
+            />
+          </div>
+          <span className="font-ui text-2xs text-text-secondary">
+            {totalTasks > 0
+              ? `${completedTasks} / ${totalTasks} tasks done — ${goalPercent}%`
+              : "No tasks yet — 0%"}
+          </span>
+        </div>
+      )}
+
+      {projectType === "habit" && (
+        <div className="flex items-center gap-3 pl-5 pb-0.5">
+          {habitStreak > 0 ? (
+            <span className="inline-flex items-center gap-1 font-ui text-2xs text-accent-warning font-medium">
+              <Flame size={10} />
+              {habitStreak}-day streak
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary">
+              <Flame size={10} />
+              No streak yet
+            </span>
+          )}
+          {completedTasks > 0 && (
+            <>
+              <span className="text-text-disabled font-ui text-2xs">·</span>
+              <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-secondary">
+                <CheckCircle2 size={10} />
+                {completedTasks} {completedTasks === 1 ? "completion" : "completions"}
+              </span>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
