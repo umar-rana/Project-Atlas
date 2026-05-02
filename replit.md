@@ -247,7 +247,8 @@ All admin mutations write AuditLog entries with `actor_type: 'admin'`. Cursor pa
 | `.github/workflows/ci.yml` | CI: lint + type-check + unit tests + integration tests + e2e (Playwright) — **do not modify** |
 
 ## Deployment
-- **Platform**: Replit (`.replit.app` domain)
+- **Platform**: Replit
+- **Production domain**: `atlas.rana.pk`
 - **Database in production**: Neon only (via `DATABASE_URL_NEON`)
 - **Replit production postgres**: Disconnected from deployment settings — the app never uses it. Disconnecting it prevents the Replit provisioner from auto-generating conflicting DDL migrations.
 - **Migrations in production**: Handled by `scripts/post-merge.sh` on every task agent merge (applies to Neon via `DATABASE_URL_NEON`)
