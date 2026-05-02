@@ -106,7 +106,16 @@ export const jobsRouter = router({
               const synced =
                 output.synced ?? output.files_synced ?? output.count;
               if (typeof synced === "number") {
-                lastResult = `${synced} file${synced !== 1 ? "s" : ""} synced`;
+                const parts: string[] = [`${synced} file${synced !== 1 ? "s" : ""} synced`];
+                const deleted = output.deleted;
+                if (typeof deleted === "number" && deleted > 0) {
+                  parts.push(`${deleted} deleted`);
+                }
+                const errors = output.errors;
+                if (typeof errors === "number" && errors > 0) {
+                  parts.push(`${errors} error${errors !== 1 ? "s" : ""}`);
+                }
+                lastResult = parts.join(", ");
               } else if (typeof output.message === "string") {
                 lastResult = output.message;
               } else if (typeof output.deleted === "number") {
