@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Folder, Plus } from "lucide-react";
+import { Folder, Plus, Settings2 } from "lucide-react";
 import { TasksShell } from "@/components/tasks/tasks-shell";
 import { trpc } from "@/lib/trpc/client";
 import { ProjectAddForm } from "@/components/tasks/project-add-form";
 import { ProjectTypeFilterPills } from "@/components/projects/project-type-filter-pills";
+import { ManageTypesDialog } from "@/components/projects/manage-types-dialog";
 import { EmptyState } from "@/components/composed/empty-state";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
@@ -30,6 +31,7 @@ export default function ProjectsIndexPage() {
   const projects = trpc.projects.list.useQuery({ type: activeType });
   const distinctTypes = trpc.projects.distinctTypes.useQuery();
   const [adding, setAdding] = React.useState(false);
+  const [managingTypes, setManagingTypes] = React.useState(false);
 
   const typeCounts = distinctTypes.data ?? [];
 
@@ -46,13 +48,25 @@ export default function ProjectsIndexPage() {
       <div className="flex h-full flex-col">
         <header className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
           <h1 className="font-ui text-base font-semibold text-text-primary">All projects</h1>
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
-          >
-            <Plus size={12} /> New project
-          </button>
+          <div className="flex items-center gap-1.5">
+            {typeCounts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setManagingTypes(true)}
+                className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+                title="Manage project types"
+              >
+                <Settings2 size={12} /> Manage types
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+            >
+              <Plus size={12} /> New project
+            </button>
+          </div>
         </header>
 
         {typeCounts.length > 0 && (
@@ -97,6 +111,11 @@ export default function ProjectsIndexPage() {
           </ul>
         )}
       </div>
+      <ManageTypesDialog
+        open={managingTypes}
+        onOpenChange={setManagingTypes}
+        typeCounts={typeCounts}
+      />
     </TasksShell>
   );
 }

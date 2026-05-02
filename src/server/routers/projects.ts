@@ -333,6 +333,84 @@ export const projectsRouter = router({
       return { ok: true };
     }),
 
+  renameType: protectedProcedure
+    .input(
+      z.object({
+        from: PROJECT_TYPE_STRING,
+        to: PROJECT_TYPE_STRING,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.from === input.to) return { count: 0 };
+
+      const projects = await db.project.findMany({
+        where: { user_id: ctx.user.id, type: input.from, deleted_at: null },
+        select: { id: true, type: true },
+      });
+
+      if (projects.length === 0) return { count: 0 };
+
+      await db.project.updateMany({
+        where: { user_id: ctx.user.id, type: input.from, deleted_at: null },
+        data: { type: input.to },
+      });
+
+      await Promise.all(
+        projects.map((p) =>
+          logActivity({
+            user_id: ctx.user.id,
+            entity_type: "Project",
+            entity_id: p.id,
+            action: "project_type_changed",
+            before: { type: input.from },
+            after: { type: input.to },
+            meta: { operation: "rename_type" },
+          }),
+        ),
+      );
+
+      return { count: projects.length };
+    }),
+
+  mergeTypes: protectedProcedure
+    .input(
+      z.object({
+        source: PROJECT_TYPE_STRING,
+        target: PROJECT_TYPE_STRING,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.source === input.target) return { count: 0 };
+
+      const projects = await db.project.findMany({
+        where: { user_id: ctx.user.id, type: input.source, deleted_at: null },
+        select: { id: true, type: true },
+      });
+
+      if (projects.length === 0) return { count: 0 };
+
+      await db.project.updateMany({
+        where: { user_id: ctx.user.id, type: input.source, deleted_at: null },
+        data: { type: input.target },
+      });
+
+      await Promise.all(
+        projects.map((p) =>
+          logActivity({
+            user_id: ctx.user.id,
+            entity_type: "Project",
+            entity_id: p.id,
+            action: "project_type_changed",
+            before: { type: input.source },
+            after: { type: input.target },
+            meta: { operation: "merge_type" },
+          }),
+        ),
+      );
+
+      return { count: projects.length };
+    }),
+
   markAllComplete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
