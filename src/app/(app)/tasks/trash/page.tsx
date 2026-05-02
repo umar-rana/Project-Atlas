@@ -11,7 +11,6 @@ import { EmptyState } from "@/components/composed/empty-state";
 import { toast } from "@/lib/toast";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -21,22 +20,41 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+function EntityCountLine({ label, count }: { label: string; count: number }) {
+  if (count === 0) return null;
+  return (
+    <li>
+      <strong>{count}</strong> {label}
+    </li>
+  );
+}
 
 export default function TrashPage() {
   const list = trpc.tasks.list.useQuery({ perspective: "trash", include_completed: true });
-  const counts = trpc.tasks.counts.useQuery({ timezoneOffset: 0 });
+  const preview = trpc.trash.preview.useQuery();
   const utils = trpc.useUtils();
-  const empty = trpc.tasks.emptyTrash.useMutation({
+  const [confirmInput, setConfirmInput] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+
+  const empty = trpc.trash.empty.useMutation({
     onSuccess: (r) => {
-      toast.success(`Deleted ${r.count} task${r.count === 1 ? "" : "s"} forever`);
+      const total = Object.values(r.deleted).reduce((a, b) => a + b, 0);
+      toast.success(`Permanently deleted ${total} item${total === 1 ? "" : "s"}`);
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
+      utils.trash.preview.invalidate();
+      setOpen(false);
+      setConfirmInput("");
     },
   });
+
   const selectedTaskId = useTasksStore((s) => s.selectedTaskId);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
   const tasks = (list.data as TaskRow[] | undefined) ?? [];
-  const trashCount = counts.data?.trash ?? tasks.length;
+
+  const counts = preview.data ?? { tasks: 0, notes: 0, projects: 0, attachments: 0 };
+  const totalCount = counts.tasks + counts.notes + counts.projects + counts.attachments;
+  const isConfirmed = confirmInput === "DELETE";
 
   return (
     <TasksShell trash>
@@ -47,11 +65,11 @@ export default function TrashPage() {
             <p className="font-ui text-2xs text-text-tertiary">Restore or permanently delete tasks.</p>
           </div>
 
-          <AlertDialog>
+          <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setConfirmInput(""); }}>
             <AlertDialogTrigger asChild>
               <button
                 type="button"
-                disabled={trashCount === 0 || empty.isPending}
+                disabled={totalCount === 0 || empty.isPending}
                 className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-2 py-1 font-ui text-2xs text-accent-danger hover:bg-surface-hover disabled:opacity-50"
               >
                 <Trash2 size={12} /> Empty trash
@@ -59,17 +77,51 @@ export default function TrashPage() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Permanently delete {trashCount} task{trashCount === 1 ? "" : "s"}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently and irrecoverably delete{" "}
-                  <strong>{trashCount} task{trashCount === 1 ? "" : "s"}</strong> from your account.
-                  This action cannot be undone.
+                <AlertDialogTitle>Permanently delete all trashed items?</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3">
+                    <p>
+                      This will permanently and irrecoverably delete the following from your account.
+                      This action cannot be undone.
+                    </p>
+                    {totalCount > 0 && (
+                      <ul className="list-disc pl-5 font-ui text-sm text-text-primary space-y-0.5">
+                        <EntityCountLine label={counts.tasks === 1 ? "task" : "tasks"} count={counts.tasks} />
+                        <EntityCountLine label={counts.projects === 1 ? "project" : "projects"} count={counts.projects} />
+                        <EntityCountLine label={counts.notes === 1 ? "note" : "notes"} count={counts.notes} />
+                        <EntityCountLine label={counts.attachments === 1 ? "attachment" : "attachments"} count={counts.attachments} />
+                      </ul>
+                    )}
+                    <div>
+                      <label className="block font-ui text-xs text-text-secondary mb-1">
+                        Type <strong>DELETE</strong> to confirm:
+                      </label>
+                      <input
+                        type="text"
+                        value={confirmInput}
+                        onChange={(e) => setConfirmInput(e.target.value)}
+                        placeholder="DELETE"
+                        className="w-full rounded-md border border-border-subtle bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-accent-danger"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && isConfirmed && !empty.isPending) {
+                            empty.mutate({ confirmation_token: "DELETE" });
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogAction onClick={() => empty.mutate()} disabled={empty.isPending}>
+                <button
+                  type="button"
+                  disabled={!isConfirmed || empty.isPending}
+                  onClick={() => empty.mutate({ confirmation_token: "DELETE" })}
+                  className="inline-flex items-center justify-center rounded-md bg-accent-danger px-4 py-2 font-ui text-sm font-medium text-white hover:opacity-90 disabled:opacity-40"
+                >
                   Delete forever
-                </AlertDialogAction>
+                </button>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>

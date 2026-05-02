@@ -1180,38 +1180,60 @@ export const tasksRouter = router({
       return { ok: true };
     }),
 
-  emptyTrash: protectedProcedure.mutation(async ({ ctx }) => {
-    const tasks = await db.task.findMany({
-      where: withDeleted<Prisma.TaskWhereInput>({
-        user_id: ctx.user.id,
-        NOT: { deleted_at: null },
-      }),
-      select: { id: true, referenced_tag_ids: true },
-    });
-    if (tasks.length === 0) return { ok: true, count: 0 };
-    const ids = tasks.map((t) => t.id);
-    await db.$transaction(async (tx) => {
-      const tagJoins = await tx.tagOnTask.findMany({
-        where: { task_id: { in: ids } },
-        select: { tag_id: true },
-      });
-      const allRefTags = tasks.flatMap((t) => t.referenced_tag_ids);
-      const tagDecrements = [...tagJoins.map((t) => t.tag_id), ...allRefTags];
-      if (tagDecrements.length) {
-        const counts = new Map<string, number>();
-        for (const id of tagDecrements) counts.set(id, (counts.get(id) ?? 0) + 1);
-        for (const [tagId, n] of counts) {
-          await tx.tag.update({
-            where: { id: tagId },
-            data: { usage_count: { decrement: n } },
-          });
-        }
-      }
-      // Bypass the soft-delete middleware via raw SQL, scoped to user.
-      await tx.$executeRaw`DELETE FROM "Task" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
-    });
-    return { ok: true, count: ids.length };
+  // Trash preview and empty-trash are now handled by trashRouter (trash.preview / trash.empty).
+  // These thin delegating aliases are kept for backwards compatibility with any callers
+  // that have not yet been migrated to the canonical trash.* procedures.
+  trashPreview: protectedProcedure.query(async ({ ctx }) => {
+    const [tasks, notes, projects, attachments] = await Promise.all([
+      db.task.count({ where: withDeleted<Prisma.TaskWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+      db.note.count({ where: withDeleted<Prisma.NoteWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+      db.project.count({ where: withDeleted<Prisma.ProjectWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+      db.attachment.count({ where: withDeleted<Prisma.AttachmentWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+    ]);
+    return { tasks, notes, projects, attachments };
   }),
+
+  // Backwards-compat alias — delegates to trash.empty (the canonical procedure).
+  // Kept so any legacy callers are not broken during the rollout of the trash router.
+  emptyTrash: protectedProcedure
+    .input(z.object({ confirmation_token: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.confirmation_token !== "DELETE") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: 'confirmation_token must be exactly "DELETE"',
+        });
+      }
+      const tasks = await db.task.findMany({
+        where: withDeleted<Prisma.TaskWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }),
+        select: { id: true, referenced_tag_ids: true },
+      });
+      const ids = tasks.map((t) => t.id);
+      const [noteCount, projectCount, attachmentCount] = await Promise.all([
+        db.note.count({ where: withDeleted<Prisma.NoteWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+        db.project.count({ where: withDeleted<Prisma.ProjectWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+        db.attachment.count({ where: withDeleted<Prisma.AttachmentWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+      ]);
+      await db.$transaction(async (tx) => {
+        if (ids.length > 0) {
+          const tagJoins = await tx.tagOnTask.findMany({ where: { task_id: { in: ids } }, select: { tag_id: true } });
+          const allRefTags = tasks.flatMap((t) => t.referenced_tag_ids);
+          const tagDecrements = [...tagJoins.map((t) => t.tag_id), ...allRefTags];
+          if (tagDecrements.length) {
+            const counts = new Map<string, number>();
+            for (const id of tagDecrements) counts.set(id, (counts.get(id) ?? 0) + 1);
+            for (const [tagId, n] of counts) {
+              await tx.tag.update({ where: { id: tagId }, data: { usage_count: { decrement: n } } });
+            }
+          }
+          await tx.$executeRaw`DELETE FROM "Task" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
+        }
+        await tx.$executeRaw`DELETE FROM "Note" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
+        await tx.$executeRaw`DELETE FROM "Project" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
+        await tx.$executeRaw`DELETE FROM "Attachment" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
+      });
+      return { ok: true, deleted: { tasks: ids.length, notes: noteCount, projects: projectCount, attachments: attachmentCount } };
+    }),
 
   // ── Move (fractional indexing) ─────────────────────────────────────────
   move: protectedProcedure

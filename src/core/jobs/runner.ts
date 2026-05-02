@@ -3,6 +3,7 @@ import PgBoss from "pg-boss";
 import { createLogger } from "@/core/logging";
 import { JOB_REGISTRY } from "./registry";
 import { writeJobAuditLog } from "./audit";
+import { runBackfillOrphanRecovery } from "@/core/auth/backfill";
 
 const log = createLogger({ module: "jobs/runner" });
 
@@ -43,6 +44,11 @@ export async function startJobRunner(): Promise<void> {
 
   await boss.start();
   log.info("pg-boss started");
+
+  // One-time backfill: runs idempotently on startup, skips if already done.
+  runBackfillOrphanRecovery().catch((err) => {
+    log.error({ err }, "Backfill orphan recovery failed on startup — non-fatal");
+  });
 
   for (const job of JOB_REGISTRY) {
     await boss.createQueue(job.name);

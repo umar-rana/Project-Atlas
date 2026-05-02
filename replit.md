@@ -1,4 +1,4 @@
-# Atlas — Wave 4b: Tables Module
+# Atlas — Auth Hardening and Automatic Orphan Recovery
 
 ## Overview
 Atlas is a desktop-first personal productivity command center designed as a local-first capture intelligence system. It efficiently processes user input by prioritizing cost-effective local parsing methods and using AI services like Claude Haiku only as a fallback for ambiguous cases, significantly reducing AI costs. The project includes a comprehensive captures tRPC router for parsing, previewing, logging, and statistical analysis, a re-engineered capture modal, email-to-inbox functionality, and a robust, authenticated application shell focused on user experience. It aims to be a command center for personal productivity.

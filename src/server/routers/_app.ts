@@ -26,6 +26,7 @@ import { jobsRouter } from "./jobs";
 import { adminRouter } from "./admin";
 import { tablesRouter } from "./tables";
 import { tablesFoldersRouter } from "./tablesFolders";
+import { trashRouter } from "./trash";
 
 export const appRouter = router({
   health: healthRouter,
@@ -55,6 +56,7 @@ export const appRouter = router({
   admin: adminRouter,
   tables: tablesRouter,
   tablesFolders: tablesFoldersRouter,
+  trash: trashRouter,
 });
 
 export type AppRouter = typeof appRouter;

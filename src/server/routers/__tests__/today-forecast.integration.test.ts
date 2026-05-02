@@ -52,10 +52,12 @@ async function insertTask(opts: {
 }
 
 beforeAll(async () => {
+  const userId = uuidv7();
   testUser = await rawDb.user.create({
     data: {
-      id: uuidv7(),
-      email: `integration-test-${uuidv7()}@atlas.test`,
+      id: userId,
+      clerk_id: `test_${userId}`,
+      email: `integration-test-${userId}@atlas.test`,
       name: "Integration Test User",
     },
   });

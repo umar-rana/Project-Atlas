@@ -15,6 +15,36 @@ export const userRouter = router({
     return user;
   }),
 
+  recoveryStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await db.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { recovery_notification_pending: true, last_recovery_summary: true },
+    });
+    if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+    // Serialize summary through JSON to produce a plain `unknown` type.
+    // This prevents Prisma's recursive JsonValue type from leaking into tRPC
+    // client types and causing TS2589 depth errors in consuming components.
+    const summary: unknown =
+      user.last_recovery_summary != null
+        ? JSON.parse(JSON.stringify(user.last_recovery_summary))
+        : null;
+    return {
+      pending: user.recovery_notification_pending,
+      summary,
+    };
+  }),
+
+  dismissRecoveryNotification: protectedProcedure.mutation(async ({ ctx }) => {
+    await db.user.update({
+      where: { id: ctx.user.id },
+      data: {
+        recovery_notification_pending: false,
+        last_recovery_dismissed_at: new Date(),
+      },
+    });
+    return { ok: true };
+  }),
+
   updatePreferences: protectedProcedure
     .input(
       z.object({

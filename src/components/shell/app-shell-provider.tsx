@@ -13,6 +13,7 @@ import { ShortcutsRegistryProvider } from "@/core/shortcuts/registry";
 import { useShellStore } from "@/lib/shell/store";
 import { InspectorPanel } from "@/components/composed/inspector-panel";
 import { toast } from "@/lib/toast";
+import { RecoveryBanner } from "@/components/notifications/recovery-banner";
 import dynamic from "next/dynamic";
 
 const CaptureModal = dynamic(
@@ -178,9 +179,12 @@ function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.R
         rail={<ModuleSwitcherWired />}
         topBar={<TopBarWired user={user} isAdmin={isAdmin} />}
       >
-        <div className="flex h-full min-h-0 w-full">
-          <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
-          <InspectorSlot />
+        <div className="flex h-full min-h-0 w-full flex-col">
+          <RecoveryBanner />
+          <div className="flex min-h-0 flex-1 w-full">
+            <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+            <InspectorSlot />
+          </div>
         </div>
       </AppShell>
       <CommandPaletteWired />

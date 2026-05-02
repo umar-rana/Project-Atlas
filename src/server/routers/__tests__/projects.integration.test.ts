@@ -65,10 +65,12 @@ async function insertTask(opts: {
 }
 
 beforeAll(async () => {
+  const userId = uuidv7();
   testUser = await rawDb.user.create({
     data: {
-      id: uuidv7(),
-      email: `projects-integration-test-${uuidv7()}@atlas.test`,
+      id: userId,
+      clerk_id: `test_${userId}`,
+      email: `projects-integration-test-${userId}@atlas.test`,
       name: "Projects Integration Test User",
     },
   });
@@ -96,10 +98,12 @@ describe("projects.distinctTypes", () => {
   let projectIds: string[] = [];
 
   beforeAll(async () => {
+    const dtUserId = uuidv7();
     dtUser = await rawDb.user.create({
       data: {
-        id: uuidv7(),
-        email: `dt-isolated-${uuidv7()}@atlas.test`,
+        id: dtUserId,
+        clerk_id: `test_${dtUserId}`,
+        email: `dt-isolated-${dtUserId}@atlas.test`,
         name: "DT Isolated User",
       },
     });
@@ -311,10 +315,12 @@ describe("projects.get — task_counts metrics", () => {
   });
 
   it("throws NOT_FOUND when requesting a project owned by a different user", async () => {
+    const otherUserId = uuidv7();
     const otherUser = await rawDb.user.create({
       data: {
-        id: uuidv7(),
-        email: `other-user-${uuidv7()}@atlas.test`,
+        id: otherUserId,
+        clerk_id: `test_${otherUserId}`,
+        email: `other-user-${otherUserId}@atlas.test`,
         name: "Other User",
       },
     });
@@ -516,10 +522,12 @@ describe("habit→goal migration SQL", () => {
   let deletedHabitId: string;
 
   beforeAll(async () => {
+    const migUserId = uuidv7();
     migrationUser = await rawDb.user.create({
       data: {
-        id: uuidv7(),
-        email: `migration-test-${uuidv7()}@atlas.test`,
+        id: migUserId,
+        clerk_id: `test_${migUserId}`,
+        email: `migration-test-${migUserId}@atlas.test`,
         name: "Migration Test User",
       },
     });

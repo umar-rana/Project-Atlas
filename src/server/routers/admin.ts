@@ -114,20 +114,14 @@ export const adminRouter = router({
       }
 
       await db.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: blank.id },
-          data: { clerk_id: null },
-        });
-
+        // Reassign clerk_id to target, then give blank a placeholder (clerk_id is non-nullable)
+        // before soft-deleting it so the unique constraint isn't violated.
         await tx.user.update({
           where: { id: target.id },
           data: { clerk_id: input.clerk_id },
         });
 
-        await tx.user.update({
-          where: { id: blank.id },
-          data: { deleted_at: new Date() },
-        });
+        await tx.$executeRaw`UPDATE "User" SET clerk_id = 'reassigned_' || id::text, deleted_at = NOW() WHERE id = ${blank.id}::uuid`;
       });
 
       log.warn(
