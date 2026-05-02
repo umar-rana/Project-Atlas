@@ -8,7 +8,7 @@ import type { ReferencePickerType } from "@/core/editor/reference-extension";
 export type ReferenceItem = {
   id: string;
   display_text: string;
-  target_type: "note" | "tag" | "context" | "task" | "project";
+  target_type: "note" | "tag" | "context" | "task" | "project" | "table";
   subtitle?: string;
   group?: string;
 };
@@ -28,6 +28,7 @@ const TYPE_ICONS: Record<string, string> = {
   project: "📁",
   tag: "#",
   context: "@",
+  table: "⊞",
 };
 
 function useNoteResults(query: string, enabled: boolean): ReferenceItem[] {
@@ -101,15 +102,30 @@ function useContextResults(query: string, enabled: boolean): ReferenceItem[] {
   }));
 }
 
+function useTableResults(query: string, enabled: boolean): ReferenceItem[] {
+  const { data } = trpc.tables.search.useQuery(
+    { query, limit: 8 },
+    { enabled },
+  );
+  return (data ?? []).map((t): ReferenceItem => ({
+    id: t.id,
+    display_text: t.name,
+    target_type: "table",
+    subtitle: t.description?.slice(0, 60) ?? undefined,
+    group: "Tables",
+  }));
+}
+
 function useReferenceResults(trigger: ReferencePickerType, query: string): ReferenceItem[] {
   const notes = useNoteResults(query, trigger === "note");
   const tasks = useTaskResults(query, trigger === "note");
   const projects = useProjectResults(query, trigger === "note");
+  const tables = useTableResults(query, trigger === "note");
   const tags = useTagResults(query, trigger === "tag");
   const contexts = useContextResults(query, trigger === "context");
 
   if (trigger === "note") {
-    return [...notes, ...tasks, ...projects];
+    return [...notes, ...tasks, ...projects, ...tables];
   }
   if (trigger === "tag") return tags;
   if (trigger === "context") return contexts;

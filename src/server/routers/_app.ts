@@ -24,6 +24,8 @@ import { notesFolderRouter } from "./notesFolder";
 import { linksRouter } from "./links";
 import { jobsRouter } from "./jobs";
 import { adminRouter } from "./admin";
+import { tablesRouter } from "./tables";
+import { tablesFoldersRouter } from "./tablesFolders";
 
 export const appRouter = router({
   health: healthRouter,
@@ -51,6 +53,8 @@ export const appRouter = router({
   links: linksRouter,
   jobs: jobsRouter,
   admin: adminRouter,
+  tables: tablesRouter,
+  tablesFolders: tablesFoldersRouter,
 });
 
 export type AppRouter = typeof appRouter;

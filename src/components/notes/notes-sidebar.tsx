@@ -16,6 +16,8 @@ import { toast } from "@/lib/toast";
 import { NavRow } from "@/components/sidebar/nav-row";
 import { SectionHeader, useSidebarSection } from "@/components/sidebar/section-header";
 import { NotesFolderTreeNode, type NotesFolderNode } from "./notes-folder-tree-node";
+import { TablesFolderTreeNode } from "./tables-folder-tree-node";
+import { NewTableDialog } from "@/components/tables/new-table-dialog";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -260,14 +262,91 @@ export function NotesSidebar(): React.ReactElement {
         </div>
       ) : null}
 
-      {/* Tables placeholder */}
+      {/* Tables section */}
       <div className="mt-3 border-t border-border-subtle pt-2">
-        <div className="flex items-center gap-2 rounded-sm px-2 py-1 font-ui text-sm text-text-disabled">
-          <Table2 size={14} />
-          <span>Tables</span>
-          <span className="ml-auto font-ui text-2xs text-text-disabled">Wave 4b</span>
-        </div>
+        <TablesSection pathname={pathname} />
       </div>
     </nav>
+  );
+}
+
+function TablesSection({ pathname }: { pathname: string }) {
+  const utils = trpc.useUtils();
+  const [showNewDialog, setShowNewDialog] = React.useState(false);
+  const [tablesOpen, setTablesOpen] = useSidebarSection("tables-section", true);
+  const [foldersOpen, setFoldersOpen] = useSidebarSection("tables-folders", true);
+
+  const foldersQuery = trpc.tablesFolders.list.useQuery();
+  const folders = foldersQuery.data ?? [];
+
+  const router = useRouter();
+
+  function handleCreated(tableId: string) {
+    setShowNewDialog(false);
+    utils.tables.list.invalidate();
+    router.push(`/notes/tables/${tableId}`);
+  }
+
+  return (
+    <>
+      <SectionHeader
+        label="Tables"
+        expanded={tablesOpen}
+        onToggle={() => setTablesOpen(!tablesOpen)}
+        addElement={
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowNewDialog(true); }}
+            title="New table"
+            className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+          >
+            <Plus size={11} />
+          </button>
+        }
+      />
+      {tablesOpen && (
+        <div className="flex flex-col gap-px">
+          <NavRow
+            href="/notes/tables"
+            active={pathname === "/notes/tables"}
+            icon={<Table2 size={13} />}
+            label="All tables"
+          />
+
+          {folders.length > 0 && (
+            <div className="mt-1">
+              <SectionHeader
+                label="Folders"
+                expanded={foldersOpen}
+                onToggle={() => setFoldersOpen(!foldersOpen)}
+              />
+              {foldersOpen && (
+                <div className="mt-px flex flex-col gap-px">
+                  {folders.map((folder) => (
+                    <TablesFolderTreeNode
+                      key={folder.id}
+                      folder={folder}
+                      depth={0}
+                      pathname={pathname}
+                      onRefresh={() => {
+                        utils.tablesFolders.list.invalidate();
+                        utils.tables.list.invalidate();
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showNewDialog && (
+        <NewTableDialog
+          onClose={() => setShowNewDialog(false)}
+          onCreated={handleCreated}
+        />
+      )}
+    </>
   );
 }

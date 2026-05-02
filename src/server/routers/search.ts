@@ -3,6 +3,13 @@ import { Prisma } from "@prisma/client";
 import { router, protectedProcedure } from "@/server/trpc";
 import { db } from "@/core/db";
 
+interface TableSearchHit {
+  id: string;
+  name: string;
+  description: string | null;
+  updated_at: Date;
+}
+
 interface NoteSearchHit {
   id: string;
   title: string;
@@ -33,6 +40,42 @@ type Row = {
 };
 
 export const searchRouter = router({
+  tables: protectedProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        limit: z.number().int().min(1).max(50).default(15),
+      }),
+    )
+    .query(async ({ ctx, input }): Promise<TableSearchHit[]> => {
+      const q = input.query.trim();
+      const userId = ctx.user.id;
+      const limit = input.limit;
+
+      if (!q) {
+        return db.table.findMany({
+          where: { user_id: userId, deleted_at: null },
+          orderBy: { updated_at: "desc" },
+          take: limit,
+          select: { id: true, name: true, description: true, updated_at: true },
+        });
+      }
+
+      return db.table.findMany({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { description: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        orderBy: { updated_at: "desc" },
+        take: limit,
+        select: { id: true, name: true, description: true, updated_at: true },
+      });
+    }),
+
   notes: protectedProcedure
     .input(
       z.object({

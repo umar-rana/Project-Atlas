@@ -1,0 +1,340 @@
+"use client";
+
+import * as React from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Table2,
+  SlidersHorizontal,
+  Filter,
+  Plus,
+  X,
+  RefreshCw,
+} from "lucide-react";
+import { trpc } from "@/lib/trpc/client";
+import { NotesShell } from "@/components/notes/notes-shell";
+import { TableGrid } from "@/components/tables/table-grid";
+import { cn } from "@/lib/utils";
+import type { SortState, FilterState, ColumnType, FilterOperator } from "@/core/tables/types";
+import { getOperatorsForType, OPERATOR_LABELS } from "@/core/tables/types";
+
+const SORT_STORAGE_KEY = (id: string) => `table-sort-${id}`;
+const FILTER_STORAGE_KEY = (id: string) => `table-filter-${id}`;
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
+export default function TableEditorPage() {
+  const { tableId } = useParams<{ tableId: string }>();
+  const router = useRouter();
+
+  const tableQuery = trpc.tables.get.useQuery({ id: tableId });
+  const userQuery = trpc.user.me.useQuery();
+  const table = tableQuery.data;
+  const currencySymbol = userQuery.data?.currency_symbol ?? "$";
+
+  const [sort, setSort] = React.useState<SortState>(() =>
+    loadFromStorage(SORT_STORAGE_KEY(tableId), { column_id: null, direction: "asc" as const })
+  );
+
+  const [filter, setFilter] = React.useState<FilterState | null>(() =>
+    loadFromStorage(FILTER_STORAGE_KEY(tableId), null)
+  );
+
+  const [showSortPanel, setShowSortPanel] = React.useState(false);
+  const [showFilterPanel, setShowFilterPanel] = React.useState(false);
+
+  const [filterColId, setFilterColId] = React.useState<string>("");
+  const [filterOp, setFilterOp] = React.useState<FilterOperator>("contains");
+  const [filterVal, setFilterVal] = React.useState<string>("");
+
+  const utils = trpc.useUtils();
+
+  function handleSortChange(s: SortState) {
+    setSort(s);
+    saveToStorage(SORT_STORAGE_KEY(tableId), s);
+  }
+
+  function handleFilterChange(f: FilterState | null) {
+    setFilter(f);
+    saveToStorage(FILTER_STORAGE_KEY(tableId), f);
+  }
+
+  function applyFilter() {
+    if (!filterColId) return;
+    const col = table?.columns.find((c) => c.id === filterColId);
+    const val = filterOp === "is_empty" || filterOp === "is_not_empty"
+      ? null
+      : (col?.type === "number" || col?.type === "currency") ? parseFloat(filterVal) || null
+      : col?.type === "checkbox" ? filterVal === "true"
+      : filterVal || null;
+    handleFilterChange({ column_id: filterColId, operator: filterOp, value: val });
+    setShowFilterPanel(false);
+  }
+
+  function clearFilter() {
+    handleFilterChange(null);
+    setShowFilterPanel(false);
+  }
+
+  const addRow = trpc.tables.addRow.useMutation({
+    onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
+  });
+
+  if (tableQuery.isLoading) {
+    return (
+      <NotesShell>
+        <div className="flex h-full items-center justify-center">
+          <span className="font-ui text-sm text-text-disabled">Loading table…</span>
+        </div>
+      </NotesShell>
+    );
+  }
+
+  if (!table) {
+    return (
+      <NotesShell>
+        <div className="flex h-full items-center justify-center">
+          <span className="font-ui text-sm text-text-disabled">Table not found</span>
+        </div>
+      </NotesShell>
+    );
+  }
+
+  const visibleRowCount = filter
+    ? table.rows.filter((row) => {
+        const col = table.columns.find((c) => c.id === filter.column_id);
+        if (!col) return true;
+        const cell = row.cells.find((c) => c.column_id === filter.column_id);
+        return cell !== undefined;
+      }).length
+    : table.rows.length;
+
+  const columns = table.columns.map((col) => ({
+    ...col,
+    config: (col.config ?? {}) as Record<string, unknown>,
+  }));
+
+  const rows = table.rows.map((row) => ({
+    ...row,
+    cells: row.cells.map((cell) => ({
+      ...cell,
+      value: cell.value as string | number | boolean | null,
+    })),
+  }));
+
+  return (
+    <NotesShell>
+      <div className="flex h-full flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-text-tertiary hover:text-text-primary"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <Table2 size={16} className="text-text-tertiary" />
+          <h1 className="font-ui text-base font-semibold text-text-primary">{table.name}</h1>
+          <span className="font-ui text-xs text-text-disabled">
+            {table.rows.length} row{table.rows.length !== 1 ? "s" : ""}
+            {filter ? ` (${visibleRowCount} visible)` : ""}
+          </span>
+          {table.drive_synced_at && (
+            <span className="ml-auto font-ui text-2xs text-text-disabled">
+              Synced {new Date(table.drive_synced_at).toLocaleDateString()}
+            </span>
+          )}
+          {table.drive_sync_error && (
+            <span className="ml-auto font-ui text-2xs text-destructive" title={table.drive_sync_error}>
+              Sync error
+            </span>
+          )}
+        </div>
+
+        {/* Action bar */}
+        <div className="flex items-center gap-2 border-b border-border-subtle px-4 py-2">
+          {/* Sort */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => { setShowSortPanel(!showSortPanel); setShowFilterPanel(false); }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-ui text-xs",
+                sort.column_id
+                  ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
+                  : "border-border-default text-text-secondary hover:bg-surface-hover",
+              )}
+            >
+              <SlidersHorizontal size={12} />
+              Sort{sort.column_id ? `: ${table.columns.find((c) => c.id === sort.column_id)?.name}` : ""}
+            </button>
+
+            {showSortPanel && (
+              <div className="absolute left-0 top-9 z-40 w-64 rounded-lg border border-border-default bg-popover shadow-lg">
+                <div className="p-3">
+                  <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Sort by</p>
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => { handleSortChange({ column_id: null, direction: "asc" }); setShowSortPanel(false); }}
+                      className={cn(
+                        "rounded-sm px-2 py-1 text-left font-ui text-xs",
+                        !sort.column_id ? "bg-accent-primary-subtle text-accent-primary" : "text-text-secondary hover:bg-surface-hover",
+                      )}
+                    >
+                      — None (manual order) —
+                    </button>
+                    {table.columns.map((col) => (
+                      <div key={col.id} className="flex gap-1">
+                        {(["asc", "desc"] as const).map((dir) => (
+                          <button
+                            key={dir}
+                            type="button"
+                            onClick={() => { handleSortChange({ column_id: col.id, direction: dir }); setShowSortPanel(false); }}
+                            className={cn(
+                              "flex-1 rounded-sm px-2 py-1 text-left font-ui text-xs",
+                              sort.column_id === col.id && sort.direction === dir
+                                ? "bg-accent-primary-subtle text-accent-primary"
+                                : "text-text-secondary hover:bg-surface-hover",
+                            )}
+                          >
+                            {col.name} {dir === "asc" ? "↑" : "↓"}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Filter */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => { setShowFilterPanel(!showFilterPanel); setShowSortPanel(false); }}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-ui text-xs",
+                filter
+                  ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
+                  : "border-border-default text-text-secondary hover:bg-surface-hover",
+              )}
+            >
+              <Filter size={12} />
+              Filter{filter ? ` (active)` : ""}
+            </button>
+
+            {showFilterPanel && (
+              <div className="absolute left-0 top-9 z-40 w-72 rounded-lg border border-border-default bg-popover p-3 shadow-lg">
+                <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Filter rows</p>
+                <div className="flex flex-col gap-2">
+                  <select
+                    value={filterColId}
+                    onChange={(e) => {
+                      setFilterColId(e.target.value);
+                      const col = table.columns.find((c) => c.id === e.target.value);
+                      const firstOp = getOperatorsForType(col?.type as ColumnType ?? "text")[0];
+                      if (firstOp) setFilterOp(firstOp);
+                    }}
+                    className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
+                  >
+                    <option value="">— Pick column —</option>
+                    {table.columns.map((col) => (
+                      <option key={col.id} value={col.id}>{col.name}</option>
+                    ))}
+                  </select>
+
+                  {filterColId && (
+                    <>
+                      <select
+                        value={filterOp}
+                        onChange={(e) => setFilterOp(e.target.value as FilterOperator)}
+                        className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
+                      >
+                        {getOperatorsForType(table.columns.find((c) => c.id === filterColId)?.type as ColumnType ?? "text").map((op) => (
+                          <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
+                        ))}
+                      </select>
+
+                      {filterOp !== "is_empty" && filterOp !== "is_not_empty" && (
+                        <input
+                          value={filterVal}
+                          onChange={(e) => setFilterVal(e.target.value)}
+                          placeholder="Filter value…"
+                          className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
+                        />
+                      )}
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={applyFilter}
+                          className="flex-1 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover"
+                        >
+                          Apply
+                        </button>
+                        {filter && (
+                          <button
+                            type="button"
+                            onClick={clearFilter}
+                            className="rounded-md border border-border-default px-3 py-1.5 font-ui text-xs text-text-secondary hover:bg-surface-hover"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="ml-auto">
+            <button
+              type="button"
+              onClick={() => addRow.mutate({ table_id: tableId })}
+              disabled={addRow.isPending}
+              className="flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+            >
+              <Plus size={12} />
+              Add row
+            </button>
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div
+          className="flex-1 overflow-auto"
+          onClick={() => { setShowSortPanel(false); setShowFilterPanel(false); }}
+        >
+          <TableGrid
+            tableId={tableId}
+            columns={columns as any}
+            rows={rows as any}
+            sort={sort}
+            filter={filter}
+            currencySymbol={currencySymbol}
+            onSortChange={handleSortChange}
+            onFilterChange={handleFilterChange}
+            onRefresh={() => utils.tables.get.invalidate({ id: tableId })}
+          />
+        </div>
+      </div>
+    </NotesShell>
+  );
+}

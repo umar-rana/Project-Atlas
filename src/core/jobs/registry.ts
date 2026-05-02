@@ -20,8 +20,8 @@ export const JOB_REGISTRY: JobDefinition[] = [
   },
   {
     name: "drive-sync-tables",
-    cron: "0 2 * * *",
-    description: "Sync database tables to Google Drive nightly at 02:00 UTC (no-op placeholder)",
+    cron: "0 * * * *",
+    description: "Sync tables to Google Drive hourly (exports JSON schema + CSV for each table)",
     handler: handleDriveSyncTables,
   },
   {

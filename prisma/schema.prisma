@@ -55,6 +55,8 @@ model User {
   notes              Note[]
   notes_folders      NotesFolder[]
   links              Link[]
+  tables             Table[]
+  tables_folders     TablesFolder[]
 
   @@index([clerk_id])
   @@index([email])
@@ -335,6 +337,7 @@ model Project {
   folder      ProjectFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   tasks       Task[]
   note_refs   Note[]
+  tables      Table[]
 
   @@index([user_id])
   @@index([user_id, type])
@@ -533,6 +536,7 @@ model DriveConfig {
   folder_notes            String?
   folder_journal          String?
   folder_attachments      String?
+  folder_tables           String?
   verified                Boolean   @default(false)
   verified_at             DateTime? @db.Timestamptz
   created_at              DateTime  @default(now()) @db.Timestamptz
@@ -642,4 +646,115 @@ model Link {
   @@index([user_id])
   @@index([source_type, source_id])
   @@index([target_type, target_id])
+}
+
+// ─── TablesFolder ─────────────────────────────────────────────────────────────
+
+model TablesFolder {
+  id         String    @id @db.Uuid
+  user_id    String    @db.Uuid
+  parent_id  String?   @db.Uuid
+  name       String
+  position   Decimal   @default(0) @db.Decimal(20, 10)
+  deleted_at DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+
+  user       User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent     TablesFolder?  @relation("TablesFolderHierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  children   TablesFolder[] @relation("TablesFolderHierarchy")
+  tables     Table[]
+
+  @@index([user_id])
+  @@index([user_id, parent_id])
+  @@index([deleted_at])
+}
+
+// ─── Table ────────────────────────────────────────────────────────────────────
+
+model Table {
+  id                String    @id @db.Uuid
+  user_id           String    @db.Uuid
+  folder_id         String?   @db.Uuid
+  project_id        String?   @db.Uuid
+  name              String
+  description       String?
+  manual_row_order  Json      @default("[]") // array of row IDs in manual order
+  drive_csv_file_id  String?
+  drive_json_file_id String?
+  drive_synced_at   DateTime? @db.Timestamptz
+  drive_sync_error  String?
+  deleted_at        DateTime? @db.Timestamptz
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+
+  user    User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder  TablesFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
+  project Project?      @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  columns TableColumn[]
+  rows    TableRow[]
+
+  @@index([user_id])
+  @@index([user_id, folder_id])
+  @@index([user_id, project_id])
+  @@index([deleted_at])
+}
+
+// ─── TableColumn ──────────────────────────────────────────────────────────────
+
+model TableColumn {
+  id          String    @id @db.Uuid
+  table_id    String    @db.Uuid
+  name        String
+  type        String    // text | number | date | checkbox | single_select | currency
+  position    Decimal   @default(0) @db.Decimal(20, 10)
+  config      Json      @default("{}") // type-specific config: { options, decimal_places, etc. }
+  aggregation String?   // sum | average | count | min | max | checked_ratio | none
+  width       Int       @default(160)
+  deleted_at  DateTime? @db.Timestamptz
+  created_at  DateTime  @default(now()) @db.Timestamptz
+  updated_at  DateTime  @updatedAt @db.Timestamptz
+
+  table  Table       @relation(fields: [table_id], references: [id], onDelete: Cascade)
+  cells  TableCell[]
+
+  @@index([table_id])
+  @@index([table_id, position])
+  @@index([deleted_at])
+}
+
+// ─── TableRow ─────────────────────────────────────────────────────────────────
+
+model TableRow {
+  id         String    @id @db.Uuid
+  table_id   String    @db.Uuid
+  position   Decimal   @default(0) @db.Decimal(20, 10)
+  deleted_at DateTime? @db.Timestamptz
+  created_at DateTime  @default(now()) @db.Timestamptz
+  updated_at DateTime  @updatedAt @db.Timestamptz
+
+  table  Table       @relation(fields: [table_id], references: [id], onDelete: Cascade)
+  cells  TableCell[]
+
+  @@index([table_id])
+  @@index([table_id, position])
+  @@index([deleted_at])
+}
+
+// ─── TableCell ────────────────────────────────────────────────────────────────
+
+model TableCell {
+  id         String   @id @db.Uuid
+  row_id     String   @db.Uuid
+  column_id  String   @db.Uuid
+  value      Json?    // type-specific JSON value
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @updatedAt @db.Timestamptz
+
+  row    TableRow    @relation(fields: [row_id], references: [id], onDelete: Cascade)
+  column TableColumn @relation(fields: [column_id], references: [id], onDelete: Cascade)
+
+  @@unique([row_id, column_id])
+  @@index([row_id])
+  @@index([column_id])
 }
