@@ -80,7 +80,7 @@ export function NoteMetadataPanel({
 
   const designateBrief = trpc.notes.designateBrief.useMutation({
     onSuccess: () => utils.notes.get.invalidate({ id: noteId }),
-    onError: (err) => toast.error(err.message || "Failed to set as brief"),
+    onError: () => toast.error("Failed to set as project brief"),
   });
 
   const undesignateBrief = trpc.notes.undesignateBrief.useMutation({

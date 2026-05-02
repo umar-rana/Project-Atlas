@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
-import { toast } from "@/lib/toast";
 import { TextCell } from "./cells/text-cell";
 import { NumberCell } from "./cells/number-cell";
 import { DateCell } from "./cells/date-cell";
@@ -86,23 +85,19 @@ export function TableGrid({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upsertCell = (trpc.tables.upsertCell as any).useMutation({
-    onError: (err: { message: string }) => toast.error(err.message),
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
   }) as { mutate: (args: { row_id: string; column_id: string; value: unknown }) => void; isPending: boolean };
 
   const addRow = trpc.tables.addRow.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-    onError: (err) => toast.error(err.message),
   });
 
   const deleteRow = trpc.tables.deleteRow.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-    onError: (err) => toast.error(err.message),
   });
 
   const reorderRows = trpc.tables.reorderRows.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-    onError: (err) => toast.error(err.message),
   });
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -113,22 +108,18 @@ export function TableGrid({
       setNewColName("");
       utils.tables.get.invalidate({ id: tableId });
     },
-    onError: (err) => toast.error(err.message),
   });
 
   const updateColumn = trpc.tables.updateColumn.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-    onError: (err) => toast.error(err.message),
   });
 
   const deleteColumn = trpc.tables.deleteColumn.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-    onError: (err) => toast.error(err.message),
   });
 
   const reorderColumns = trpc.tables.reorderColumns.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-    onError: (err) => toast.error(err.message),
   });
 
   const visibleRows = React.useMemo(() => {

@@ -5,6 +5,7 @@ import { FileText, Users, BookOpen, Glasses } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { useRouter } from "next/navigation";
+import { withRetry, handleTrpcError } from "@/core/errors/error-handler";
 import { toast } from "@/lib/toast";
 
 type Purpose = "note" | "meeting_note" | "project_brief" | "reading_note";
@@ -100,23 +101,32 @@ export function PurposeTemplatePicker({
 }: PurposeTemplatePickerProps): React.ReactElement {
   const router = useRouter();
   const utils = trpc.useUtils();
+  const [isPending, setIsPending] = React.useState(false);
 
   const createNote = trpc.notes.create.useMutation({
-    onSuccess: (note) => {
-      utils.notes.list.invalidate();
-      router.push(`/notes/${note.id}`);
-    },
-    onError: () => toast.error("Failed to create note"),
+    meta: { suppressGlobalError: true },
   });
 
-  function handleSelect(purpose: Purpose) {
+  async function handleSelect(purpose: Purpose) {
+    if (isPending) return;
     const template = PURPOSES.find((p) => p.id === purpose)!.template;
-    createNote.mutate({
-      purpose,
-      folder_id: folderId ?? undefined,
-      project_id: projectId ?? undefined,
-      body_json: JSON.stringify(template),
-    });
+    setIsPending(true);
+    try {
+      const note = await withRetry(() =>
+        createNote.mutateAsync({
+          purpose,
+          folder_id: folderId ?? undefined,
+          project_id: projectId ?? undefined,
+          body_json: JSON.stringify(template),
+        }),
+      );
+      await utils.notes.list.invalidate();
+      router.push(`/notes/${note.id}`);
+    } catch (err) {
+      toast.error(handleTrpcError(err));
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (
@@ -133,7 +143,7 @@ export function PurposeTemplatePicker({
             <button
               key={p.id}
               type="button"
-              disabled={createNote.isPending}
+              disabled={isPending}
               onClick={() => handleSelect(p.id)}
               className={cn(
                 "flex flex-col gap-2 rounded-lg border border-border-default p-4 text-left transition-colors",

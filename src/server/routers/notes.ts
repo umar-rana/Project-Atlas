@@ -98,38 +98,54 @@ export const notesRouter = router({
         });
         if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
-      const note = await db.note.create({
-        data: {
-          id: newId(),
-          user_id: ctx.user.id,
-          title: input.title,
-          folder_id: input.folder_id ?? null,
-          project_id: input.project_id ?? null,
-          purpose: input.purpose,
-          body_json: input.body_json ?? "{}",
-          body_text: input.body_text ?? "",
-          body_markdown: input.body_markdown ?? "",
-          word_count: input.body_text
-            ? input.body_text.split(/\s+/).filter(Boolean).length
-            : 0,
-        },
-      });
-      await logActivity({
-        user_id: ctx.user.id,
-        entity_type: "Note",
-        entity_id: note.id,
-        action: "note_created",
-        meta: { purpose: note.purpose, folder_id: note.folder_id, project_id: note.project_id },
+
+      const noteId = newId();
+      const wordCount = input.body_text
+        ? input.body_text.split(/\s+/).filter(Boolean).length
+        : 0;
+
+      const note = await db.$transaction(async (tx) => {
+        const created = await tx.note.create({
+          data: {
+            id: noteId,
+            user_id: ctx.user.id,
+            title: input.title,
+            folder_id: input.folder_id ?? null,
+            project_id: input.project_id ?? null,
+            purpose: input.purpose,
+            body_json: input.body_json ?? "{}",
+            body_text: input.body_text ?? "",
+            body_markdown: input.body_markdown ?? "",
+            word_count: wordCount,
+          },
+        });
+        return created;
       });
 
-      if (input.body_json) {
-        const refs = extractReferenceNodes(input.body_json);
-        await syncLinksForSource({
-          userId: ctx.user.id,
-          source_type: "Note",
-          source_id: note.id,
-          resolved: refs,
+      try {
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "Note",
+          entity_id: note.id,
+          action: "note_created",
+          meta: { purpose: note.purpose, folder_id: note.folder_id, project_id: note.project_id },
         });
+      } catch {
+        // Activity log failures must not prevent the note from being returned
+      }
+
+      if (input.body_json) {
+        try {
+          const refs = extractReferenceNodes(input.body_json);
+          await syncLinksForSource({
+            userId: ctx.user.id,
+            source_type: "Note",
+            source_id: note.id,
+            resolved: refs,
+          });
+        } catch {
+          // Link sync failures must not prevent the note from being returned
+        }
       }
 
       return note;

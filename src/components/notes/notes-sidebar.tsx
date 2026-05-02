@@ -72,7 +72,7 @@ export function NotesSidebar(): React.ReactElement {
       utils.notesFolder.list.invalidate();
       router.push(`/notes/folder/${folder.id}`);
     },
-    onError: (err) => toast.error(err.message || "Failed to create folder"),
+    onError: () => toast.error("Failed to create folder"),
   });
 
   const reorderFolder = trpc.notesFolder.reorder.useMutation({

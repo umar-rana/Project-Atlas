@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { withRetry, handleTrpcError } from "@/core/errors/error-handler";
 
 interface NewTableDialogProps {
   defaultFolderId?: string | null;
@@ -17,28 +18,35 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
   const [name, setName] = React.useState("");
   const [folderId, setFolderId] = React.useState<string>(defaultFolderId ?? "");
   const [projectId, setProjectId] = React.useState<string>(defaultProjectId ?? "");
+  const [isPending, setIsPending] = React.useState(false);
 
   const foldersQuery = trpc.tablesFolders.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery({ include_all_statuses: false });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const createTable = (trpc.tables.create as any).useMutation({
-    onSuccess: (table: { id: string; name: string }) => {
-      onCreated(table.id);
-      toast.success(`Table "${table.name}" created`);
-    },
-    onError: (err: { message?: string }) => toast.error(err.message || "Failed to create table"),
-  }) as { mutate: (args: { name: string; folder_id: string | null; project_id: string | null }) => void; isPending: boolean };
+  const createTable = trpc.tables.create.useMutation({
+    meta: { suppressGlobalError: true },
+  });
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) return;
-    createTable.mutate({
-      name: trimmed,
-      folder_id: folderId || null,
-      project_id: projectId || null,
-    });
+    if (!trimmed || isPending) return;
+    setIsPending(true);
+    try {
+      const table = await withRetry(() =>
+        createTable.mutateAsync({
+          name: trimmed,
+          folder_id: folderId || null,
+          project_id: projectId || null,
+        }),
+      );
+      onCreated(table.id);
+      toast.success(`Table "${table.name}" created`);
+    } catch (err) {
+      toast.error(handleTrpcError(err));
+    } finally {
+      setIsPending(false);
+    }
   }
 
   type FlatFolder = { id: string; label: string };
@@ -118,13 +126,13 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
             </button>
             <button
               type="submit"
-              disabled={!name.trim() || createTable.isPending}
+              disabled={!name.trim() || isPending}
               className={cn(
                 "rounded-md bg-accent-primary px-4 py-2 font-ui text-sm font-medium text-text-on-accent",
                 "hover:bg-accent-primary-hover disabled:opacity-50",
               )}
             >
-              {createTable.isPending ? "Creating…" : "Create table"}
+              {isPending ? "Creating…" : "Create table"}
             </button>
           </div>
         </form>

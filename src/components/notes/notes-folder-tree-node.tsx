@@ -93,7 +93,7 @@ export function NotesFolderTreeNode({
       onRefresh();
       toast.success("Folder moved");
     },
-    onError: (err) => toast.error(err.message || "Failed to move folder"),
+    onError: () => toast.error("Failed to move folder"),
   });
 
   const reorderFolder = trpc.notesFolder.reorder.useMutation({

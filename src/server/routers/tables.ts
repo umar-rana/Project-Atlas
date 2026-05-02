@@ -127,36 +127,47 @@ export const tablesRouter = router({
         if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
 
-      const table = await db.table.create({
-        data: {
-          id: newId(),
+      const tableId = newId();
+      const columnId = newId();
+
+      const table = await db.$transaction(async (tx) => {
+        const created = await tx.table.create({
+          data: {
+            id: tableId,
+            user_id: ctx.user.id,
+            name: input.name,
+            folder_id: input.folder_id ?? null,
+            project_id: input.project_id ?? null,
+            description: input.description ?? null,
+            manual_row_order: [],
+          },
+        });
+
+        await tx.tableColumn.create({
+          data: {
+            id: columnId,
+            table_id: tableId,
+            name: "Name",
+            type: "text",
+            position: new Prisma.Decimal(0),
+            config: {},
+          },
+        });
+
+        return created;
+      });
+
+      try {
+        await logActivity({
           user_id: ctx.user.id,
-          name: input.name,
-          folder_id: input.folder_id ?? null,
-          project_id: input.project_id ?? null,
-          description: input.description ?? null,
-          manual_row_order: [],
-        },
-      });
-
-      await db.tableColumn.create({
-        data: {
-          id: newId(),
-          table_id: table.id,
-          name: "Name",
-          type: "text",
-          position: new Prisma.Decimal(0),
-          config: {},
-        },
-      });
-
-      await logActivity({
-        user_id: ctx.user.id,
-        entity_type: "Table",
-        entity_id: table.id,
-        action: "table_created",
-        meta: { name: table.name, folder_id: table.folder_id, project_id: table.project_id },
-      });
+          entity_type: "Table",
+          entity_id: table.id,
+          action: "table_created",
+          meta: { name: table.name, folder_id: table.folder_id, project_id: table.project_id },
+        });
+      } catch {
+        // Activity log failures must not prevent the table from being returned
+      }
 
       return table;
     }),
