@@ -4,24 +4,27 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/core/db";
 import { getAuthUrl } from "@/core/drive/client";
 import { createLogger } from "@/core/logging";
+import { getBaseUrl } from "@/core/get-base-url";
 
 const log = createLogger({ module: "drive/connect" });
 
 export async function GET(req: NextRequest) {
   const { userId: clerkId } = await auth();
+  const baseUrl = getBaseUrl(req);
+
   if (!clerkId) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
+    return NextResponse.redirect(new URL("/sign-in", baseUrl));
   }
 
   const user = await db.user.findUnique({ where: { clerk_id: clerkId } });
   if (!user) {
-    return NextResponse.redirect(new URL("/sign-in", req.url));
+    return NextResponse.redirect(new URL("/sign-in", baseUrl));
   }
 
   const secret = process.env.SESSION_SECRET;
   if (!secret) {
     log.error({}, "SESSION_SECRET not set — cannot generate Drive OAuth nonce");
-    return NextResponse.redirect(new URL("/settings?drive_error=config", req.url));
+    return NextResponse.redirect(new URL("/settings?drive_error=config", baseUrl));
   }
 
   const nonce = randomBytes(32).toString("hex");

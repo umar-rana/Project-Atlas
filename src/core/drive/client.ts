@@ -12,6 +12,20 @@ export const DRIVE_SCOPES = [
   "https://www.googleapis.com/auth/drive.metadata.readonly",
 ];
 
+/**
+ * GOOGLE_REDIRECT_URI must be set to the full public-facing callback URL:
+ *   <public-domain>/api/drive/oauth-callback
+ *
+ * In Replit's proxied environment, this means using the external domain shown
+ * in the browser (e.g. https://<your-repl>.replit.dev/api/drive/oauth-callback)
+ * rather than an internal address like http://0.0.0.0:5000/...
+ *
+ * This exact URI must also be registered as an "Authorized redirect URI" in the
+ * Google Cloud Console OAuth 2.0 client configuration.
+ *
+ * The env var is validated at call time — if it is missing the function throws
+ * immediately so misconfiguration surfaces early rather than at auth-flow time.
+ */
 function getOAuthClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
