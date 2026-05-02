@@ -9,6 +9,8 @@ import {
   resolveAndApplyReferences,
   releaseTagReferences,
 } from "@/core/references/resolver";
+import { syncLinksForSource } from "@/core/links/service";
+import type { ResolvedLink } from "@/core/links/resolver";
 import { createLogger } from "@/core/logging";
 import { computeNextOccurrence, ruleForNextOccurrence } from "@/core/recurrence/rrule-helpers";
 import { RRule } from "rrule";
@@ -574,6 +576,21 @@ export const tasksRouter = router({
               referenced_entity_refs: refs.entity_refs satisfies Prisma.InputJsonValue,
             },
           });
+
+          const resolvedLinks: ResolvedLink[] = [
+            ...refs.entity_refs.map((e) => ({
+              target_type: e.kind === "project" ? "Project" : "Task",
+              target_id: e.id,
+            })),
+            ...refs.tag_ids.map((id) => ({ target_type: "Tag", target_id: id })),
+          ];
+          await syncLinksForSource({
+            userId,
+            source_type: "Task",
+            source_id: created.id,
+            resolved: resolvedLinks,
+            tx,
+          });
         }
 
         return tx.task.findUniqueOrThrow({
@@ -750,6 +767,21 @@ export const tasksRouter = router({
               referenced_tag_ids: refs.tag_ids,
               referenced_entity_refs: refs.entity_refs satisfies Prisma.InputJsonValue,
             },
+          });
+
+          const resolvedLinks: ResolvedLink[] = [
+            ...refs.entity_refs.map((e) => ({
+              target_type: e.kind === "project" ? "Project" : "Task",
+              target_id: e.id,
+            })),
+            ...refs.tag_ids.map((id) => ({ target_type: "Tag", target_id: id })),
+          ];
+          await syncLinksForSource({
+            userId: ctx.user.id,
+            source_type: "Task",
+            source_id: input.id,
+            resolved: resolvedLinks,
+            tx,
           });
         }
 

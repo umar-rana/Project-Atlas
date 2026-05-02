@@ -67,7 +67,7 @@ export function NoteMetadataPanel({
 
   const foldersQuery = trpc.notesFolder.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery({ status: "active" });
-  const backlinksQuery = trpc.notes.backlinks.useQuery({ id: noteId });
+  const backlinksQuery = trpc.links.inbound.useQuery({ target_type: "Note", target_id: noteId });
   const attachmentsQuery = trpc.attachments.byParentId.useQuery(
     { parent_type: "Note", parent_id: noteId },
     { refetchOnWindowFocus: false },

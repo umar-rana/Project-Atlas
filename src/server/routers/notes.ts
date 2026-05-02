@@ -4,6 +4,8 @@ import { z } from "zod";
 import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
+import { extractReferenceNodes } from "@/core/links/resolver";
+import { syncLinksForSource } from "@/core/links/service";
 
 export const notesRouter = router({
   list: protectedProcedure
@@ -117,6 +119,17 @@ export const notesRouter = router({
         action: "note_created",
         meta: { purpose: note.purpose, folder_id: note.folder_id, project_id: note.project_id },
       });
+
+      if (input.body_json) {
+        const refs = extractReferenceNodes(input.body_json);
+        await syncLinksForSource({
+          userId: ctx.user.id,
+          source_type: "Note",
+          source_id: note.id,
+          resolved: refs,
+        });
+      }
+
       return note;
     }),
 
@@ -187,6 +200,17 @@ export const notesRouter = router({
         action: "note_updated",
         meta: { fields: Object.keys(data) },
       });
+
+      if (input.body_json !== undefined) {
+        const refs = extractReferenceNodes(input.body_json);
+        await syncLinksForSource({
+          userId: ctx.user.id,
+          source_type: "Note",
+          source_id: input.id,
+          resolved: refs,
+        });
+      }
+
       return updated;
     }),
 
