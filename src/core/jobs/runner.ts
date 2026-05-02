@@ -50,8 +50,9 @@ export async function startJobRunner(): Promise<void> {
     await boss.work(job.name, async () => {
       log.info({ job: job.name }, "running job");
       try {
-        await job.handler();
-        log.info({ job: job.name }, "job completed");
+        const output = await job.handler();
+        log.info({ job: job.name, output }, "job completed");
+        return output;
       } catch (err) {
         log.error({ err, job: job.name }, "job failed");
         throw err;
@@ -63,4 +64,20 @@ export async function startJobRunner(): Promise<void> {
 
   globalThis.__atlasJobRunner = boss;
   log.info({ count: JOB_REGISTRY.length }, "all jobs registered");
+}
+
+export async function runJobNow(jobName: string): Promise<void> {
+  const job = JOB_REGISTRY.find((j) => j.name === jobName);
+  if (!job) {
+    throw new Error(`Unknown job: ${jobName}`);
+  }
+
+  const boss = globalThis.__atlasJobRunner;
+  if (boss) {
+    await boss.send(jobName, {}, { priority: 10, singletonKey: `run-now-${jobName}` });
+    log.info({ job: jobName }, "job enqueued for immediate run via pg-boss");
+  } else {
+    log.warn({ job: jobName }, "pg-boss not running — executing handler directly");
+    await job.handler();
+  }
 }

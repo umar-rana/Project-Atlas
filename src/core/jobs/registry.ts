@@ -8,7 +8,7 @@ export interface JobDefinition {
   name: string;
   cron: string;
   description: string;
-  handler: () => Promise<void>;
+  handler: () => Promise<unknown>;
 }
 
 export const JOB_REGISTRY: JobDefinition[] = [
