@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
+import { useShellStore } from "@/lib/shell/store";
 
 const DISMISSED_KEY_PREFIX = "atlas_inbox_welcome_dismissed_v1";
 const NEW_ACCOUNT_DAYS = 7;
@@ -18,6 +19,7 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
     refetchOnWindowFocus: false,
   });
 
+  const setCaptureModalOpen = useShellStore((s) => s.setCaptureModalOpen);
   const [dismissed, setDismissed] = React.useState<boolean>(false);
 
   React.useEffect(() => {
@@ -55,9 +57,24 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
             Welcome to your inbox
           </p>
           <p className="mt-0.5 font-ui text-2xs text-text-secondary">
-            Capture anything on your mind with{" "}
-            <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘⇧I</kbd>{" "}
-            and it will land here for triage. Need a quick refresher?{" "}
+            Capture anything on your mind and it will land here for triage.
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCaptureModalOpen(true)}
+              className="inline-flex items-center gap-1 rounded-md bg-accent-brand px-2 py-1 font-ui text-2xs font-medium text-white hover:bg-accent-brand/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-brand"
+            >
+              <Plus size={11} aria-hidden />
+              Capture your first task
+            </button>
+            <span className="font-ui text-2xs text-text-tertiary">
+              or press{" "}
+              <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘⇧I</kbd>
+            </span>
+          </div>
+          <p className="mt-1.5 font-ui text-2xs text-text-secondary">
+            Need a quick refresher?{" "}
             <Link
               href="/welcome"
               className="text-accent-brand underline-offset-2 hover:underline"
