@@ -3,6 +3,17 @@ import { Prisma } from "@prisma/client";
 import { router, protectedProcedure } from "@/server/trpc";
 import { db } from "@/core/db";
 
+interface NoteSearchHit {
+  id: string;
+  title: string;
+  purpose: string;
+  body_text: string;
+  is_project_brief: boolean;
+  project_id: string | null;
+  folder_id: string | null;
+  updated_at: Date;
+}
+
 interface TaskSearchHit {
   id: string;
   title: string;
@@ -22,6 +33,94 @@ type Row = {
 };
 
 export const searchRouter = router({
+  notes: protectedProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        limit: z.number().int().min(1).max(50).default(15),
+      }),
+    )
+    .query(async ({ ctx, input }): Promise<NoteSearchHit[]> => {
+      const q = input.query.trim();
+      if (!q) {
+        return db.note.findMany({
+          where: { user_id: ctx.user.id, deleted_at: null },
+          orderBy: { updated_at: "desc" },
+          take: input.limit,
+          select: {
+            id: true,
+            title: true,
+            purpose: true,
+            body_text: true,
+            is_project_brief: true,
+            project_id: true,
+            folder_id: true,
+            updated_at: true,
+          },
+        });
+      }
+
+      const userId = ctx.user.id;
+      const limit = input.limit;
+      const ilike = `%${q}%`;
+
+      type NoteRow = {
+        id: string;
+        title: string;
+        purpose: string;
+        body_text: string;
+        is_project_brief: boolean;
+        project_id: string | null;
+        folder_id: string | null;
+        updated_at: Date;
+      };
+
+      const ftsRows = await db.$queryRaw<NoteRow[]>(Prisma.sql`
+        SELECT n.id, n.title, n.purpose, n.body_text, n.is_project_brief,
+               n.project_id, n.folder_id, n.updated_at
+        FROM "Note" n
+        WHERE n.user_id = ${userId}
+          AND n.deleted_at IS NULL
+          AND to_tsvector('english', COALESCE(n.body_text, '') || ' ' || COALESCE(n.title, ''))
+                @@ websearch_to_tsquery('english', ${q})
+        ORDER BY n.updated_at DESC
+        LIMIT ${limit}
+      `);
+
+      let rows: NoteRow[] = ftsRows;
+      const remaining = limit - ftsRows.length;
+      if (remaining > 0) {
+        const ftsIds = ftsRows.map((r) => r.id);
+        const ilikeRows = await db.$queryRaw<NoteRow[]>(
+          ftsIds.length > 0
+            ? Prisma.sql`
+                SELECT n.id, n.title, n.purpose, n.body_text, n.is_project_brief,
+                       n.project_id, n.folder_id, n.updated_at
+                FROM "Note" n
+                WHERE n.user_id = ${userId}
+                  AND n.deleted_at IS NULL
+                  AND n.id != ALL(${ftsIds}::uuid[])
+                  AND (n.title ILIKE ${ilike} OR n.body_text ILIKE ${ilike})
+                ORDER BY n.updated_at DESC
+                LIMIT ${remaining}
+              `
+            : Prisma.sql`
+                SELECT n.id, n.title, n.purpose, n.body_text, n.is_project_brief,
+                       n.project_id, n.folder_id, n.updated_at
+                FROM "Note" n
+                WHERE n.user_id = ${userId}
+                  AND n.deleted_at IS NULL
+                  AND (n.title ILIKE ${ilike} OR n.body_text ILIKE ${ilike})
+                ORDER BY n.updated_at DESC
+                LIMIT ${remaining}
+              `,
+        );
+        rows = [...ftsRows, ...ilikeRows];
+      }
+
+      return rows;
+    }),
+
   tasks: protectedProcedure
     .input(
       z.object({

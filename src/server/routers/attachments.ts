@@ -304,6 +304,26 @@ export const attachmentsRouter = router({
       return { updated: input.ids.length };
     }),
 
+  byParentId: protectedProcedure
+    .input(
+      z.object({
+        parent_type: z.string(),
+        parent_id: z.string().uuid(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return db.attachment.findMany({
+        where: {
+          parent_type: input.parent_type,
+          parent_id: input.parent_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+        },
+        orderBy: [{ position: "asc" }, { created_at: "asc" }],
+        select: attachmentSelect,
+      });
+    }),
+
   getUrl: protectedProcedure
     .input(z.object({ file_id: z.string() }))
     .query(async ({ ctx, input }) => {
