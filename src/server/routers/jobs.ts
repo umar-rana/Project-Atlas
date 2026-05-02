@@ -70,7 +70,7 @@ async function getLastJobRun(jobName: string): Promise<PgBossJob | null> {
 
 function computeNextRun(cron: string): Date | null {
   try {
-    const interval = cronParser.parseExpression(cron, {
+    const interval = cronParser.parse(cron, {
       currentDate: new Date(),
       tz: "UTC",
     });

@@ -157,7 +157,7 @@ export function ManageTypesDialog({
                         <p className="font-ui text-2xs text-accent-danger">{renameError}</p>
                       )}
                       <p className="font-ui text-2xs text-text-disabled">
-                        Renames "{displayType(type)}" across all {count} project{count !== 1 ? "s" : ""}
+                        Renames &quot;{displayType(type)}&quot; across all {count} project{count !== 1 ? "s" : ""}
                       </p>
                     </form>
                   ) : isMerging ? (
@@ -165,7 +165,7 @@ export function ManageTypesDialog({
                       <div className="flex items-center gap-1.5">
                         <GitMerge size={12} className="shrink-0 text-accent-primary" />
                         <span className="font-ui text-xs font-medium text-text-primary">
-                          Merge "{displayType(type)}" into…
+                          Merge &quot;{displayType(type)}&quot; into…
                         </span>
                         <button
                           type="button"
@@ -203,7 +203,7 @@ export function ManageTypesDialog({
                         <div className="flex items-start gap-1.5 rounded-sm bg-surface-raised px-2 py-1.5">
                           <AlertTriangle size={11} className="mt-0.5 shrink-0 text-accent-warning" />
                           <p className="font-ui text-2xs text-text-secondary">
-                            All {count} project{count !== 1 ? "s" : ""} in "{displayType(type)}" will move to "{displayType(mergeTarget)}". This cannot be undone.
+                            All {count} project{count !== 1 ? "s" : ""} in &quot;{displayType(type)}&quot; will move to &quot;{displayType(mergeTarget)}&quot;. This cannot be undone.
                           </p>
                         </div>
                       )}

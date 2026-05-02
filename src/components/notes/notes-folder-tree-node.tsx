@@ -142,7 +142,7 @@ export function NotesFolderTreeNode({
     const siblings = allFolders.filter((f) => f.parent_id === folder.parent_id);
     const idx = siblings.findIndex((f) => f.id === folder.id);
     if (idx <= 0) return;
-    const insertAfterId = idx >= 2 ? siblings[idx - 2].id : null;
+    const insertAfterId = idx >= 2 ? (siblings[idx - 2]?.id ?? null) : null;
     reorderFolder.mutate({
       id: folder.id,
       parent_id: folder.parent_id,
@@ -154,7 +154,7 @@ export function NotesFolderTreeNode({
     const siblings = allFolders.filter((f) => f.parent_id === folder.parent_id);
     const idx = siblings.findIndex((f) => f.id === folder.id);
     if (idx >= siblings.length - 1) return;
-    const insertAfterId = siblings[idx + 1].id;
+    const insertAfterId = siblings[idx + 1]?.id ?? null;
     reorderFolder.mutate({
       id: folder.id,
       parent_id: folder.parent_id,

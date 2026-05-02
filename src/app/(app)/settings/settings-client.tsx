@@ -1940,6 +1940,8 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
     setShowCustom(serverPreset === "custom");
   }, [serverPreset, user.date_format, user.time_format, user.number_format, user.currency_code, user.currency_symbol, user.language]);
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore -- TS2589: tRPC type inference depth; safe at runtime
   const updateLocale = trpc.user.updateLocale.useMutation({
     onSuccess: () => {
       utils.user.me.invalidate();

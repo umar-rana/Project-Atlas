@@ -108,7 +108,7 @@ export function NotesSidebar(): React.ReactElement {
     let insertAfterId: string | null;
     if (position === "before") {
       const targetIdx = siblings.findIndex((s) => s.id === targetId);
-      insertAfterId = targetIdx > 0 ? siblings[targetIdx - 1].id : null;
+      insertAfterId = targetIdx > 0 ? (siblings[targetIdx - 1]?.id ?? null) : null;
     } else {
       insertAfterId = targetId;
     }
