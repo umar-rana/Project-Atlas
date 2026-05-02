@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/composed/empty-state";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { displayType } from "@/core/projects/type-suggestions";
+import { useTypeConfig } from "@/core/projects/type-config-context";
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
   blue: "bg-cal-1-border",
@@ -32,6 +33,7 @@ export default function ProjectsIndexPage() {
   const distinctTypes = trpc.projects.distinctTypes.useQuery();
   const [adding, setAdding] = React.useState(false);
   const [managingTypes, setManagingTypes] = React.useState(false);
+  const { getIcon, getColor } = useTypeConfig();
 
   const typeCounts = distinctTypes.data ?? [];
 
@@ -100,7 +102,13 @@ export default function ProjectsIndexPage() {
                     aria-hidden
                   />
                   <span className="flex-1 truncate font-ui text-sm text-text-primary">{p.title}</span>
-                  <span className="font-ui text-2xs uppercase tracking-caps text-text-tertiary">
+                  <span className="inline-flex items-center gap-1 font-ui text-2xs uppercase tracking-caps text-text-tertiary">
+                    <span
+                      className="inline-block size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: getColor(p.type ?? "project") }}
+                      aria-hidden
+                    />
+                    <span>{getIcon(p.type ?? "project")}</span>
                     {displayType(p.type ?? "project")}
                   </span>
                   <span className="font-ui text-2xs uppercase tracking-caps text-text-tertiary">{p.status.replace("_", " ")}</span>

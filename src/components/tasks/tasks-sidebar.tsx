@@ -29,6 +29,7 @@ import { TagsSection } from "@/components/sidebar/tags-section";
 import { ContextsSection } from "@/components/sidebar/contexts-section";
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
 import { displayType, getSuggestedTypes } from "@/core/projects/type-suggestions";
+import { useTypeConfig } from "@/core/projects/type-config-context";
 import { CustomTypeDialog } from "@/components/projects/custom-type-dialog";
 
 function ProjectSubGroup({
@@ -45,6 +46,7 @@ function ProjectSubGroup({
   onDragStart: (item: DragItem) => void;
 }) {
   const [open, setOpen] = useSidebarSection(`projects-type-${groupType}`, true);
+  const { getIcon, getColor } = useTypeConfig();
 
   if (projects.length === 0) return null;
 
@@ -57,6 +59,12 @@ function ProjectSubGroup({
         className="flex items-center gap-1 px-2 py-0.5 font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled hover:text-text-tertiary"
       >
         {open ? <ChevronDown size={9} /> : <ChevronRight size={9} />}
+        <span
+          className="inline-block size-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: getColor(groupType) }}
+          aria-hidden
+        />
+        <span className="mr-0.5">{getIcon(groupType)}</span>
         <span>{displayType(groupType)}</span>
         <span className="ml-0.5 font-mono text-3xs tabular-nums">({projects.length})</span>
       </button>
@@ -94,6 +102,7 @@ function ProjectSubGroup({
 export function TasksSidebar(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
+  const { getIcon, getColor } = useTypeConfig();
 
   const timezoneOffset = React.useMemo(() => new Date().getTimezoneOffset(), []);
   const counts = trpc.tasks.counts.useQuery(
@@ -294,7 +303,12 @@ export function TasksSidebar(): React.ReactElement {
               onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
               className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
             >
-              {t === "project" ? "📁" : "🎯"} New {displayType(t)}
+              <span
+                className="inline-block size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: getColor(t) }}
+                aria-hidden
+              />
+              {getIcon(t)} New {displayType(t)}
             </button>
           ))}
           <div className="mx-2 my-1 border-t border-border-subtle" />
@@ -308,7 +322,12 @@ export function TasksSidebar(): React.ReactElement {
               onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
               className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
             >
-              📂 New {displayType(t)}
+              <span
+                className="inline-block size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: getColor(t) }}
+                aria-hidden
+              />
+              {getIcon(t)} New {displayType(t)}
             </button>
           ))}
           {userOnlyTypes.length > 0 && (
@@ -324,7 +343,12 @@ export function TasksSidebar(): React.ReactElement {
                   onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
                   className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                 >
-                  📂 New {displayType(t)}
+                  <span
+                    className="inline-block size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: getColor(t) }}
+                    aria-hidden
+                  />
+                  {getIcon(t)} New {displayType(t)}
                 </button>
               ))}
             </>

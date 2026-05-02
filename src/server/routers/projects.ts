@@ -86,6 +86,62 @@ export const projectsRouter = router({
       .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
   }),
 
+  typeConfigs: protectedProcedure.query(async ({ ctx }) => {
+    const user = await db.user.findUnique({
+      where: { id: ctx.user.id },
+      select: { tasks_prefs: true },
+    });
+    const prefs = (user?.tasks_prefs ?? {}) as Record<string, unknown>;
+    const configs = (prefs.type_configs ?? {}) as Record<string, { icon?: string; color?: string }>;
+    return configs;
+  }),
+
+  setTypeConfig: protectedProcedure
+    .input(
+      z.object({
+        type: z.string().min(1).max(32),
+        icon: z.string().max(10).nullable().optional(),
+        color: z.string().max(20).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = await db.user.findUnique({
+        where: { id: ctx.user.id },
+        select: { tasks_prefs: true },
+      });
+      const prefs = (user?.tasks_prefs ?? {}) as Record<string, unknown>;
+      const configs = { ...((prefs.type_configs ?? {}) as Record<string, { icon?: string; color?: string }>) };
+
+      const entry: { icon?: string; color?: string } = configs[input.type] ?? {};
+      if (input.icon !== undefined) {
+        if (input.icon === null) {
+          delete entry.icon;
+        } else {
+          entry.icon = input.icon;
+        }
+      }
+      if (input.color !== undefined) {
+        if (input.color === null) {
+          delete entry.color;
+        } else {
+          entry.color = input.color;
+        }
+      }
+      if (!entry.icon && !entry.color) {
+        delete configs[input.type];
+      } else {
+        configs[input.type] = entry;
+      }
+
+      await db.user.update({
+        where: { id: ctx.user.id },
+        data: {
+          tasks_prefs: { ...prefs, type_configs: configs } as Prisma.InputJsonValue,
+        },
+      });
+      return { ok: true };
+    }),
+
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
