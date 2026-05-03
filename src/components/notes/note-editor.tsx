@@ -20,6 +20,8 @@ import {
 } from "@/core/editor/slash-command-extension";
 import { ReferencePicker, type ReferenceItem } from "./reference-picker";
 import { SlashCommandMenu } from "./slash-command-menu";
+import { EditorBubbleMenu } from "./editor-bubble-menu";
+import { EditorBlockHandle } from "./editor-block-handle";
 import { tiptapToMarkdown } from "@/core/editor/markdown-export";
 import { extractPlainText } from "@/core/editor/text-extraction";
 import { trpc } from "@/lib/trpc/client";
@@ -67,6 +69,30 @@ function getCaretPosition(editor: Editor): PickerPosition {
     top: coords.bottom + 4,
     left: coords.left,
   };
+}
+
+async function uploadFileToNote(
+  file: File,
+  noteId: string,
+): Promise<{ file_id: string } | null> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("parent_type", "Note");
+  formData.append("parent_id", noteId);
+
+  try {
+    const res = await fetch("/api/attachments/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const data = (await res.json()) as unknown;
+    if (data && typeof data === "object" && "file_id" in data) {
+      return data as { file_id: string };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function NoteEditor({
@@ -214,20 +240,10 @@ export function NoteEditor({
             if (!file) continue;
             event.preventDefault();
 
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("parent_type", "Note");
-            formData.append("parent_id", noteId);
-
-            fetch("/api/attachments/upload", {
-              method: "POST",
-              body: formData,
-            })
-              .then((res) => res.json())
-              .then((data: unknown) => {
-                if (data && typeof data === "object" && "file_id" in data) {
-                  const fileId = (data as { file_id: string }).file_id;
-                  const imgUrl = `/api/attachments/${fileId}`;
+            uploadFileToNote(file, noteId)
+              .then((data) => {
+                if (data) {
+                  const imgUrl = `/api/attachments/${data.file_id}`;
                   view.dispatch(
                     view.state.tr.replaceSelectionWith(
                       view.state.schema.nodes.image!.create({ src: imgUrl }),
@@ -264,6 +280,57 @@ export function NoteEditor({
         }
 
         return false;
+      },
+
+      handleDrop(view, event) {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return false;
+
+        const imageFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+        const otherFiles = Array.from(files).filter((f) => !f.type.startsWith("image/"));
+
+        if (imageFiles.length === 0 && otherFiles.length === 0) return false;
+
+        event.preventDefault();
+
+        const dropPos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
+        const invalidateAfterUpload = () => {
+          void utils.attachments.byParentId.invalidate({
+            parent_type: "Note",
+            parent_id: noteId,
+          });
+        };
+
+        for (const file of imageFiles) {
+          uploadFileToNote(file, noteId)
+            .then((data) => {
+              if (data) {
+                const imgUrl = `/api/attachments/${data.file_id}`;
+                const pos = dropPos?.pos ?? view.state.doc.content.size;
+                view.dispatch(
+                  view.state.tr.insert(
+                    pos,
+                    view.state.schema.nodes.image!.create({ src: imgUrl }),
+                  ),
+                );
+                invalidateAfterUpload();
+              } else {
+                setSaveStatus("error");
+              }
+            })
+            .catch(() => setSaveStatus("error"));
+        }
+
+        for (const file of otherFiles) {
+          uploadFileToNote(file, noteId)
+            .then((data) => {
+              if (data) invalidateAfterUpload();
+            })
+            .catch(() => setSaveStatus("error"));
+        }
+
+        return true;
       },
     },
   });
@@ -438,14 +505,20 @@ export function NoteEditor({
 
       <div
         ref={editorContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4"
+        className="flex-1 overflow-y-auto px-4 py-4 relative"
         onClick={handleReferenceNodeClick}
       >
+        {editor && !readOnly && <EditorBubbleMenu editor={editor} />}
+
         <EditorContent
           editor={editor}
           className="note-editor-content prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-full"
         />
       </div>
+
+      {editor && !readOnly && (
+        <EditorBlockHandle editor={editor} />
+      )}
 
       {referencePickerState?.active && editor && (
         <ReferencePicker

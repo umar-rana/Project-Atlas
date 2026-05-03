@@ -6,6 +6,9 @@ import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { extractReferenceNodes } from "@/core/links/resolver";
 import { syncLinksForSource } from "@/core/links/service";
+import { createLogger } from "@/core/logging";
+
+const log = createLogger({ module: "notes-router" });
 
 export const notesRouter = router({
   list: protectedProcedure
@@ -211,22 +214,31 @@ export const notesRouter = router({
       if (input.pinned !== undefined) data.pinned = input.pinned;
 
       const updated = await db.note.update({ where: { id: input.id }, data });
-      await logActivity({
-        user_id: ctx.user.id,
-        entity_type: "Note",
-        entity_id: input.id,
-        action: "note_updated",
-        meta: { fields: Object.keys(data) },
-      });
+
+      try {
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "Note",
+          entity_id: input.id,
+          action: "note_updated",
+          meta: { fields: Object.keys(data) },
+        });
+      } catch (err) {
+        log.warn({ err, note_id: input.id }, "Non-fatal: audit log failed for note update");
+      }
 
       if (input.body_json !== undefined) {
-        const refs = extractReferenceNodes(input.body_json);
-        await syncLinksForSource({
-          userId: ctx.user.id,
-          source_type: "Note",
-          source_id: input.id,
-          resolved: refs,
-        });
+        try {
+          const refs = extractReferenceNodes(input.body_json);
+          await syncLinksForSource({
+            userId: ctx.user.id,
+            source_type: "Note",
+            source_id: input.id,
+            resolved: refs,
+          });
+        } catch (err) {
+          log.warn({ err, note_id: input.id }, "Non-fatal: link graph sync failed for note update");
+        }
       }
 
       return updated;

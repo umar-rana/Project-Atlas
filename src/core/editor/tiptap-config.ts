@@ -9,6 +9,9 @@ import Underline from "@tiptap/extension-underline";
 import Strike from "@tiptap/extension-strike";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
+import Highlight from "@tiptap/extension-highlight";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { DragHandle } from "@tiptap/extension-drag-handle";
 import { createLowlight } from "lowlight";
 import javascript from "highlight.js/lib/languages/javascript";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -67,6 +70,12 @@ export function buildExtensions(placeholder?: string) {
     Image.configure({
       HTMLAttributes: { class: "editor-image" },
     }),
+    Highlight.configure({
+      multicolor: true,
+      HTMLAttributes: { class: "editor-highlight" },
+    }),
+    TextStyle,
+    DragHandle,
     Placeholder.configure({
       placeholder: placeholder ?? "Start writing…",
     }),

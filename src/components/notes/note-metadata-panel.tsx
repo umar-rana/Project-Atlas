@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Star, Link2, Paperclip, ChevronDown, ChevronRight } from "lucide-react";
+import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,62 @@ interface NoteMetadataPanelProps {
   project_id: string | null;
   created_at: Date | string;
   updated_at: Date | string;
+}
+
+function fileTypeIcon(filename: string, mimeType?: string | null): React.ReactElement {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  const mime = mimeType ?? "";
+  if (mime === "application/pdf" || ext === "pdf") {
+    return <FileText size={13} className="shrink-0 text-red-400" />;
+  }
+  if (mime.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)) {
+    return <Image size={13} className="shrink-0 text-blue-400" />;
+  }
+  if (mime.startsWith("video/") || ["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) {
+    return <Film size={13} className="shrink-0 text-purple-400" />;
+  }
+  if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "flac", "aac"].includes(ext)) {
+    return <Music size={13} className="shrink-0 text-green-400" />;
+  }
+  if (["zip", "tar", "gz", "7z", "rar"].includes(ext)) {
+    return <Archive size={13} className="shrink-0 text-amber-400" />;
+  }
+  if (["doc", "docx", "txt", "md", "csv", "xls", "xlsx", "ppt", "pptx"].includes(ext)) {
+    return <FileText size={13} className="shrink-0 text-text-secondary" />;
+  }
+  return <File size={13} className="shrink-0 text-text-disabled" />;
+}
+
+function isImageMime(mime?: string | null, filename?: string): boolean {
+  const ext = filename?.split(".").pop()?.toLowerCase() ?? "";
+  return (
+    (!!mime && mime.startsWith("image/")) ||
+    ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)
+  );
+}
+
+function AttachmentThumbnail({
+  fileId,
+  filename,
+  mimeType,
+}: {
+  fileId: string;
+  filename: string;
+  mimeType?: string | null;
+}) {
+  const [imgError, setImgError] = React.useState(false);
+
+  if (isImageMime(mimeType, filename) && !imgError) {
+    return (
+      <img
+        src={`/api/attachments/${fileId}`}
+        alt={filename}
+        onError={() => setImgError(true)}
+        className="h-8 w-8 shrink-0 rounded object-cover border border-border-default"
+      />
+    );
+  }
+  return <div className="flex h-8 w-8 shrink-0 items-center justify-center">{fileTypeIcon(filename, mimeType)}</div>;
 }
 
 function CollapsibleSection({
@@ -277,6 +333,7 @@ export function NoteMetadataPanel({
           ) : (
             attachments.map((att) => (
               <div key={att.id} className="flex items-center gap-1.5">
+                <AttachmentThumbnail fileId={att.file_id} filename={att.filename} mimeType={att.content_type} />
                 <span className="flex-1 truncate font-ui text-xs text-text-secondary">{att.filename}</span>
                 <button
                   type="button"
