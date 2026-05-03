@@ -39,6 +39,7 @@ export function EditorBlockHandle({ editor }: Props) {
         editor={editor}
         onNodeChange={handleNodeChange}
         className="drag-handle-wrapper"
+        nested
       >
         <button
           type="button"

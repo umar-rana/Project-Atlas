@@ -40,6 +40,10 @@ export function buildExtensions(placeholder?: string) {
       strike: false,
       blockquote: false,
       horizontalRule: false,
+      dropcursor: {
+        color: "#6366f1",
+        width: 2,
+      },
     }),
     Link.configure({
       openOnClick: false,

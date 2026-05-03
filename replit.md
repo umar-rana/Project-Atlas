@@ -163,6 +163,9 @@ Pure functions: `formatDate`, `formatNumber`, `formatCurrency`, `formatTime`, `f
 ### Notes (`src/app/(app)/notes/`)
 - TipTap (ProseMirror) editor in `src/core/editor/` and `src/components/notes/`
 - Extensions: StarterKit, Link, CodeBlockLowlight, TaskList, Underline, Strike, Placeholder, Highlight (multicolor), TextStyle, Color, DragHandle (`@tiptap/extension-drag-handle-react`)
+- Block drag handle (`@tiptap/extension-drag-handle-react`) with `nested` enabled — supports dragging list items, blockquotes, task items
+- Drop indicator: ProseMirror dropcursor styled in indigo (`#6366f1`, 2px) via StarterKit dropcursor config
+- Block context menu: Turn into / Color / Duplicate / Delete (click the grip handle)
 - `reference-extension.ts` — `[[note]]`, `#tag`, `@context` trigger plugins
 - `slash-command-extension.ts` — `/` block-type command menu (10 block types)
 - `markdown-export.ts` / `markdown-import.ts` — round-trip Markdown
@@ -275,6 +278,7 @@ All admin mutations write AuditLog entries with `actor_type: 'admin'`. Cursor pa
 - **Neon Postgres** — primary database (production + dev)
 - **pg-boss v10** — durable PostgreSQL-backed job scheduler
 - **TipTap** — rich-text editor (ProseMirror-based)
+- **@tiptap/extension-drag-handle + @tiptap/extension-drag-handle-react** — block drag handle (nested mode enabled)
 - **lowlight** — syntax highlighting for code blocks
 - **Anthropic Claude** — AI parsing (Haiku) and assistance (Sonnet)
 - **Cloudflare R2** — file attachment storage (`@aws-sdk/client-s3` + presigner)

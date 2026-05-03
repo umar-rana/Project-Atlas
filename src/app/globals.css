@@ -130,3 +130,17 @@
 .reference-node:hover {
   opacity: 0.8;
 }
+
+/* ── Drag-and-drop drop indicator ────────────────────────────────────────── */
+
+.ProseMirror-dropcursor {
+  border-top: 2px solid var(--accent-primary, #6366f1) !important;
+  opacity: 1 !important;
+  border-radius: 1px;
+}
+
+/* Drag handle wrapper — shown on hover via the extension's own logic */
+.drag-handle-wrapper {
+  display: flex;
+  align-items: center;
+}
