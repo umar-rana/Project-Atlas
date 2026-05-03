@@ -12,10 +12,12 @@ import {
   Vault,
   Trash2,
   HardDrive,
+  CircleHelp,
 } from "lucide-react";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
+import { useShellStore } from "@/lib/shell/store";
 
 const MODULES = [
   { id: "tasks",     label: "Tasks",     icon: CheckSquare,   href: "/tasks",     shortcut: ["⌘", "1"] },
@@ -44,6 +46,8 @@ export function ModuleSwitcherWired(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
   const active = getModuleId(pathname);
+  const helpOpen = useShellStore((s) => s.helpOpen);
+  const setHelpOpen = useShellStore((s) => s.setHelpOpen);
 
   React.useEffect(() => {
     const handle = (e: KeyboardEvent) => {
@@ -69,10 +73,10 @@ export function ModuleSwitcherWired(): React.ReactElement {
   const footer = (
     <>
       <div className="h-px w-6 bg-border-subtle" />
-      <Tooltip content="Media (⌘8)" side="right">
+      <Hint label="Media inbox" shortcut="⌘8" side="right">
         <Link
           href="/media"
-          aria-label="Media inbox"
+          aria-label="Media inbox (⌘8)"
           className={cn(
             "relative grid size-8 place-items-center rounded-md transition-colors duration-fast ease-standard",
             active === "media"
@@ -82,8 +86,8 @@ export function ModuleSwitcherWired(): React.ReactElement {
         >
           <HardDrive size={16} aria-hidden />
         </Link>
-      </Tooltip>
-      <Tooltip content="Trash" side="right">
+      </Hint>
+      <Hint label="Trash" side="right">
         <Link
           href="/trash"
           aria-label="Trash"
@@ -94,7 +98,23 @@ export function ModuleSwitcherWired(): React.ReactElement {
         >
           <Trash2 size={16} aria-hidden />
         </Link>
-      </Tooltip>
+      </Hint>
+      <div className="h-px w-6 bg-border-subtle" />
+      <Hint label="Help Center" shortcut="?" side="right">
+        <button
+          type="button"
+          aria-label="Help Center"
+          onClick={() => setHelpOpen(true)}
+          className={cn(
+            "relative grid size-8 place-items-center rounded-md transition-colors duration-fast ease-standard",
+            helpOpen
+              ? "bg-accent-primary-subtle text-accent-primary"
+              : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
+          )}
+        >
+          <CircleHelp size={16} aria-hidden />
+        </button>
+      </Hint>
     </>
   );
 

@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Folder, Plus, Settings2 } from "lucide-react";
+import { Hint } from "@/components/ui/hint";
 import { TasksShell } from "@/components/tasks/tasks-shell";
 import { trpc } from "@/lib/trpc/client";
 import { ProjectAddForm } from "@/components/tasks/project-add-form";
@@ -61,13 +62,15 @@ export default function ProjectsIndexPage() {
                 <Settings2 size={12} /> Manage types
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
-            >
-              <Plus size={12} /> New project
-            </button>
+            <Hint label="New project" side="bottom">
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+              >
+                <Plus size={12} /> New project
+              </button>
+            </Hint>
           </div>
         </header>
 

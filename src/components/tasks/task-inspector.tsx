@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useLocale } from "@/core/locale/hooks";
 import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock, Palette } from "lucide-react";
+import { Hint } from "@/components/ui/hint";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
 import { trpc } from "@/lib/trpc/client";
@@ -470,7 +471,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               />
             </label>
             <label className="flex flex-col gap-1 font-ui text-2xs text-text-tertiary">
-              Due
+              <Hint label="Due date — the deadline for this task" side="top" delayDuration={800}>
+                <span>Due</span>
+              </Hint>
               <input
                 type="date"
                 value={fmtDateForInput(taskData.due_date)}
@@ -499,7 +502,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           )}
 
           <section className="mt-4">
-            <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Contexts</h3>
+            <Hint label="Contexts group tasks by location or tool (@home, @phone, @waiting)" side="top" delayDuration={800}>
+              <h3 className="mb-1 inline-block font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Contexts</h3>
+            </Hint>
             <div className="flex flex-wrap gap-1">
               {(contexts.data ?? []).map((c) => {
                 const on = selectedContextIds.includes(c.id);

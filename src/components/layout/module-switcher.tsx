@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
-import { Tooltip } from "@/components/ui/tooltip";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 
 export interface ModuleSwitcherItem {
@@ -63,7 +63,7 @@ export function ModuleSwitcher({
 
           return (
             <li key={id}>
-              <Tooltip content={label} shortcut={shortcut} side="right">
+              <Hint label={label} shortcut={shortcut?.join("")} side="right">
                 {href ? (
                   <Link
                     href={href}
@@ -86,7 +86,7 @@ export function ModuleSwitcher({
                     {badge}
                   </button>
                 )}
-              </Tooltip>
+              </Hint>
             </li>
           );
         })}

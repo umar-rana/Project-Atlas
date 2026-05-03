@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File } from "lucide-react";
+import { Hint } from "@/components/ui/hint";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -84,11 +85,13 @@ function AttachmentThumbnail({
 
 function CollapsibleSection({
   label,
+  labelHint,
   icon,
   defaultOpen = true,
   children,
 }: {
   label: string;
+  labelHint?: string;
   icon?: React.ReactNode;
   defaultOpen?: boolean;
   children: React.ReactNode;
@@ -102,7 +105,13 @@ function CollapsibleSection({
         className="flex items-center gap-1.5"
       >
         {icon}
-        <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">{label}</span>
+        {labelHint ? (
+          <Hint label={labelHint} side="right" delayDuration={800}>
+            <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">{label}</span>
+          </Hint>
+        ) : (
+          <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">{label}</span>
+        )}
         {open ? <ChevronDown size={10} className="text-text-disabled" /> : <ChevronRight size={10} className="text-text-disabled" />}
       </button>
       {open ? <div>{children}</div> : null}
@@ -219,7 +228,10 @@ export function NoteMetadataPanel({
     <div className="flex flex-col gap-4 p-4">
       <h2 className="font-ui text-xs font-semibold uppercase tracking-caps text-text-tertiary">Metadata</h2>
 
-      <CollapsibleSection label="Purpose">
+      <CollapsibleSection
+        label="Purpose"
+        labelHint="Categorizes this note: Reference, Project support, Someday/Maybe, or Archive"
+      >
         <select
           value={purpose}
           onChange={(e) => handlePurposeChange(e.target.value as Purpose)}
@@ -310,6 +322,7 @@ export function NoteMetadataPanel({
 
       <CollapsibleSection
         label={`Backlinks${backlinks.length > 0 ? ` (${backlinks.length})` : ""}`}
+        labelHint="Backlinks show other notes, tasks, or contacts that link to this note"
         icon={<Link2 size={11} className="text-text-tertiary" />}
         defaultOpen={backlinks.length > 0}
       >

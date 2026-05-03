@@ -144,3 +144,10 @@
   display: flex;
   align-items: center;
 }
+
+/* ── Hint tooltip — hidden on touch devices ──────────────────────────────── */
+@media (hover: none) {
+  .hint-tooltip {
+    display: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { ModuleSwitcherWired } from "@/components/shell/module-switcher-wired";
@@ -18,6 +19,14 @@ import dynamic from "next/dynamic";
 
 const CaptureModal = dynamic(
   () => import("@/components/shell/capture-modal").then((m) => m.CaptureModal),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
+const HelpShellDynamic = dynamic(
+  () => import("@/components/help/help-shell").then((m) => m.HelpShell),
   {
     ssr: false,
     loading: () => null,
@@ -68,6 +77,7 @@ function GlobalShortcuts(): null {
   const setCaptureModalOpen = useShellStore((s) => s.setCaptureModalOpen);
   const setInspectorOpen = useShellStore((s) => s.setInspectorOpen);
   const inspectorOpen = useShellStore((s) => s.inspectorOpen);
+  const setHelpOpen = useShellStore((s) => s.setHelpOpen);
 
   React.useEffect(() => {
     const handle = (e: KeyboardEvent) => {
@@ -91,7 +101,7 @@ function GlobalShortcuts(): null {
           return;
         }
         e.preventDefault();
-        setShortcutsOverlayOpen(true);
+        setHelpOpen(true);
         return;
       }
 
@@ -109,7 +119,7 @@ function GlobalShortcuts(): null {
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
-  }, [router, setShortcutsOverlayOpen, setCaptureModalOpen, setInspectorOpen, inspectorOpen]);
+  }, [router, setShortcutsOverlayOpen, setCaptureModalOpen, setInspectorOpen, inspectorOpen, setHelpOpen]);
 
   return null;
 }
@@ -169,6 +179,31 @@ function LazyCapture(): React.ReactElement | null {
   return <CaptureModal />;
 }
 
+function LazyHelp(): React.ReactElement | null {
+  const helpOpen = useShellStore((s) => s.helpOpen);
+  const setHelpOpen = useShellStore((s) => s.setHelpOpen);
+  const [everOpened, setEverOpened] = React.useState(false);
+
+  React.useEffect(() => {
+    if (helpOpen && !everOpened) {
+      setEverOpened(true);
+    }
+  }, [helpOpen, everOpened]);
+
+  if (!everOpened) return null;
+
+  return (
+    <div
+      className={helpOpen ? "fixed inset-0 z-50 bg-[var(--color-bg-base)]" : "hidden"}
+      aria-modal="true"
+      role="dialog"
+      aria-label="Help Center"
+    >
+      <HelpShellDynamic onClose={() => setHelpOpen(false)} />
+    </div>
+  );
+}
+
 function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.ReactElement {
   return (
     <>
@@ -191,16 +226,19 @@ function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.R
       <TasksCommands />
       <KeyboardShortcutsOverlay />
       <LazyCapture />
+      <LazyHelp />
     </>
   );
 }
 
 export function AppShellProvider({ user, isAdmin, children }: AppShellProviderProps): React.ReactElement {
   return (
-    <CommandRegistryProvider>
-      <ShortcutsRegistryProvider>
-        <ShellInner user={user} isAdmin={isAdmin}>{children}</ShellInner>
-      </ShortcutsRegistryProvider>
-    </CommandRegistryProvider>
+    <TooltipPrimitive.Provider delayDuration={600} skipDelayDuration={200}>
+      <CommandRegistryProvider>
+        <ShortcutsRegistryProvider>
+          <ShellInner user={user} isAdmin={isAdmin}>{children}</ShellInner>
+        </ShortcutsRegistryProvider>
+      </CommandRegistryProvider>
+    </TooltipPrimitive.Provider>
   );
 }

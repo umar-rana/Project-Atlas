@@ -9,6 +9,7 @@ import { SyncStatus } from "@/components/shell/sync-status";
 import { TopbarHelpMenu } from "@/components/shell/topbar-help-menu";
 import { useShellStore } from "@/lib/shell/store";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 
@@ -60,7 +61,7 @@ export function TopBarWired({ user, isAdmin }: TopBarWiredProps): React.ReactEle
   const setCaptureModalOpen = useShellStore((s) => s.setCaptureModalOpen);
 
   const captureNode = (
-    <Tooltip content="Quick capture" shortcut={["⌘", "⇧", "I"]} side="bottom">
+    <Hint label="Quick capture" shortcut="⌘⇧I" side="bottom">
       <button
         type="button"
         aria-label="Quick capture (⌘⇧I)"
@@ -74,7 +75,7 @@ export function TopBarWired({ user, isAdmin }: TopBarWiredProps): React.ReactEle
       >
         <Plus size={16} aria-hidden />
       </button>
-    </Tooltip>
+    </Hint>
   );
 
   const trailing = (
