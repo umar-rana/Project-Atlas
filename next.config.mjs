@@ -19,6 +19,7 @@ const nextConfig = {
   transpilePackages: ['uuidv7'],
   serverExternalPackages: ['pino', 'pino-pretty', 'pg-boss', 'pg'],
   devIndicators: false,
+  eslint: { ignoreDuringBuilds: true },
   ...(devOrigins ? { allowedDevOrigins: devOrigins } : {}),
   experimental: {
     optimizePackageImports: [

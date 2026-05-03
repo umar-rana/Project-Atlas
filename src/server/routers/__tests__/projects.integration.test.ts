@@ -609,8 +609,8 @@ describe("habit→goal migration SQL", () => {
       where: { user_id: migrationUser.id, entity_id: habitProjectId, action: "project_type_migrated" },
     });
     expect(auditEntries.length).toBeGreaterThanOrEqual(1);
-    expect(auditEntries[0].meta).toMatchObject({ from: "habit", to: "goal" });
-    expect(auditEntries[0].entity_type).toBe("Project");
+    expect(auditEntries[0]!.meta).toMatchObject({ from: "habit", to: "goal" });
+    expect(auditEntries[0]!.entity_type).toBe("Project");
   });
 
   it("migration UPDATE does not touch already-goal projects", async () => {

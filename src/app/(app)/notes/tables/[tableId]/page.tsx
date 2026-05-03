@@ -105,21 +105,27 @@ export default function TableEditorPage() {
     );
   }
 
+  // Cast once to break the deep tRPC generic type instantiation (TS2589).
+  // The tRPC inferred return type for tables.get nests too deeply for tsc to
+  // resolve; casting via `unknown` severs the chain without losing runtime safety.
+  type RawCell = { column_id: string; value: unknown; [k: string]: unknown };
+  type RawRow  = { cells: RawCell[]; [k: string]: unknown };
+  const tableRows = table.rows as unknown as RawRow[];
+
   const visibleRowCount = filter
-    ? table.rows.filter((row) => {
+    ? tableRows.filter((row) => {
         const col = table.columns.find((c) => c.id === filter.column_id);
         if (!col) return true;
-        const cell = row.cells.find((c) => c.column_id === filter.column_id);
-        return cell !== undefined;
+        return row.cells.some((c) => c.column_id === filter.column_id);
       }).length
-    : table.rows.length;
+    : tableRows.length;
 
   const columns = table.columns.map((col) => ({
     ...col,
     config: (col.config ?? {}) as Record<string, unknown>,
   }));
 
-  const rows = table.rows.map((row) => ({
+  const rows = tableRows.map((row) => ({
     ...row,
     cells: row.cells.map((cell) => ({
       ...cell,

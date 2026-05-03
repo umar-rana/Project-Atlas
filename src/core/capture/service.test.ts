@@ -147,10 +147,11 @@ describe("captureAndCreate — AI enrichment tag gating", () => {
         title: "Make pasta for dinner",
         tags: ["cooking", "dinner"],
       }),
-      model: "claude-test",
+      model: "claude-test" as never,
       inputTokens: 10,
       outputTokens: 5,
       costUsd: 0.001,
+      durationMs: 100,
     });
 
     // No existing tags in library — both are AI-suggested new
@@ -175,10 +176,11 @@ describe("captureAndCreate — AI enrichment tag gating", () => {
         title: "Buy groceries",
         tags: ["groceries"],
       }),
-      model: "claude-test",
+      model: "claude-test" as never,
       inputTokens: 10,
       outputTokens: 5,
       costUsd: 0.001,
+      durationMs: 100,
     });
 
     // The tag doesn't exist yet in the library
@@ -208,10 +210,11 @@ describe("captureAndCreate — AI enrichment tag gating", () => {
         title: "Exercise routine",
         tags: ["fitness", "brandnew"],
       }),
-      model: "claude-test",
+      model: "claude-test" as never,
       inputTokens: 10,
       outputTokens: 5,
       costUsd: 0.001,
+      durationMs: 100,
     });
 
     // "fitness" exists in library, "brandnew" does not
