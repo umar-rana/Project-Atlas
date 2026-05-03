@@ -27,6 +27,7 @@ import { adminRouter } from "./admin";
 import { tablesRouter } from "./tables";
 import { tablesFoldersRouter } from "./tablesFolders";
 import { trashRouter } from "./trash";
+import { convertRouter } from "./convert";
 
 export const appRouter = router({
   health: healthRouter,
@@ -57,6 +58,7 @@ export const appRouter = router({
   tables: tablesRouter,
   tablesFolders: tablesFoldersRouter,
   trash: trashRouter,
+  convert: convertRouter,
 });
 
 export type AppRouter = typeof appRouter;

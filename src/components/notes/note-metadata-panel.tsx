@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File } from "lucide-react";
+import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File, Download, FileDown, Loader2 } from "lucide-react";
 import { Hint } from "@/components/ui/hint";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { BacklinksPanel } from "./backlinks-panel";
+import { ExportPdfDialog } from "./export-pdf-dialog";
 
 type Purpose = "note" | "meeting_note" | "project_brief" | "reading_note";
 
@@ -19,6 +20,7 @@ const PURPOSE_OPTIONS: { value: Purpose; label: string }[] = [
 
 interface NoteMetadataPanelProps {
   noteId: string;
+  noteTitle?: string;
   purpose: Purpose;
   is_project_brief: boolean;
   folder_id: string | null;
@@ -127,8 +129,25 @@ export function NoteMetadataPanel({
   project_id,
   created_at,
   updated_at,
-}: NoteMetadataPanelProps): React.ReactElement {
+  noteTitle,
+}: NoteMetadataPanelProps & { noteTitle?: string }): React.ReactElement {
   const utils = trpc.useUtils();
+  const [showPdfDialog, setShowPdfDialog] = React.useState(false);
+
+  const exportMarkdown = trpc.convert.exportMarkdown.useMutation({
+    onSuccess(data) {
+      const blob = new Blob([data.markdown], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    onError(err) {
+      toast.error(err.message ?? "Markdown export failed");
+    },
+  });
 
   const foldersQuery = trpc.notesFolder.list.useQuery();
   const projectsQuery = trpc.projects.list.useQuery({ status: "active" });
@@ -360,6 +379,43 @@ export function NoteMetadataPanel({
           )}
         </div>
       </CollapsibleSection>
+
+      {/* Actions section */}
+      <CollapsibleSection
+        label="Actions"
+        icon={<Download size={11} className="text-text-tertiary" />}
+        defaultOpen={false}
+      >
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={() => setShowPdfDialog(true)}
+            className="flex w-full items-center gap-2 rounded-md border border-border-default px-3 py-2 font-ui text-xs text-text-secondary hover:border-border-focus hover:bg-surface-raised hover:text-text-primary focus-visible:focus-ring"
+          >
+            <FileDown size={12} className="shrink-0 text-text-disabled" aria-hidden />
+            Export as PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => exportMarkdown.mutate({ noteId })}
+            disabled={exportMarkdown.isPending}
+            className="flex w-full items-center gap-2 rounded-md border border-border-default px-3 py-2 font-ui text-xs text-text-secondary hover:border-border-focus hover:bg-surface-raised hover:text-text-primary focus-visible:focus-ring disabled:opacity-50"
+          >
+            {exportMarkdown.isPending
+              ? <Loader2 size={12} className="shrink-0 animate-spin text-text-disabled" aria-hidden />
+              : <Download size={12} className="shrink-0 text-text-disabled" aria-hidden />
+            }
+            {exportMarkdown.isPending ? "Exporting…" : "Export as Markdown"}
+          </button>
+        </div>
+      </CollapsibleSection>
+
+      <ExportPdfDialog
+        open={showPdfDialog}
+        onOpenChange={setShowPdfDialog}
+        noteId={noteId}
+        noteTitle={noteTitle ?? "Note"}
+      />
     </div>
   );
 }

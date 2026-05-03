@@ -18,6 +18,7 @@ export default function NoteEditorPage() {
   const metaPanel = note ? (
     <NoteMetadataPanel
       noteId={note.id}
+      noteTitle={note.title}
       purpose={note.purpose as "note" | "meeting_note" | "project_brief" | "reading_note"}
       is_project_brief={note.is_project_brief}
       folder_id={note.folder_id ?? null}

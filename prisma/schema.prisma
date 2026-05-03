@@ -615,6 +615,9 @@ model Note {
   drive_file_id     String?
   drive_synced_at   DateTime? @db.Timestamptz
   drive_sync_error  String?
+  imported_from     String?   // "md" | "docx" | null
+  imported_at       DateTime? @db.Timestamptz
+  source_metadata   Json?     // frontmatter fields, docx warnings, etc.
   deleted_at        DateTime? @db.Timestamptz
   created_at        DateTime  @default(now()) @db.Timestamptz
   updated_at        DateTime  @updatedAt @db.Timestamptz

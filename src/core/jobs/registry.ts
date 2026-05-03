@@ -3,6 +3,7 @@ import { handleDriveSyncTables } from "./handlers/drive-sync-tables";
 import { handleSessionCleanup } from "./handlers/session-cleanup";
 import { handleTrashRetention } from "./handlers/trash-retention";
 import { handleAttachmentCleanup } from "./handlers/attachment-cleanup";
+import { handleImportCleanup } from "./handlers/import-cleanup-job";
 
 export interface JobDefinition {
   name: string;
@@ -17,6 +18,12 @@ export const JOB_REGISTRY: JobDefinition[] = [
     cron: "0 * * * *",
     description: "Sync notes to Google Drive hourly",
     handler: handleDriveSyncNotes,
+  },
+  {
+    name: "import-cleanup",
+    cron: "0 6 * * *",
+    description: "Daily cleanup of expired PDF exports from object storage at 06:00 UTC",
+    handler: handleImportCleanup,
   },
   {
     name: "drive-sync-tables",
