@@ -162,7 +162,7 @@ Pure functions: `formatDate`, `formatNumber`, `formatCurrency`, `formatTime`, `f
 
 ### Notes (`src/app/(app)/notes/`)
 - TipTap (ProseMirror) editor in `src/core/editor/` and `src/components/notes/`
-- Extensions: StarterKit, Link, CodeBlockLowlight, TaskList, Underline, Strike, Placeholder
+- Extensions: StarterKit, Link, CodeBlockLowlight, TaskList, Underline, Strike, Placeholder, Highlight (multicolor), TextStyle, Color
 - `reference-extension.ts` — `[[note]]`, `#tag`, `@context` trigger plugins
 - `slash-command-extension.ts` — `/` block-type command menu (10 block types)
 - `markdown-export.ts` / `markdown-import.ts` — round-trip Markdown

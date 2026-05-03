@@ -11,6 +11,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
 import { DragHandle } from "@tiptap/extension-drag-handle";
 import { createLowlight } from "lowlight";
 import javascript from "highlight.js/lib/languages/javascript";
@@ -75,6 +76,7 @@ export function buildExtensions(placeholder?: string) {
       HTMLAttributes: { class: "editor-highlight" },
     }),
     TextStyle,
+    Color,
     DragHandle,
     Placeholder.configure({
       placeholder: placeholder ?? "Start writing…",

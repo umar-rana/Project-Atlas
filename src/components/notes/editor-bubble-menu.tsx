@@ -38,6 +38,18 @@ const HIGHLIGHT_COLORS = [
   { label: "None", value: null },
 ];
 
+const TEXT_COLORS = [
+  { label: "Default", value: null },
+  { label: "Red", value: "#ef4444" },
+  { label: "Orange", value: "#f97316" },
+  { label: "Yellow", value: "#ca8a04" },
+  { label: "Green", value: "#16a34a" },
+  { label: "Blue", value: "#2563eb" },
+  { label: "Purple", value: "#9333ea" },
+  { label: "Pink", value: "#db2777" },
+  { label: "Gray", value: "#6b7280" },
+];
+
 function getActiveBlockType(editor: Editor): BlockType {
   if (editor.isActive("heading", { level: 1 })) return "heading1";
   if (editor.isActive("heading", { level: 2 })) return "heading2";
@@ -207,37 +219,72 @@ type ColorPopoverProps = {
 
 function ColorPopover({ editor, onClose }: ColorPopoverProps) {
   const activeHighlight = editor.getAttributes("highlight").color as string | undefined;
+  const activeTextColor = editor.getAttributes("textStyle").color as string | undefined;
 
   return (
-    <div className="flex flex-col gap-2 p-2.5">
-      <p className="text-xs font-medium text-muted-foreground">Highlight</p>
-      <div className="flex flex-wrap gap-1.5">
-        {HIGHLIGHT_COLORS.map((c) => (
-          <button
-            key={c.label}
-            type="button"
-            title={c.label}
-            onClick={() => {
-              if (!c.value) {
-                editor.chain().focus().unsetHighlight().run();
-              } else {
-                editor.chain().focus().toggleHighlight({ color: c.value }).run();
-              }
-              onClose();
-            }}
-            className={cn(
-              "h-6 w-6 rounded border-2 transition-all hover:scale-110",
-              c.value === null
-                ? "border-border bg-transparent text-[10px] text-muted-foreground"
-                : activeHighlight === c.value
-                ? "border-primary"
-                : "border-transparent",
-            )}
-            style={c.value ? { backgroundColor: c.value } : undefined}
-          >
-            {c.value === null && "✕"}
-          </button>
-        ))}
+    <div className="flex flex-col gap-3 p-2.5">
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs font-medium text-muted-foreground">Text colour</p>
+        <div className="flex flex-wrap gap-1.5">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              title={c.label}
+              onClick={() => {
+                if (!c.value) {
+                  editor.chain().focus().unsetColor().run();
+                } else {
+                  editor.chain().focus().setColor(c.value).run();
+                }
+                onClose();
+              }}
+              className={cn(
+                "h-6 w-6 rounded border-2 transition-all hover:scale-110",
+                c.value === null
+                  ? "border-border bg-transparent text-[10px] text-muted-foreground"
+                  : activeTextColor === c.value
+                  ? "border-primary"
+                  : "border-transparent",
+              )}
+              style={c.value ? { backgroundColor: c.value } : undefined}
+            >
+              {c.value === null && "A"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <p className="text-xs font-medium text-muted-foreground">Highlight</p>
+        <div className="flex flex-wrap gap-1.5">
+          {HIGHLIGHT_COLORS.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              title={c.label}
+              onClick={() => {
+                if (!c.value) {
+                  editor.chain().focus().unsetHighlight().run();
+                } else {
+                  editor.chain().focus().toggleHighlight({ color: c.value }).run();
+                }
+                onClose();
+              }}
+              className={cn(
+                "h-6 w-6 rounded border-2 transition-all hover:scale-110",
+                c.value === null
+                  ? "border-border bg-transparent text-[10px] text-muted-foreground"
+                  : activeHighlight === c.value
+                  ? "border-primary"
+                  : "border-transparent",
+              )}
+              style={c.value ? { backgroundColor: c.value } : undefined}
+            >
+              {c.value === null && "✕"}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
