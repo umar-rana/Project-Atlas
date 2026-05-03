@@ -162,23 +162,26 @@ Pure functions: `formatDate`, `formatNumber`, `formatCurrency`, `formatTime`, `f
 
 ### Notes (`src/app/(app)/notes/`)
 - TipTap (ProseMirror) editor in `src/core/editor/` and `src/components/notes/`
-- Extensions: StarterKit, Link, CodeBlockLowlight, TaskList, Underline, Strike, Placeholder, Highlight (multicolor), TextStyle, Color
+- Extensions: StarterKit, Link, CodeBlockLowlight, TaskList, Underline, Strike, Placeholder, Highlight (multicolor), TextStyle, Color, DragHandle (`@tiptap/extension-drag-handle-react`)
 - `reference-extension.ts` — `[[note]]`, `#tag`, `@context` trigger plugins
 - `slash-command-extension.ts` — `/` block-type command menu (10 block types)
 - `markdown-export.ts` / `markdown-import.ts` — round-trip Markdown
 - `text-extraction.ts` — JSON→plain text for FTS
-- `note-editor.tsx` — 1s debounced auto-save, Cmd+S, image-paste upload, URL-paste-as-link
+- `note-editor.tsx` — 1s debounced auto-save, Cmd+S, image-paste upload, URL-paste-as-link; drop handler invalidates attachment cache immediately
+- `editor-bubble-menu.tsx` — BubbleMenu with mark toolbar, link editor, block-type dropdown, color/highlight popover (9 text colors + highlight swatches using Color + Highlight extensions)
+- `editor-block-handle.tsx` — official DragHandle extension for block DnD + block context menu (Turn into / Duplicate / Delete / Color submenu via `applyHighlightToBlock()`)
 - `reference-picker.tsx` — searchable tRPC-backed dropdown with create-note option
+- `AttachmentThumbnail` — real 32×32 image thumbnails via `/api/attachments/{file_id}`, PDF icon, color-coded file type icons
 - Backlinks panel, note inspector dialog, purpose template picker
 - Notes folder tree (collapsible, drag-to-reorder)
-- Google Drive sync (exports notes hourly)
+- Google Drive sync (exports notes hourly): body_markdown fallback from body_json via `tiptapToMarkdown()`, proactive OAuth token refresh before sync, hardened quota/rate-limit detection + bounded retry (3 attempts, exponential backoff), richer job result summary (synced/deleted/errors)
 
 ### Tables (`src/app/(app)/notes/tables/`) — Wave 4b
 Structured-data module peer to Notes.
 - **Prisma models**: `Table`, `TablesFolder`, `TableColumn`, `TableRow`, `TableCell` (soft-delete, fractional positions)
 - **Column types**: Text, Number, Currency, Date, Checkbox, Single Select
 - **Core utilities**: `src/core/tables/types.ts`, `sort.ts`, `filter.ts`, `aggregations.ts` (sum/avg/count/min/max/checked_ratio), `validators.ts`, `export.ts` (JSON schema + CSV)
-- **Grid** (`table-grid.tsx`): keyboard nav, inline editing, drag-to-reorder rows, column header sort/rename/move/delete, footer aggregations, add row/column
+- **Grid** (`table-grid.tsx`): keyboard nav (Enter=down, Tab=right, Escape=exit), inline editing (click selected cell or type printable char), drag-to-reorder rows (disabled tooltip when sorted), column header sort/rename/move/delete, sticky footer aggregations, empty state ("No rows yet" + Add row), filter-empty state ("No rows match" + Clear filter)
 - **6 cell components** in `src/components/tables/cells/`
 - **Pages**: `/notes/tables` (all tables), `/notes/tables/[tableId]` (editor), `/notes/tables/folder/[folderId]` (folder view)
 - Notes sidebar extended with full Tables section (collapsible folder tree)
@@ -232,11 +235,17 @@ All admin mutations write AuditLog entries with `actor_type: 'admin'`. Cursor pa
 - AES-256-GCM encrypted token storage
 - Drive token linked + verified via `drive_verified_at`
 - Subfolder IDs tracked per user for notes and tables exports
+- `src/core/get-base-url.ts` — derives correct public base URL in priority order: `APP_URL` env var → `x-forwarded-proto` + `x-forwarded-host` headers → `REPLIT_DEV_DOMAIN` → req.url fallback. Used in OAuth callback/connect routes to prevent redirects to `0.0.0.0` in Replit's proxied environment.
+- `GOOGLE_REDIRECT_URI` must be set to the full public callback URL (`https://atlas.rana.pk/api/drive/oauth-callback`) and registered in Google Cloud Console
+- `refreshDriveTokenIfNeeded()` in `client.ts` — proactive token refresh (within 5 min of expiry) before any sync run; refresh failure aborts the run with a clear error
 
 ## Key Infrastructure Files
 | File | Purpose |
 |------|---------|
 | `src/core/db/index.ts` | Prisma client — always uses `DATABASE_URL_NEON`, soft-delete middleware, audit middleware |
+| `src/core/get-base-url.ts` | Derives correct public base URL for API routes (APP_URL → forwarded headers → REPLIT_DEV_DOMAIN) |
+| `src/core/errors/error-handler.ts` | `handleTrpcError()` maps errors to plain-language strings; `withRetry()` exponential backoff for transient failures |
+| `src/components/providers/trpc-provider.tsx` | MutationCache global error handler; `safeFetch()` converts HTML 500 pages to structured tRPC errors |
 | `src/lib/admin-gate.ts` | Admin email allowlist + `isAdmin()` |
 | `src/server/trpc.ts` | tRPC context, `protectedProcedure`, `adminProcedure` |
 | `src/middleware.ts` | Clerk auth middleware, route protection |
