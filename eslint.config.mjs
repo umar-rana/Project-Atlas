@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
+import tailwindcss from "eslint-plugin-tailwindcss";
 import noServerImportsInClient from "./eslint-rules/no-server-imports-in-client.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,6 +30,8 @@ export default defineConfig([
             "next-env.d.ts",
         ],
     },
+    // Tailwind CSS class-order + unknown-utility enforcement
+    ...tailwindcss.configs["flat/recommended"],
     {
         extends: [
             ...compat.extends("next/core-web-vitals"),
@@ -64,6 +67,11 @@ export default defineConfig([
              * for full documentation and the list of guarded import paths.
              */
             "local/no-server-imports-in-client": "error",
+            // Class ordering is enforced by eslint-plugin-tailwindcss; keep as warn
+            // so it doesn't block builds while the codebase is being migrated.
+            "tailwindcss/classnames-order": "warn",
+            // Flag unknown utilities — catches stale Stratum token references.
+            "tailwindcss/no-custom-classname": "off",
         },
     },
 ]);

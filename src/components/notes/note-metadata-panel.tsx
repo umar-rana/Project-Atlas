@@ -338,7 +338,7 @@ export function NoteMetadataPanel({
                 <button
                   type="button"
                   onClick={() => deleteAttachment.mutate({ id: att.id })}
-                  className="shrink-0 font-ui text-2xs text-text-disabled hover:text-destructive"
+                  className="shrink-0 font-ui text-2xs text-text-disabled hover:text-accent-danger"
                 >
                   ×
                 </button>

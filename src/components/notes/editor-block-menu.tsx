@@ -154,34 +154,34 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
     <div
       ref={menuRef}
       style={menuStyle}
-      className="min-w-[180px] rounded-lg border border-border bg-popover shadow-lg py-1 text-sm"
+      className="min-w-[180px] rounded-lg border border-border-default bg-surface-raised py-1 text-sm shadow-2"
     >
       <div className="relative">
         <button
           type="button"
-          className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-accent"
+          className="flex w-full items-center justify-between px-3 py-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary"
           onMouseEnter={() => setSubMenu("turnInto")}
         >
           <span>Turn into</span>
-          <span className="text-xs text-muted-foreground">▶</span>
+          <span className="text-xs text-text-tertiary">▶</span>
         </button>
         {subMenu === "turnInto" && (
           <div
-            className="absolute left-full top-0 ml-1 min-w-[160px] rounded-lg border border-border bg-popover shadow-lg py-1"
+            className="absolute left-full top-0 ml-1 min-w-[160px] rounded-lg border border-border-default bg-surface-raised py-1 shadow-2"
             onMouseLeave={() => setSubMenu(null)}
           >
             {TURN_INTO_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-accent text-sm"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                 onClick={() => {
                   focusBlock();
                   applyBlockType(editor, opt.id);
                   onClose();
                 }}
               >
-                <span className="w-5 text-center font-mono text-xs text-muted-foreground">
+                <span className="w-5 text-center font-mono text-xs text-text-tertiary">
                   {opt.icon}
                 </span>
                 {opt.label}
@@ -194,18 +194,18 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
       <div className="relative">
         <button
           type="button"
-          className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-accent"
+          className="flex w-full items-center justify-between px-3 py-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary"
           onMouseEnter={() => setSubMenu("color")}
         >
           <span>Color</span>
-          <span className="text-xs text-muted-foreground">▶</span>
+          <span className="text-xs text-text-tertiary">▶</span>
         </button>
         {subMenu === "color" && (
           <div
-            className="absolute left-full top-0 ml-1 rounded-lg border border-border bg-popover shadow-lg p-2.5"
+            className="absolute left-full top-0 ml-1 rounded-lg border border-border-default bg-surface-raised p-2.5 shadow-2"
             onMouseLeave={() => setSubMenu(null)}
           >
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Highlight</p>
+            <p className="mb-1.5 text-xs font-medium text-text-tertiary">Highlight</p>
             <div className="flex flex-wrap gap-1.5">
               {HIGHLIGHT_COLORS.map((c) => (
                 <button
@@ -216,7 +216,7 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
                     applyHighlightToBlock(editor, pos, c.value);
                     onClose();
                   }}
-                  className="h-6 w-6 rounded border-2 border-transparent transition-all hover:scale-110 hover:border-primary"
+                  className="h-6 w-6 rounded border-2 border-transparent transition-all hover:scale-110 hover:border-accent-primary focus-visible:focus-ring"
                   style={{ backgroundColor: c.value }}
                 />
               ))}
@@ -228,8 +228,8 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
                   onClose();
                 }}
                 className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded border-2 border-border",
-                  "text-[10px] text-muted-foreground hover:border-primary",
+                  "flex h-6 w-6 items-center justify-center rounded border-2 border-border-default",
+                  "text-[10px] text-text-tertiary hover:border-accent-primary focus-visible:focus-ring",
                 )}
               >
                 ✕
@@ -241,18 +241,18 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
 
       <button
         type="button"
-        className="flex w-full items-center px-3 py-1.5 hover:bg-accent"
+        className="flex w-full items-center px-3 py-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary"
         onMouseEnter={() => setSubMenu(null)}
         onClick={handleDuplicate}
       >
         Duplicate
       </button>
 
-      <div className="my-1 h-px bg-border" />
+      <div className="my-1 h-px bg-border-subtle" />
 
       <button
         type="button"
-        className="flex w-full items-center px-3 py-1.5 hover:bg-accent text-destructive"
+        className="flex w-full items-center px-3 py-1.5 text-accent-danger hover:bg-accent-danger-muted"
         onMouseEnter={() => setSubMenu(null)}
         onClick={handleDelete}
       >

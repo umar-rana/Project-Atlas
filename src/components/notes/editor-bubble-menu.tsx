@@ -106,11 +106,11 @@ function ToolbarButton({ active, onClick, title, children, className }: ToolbarB
       title={title}
       onClick={onClick}
       className={cn(
-        "flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-sm font-medium transition-colors",
-        "hover:bg-accent hover:text-accent-foreground",
+        "flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-sm font-medium transition-colors duration-fast ease-standard",
+        "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
         active
-          ? "bg-accent text-accent-foreground"
-          : "text-muted-foreground",
+          ? "bg-surface-hover text-text-primary"
+          : "text-text-tertiary",
         className,
       )}
     >
@@ -155,12 +155,12 @@ function LinkEditor({ editor, onClose }: LinkEditorProps) {
           if (e.key === "Enter") apply();
           if (e.key === "Escape") onClose();
         }}
-        className="h-7 w-52 rounded border border-border bg-background px-2 text-xs outline-none focus:border-primary"
+        className="h-7 w-52 rounded border border-border-default bg-surface-base px-2 text-xs text-text-primary placeholder:text-text-disabled outline-none focus:border-border-focus"
       />
       <button
         type="button"
         onClick={apply}
-        className="h-7 rounded bg-primary px-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+        className="h-7 rounded bg-accent-primary px-2 text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover focus-visible:focus-ring"
       >
         Apply
       </button>
@@ -171,7 +171,7 @@ function LinkEditor({ editor, onClose }: LinkEditorProps) {
             editor.chain().focus().extendMarkRange("link").unsetLink().run();
             onClose();
           }}
-          className="h-7 rounded px-2 text-xs text-destructive hover:bg-destructive/10"
+          className="h-7 rounded px-2 text-xs text-accent-danger hover:bg-accent-danger-muted focus-visible:focus-ring"
         >
           Remove
         </button>
@@ -198,11 +198,11 @@ function BlockDropdown({ editor, onClose }: BlockDropdownProps) {
             onClose();
           }}
           className={cn(
-            "flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent",
-            active === bt.id && "bg-accent font-medium",
+            "flex w-full items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+            active === bt.id && "bg-surface-hover font-medium text-text-primary",
           )}
         >
-          <span className="w-6 text-center text-xs font-mono text-muted-foreground">
+          <span className="w-6 text-center text-xs font-mono text-text-tertiary">
             {bt.icon}
           </span>
           {bt.label}
@@ -224,7 +224,7 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
   return (
     <div className="flex flex-col gap-3 p-2.5">
       <div className="flex flex-col gap-1.5">
-        <p className="text-xs font-medium text-muted-foreground">Text colour</p>
+        <p className="text-xs font-medium text-text-tertiary">Text colour</p>
         <div className="flex flex-wrap gap-1.5">
           {TEXT_COLORS.map((c) => (
             <button
@@ -240,11 +240,11 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
                 onClose();
               }}
               className={cn(
-                "h-6 w-6 rounded border-2 transition-all hover:scale-110",
+                "h-6 w-6 rounded border-2 transition-all hover:scale-110 focus-visible:focus-ring",
                 c.value === null
-                  ? "border-border bg-transparent text-[10px] text-muted-foreground"
+                  ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
                   : activeTextColor === c.value
-                  ? "border-primary"
+                  ? "border-accent-primary"
                   : "border-transparent",
               )}
               style={c.value ? { backgroundColor: c.value } : undefined}
@@ -256,7 +256,7 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <p className="text-xs font-medium text-muted-foreground">Highlight</p>
+        <p className="text-xs font-medium text-text-tertiary">Highlight</p>
         <div className="flex flex-wrap gap-1.5">
           {HIGHLIGHT_COLORS.map((c) => (
             <button
@@ -272,11 +272,11 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
                 onClose();
               }}
               className={cn(
-                "h-6 w-6 rounded border-2 transition-all hover:scale-110",
+                "h-6 w-6 rounded border-2 transition-all hover:scale-110 focus-visible:focus-ring",
                 c.value === null
-                  ? "border-border bg-transparent text-[10px] text-muted-foreground"
+                  ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
                   : activeHighlight === c.value
-                  ? "border-primary"
+                  ? "border-accent-primary"
                   : "border-transparent",
               )}
               style={c.value ? { backgroundColor: c.value } : undefined}
@@ -329,7 +329,7 @@ export function EditorBubbleMenu({ editor }: Props) {
       options={{ placement: "top", flip: true }}
       shouldShow={shouldShow}
     >
-      <div className="flex items-center rounded-lg border border-border bg-popover shadow-lg">
+      <div className="flex items-center rounded-lg border border-border-default bg-surface-raised shadow-2">
         {mode === "toolbar" && (
           <>
             <button
@@ -337,9 +337,9 @@ export function EditorBubbleMenu({ editor }: Props) {
               title="Block type"
               onClick={() => setMode("block")}
               className={cn(
-                "flex h-7 items-center gap-1 rounded-l-lg px-2 text-xs font-medium transition-colors",
-                "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                "border-r border-border",
+                "flex h-7 items-center gap-1 rounded-l-lg px-2 text-xs font-medium transition-colors duration-fast ease-standard",
+                "text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
+                "border-r border-border-default",
               )}
             >
               <span className="font-mono">{activeBlockDef?.icon ?? "¶"}</span>
@@ -386,7 +386,7 @@ export function EditorBubbleMenu({ editor }: Props) {
               </ToolbarButton>
             </div>
 
-            <div className="mx-0.5 h-5 w-px bg-border" />
+            <div className="mx-0.5 h-5 w-px bg-border-subtle" />
 
             <div className="flex items-center gap-0.5 px-1">
               <ToolbarButton
@@ -395,7 +395,7 @@ export function EditorBubbleMenu({ editor }: Props) {
                 title="Highlight color"
               >
                 <span
-                  className="inline-block h-4 w-4 rounded-sm border border-border"
+                  className="inline-block h-4 w-4 rounded-sm border border-border-default"
                   style={{ backgroundColor: activeHighlight ?? "#fef08a" }}
                 />
               </ToolbarButton>
@@ -427,7 +427,7 @@ export function EditorBubbleMenu({ editor }: Props) {
             type="button"
             title="Back"
             onClick={closePopover}
-            className="flex h-7 w-7 items-center justify-center rounded-r-lg border-l border-border text-muted-foreground hover:bg-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-r-lg border-l border-border-default text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring"
           >
             ✕
           </button>

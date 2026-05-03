@@ -255,6 +255,8 @@ All admin mutations write AuditLog entries with `actor_type: 'admin'`. Cursor pa
 | `scripts/post-merge.sh` | Post-merge automation (install → generate → migrate Neon, 3 retries) |
 | `scripts/migrate-clerk-id-nulls.ts` | Assigns placeholder clerk_ids before NOT NULL enforcement |
 | `scripts/validate-migrations.mjs` | Validates migration file integrity |
+| `scripts/validate-token-references.ts` | CI script: scans all .tsx/.ts files for forbidden shadcn tokens and reports replacements |
+| `CONTRIBUTING.md` | Developer guide: Stratum token map, focus ring rules, CI checks, component conventions |
 | `prisma/schema.prisma` | Single source of truth for DB schema |
 | `.github/workflows/ci.yml` | CI: lint + type-check + unit tests + integration tests + e2e (Playwright) — **do not modify** |
 
@@ -272,6 +274,7 @@ All admin mutations write AuditLog entries with `actor_type: 'admin'`. Cursor pa
 - **TypeScript** — strict mode
 - **Tailwind CSS 3.4** — utility-first CSS
 - **Radix UI, cmdk, vaul, sonner** — UI primitives
+- **eslint-plugin-tailwindcss** — class ordering + unknown utility enforcement in ESLint
 - **next-themes** — dark mode
 - **@clerk/nextjs v7** — authentication
 - **Prisma** — ORM

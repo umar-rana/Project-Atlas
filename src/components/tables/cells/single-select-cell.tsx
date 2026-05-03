@@ -32,7 +32,7 @@ export function SingleSelectCell({ value, options, isSelected, isEditing, onStar
 
   if (isEditing) {
     return (
-      <div ref={containerRef} className="absolute inset-x-0 top-0 z-50 min-w-[160px] rounded-md border border-border-default bg-popover shadow-lg">
+      <div ref={containerRef} className="absolute inset-x-0 top-0 z-overlay min-w-[160px] rounded-md border border-border-default bg-surface-raised shadow-2">
         <div className="max-h-48 overflow-y-auto py-1">
           <button
             type="button"

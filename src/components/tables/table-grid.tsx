@@ -428,7 +428,7 @@ export function TableGrid({
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
+                        className="text-accent-danger focus:text-accent-danger"
                         onClick={() => {
                           if (confirm(`Delete column "${col.name}"? All cell data will be lost.`)) {
                             deleteColumn.mutate({ id: col.id });
@@ -529,7 +529,7 @@ export function TableGrid({
               className={cn(
                 "group",
                 draggingRowId === row.id && "opacity-50",
-                dragOverRowId === row.id && "ring-t-2 ring-accent-primary",
+                dragOverRowId === row.id && "border-t-2 border-accent-primary",
               )}
               draggable={!sort.column_id}
               onDragStart={() => setDraggingRowId(row.id)}
@@ -570,7 +570,7 @@ export function TableGrid({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
+                        className="text-accent-danger focus:text-accent-danger"
                         onClick={() => {
                           const hasData = row.cells.some((c) => c.value !== null && c.value !== undefined && c.value !== "");
                           if (!hasData || confirm("Delete this row?")) {

@@ -73,27 +73,27 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
-        <h1 className="font-ui text-base font-semibold text-text-primary">{title}</h1>
+        <h1 className="font-ui text-md font-semibold text-text-primary">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-disabled" />
+            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-disabled" aria-hidden />
             <input
               type="text"
               placeholder="Search notes…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 rounded-md border border-border-default bg-surface-base pl-7 pr-3 font-ui text-xs text-text-primary placeholder:text-text-disabled focus:border-border-focus focus:outline-none"
+              className="h-7 rounded-md border border-border-default bg-surface-base pl-7 pr-3 font-ui text-xs text-text-primary placeholder:text-text-disabled focus:border-border-focus focus:outline-none focus-visible:focus-ring"
             />
           </div>
           <button
             type="button"
             onClick={() => setShowPicker(true)}
             className={cn(
-              "flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent",
-              "hover:bg-accent-primary-hover",
+              "inline-flex h-7 items-center gap-1.5 rounded-md bg-accent-primary px-3 font-ui text-xs font-medium text-text-on-accent",
+              "hover:bg-accent-primary-hover focus-visible:focus-ring",
             )}
           >
-            <Plus size={13} />
+            <Plus size={13} aria-hidden />
             New note
           </button>
         </div>
@@ -105,18 +105,14 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
             <span className="font-ui text-sm text-text-disabled">Loading…</span>
           </div>
         ) : notes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
+          <div className="mx-auto flex max-w-empty-state flex-col items-center justify-center gap-2 py-20 text-center">
             <p className="font-ui text-sm text-text-tertiary">
               {search.length >= 2 ? `No results for "${search}"` : "No notes yet"}
             </p>
             {search.length < 2 && (
-              <button
-                type="button"
-                onClick={() => setShowPicker(true)}
-                className="font-ui text-xs text-accent-primary hover:underline"
-              >
-                Create your first note
-              </button>
+              <p className="font-ui text-2xs text-text-disabled">
+                Use the <strong className="text-text-tertiary">+ New note</strong> button above to create one.
+              </p>
             )}
           </div>
         ) : (

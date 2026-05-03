@@ -45,9 +45,9 @@ export function EditorBlockHandle({ editor }: Props) {
           type="button"
           title="Drag to reorder · Click to open menu"
           onClick={handleClick}
-          className="flex h-5 w-5 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
+          className="flex h-5 w-5 cursor-grab items-center justify-center rounded text-text-tertiary hover:bg-surface-hover hover:text-text-primary active:cursor-grabbing focus-visible:focus-ring"
         >
-          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden>
             <circle cx="2.5" cy="2.5" r="1.5" />
             <circle cx="7.5" cy="2.5" r="1.5" />
             <circle cx="2.5" cy="7" r="1.5" />

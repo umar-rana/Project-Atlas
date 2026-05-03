@@ -60,10 +60,10 @@ function EntityPreview({
 
   return (
     <div className="min-w-[180px] max-w-[280px]">
-      <div className="text-xs text-muted-foreground mb-0.5">{typeLabel}</div>
-      <div className="text-sm font-medium leading-tight">{title}</div>
+      <div className="text-xs text-text-tertiary mb-0.5">{typeLabel}</div>
+      <div className="text-sm font-medium leading-tight text-text-primary">{title}</div>
       {firstLine && (
-        <div className="text-xs text-muted-foreground mt-1 leading-tight line-clamp-2">
+        <div className="text-xs text-text-tertiary mt-1 leading-tight line-clamp-2">
           {firstLine}
         </div>
       )}
@@ -137,7 +137,7 @@ export function ReferenceTooltipLayer({ containerRef }: Props) {
     <div
       data-reference-tooltip
       style={{ top, left, position: "fixed", zIndex: 60 }}
-      className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2 text-sm"
+      className="bg-surface-raised border border-border-default rounded-lg shadow-2 px-3 py-2 text-sm text-text-primary"
       onMouseEnter={() => {
         if (hideTimeout.current) {
           clearTimeout(hideTimeout.current);

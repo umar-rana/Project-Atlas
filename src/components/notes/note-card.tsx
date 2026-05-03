@@ -228,7 +228,7 @@ export function NoteCard({
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
+                  className="text-accent-danger focus:text-accent-danger"
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteNote.mutate({ id });

@@ -77,7 +77,7 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
-              Name <span className="text-destructive">*</span>
+              Name <span className="text-accent-danger">*</span>
             </label>
             <input
               autoFocus

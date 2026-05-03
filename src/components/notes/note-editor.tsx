@@ -478,16 +478,16 @@ export function NoteEditor({
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border-default flex-shrink-0">
         <input
           type="text"
           value={title}
           onChange={handleTitleChange}
           placeholder="Note title…"
-          className="flex-1 text-xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground"
+          className="flex-1 text-xl font-semibold bg-transparent border-none outline-none placeholder:text-text-disabled focus-visible:focus-ring"
           disabled={readOnly}
         />
-        <div className="flex items-center gap-2 text-xs text-muted-foreground ml-4 flex-shrink-0">
+        <div className="flex items-center gap-2 text-xs text-text-tertiary ml-4 flex-shrink-0">
           {saveStatus === "saving" && (
             <span className="flex items-center gap-1">
               <span className="animate-spin">⟳</span>
@@ -495,10 +495,10 @@ export function NoteEditor({
             </span>
           )}
           {saveStatus === "saved" && (
-            <span className="text-green-600 dark:text-green-400">✓ saved</span>
+            <span className="text-accent-success">✓ saved</span>
           )}
           {saveStatus === "error" && (
-            <span className="text-destructive">⚠ error saving</span>
+            <span className="text-accent-danger">⚠ error saving</span>
           )}
         </div>
       </div>

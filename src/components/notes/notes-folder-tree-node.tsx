@@ -314,7 +314,7 @@ export function NotesFolderTreeNode({
               <DropdownMenuSeparator />
 
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
+                className="text-accent-danger focus:text-accent-danger"
                 onClick={() => deleteFolder.mutate({ id: folder.id })}
                 disabled={deleteFolder.isPending}
               >

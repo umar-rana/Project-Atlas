@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { TopBar } from "@/components/layout/top-bar";
 import { UserMenu } from "@/components/shell/user-menu";
 import { SyncStatus } from "@/components/shell/sync-status";
+import { TopbarHelpMenu } from "@/components/shell/topbar-help-menu";
 import { useShellStore } from "@/lib/shell/store";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -66,9 +67,9 @@ export function TopBarWired({ user, isAdmin }: TopBarWiredProps): React.ReactEle
         onClick={() => setCaptureModalOpen(true)}
         className={cn(
           "inline-flex size-8 shrink-0 items-center justify-center rounded-md",
-          "bg-accent-primary text-white",
+          "bg-accent-primary text-text-on-accent",
           "transition-colors duration-fast ease-standard",
-          "hover:bg-accent-primary/90 focus-visible:focus-ring",
+          "hover:bg-accent-primary-hover focus-visible:focus-ring",
         )}
       >
         <Plus size={16} aria-hidden />
@@ -79,6 +80,7 @@ export function TopBarWired({ user, isAdmin }: TopBarWiredProps): React.ReactEle
   const trailing = (
     <>
       <ThemeToggle />
+      <TopbarHelpMenu />
       <SyncStatus />
       <UserMenu name={user.name} email={user.email} image={user.image} isAdmin={isAdmin} />
     </>

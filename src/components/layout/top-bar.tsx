@@ -22,7 +22,7 @@ export function TopBar({
   leading,
   trailing,
   captureNode,
-  searchPlaceholder = "Search Atlas",
+  searchPlaceholder = "Search or jump to…",
   onOpenSearch,
   searchShortcut = ["cmd", "K"],
   className,
@@ -42,18 +42,18 @@ export function TopBar({
 
       {/* Center: search + capture — absolutely centered so it's always in the middle */}
       <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">
-        <div className="pointer-events-auto flex w-full max-w-[556px] min-w-[340px] items-center gap-2 px-4">
+        <div className="pointer-events-auto flex w-full max-w-top-bar-search min-w-[340px] items-center gap-2 px-4">
           <button
             type="button"
             onClick={onOpenSearch}
             className={cn(
-              "inline-flex h-8 flex-1 cursor-pointer items-center gap-2 rounded-md border border-border-default bg-surface-sunken px-2 text-left text-sm text-text-tertiary",
+              "inline-flex h-8 flex-1 cursor-pointer items-center gap-2 rounded-md border border-border-default bg-surface-sunken px-2.5 text-left text-sm text-text-tertiary",
               "transition-colors duration-fast ease-standard",
               "hover:border-border-strong hover:bg-surface-hover",
               "focus-visible:focus-ring",
             )}
           >
-            <Search size={12} aria-hidden />
+            <Search size={14} aria-hidden />
             <span className="flex-1 truncate">{searchPlaceholder}</span>
             <KeyboardShortcut keys={searchShortcut} variant="subtle" />
           </button>

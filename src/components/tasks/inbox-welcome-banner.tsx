@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { Sparkles, X, Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { useShellStore } from "@/lib/shell/store";
@@ -49,9 +48,9 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
   if (accountAgeDays > NEW_ACCOUNT_DAYS) return null;
 
   return (
-    <div className="mx-2 my-2 rounded-md border border-accent-brand/30 bg-accent-brand-muted">
+    <div className="mx-2 my-2 rounded-md border border-accent-primary-muted bg-accent-primary-subtle">
       <div className="flex items-start gap-2.5 px-3 py-2.5">
-        <Sparkles size={13} className="mt-0.5 shrink-0 text-accent-brand" aria-hidden />
+        <Sparkles size={13} className="mt-0.5 shrink-0 text-accent-primary" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="font-ui text-xs font-semibold text-text-primary">
             Welcome to your inbox
@@ -63,7 +62,7 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
             <button
               type="button"
               onClick={() => setCaptureModalOpen(true)}
-              className="inline-flex items-center gap-1 rounded-md bg-accent-brand px-2 py-1 font-ui text-2xs font-medium text-white hover:bg-accent-brand/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-brand"
+              className="inline-flex items-center gap-1 rounded-md bg-accent-primary px-2 py-1 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover focus-visible:focus-ring"
             >
               <Plus size={11} aria-hidden />
               Capture your first task
@@ -73,22 +72,12 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
               <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">⌘⇧I</kbd>
             </span>
           </div>
-          <p className="mt-1.5 font-ui text-2xs text-text-secondary">
-            Need a quick refresher?{" "}
-            <Link
-              href="/welcome"
-              className="text-accent-brand underline-offset-2 hover:underline"
-            >
-              View the getting started guide
-            </Link>
-            .
-          </p>
         </div>
         <button
           type="button"
           onClick={handleDismiss}
           aria-label="Dismiss welcome message"
-          className="shrink-0 rounded-sm p-0.5 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+          className="shrink-0 rounded-sm p-0.5 text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring"
         >
           <X size={12} />
         </button>

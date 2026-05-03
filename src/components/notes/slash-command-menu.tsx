@@ -163,7 +163,7 @@ export function SlashCommandMenu({ query, position, editor, from, onClose }: Pro
     return (
       <div
         style={{ top: position.top, left: position.left }}
-        className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg p-3 text-sm text-muted-foreground"
+        className="fixed z-overlay rounded-lg border border-border-default bg-surface-raised p-3 text-sm text-text-tertiary shadow-2"
       >
         No commands found
       </div>
@@ -173,9 +173,9 @@ export function SlashCommandMenu({ query, position, editor, from, onClose }: Pro
   return (
     <div
       style={{ top: position.top, left: position.left }}
-      className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg overflow-hidden min-w-[240px] max-w-[320px]"
+      className="fixed z-overlay overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2 min-w-[240px] max-w-[320px]"
     >
-      <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b border-border bg-muted/50">
+      <div className="border-b border-border-default bg-surface-sunken px-3 py-1.5 text-xs font-medium text-text-tertiary">
         Commands
         {query && <span className="ml-1 opacity-60">&ldquo;{query}&rdquo;</span>}
       </div>
@@ -185,18 +185,18 @@ export function SlashCommandMenu({ query, position, editor, from, onClose }: Pro
             <button
               type="button"
               className={cn(
-                "w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-accent transition-colors",
-                i === activeIndex && "bg-accent",
+                "flex w-full items-center gap-3 px-3 py-2 text-left transition-colors duration-fast hover:bg-surface-hover",
+                i === activeIndex && "bg-surface-hover",
               )}
               onMouseEnter={() => setActiveIndex(i)}
               onClick={() => executeCommand(cmd)}
             >
-              <span className="w-7 h-7 flex items-center justify-center text-xs font-mono bg-muted rounded flex-shrink-0">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-surface-sunken font-mono text-xs text-text-tertiary">
                 {cmd.icon}
               </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium">{cmd.label}</div>
-                <div className="text-xs text-muted-foreground">{cmd.description}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-text-primary">{cmd.label}</div>
+                <div className="text-xs text-text-tertiary">{cmd.description}</div>
               </div>
             </button>
           </li>

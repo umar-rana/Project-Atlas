@@ -19,7 +19,8 @@
     "test:e2e": "node e2e/task-list.e2e.mjs && node e2e/task-complete.e2e.mjs && node e2e/quick-capture.e2e.mjs && node e2e/project-context.e2e.mjs && node e2e/sign-out.e2e.mjs && node e2e/forecast.e2e.mjs",
     "storybook:sweep": "node scripts/storybook-theme-sweep.mjs",
     "storybook:sweep:overlays": "node scripts/storybook-overlay-sweep.mjs",
-    "validate:migrations": "node scripts/validate-migrations.mjs"
+    "validate:migrations": "node scripts/validate-migrations.mjs",
+    "validate-tokens": "npx ts-node --project tsconfig.scripts.json scripts/validate-token-references.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
@@ -88,6 +89,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "drizzle-zod": "^0.8.3",
+    "eslint-plugin-tailwindcss": "^3.18.3",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "lowlight": "^3.3.0",

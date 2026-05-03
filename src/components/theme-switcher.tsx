@@ -22,7 +22,7 @@ export function ThemeSwitcher(): React.ReactElement {
       role="radiogroup"
       aria-label="Theme"
       className={cn(
-        "inline-flex items-stretch gap-px rounded-md border border-border-subtle bg-surface-sunken p-0.5",
+        "inline-flex items-stretch rounded-md border border-border-subtle bg-surface-sunken p-0.5",
       )}
     >
       {OPTIONS.map(({ value, label, Icon }) => {
@@ -36,13 +36,14 @@ export function ThemeSwitcher(): React.ReactElement {
             aria-label={label}
             onClick={() => setTheme(value)}
             className={cn(
-              "inline-flex h-22 items-center gap-1.5 rounded-sm px-2 text-xs font-medium transition-colors duration-fast ease-standard",
+              "inline-flex h-7 items-center gap-1.5 rounded-sm px-2.5 text-xs font-medium transition-colors duration-fast ease-standard",
+              "focus-visible:focus-ring",
               selected
                 ? "bg-surface-raised text-text-primary shadow-1"
                 : "text-text-secondary hover:text-text-primary",
             )}
           >
-            <Icon size={12} aria-hidden />
+            <Icon size={14} aria-hidden />
             <span>{label}</span>
           </button>
         );

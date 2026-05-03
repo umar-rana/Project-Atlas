@@ -216,7 +216,7 @@ export function ReferencePicker({
     return (
       <div
         style={{ top: position.top, left: position.left }}
-        className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg p-3 text-sm text-muted-foreground min-w-[200px]"
+        className="fixed z-overlay rounded-lg border border-border-default bg-surface-raised p-3 text-sm text-text-tertiary shadow-2 min-w-[200px]"
       >
         No {TRIGGER_LABELS[trigger].toLowerCase()} found
       </div>
@@ -226,9 +226,9 @@ export function ReferencePicker({
   return (
     <div
       style={{ top: position.top, left: position.left }}
-      className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg overflow-hidden min-w-[260px] max-w-[380px]"
+      className="fixed z-overlay overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2 min-w-[260px] max-w-[380px]"
     >
-      <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b border-border bg-muted/50">
+      <div className="border-b border-border-default bg-surface-sunken px-3 py-1.5 text-xs font-medium text-text-tertiary">
         {TRIGGER_LABELS[trigger]}
         {query && <span className="ml-1 opacity-60">&ldquo;{query}&rdquo;</span>}
       </div>
@@ -236,7 +236,7 @@ export function ReferencePicker({
         {grouped.map(({ group, items, startIndex }) => (
           <div key={group}>
             {trigger === "note" && (
-              <div className="px-3 pt-2 pb-0.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-3 pt-2 pb-0.5 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
                 {group}
               </div>
             )}
@@ -248,19 +248,19 @@ export function ReferencePicker({
                   type="button"
                   data-idx={globalIdx}
                   className={cn(
-                    "w-full text-left px-3 py-2 flex items-start gap-2 hover:bg-accent transition-colors",
-                    globalIdx === activeIndex && "bg-accent",
+                    "w-full text-left px-3 py-2 flex items-start gap-2 transition-colors duration-fast hover:bg-surface-hover",
+                    globalIdx === activeIndex && "bg-surface-hover",
                   )}
                   onMouseEnter={() => setActiveIndex(globalIdx)}
                   onClick={() => handleSelect(globalIdx)}
                 >
-                  <span className="text-xs w-4 flex-shrink-0 mt-0.5 text-muted-foreground">
+                  <span className="text-xs w-4 flex-shrink-0 mt-0.5 text-text-tertiary">
                     {TYPE_ICONS[item.target_type] ?? "·"}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{item.display_text}</div>
                     {item.subtitle && (
-                      <div className="text-xs text-muted-foreground truncate">{item.subtitle}</div>
+                      <div className="text-xs text-text-tertiary truncate">{item.subtitle}</div>
                     )}
                   </div>
                 </button>
@@ -273,8 +273,8 @@ export function ReferencePicker({
             type="button"
             data-idx={results.length}
             className={cn(
-              "w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-accent transition-colors text-sm text-primary border-t border-border mt-1",
-              activeIndex === results.length && "bg-accent",
+              "w-full text-left px-3 py-2 flex items-center gap-2 transition-colors duration-fast hover:bg-surface-hover text-sm text-text-primary border-t border-border-default mt-1",
+              activeIndex === results.length && "bg-surface-hover",
             )}
             onMouseEnter={() => setActiveIndex(results.length)}
             onClick={() => handleSelect(results.length)}

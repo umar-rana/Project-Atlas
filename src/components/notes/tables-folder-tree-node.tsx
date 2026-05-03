@@ -130,7 +130,7 @@ export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Pro
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
+                className="text-accent-danger focus:text-accent-danger"
                 onClick={() => {
                   if (confirm(`Delete folder "${folder.name}" and all its tables?`)) {
                     deleteFolder.mutate({ id: folder.id });
