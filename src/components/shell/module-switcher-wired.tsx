@@ -18,6 +18,7 @@ import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 import { useShellStore } from "@/lib/shell/store";
+import { getUnreadCount, CHANGELOG_LS_KEY } from "@/lib/help/changelog";
 
 const MODULES = [
   { id: "tasks",     label: "Tasks",     icon: CheckSquare,   href: "/tasks",     shortcut: ["⌘", "1"] },
@@ -48,6 +49,21 @@ export function ModuleSwitcherWired(): React.ReactElement {
   const active = getModuleId(pathname);
   const helpOpen = useShellStore((s) => s.helpOpen);
   const setHelpOpen = useShellStore((s) => s.setHelpOpen);
+  const [changelogUnread, setChangelogUnread] = React.useState(0);
+
+  React.useEffect(() => {
+    setChangelogUnread(getUnreadCount());
+  }, [helpOpen]);
+
+  React.useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === CHANGELOG_LS_KEY) {
+        setChangelogUnread(getUnreadCount());
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   React.useEffect(() => {
     const handle = (e: KeyboardEvent) => {
@@ -113,6 +129,12 @@ export function ModuleSwitcherWired(): React.ReactElement {
           )}
         >
           <CircleHelp size={16} aria-hidden />
+          {!helpOpen && changelogUnread > 0 && (
+            <span
+              aria-label={`${changelogUnread} unread changelog entries`}
+              className="absolute right-1 top-1 size-2 rounded-full bg-accent-primary"
+            />
+          )}
         </button>
       </Hint>
     </>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, Sparkles, Megaphone } from "lucide-react";
 import { HELP_SECTIONS } from "@/lib/help/docs";
 import { cn } from "@/lib/utils";
 import { HelpSearch, type HelpSearchHandle } from "./help-search";
@@ -10,18 +10,24 @@ interface HelpSidebarProps {
   activeSectionId: string | null;
   activeArticleId: string | null;
   showAI: boolean;
+  showChangelog: boolean;
+  changelogUnread: number;
   searchRef: React.RefObject<HelpSearchHandle | null>;
   onNavigate: (sectionId: string, articleId: string) => void;
   onAskAI: () => void;
+  onChangelog: () => void;
 }
 
 export function HelpSidebar({
   activeSectionId,
   activeArticleId,
   showAI,
+  showChangelog,
+  changelogUnread,
   searchRef,
   onNavigate,
   onAskAI,
+  onChangelog,
 }: HelpSidebarProps): React.ReactElement {
   const [collapsed, setCollapsed] = React.useState<Record<string, boolean>>({});
 
@@ -98,6 +104,24 @@ export function HelpSidebar({
       </nav>
 
       <div className="flex flex-col gap-2 border-t border-border-subtle p-3">
+        <button
+          type="button"
+          onClick={onChangelog}
+          className={cn(
+            "relative flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 font-ui text-xs font-medium transition-colors",
+            showChangelog
+              ? "bg-accent-primary text-white"
+              : "bg-surface-hover text-text-primary hover:bg-accent-primary-subtle hover:text-accent-primary",
+          )}
+        >
+          <Megaphone size={12} aria-hidden />
+          What&apos;s New
+          {!showChangelog && changelogUnread > 0 && (
+            <span className="ml-auto flex size-4 items-center justify-center rounded-full bg-accent-primary font-mono text-2xs font-bold text-white">
+              {changelogUnread > 9 ? "9+" : changelogUnread}
+            </span>
+          )}
+        </button>
         <button
           type="button"
           onClick={onAskAI}
