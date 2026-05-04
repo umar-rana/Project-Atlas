@@ -207,6 +207,8 @@ export const tasksRouter = router({
       if (input.perspective === "inbox") {
         where.project_id = null;
         where.parent_id = null;
+        where.is_someday = false;
+        where.delegated_to_text = null;
       } else if (input.perspective === "today") {
         where.AND = [
           notDeferred,
@@ -350,13 +352,15 @@ export const tasksRouter = router({
         OR: [{ defer_date: null }, { defer_date: { lte: nowUtc } }],
       };
 
-      const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash] = await Promise.all([
+      const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor] = await Promise.all([
         db.task.count({
           where: {
             user_id: ctx.user.id,
             status: "active",
             project_id: null,
             parent_id: null,
+            is_someday: false,
+            delegated_to_text: null,
           },
         }),
         db.capture.count({
@@ -402,9 +406,25 @@ export const tasksRouter = router({
             NOT: { deleted_at: null },
           }),
         }),
+        db.task.count({
+          where: {
+            user_id: ctx.user.id,
+            is_someday: true,
+            status: "active",
+            deleted_at: null,
+          },
+        }),
+        db.task.count({
+          where: {
+            user_id: ctx.user.id,
+            delegated_to_text: { not: null },
+            status: "active",
+            deleted_at: null,
+          },
+        }),
       ]);
 
-      return { inbox: inboxTasks + inboxCaptures, today, tomorrow, flagged, trash };
+      return { inbox: inboxTasks + inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor };
     }),
 
   countDeferred: protectedProcedure
@@ -1744,6 +1764,174 @@ export const tasksRouter = router({
   //   moveToInbox  – clears project_id/parent_id, tasks appear in inbox.
   //   createDefaultProjects – creates one recovery project per folder group
   //                           and assigns orphaned tasks to it.
+  // ── GTD Perspectives ─────────────────────────────────────────────────
+
+  someday: protectedProcedure.query(async ({ ctx }) => {
+    const tasks = await db.task.findMany({
+      where: {
+        user_id: ctx.user.id,
+        is_someday: true,
+        status: "active",
+        deleted_at: null,
+      },
+      orderBy: [
+        { someday_review_date: { sort: "asc", nulls: "last" } },
+        { created_at: "asc" },
+      ],
+      select: {
+        id: true,
+        title: true,
+        notes: true,
+        is_someday: true,
+        someday_review_date: true,
+        created_at: true,
+        tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+        contexts: { select: { context: { select: { id: true, name: true } } } },
+        project: { select: { id: true, title: true, color: true } },
+      },
+    });
+    return tasks;
+  }),
+
+  waitingFor: protectedProcedure.query(async ({ ctx }) => {
+    const tasks = await db.task.findMany({
+      where: {
+        user_id: ctx.user.id,
+        delegated_to_text: { not: null },
+        status: "active",
+        deleted_at: null,
+      },
+      orderBy: [
+        { delegated_to_text: "asc" },
+        { follow_up_date: { sort: "asc", nulls: "last" } },
+      ],
+      select: {
+        id: true,
+        title: true,
+        notes: true,
+        delegated_to_text: true,
+        follow_up_date: true,
+        created_at: true,
+        tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+        contexts: { select: { context: { select: { id: true, name: true } } } },
+        project: { select: { id: true, title: true, color: true } },
+      },
+    });
+    return tasks;
+  }),
+
+  promoteFromSomeday: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, is_someday: true },
+        select: { id: true, title: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.task.update({
+        where: { id: input.id },
+        data: { is_someday: false, someday_review_date: null },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: input.id,
+        action: "task_promoted_from_someday",
+        meta: { title: task.title },
+      });
+
+      return { ok: true };
+    }),
+
+  markReceived: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, delegated_to_text: { not: null } },
+        select: { id: true, title: true, delegated_to_text: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const now = new Date();
+      await db.task.update({
+        where: { id: input.id },
+        data: {
+          delegated_to_text: null,
+          delegated_to_person_id: null,
+          follow_up_date: null,
+          status: "completed",
+          completed_at: now,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: input.id,
+        action: "task_received",
+        meta: { title: task.title, delegated_to: task.delegated_to_text },
+      });
+
+      return { ok: true };
+    }),
+
+  recordFollowUp: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), follow_up_date: z.string().datetime() }))
+    .mutation(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, delegated_to_text: { not: null } },
+        select: { id: true, title: true, delegated_to_text: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.task.update({
+        where: { id: input.id },
+        data: { follow_up_date: new Date(input.follow_up_date) },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: input.id,
+        action: "task_follow_up_recorded",
+        meta: { title: task.title, follow_up_date: input.follow_up_date },
+      });
+
+      return { ok: true };
+    }),
+
+  convertToActive: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const task = await db.task.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, delegated_to_text: { not: null } },
+        select: { id: true, title: true, delegated_to_text: true },
+      });
+      if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.task.update({
+        where: { id: input.id },
+        data: {
+          delegated_to_text: null,
+          delegated_to_person_id: null,
+          follow_up_date: null,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: input.id,
+        action: "task_converted_to_active",
+        meta: { title: task.title },
+      });
+
+      return { ok: true };
+    }),
+
+  // ── Fix hierarchy issues ──────────────────────────────────────────────
   fixHierarchyIssues: protectedProcedure
     .input(
       z.object({

@@ -218,7 +218,7 @@ function TaskListItemImpl({
       }}
       onClick={(e) => {
         if (e.shiftKey || e.metaKey || e.ctrlKey) {
-          if (!isCapture) onMultiToggle(task, e);
+          onMultiToggle(task, e);
         } else {
           onSelect(task, e);
         }
@@ -249,8 +249,22 @@ function TaskListItemImpl({
         <GripVertical size={12} aria-hidden />
       </span>
       {isCapture ? (
-        <span className="shrink-0 rounded-full border border-accent-info/40 bg-accent-info-muted px-1.5 py-px font-ui text-2xs font-medium text-accent-info">
-          New
+        <span
+          role="checkbox"
+          aria-checked={isMultiSelected}
+          aria-label="Select capture"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMultiToggle(task, e);
+          }}
+          className={cn(
+            "shrink-0 cursor-pointer rounded-full border px-1.5 py-px font-ui text-2xs font-medium transition-colors",
+            isMultiSelected
+              ? "border-accent-primary bg-accent-primary text-text-on-accent"
+              : "border-accent-info/40 bg-accent-info-muted text-accent-info hover:border-accent-primary/60 hover:bg-accent-primary/10",
+          )}
+        >
+          {isMultiSelected ? "✓" : "New"}
         </span>
       ) : (
         <>

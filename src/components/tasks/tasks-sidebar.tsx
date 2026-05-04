@@ -16,6 +16,8 @@ import {
   Sunrise,
   ChevronRight,
   ChevronDown,
+  Archive,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
@@ -422,6 +424,20 @@ export function TasksSidebar(): React.ReactElement {
         icon={<RefreshCw size={14} />}
         label="Review"
         badge={reviewCount.data?.count}
+      />
+      <NavRow
+        href="/tasks/someday"
+        active={pathname === "/tasks/someday"}
+        icon={<Archive size={14} />}
+        label="Someday / Maybe"
+        badge={counts.data?.someday}
+      />
+      <NavRow
+        href="/tasks/waiting-for"
+        active={pathname === "/tasks/waiting-for"}
+        icon={<Clock size={14} />}
+        label="Waiting For"
+        badge={counts.data?.waitingFor}
       />
 
       <HierarchyAuditBanner />

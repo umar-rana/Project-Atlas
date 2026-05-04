@@ -1178,6 +1178,13 @@ export const captureRouter = router({
         action: "capture_processed",
         meta: { disposition: "someday", task_id: taskId },
       }).catch((err: unknown) => log.warn({ err }, "processToSomeday audit log failed"));
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: taskId,
+        action: "task_marked_someday",
+        meta: { from_capture: input.capture_id, review_date: input.someday_review_date ?? null },
+      }).catch((err: unknown) => log.warn({ err }, "task_marked_someday audit log failed"));
 
       return { taskId };
     }),
@@ -1227,6 +1234,13 @@ export const captureRouter = router({
         action: "capture_processed",
         meta: { disposition: "waiting_for", task_id: taskId, delegated_to: input.delegated_to_text },
       }).catch((err: unknown) => log.warn({ err }, "processToWaitingFor audit log failed"));
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Task",
+        entity_id: taskId,
+        action: "task_delegated",
+        meta: { from_capture: input.capture_id, delegated_to: input.delegated_to_text ?? null, follow_up_date: input.follow_up_date ?? null },
+      }).catch((err: unknown) => log.warn({ err }, "task_delegated audit log failed"));
 
       return { taskId };
     }),
@@ -1303,6 +1317,118 @@ export const captureRouter = router({
       }).catch((err: unknown) => log.warn({ err }, "processToTrash audit log failed"));
 
       return { ok: true };
+    }),
+
+  bulkProcess: protectedProcedure
+    .input(
+      z.object({
+        capture_ids: z.array(z.string().uuid()).min(1).max(100),
+        disposition: z.enum(["task", "note", "someday", "trash"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const captures = await db.capture.findMany({
+        where: {
+          id: { in: input.capture_ids },
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
+        select: { id: true, raw_text: true, title: true },
+      });
+
+      if (captures.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "No processable captures found" });
+      }
+
+      const now = new Date();
+      const processedIds: string[] = [];
+
+      for (const capture of captures) {
+        const displayTitle = (capture.title ?? capture.raw_text ?? "(untitled)").slice(0, 500);
+        let processedToType: string;
+        let processedToId: string | null = null;
+
+        if (input.disposition === "task") {
+          const taskId = newId();
+          await db.$transaction([
+            db.task.create({
+              data: {
+                id: taskId,
+                user_id: ctx.user.id,
+                title: displayTitle,
+                status: "active",
+              },
+            }),
+            db.capture.update({
+              where: { id: capture.id },
+              data: { state: "processed", processed_at: now, processed_to_type: "task", processed_to_id: taskId },
+            }),
+          ]);
+          processedToType = "task";
+          processedToId = taskId;
+        } else if (input.disposition === "note") {
+          const noteId = newId();
+          const bodyText = capture.raw_text ?? "";
+          await db.$transaction([
+            db.note.create({
+              data: {
+                id: noteId,
+                user_id: ctx.user.id,
+                title: displayTitle,
+                purpose: "note",
+                body_text: bodyText,
+                body_json: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }] }),
+                body_markdown: bodyText,
+              },
+            }),
+            db.capture.update({
+              where: { id: capture.id },
+              data: { state: "processed", processed_at: now, processed_to_type: "note", processed_to_id: noteId },
+            }),
+          ]);
+          processedToType = "note";
+          processedToId = noteId;
+        } else if (input.disposition === "someday") {
+          const taskId = newId();
+          await db.$transaction([
+            db.task.create({
+              data: {
+                id: taskId,
+                user_id: ctx.user.id,
+                title: displayTitle,
+                is_someday: true,
+                status: "active",
+              },
+            }),
+            db.capture.update({
+              where: { id: capture.id },
+              data: { state: "processed", processed_at: now, processed_to_type: "someday", processed_to_id: taskId },
+            }),
+          ]);
+          processedToType = "someday";
+          processedToId = taskId;
+        } else {
+          await db.capture.update({
+            where: { id: capture.id },
+            data: { state: "processed", processed_at: now, processed_to_type: "trashed", processed_to_id: null },
+          });
+          processedToType = "trashed";
+        }
+
+        processedIds.push(capture.id);
+
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "Capture",
+          entity_id: capture.id,
+          action: "capture_bulk_processed",
+          meta: { disposition: input.disposition, processed_to_type: processedToType, processed_to_id: processedToId, bulk: true },
+        }).catch((err: unknown) => log.warn({ err }, "bulkProcess audit log failed"));
+      }
+
+      return { ok: true, count: processedIds.length };
     }),
 
   undoLastProcessing: protectedProcedure

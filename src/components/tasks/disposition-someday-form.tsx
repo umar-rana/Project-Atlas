@@ -38,6 +38,12 @@ export function DispositionSomedayForm({
 }: DispositionSomedayFormProps): React.ReactElement {
   const utils = trpc.useUtils();
   const tags = trpc.tags.list.useQuery({ limit: 200 }, { staleTime: 60_000 });
+  const { data: rawUser } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
+  const tasksPrefs = (typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" && (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
+    ? (rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>
+    : {});
+  const somedayCadence = (tasksPrefs.gtd_someday_review_cadence as string | undefined) ?? "weekly";
+  const nextCycleDays = somedayCadence === "monthly" ? 30 : somedayCadence === "biweekly" ? 14 : 7;
 
   const [title, setTitle] = React.useState(proposal?.title ?? "");
   const [tagIds, setTagIds] = React.useState<string[]>([]);
@@ -58,7 +64,7 @@ export function DispositionSomedayForm({
 
   function getReviewDate(): string | undefined {
     if (reviewOption === "none") return undefined;
-    if (reviewOption === "next_cycle") return new Date(addDays(7)).toISOString();
+    if (reviewOption === "next_cycle") return new Date(addDays(nextCycleDays)).toISOString();
     if (reviewOption === "one_month") return new Date(addMonths(1)).toISOString();
     if (reviewOption === "three_months") return new Date(addMonths(3)).toISOString();
     if (reviewOption === "specific" && specificDate) return new Date(specificDate).toISOString();
@@ -91,7 +97,7 @@ export function DispositionSomedayForm({
       capture_id: captureId,
       title: defaultTitle,
       tag_ids: [],
-      someday_review_date: new Date(addDays(7)).toISOString(),
+      someday_review_date: new Date(addDays(nextCycleDays)).toISOString(),
     });
   }
 
@@ -107,7 +113,7 @@ export function DispositionSomedayForm({
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
 
   const REVIEW_OPTIONS: { value: ReviewOption; label: string }[] = [
-    { value: "next_cycle", label: "Next review cycle (~1 week)" },
+    { value: "next_cycle", label: `Next review cycle (~${nextCycleDays === 30 ? "1 month" : nextCycleDays === 14 ? "2 weeks" : "1 week"})` },
     { value: "one_month", label: "In a month" },
     { value: "three_months", label: "In three months" },
     { value: "specific", label: "Specific date" },

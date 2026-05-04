@@ -61,6 +61,9 @@ export const userRouter = router({
         email_filter_calendar: z.boolean().optional(),
         email_blocklist: z.union([z.string(), z.array(z.string())]).optional(),
         ai_budget_usd: z.number().positive().nullable().optional(),
+        gtd_someday_review_cadence: z.enum(["weekly", "biweekly", "monthly"]).optional(),
+        gtd_waiting_for_default_window: z.enum(["1w", "2w", "1m"]).optional(),
+        gtd_two_minute_reminder: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -71,6 +74,9 @@ export const userRouter = router({
         email_filter_auto_replies,
         email_filter_calendar,
         email_blocklist,
+        gtd_someday_review_cadence,
+        gtd_waiting_for_default_window,
+        gtd_two_minute_reminder,
         ...coreFields
       } = input;
 
@@ -78,6 +84,9 @@ export const userRouter = router({
       if (tasks_default_review_interval_days !== undefined) tasksPrefsUpdate.default_review_interval_days = tasks_default_review_interval_days;
       if (tasks_default_forecast_days !== undefined) tasksPrefsUpdate.default_forecast_days = parseInt(tasks_default_forecast_days, 10);
       if (tasks_default_sequential !== undefined) tasksPrefsUpdate.default_sequential = tasks_default_sequential;
+      if (gtd_someday_review_cadence !== undefined) tasksPrefsUpdate.gtd_someday_review_cadence = gtd_someday_review_cadence;
+      if (gtd_waiting_for_default_window !== undefined) tasksPrefsUpdate.gtd_waiting_for_default_window = gtd_waiting_for_default_window;
+      if (gtd_two_minute_reminder !== undefined) tasksPrefsUpdate.gtd_two_minute_reminder = gtd_two_minute_reminder;
       if (email_filter_auto_replies !== undefined) tasksPrefsUpdate.email_filter_auto_replies = email_filter_auto_replies;
       if (email_filter_calendar !== undefined) tasksPrefsUpdate.email_filter_calendar = email_filter_calendar;
       if (email_blocklist !== undefined) {

@@ -73,6 +73,11 @@ function ProcessingModeInner({
   onClose: () => void;
 }): React.ReactElement {
   const utils = trpc.useUtils();
+  const { data: rawUser } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
+  const tasksPrefs = (typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" && (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
+    ? (rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>
+    : {});
+  const twoMinuteReminderEnabled = (tasksPrefs.gtd_two_minute_reminder as boolean | undefined) ?? true;
 
   const [currentCaptureId, setCurrentCaptureId] = React.useState<string | null>(() => {
     if (savedCaptureId && captures.some((c) => c.id === savedCaptureId)) {
@@ -317,6 +322,12 @@ function ProcessingModeInner({
               )}
             </div>
           ) : (
+            <div className="flex flex-col gap-3">
+              {twoMinuteReminderEnabled && (currentCapture.raw_text.length < 150 || /^(call|email|send|text|ask|buy|check|reply|remind|schedule|book|pay|confirm|tell)\b/i.test(currentCapture.raw_text.trim())) && (
+                <p className="rounded-md border border-accent-success/30 bg-accent-success/8 px-3 py-1.5 font-ui text-xs text-accent-success">
+                  2-minute rule: if this takes less than 2 minutes, do it now — then mark it done.
+                </p>
+              )}
             <div className="flex flex-wrap gap-2">
               {(
                 [
@@ -348,6 +359,7 @@ function ProcessingModeInner({
                   {label}
                 </button>
               ))}
+            </div>
             </div>
           )}
         </div>

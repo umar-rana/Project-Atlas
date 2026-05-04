@@ -22,15 +22,32 @@ export function DispositionWaitingForForm({
   onCancel,
 }: DispositionWaitingForFormProps): React.ReactElement {
   const utils = trpc.useUtils();
+  const { data: rawUser } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
+  const tasksPrefs = (typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" && (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
+    ? (rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>
+    : {});
+  const waitingForWindow = (tasksPrefs.gtd_waiting_for_default_window as string | undefined) ?? "1w";
+  const defaultFollowUpDays = waitingForWindow === "1m" ? 30 : waitingForWindow === "2w" ? 14 : 7;
+
+  function defaultFollowUpDateString(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + defaultFollowUpDays);
+    return d.toISOString().split("T")[0] ?? "";
+  }
 
   const [title, setTitle] = React.useState(proposal?.title ?? "");
   const [delegatedTo, setDelegatedTo] = React.useState("");
-  const [followUpDate, setFollowUpDate] = React.useState("");
+  const [followUpDate, setFollowUpDate] = React.useState(() => defaultFollowUpDateString());
   const [notes, setNotes] = React.useState("");
 
   React.useEffect(() => {
     if (proposal?.title) setTitle(proposal.title);
   }, [proposal]);
+
+  React.useEffect(() => {
+    setFollowUpDate(defaultFollowUpDateString());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultFollowUpDays]);
 
   const mut = trpc.capture.processToWaitingFor.useMutation({
     onSuccess: () => {

@@ -8,6 +8,7 @@ import { useShellStore } from "@/lib/shell/store";
 import { TaskListItem } from "./task-list-item";
 import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
+import { InboxBulkCaptureBar } from "./inbox-bulk-capture-bar";
 import { EmptyState } from "@/components/composed/empty-state";
 import { InboxWelcomeBanner } from "./inbox-welcome-banner";
 import { MigrationSummaryModal } from "./migration-summary-modal";
@@ -754,7 +755,16 @@ export function TaskList({
         </div>
       )}
 
-      <BulkActionBar />
+      {perspective === "inbox" ? (
+        <InboxBulkCaptureBar
+          captureIds={[...selectedTaskIds].filter((id) =>
+            tasks.some((t) => t.id === id && t.entity_type === "capture"),
+          )}
+          onClear={clearSelection}
+        />
+      ) : (
+        <BulkActionBar />
+      )}
     </div>
   );
 }
