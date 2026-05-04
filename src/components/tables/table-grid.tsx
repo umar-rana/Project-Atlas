@@ -79,7 +79,11 @@ export function TableGrid({
   const [renameDraft, setRenameDraft] = React.useState("");
   const [draggingRowId, setDraggingRowId] = React.useState<string | null>(null);
   const [dragOverRowId, setDragOverRowId] = React.useState<string | null>(null);
+  const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(
+    () => Object.fromEntries(columns.map((c) => [c.id, c.width || 160])),
+  );
   const gridRef = React.useRef<HTMLDivElement>(null);
+  const resizeRef = React.useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -110,9 +114,17 @@ export function TableGrid({
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore -- TS2589: tRPC type inference depth; safe at runtime
   const updateColumn = trpc.tables.updateColumn.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-  });
+    onError: (_err: unknown, vars: { id: string; width?: number }) => {
+      if (vars.width !== undefined) {
+        const col = columns.find((c) => c.id === vars.id);
+        if (col) setColumnWidths((prev) => ({ ...prev, [vars.id]: col.width || 160 }));
+      }
+    },
+  }) as { mutate: (args: { id: string; name?: string; config?: Record<string, unknown>; aggregation?: string | null; width?: number }) => void; isPending: boolean };
 
   const deleteColumn = trpc.tables.deleteColumn.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
@@ -121,6 +133,62 @@ export function TableGrid({
   const reorderColumns = trpc.tables.reorderColumns.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
   });
+
+  React.useEffect(() => {
+    setColumnWidths((prev) => {
+      const next = { ...prev };
+      for (const col of columns) {
+        if (resizeRef.current?.colId === col.id) continue;
+        next[col.id] = col.width || 160;
+      }
+      return next;
+    });
+  }, [columns]);
+
+  React.useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      if (!resizeRef.current) return;
+      const { colId, startX, startWidth } = resizeRef.current;
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(60, Math.min(800, startWidth + delta));
+      setColumnWidths((prev) => ({ ...prev, [colId]: newWidth }));
+    }
+
+    function handleMouseUp(e: MouseEvent) {
+      if (!resizeRef.current) return;
+      const { colId, startX, startWidth } = resizeRef.current;
+      const delta = e.clientX - startX;
+      const newWidth = Math.max(60, Math.min(800, Math.round(startWidth + delta)));
+      resizeRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      updateColumn.mutate({ id: colId, width: newWidth });
+    }
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      if (resizeRef.current) {
+        resizeRef.current = null;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+  }, []);
+
+  function handleResizeMouseDown(e: React.MouseEvent, colId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeRef.current = {
+      colId,
+      startX: e.clientX,
+      startWidth: columnWidths[colId] ?? 160,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }
 
   const visibleRows = React.useMemo(() => {
     const filtered = filterRows(rows, filter, columns);
@@ -335,7 +403,7 @@ export function TableGrid({
         <colgroup>
           <col style={{ width: 36 }} />
           {columns.map((col) => (
-            <col key={col.id} style={{ width: col.width || 160 }} />
+            <col key={col.id} style={{ width: columnWidths[col.id] ?? col.width ?? 160 }} />
           ))}
           <col style={{ width: 120 }} />
         </colgroup>
@@ -347,7 +415,7 @@ export function TableGrid({
             {columns.map((col, idx) => (
               <th
                 key={col.id}
-                className="border-b-2 border-r border-border-default bg-surface-sunken"
+                className="group/th relative border-b-2 border-r border-border-default bg-surface-sunken"
               >
                 <div className="group flex h-full items-center gap-1 px-2">
                   {renamingCol === col.id ? (
@@ -440,6 +508,10 @@ export function TableGrid({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                <div
+                  onMouseDown={(e) => handleResizeMouseDown(e, col.id)}
+                  className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize opacity-0 transition-opacity hover:opacity-100 hover:bg-accent-primary group-hover/th:opacity-40"
+                />
               </th>
             ))}
             <th className="border-b-2 border-border-default bg-surface-sunken">
