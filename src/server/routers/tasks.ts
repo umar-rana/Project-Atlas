@@ -350,13 +350,21 @@ export const tasksRouter = router({
         OR: [{ defer_date: null }, { defer_date: { lte: nowUtc } }],
       };
 
-      const [inbox, today, tomorrow, flagged, trash] = await Promise.all([
+      const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash] = await Promise.all([
         db.task.count({
           where: {
             user_id: ctx.user.id,
             status: "active",
             project_id: null,
             parent_id: null,
+          },
+        }),
+        db.capture.count({
+          where: {
+            user_id: ctx.user.id,
+            state: { in: ["raw", "proposed"] },
+            processed_at: null,
+            deleted_at: null,
           },
         }),
         db.task.count({
@@ -396,7 +404,7 @@ export const tasksRouter = router({
         }),
       ]);
 
-      return { inbox, today, tomorrow, flagged, trash };
+      return { inbox: inboxTasks + inboxCaptures, today, tomorrow, flagged, trash };
     }),
 
   countDeferred: protectedProcedure

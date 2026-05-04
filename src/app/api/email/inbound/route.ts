@@ -332,7 +332,7 @@ export async function POST(req: NextRequest) {
     attachments: emailAttachments,
   });
 
-  let taskId: string | null = null;
+  let inboxCaptureId: string | null = null;
   let processingError: string | null = null;
 
   try {
@@ -341,7 +341,7 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       source: "email",
     });
-    taskId = result.taskId;
+    inboxCaptureId = result.captureId;
   } catch (err) {
     log.error({ err, captureId, userId: user.id }, "Email capture processing failed");
     processingError = err instanceof Error ? err.message : "Unknown error";
@@ -356,7 +356,7 @@ export async function POST(req: NextRequest) {
   }
 
   let uploadedCount = 0;
-  if (emailAttachments.length > 0 && taskId) {
+  if (emailAttachments.length > 0 && inboxCaptureId) {
     for (const att of emailAttachments.slice(0, 10)) {
       const attSizeBytes = att.content.byteLength;
       if (attSizeBytes > MAX_FILE_SIZE_BYTES) {
@@ -374,7 +374,8 @@ export async function POST(req: NextRequest) {
           filename: att.filename,
           contentType: att.contentType,
           data: att.content,
-          taskId,
+          parentType: "Capture",
+          parentId: inboxCaptureId,
         });
         uploadedCount++;
       } catch (err) {
@@ -387,10 +388,9 @@ export async function POST(req: NextRequest) {
     where: { id: captureId },
     data: {
       status: "processed",
-      task_id: taskId ?? undefined,
     },
   });
 
-  log.info({ captureId, taskId, userId: user.id, attachments: uploadedCount }, "Email capture processed");
-  return NextResponse.json({ ok: true, status: "processed", taskId });
+  log.info({ captureId, inboxCaptureId, userId: user.id, attachments: uploadedCount }, "Email capture processed into Capture");
+  return NextResponse.json({ ok: true, status: "processed", captureId: inboxCaptureId });
 }

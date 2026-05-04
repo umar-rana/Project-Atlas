@@ -6,6 +6,13 @@ import { z } from "zod";
 import { type Prisma } from "@prisma/client";
 import { captureAndCreate, previewParse } from "@/core/capture/service";
 import { logActivity } from "@/core/audit";
+import {
+  runInboxMigrationDryRun,
+  runInboxMigrationForUser,
+  saveMigrationSummaryForUser,
+  readAndClearMigrationSummary,
+  dismissMigrationSummary,
+} from "@/core/capture/inbox-migration";
 
 const log = createLogger({ module: "capture-router" });
 
@@ -29,7 +36,7 @@ export const captureRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { taskId, basic_parse } = await captureAndCreate({
+      const { captureId, basic_parse } = await captureAndCreate({
         rawText: input.raw_text,
         userId: ctx.user.id,
         source: input.source,
@@ -38,7 +45,7 @@ export const captureRouter = router({
         tagIdOverrides: input.tag_id_overrides,
         dueDateOverride: input.due_date_override ? new Date(input.due_date_override) : undefined,
       });
-      return { taskId, basic_parse };
+      return { captureId, basic_parse };
     }),
 
   commitReview: protectedProcedure
@@ -785,6 +792,89 @@ export const captureRouter = router({
         data: { deleted_at: new Date() },
       });
       return { ok: true };
+    }),
+
+  // ── Inbox Migration procedures ───────────────────────────────────────────
+
+  runInboxMigration: protectedProcedure
+    .input(
+      z.object({
+        dry_run: z.boolean().default(true),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.dry_run) {
+        const result = await runInboxMigrationDryRun([ctx.user.id]);
+        const userCounts = result.byUser[ctx.user.id] ?? { categoryA: 0, categoryB: 0, total: 0 };
+        return {
+          dry_run: true as const,
+          categoryA: userCounts.categoryA,
+          categoryB: userCounts.categoryB,
+          total: userCounts.total,
+          converted: undefined as number | undefined,
+          kept: undefined as number | undefined,
+          errors: undefined as number | undefined,
+        };
+      }
+
+      const result = await runInboxMigrationForUser(ctx.user.id);
+      await saveMigrationSummaryForUser(ctx.user.id, {
+        converted: result.converted,
+        kept: result.kept,
+        errors: result.errors,
+        ranAt: new Date().toISOString(),
+      });
+      return {
+        dry_run: false as const,
+        converted: result.converted,
+        kept: result.kept,
+        errors: result.errors,
+        categoryA: undefined as number | undefined,
+        categoryB: undefined as number | undefined,
+        total: undefined as number | undefined,
+      };
+    }),
+
+  getMigrationSummary: protectedProcedure
+    .query(async ({ ctx }) => {
+      return await readAndClearMigrationSummary(ctx.user.id);
+    }),
+
+  dismissMigrationSummary: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      await dismissMigrationSummary(ctx.user.id);
+      return { ok: true };
+    }),
+
+  listInbox: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(500).default(200),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const captures = await db.capture.findMany({
+        where: {
+          user_id: ctx.user.id,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+          deleted_at: null,
+        },
+        orderBy: { created_at: "desc" },
+        take: input.limit,
+        select: {
+          id: true,
+          raw_text: true,
+          title: true,
+          tags: true,
+          due_date: true,
+          state: true,
+          migration_source: true,
+          ai_parsed: true,
+          created_at: true,
+        },
+      });
+      return captures;
     }),
 });
 

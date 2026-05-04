@@ -67,6 +67,8 @@ function TaskListItemImpl({
   const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
 
+  const isCapture = task.entity_type === "capture";
+
   const [editing, setEditing] = React.useState(false);
   const [titleDraft, setTitleDraft] = React.useState(task.title);
   const [hovered, setHovered] = React.useState(false);
@@ -74,7 +76,7 @@ function TaskListItemImpl({
   const [fileDragOver, setFileDragOver] = React.useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = React.useState(false);
 
-  const showQuickActions = (hovered || anyPopoverOpen || !!quickActionsFocused) && !inTrash;
+  const showQuickActions = (hovered || anyPopoverOpen || !!quickActionsFocused) && !inTrash && !isCapture;
 
   React.useEffect(() => {
     setTitleDraft(task.title);
@@ -156,12 +158,14 @@ function TaskListItemImpl({
       role="row"
       aria-selected={selected || isMultiSelected}
       data-task-id={task.id}
-      draggable={!inTrash}
+      draggable={!inTrash && !isCapture}
       onDragStart={(e) => {
+        if (isCapture) { e.preventDefault(); return; }
         e.dataTransfer.setData("text/plain", task.id);
         onDragStart?.(task.id);
       }}
       onDragOver={(e) => {
+        if (isCapture) return;
         if (!inTrash && e.dataTransfer.types.includes("Files")) {
           e.preventDefault();
           e.dataTransfer.dropEffect = "copy";
@@ -172,11 +176,13 @@ function TaskListItemImpl({
         }
       }}
       onDragLeave={(e) => {
+        if (isCapture) return;
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
           setFileDragOver(false);
         }
       }}
       onDrop={async (e) => {
+        if (isCapture) return;
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
           e.preventDefault();
           e.stopPropagation();
@@ -206,12 +212,13 @@ function TaskListItemImpl({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onContextMenu={(e) => {
+        if (isCapture) return;
         e.preventDefault();
         setMenu({ x: e.clientX, y: e.clientY });
       }}
       onClick={(e) => {
         if (e.shiftKey || e.metaKey || e.ctrlKey) {
-          onMultiToggle(task, e);
+          if (!isCapture) onMultiToggle(task, e);
         } else {
           onSelect(task, e);
         }
@@ -241,30 +248,38 @@ function TaskListItemImpl({
       <span className="cursor-grab text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
         <GripVertical size={12} aria-hidden />
       </span>
-      <Checkbox
-        checked={isCompleted}
-        onCheckedChange={(v) => {
-          if (v) complete.mutate({ id: task.id });
-          else uncomplete.mutate({ id: task.id });
-        }}
-        onClick={(e) => e.stopPropagation()}
-        aria-label={isCompleted ? "Mark task incomplete" : "Mark task complete"}
-      />
-      <button
-        type="button"
-        aria-label={task.flagged ? "Unflag task" : "Flag task"}
-        aria-pressed={task.flagged}
-        onClick={(e) => {
-          e.stopPropagation();
-          update.mutate({ id: task.id, flagged: !task.flagged });
-        }}
-        className={cn(
-          "shrink-0 rounded-sm p-0.5 transition-colors",
-          task.flagged ? "text-accent-warning" : "text-text-tertiary opacity-0 group-hover:opacity-100 hover:text-text-secondary",
-        )}
-      >
-        <Flag size={12} fill={task.flagged ? "currentColor" : "none"} />
-      </button>
+      {isCapture ? (
+        <span className="shrink-0 rounded-full border border-accent-info/40 bg-accent-info-muted px-1.5 py-px font-ui text-2xs font-medium text-accent-info">
+          New
+        </span>
+      ) : (
+        <>
+          <Checkbox
+            checked={isCompleted}
+            onCheckedChange={(v) => {
+              if (v) complete.mutate({ id: task.id });
+              else uncomplete.mutate({ id: task.id });
+            }}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={isCompleted ? "Mark task incomplete" : "Mark task complete"}
+          />
+          <button
+            type="button"
+            aria-label={task.flagged ? "Unflag task" : "Flag task"}
+            aria-pressed={task.flagged}
+            onClick={(e) => {
+              e.stopPropagation();
+              update.mutate({ id: task.id, flagged: !task.flagged });
+            }}
+            className={cn(
+              "shrink-0 rounded-sm p-0.5 transition-colors",
+              task.flagged ? "text-accent-warning" : "text-text-tertiary opacity-0 group-hover:opacity-100 hover:text-text-secondary",
+            )}
+          >
+            <Flag size={12} fill={task.flagged ? "currentColor" : "none"} />
+          </button>
+        </>
+      )}
       <div className="min-w-0 flex-1">
         {editing ? (
           <input
@@ -289,7 +304,7 @@ function TaskListItemImpl({
             type="button"
             onDoubleClick={(e) => {
               e.stopPropagation();
-              if (!inTrash) setEditing(true);
+              if (!inTrash && !isCapture) setEditing(true);
             }}
             className={cn(
               "block w-full truncate text-left font-ui text-sm",
@@ -390,7 +405,7 @@ function TaskListItemImpl({
               {dueLabel(due, locale)}
             </span>
           ) : null}
-          {!inTrash && (
+          {!inTrash && !isCapture && (
             <RecurrenceQuickPopover
               taskId={task.id}
               hasRule={Boolean(task.recurrence_rule)}

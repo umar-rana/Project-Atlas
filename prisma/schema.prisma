@@ -213,14 +213,23 @@ model TagOnAttachment {
 // ─── Capture ─────────────────────────────────────────────────────────────────
 
 model Capture {
-  id           String    @id @db.Uuid
-  user_id      String    @db.Uuid
-  raw_text     String
-  title        String?
-  tags         String[]
-  due_date     DateTime? @db.Timestamptz
-  action_items String[]
-  ai_parsed    Boolean   @default(false)
+  id                String    @id @db.Uuid
+  user_id           String    @db.Uuid
+  raw_text          String
+  title             String?
+  tags              String[]
+  due_date          DateTime? @db.Timestamptz
+  action_items      String[]
+  ai_parsed         Boolean   @default(false)
+
+  // GTD Inbox Wave 1 fields
+  state             String    @default("raw") // raw | proposed | processed
+  processed_at      DateTime? @db.Timestamptz
+  processed_to_type String?   // "task" | "project" | "reference" | "someday" | "deleted"
+  processed_to_id   String?   @db.Uuid
+  migration_source  String?   // e.g. "inbox_migration_v1"
+  parser_proposal   Json?     // structured ParsedCapture output from parser
+
   deleted_at   DateTime? @db.Timestamptz
   created_at   DateTime  @default(now()) @db.Timestamptz
   updated_at   DateTime  @updatedAt @db.Timestamptz
@@ -229,6 +238,8 @@ model Capture {
 
   @@index([user_id])
   @@index([user_id, created_at])
+  @@index([user_id, state])
+  @@index([user_id, state, processed_at])
   @@index([deleted_at])
 }
 
@@ -382,6 +393,14 @@ model Task {
 
   search_vector String?  // kept in sync by task_search_vector_trigger (title || ' ' || notes)
 
+  // GTD Inbox Wave 1 fields
+  is_someday             Boolean   @default(false)
+  someday_review_date    DateTime? @db.Timestamptz
+  delegated_to_text      String?
+  delegated_to_person_id String?   @db.Uuid
+  follow_up_date         DateTime? @db.Timestamptz
+  migration_note         String?
+
   deleted_at  DateTime? @db.Timestamptz
   created_at  DateTime  @default(now()) @db.Timestamptz
   updated_at  DateTime  @updatedAt @db.Timestamptz
@@ -405,6 +424,8 @@ model Task {
   @@index([user_id, parent_id])
   @@index([project_id, position])
   @@index([recurrence_parent_id])
+  @@index([user_id, is_someday])
+  @@index([user_id, follow_up_date])
   @@index([deleted_at])
 }
 

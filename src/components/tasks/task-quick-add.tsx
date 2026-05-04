@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Plus } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
-import { useTasksStore } from "@/lib/tasks/store";
 import { toast } from "@/lib/toast";
 
 interface TaskQuickAddProps {
@@ -24,7 +23,6 @@ export function TaskQuickAdd({
   const [value, setValue] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
-  const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
 
   const tags = trpc.tags.list.useQuery({ limit: 500 }, { enabled: !!defaultTagName });
 
@@ -50,7 +48,7 @@ export function TaskQuickAdd({
     }
 
     try {
-      const result = await parseAndCreate.mutateAsync({
+      await parseAndCreate.mutateAsync({
         raw_text: txt,
         source: "quick_add",
         project_id_override: defaultProjectId ?? undefined,
@@ -60,9 +58,6 @@ export function TaskQuickAdd({
       });
 
       setValue("");
-      if (openInspector) {
-        setSelectedTaskId(result.taskId);
-      }
       inputRef.current?.focus();
     } catch (err) {
       toast.error((err as { message?: string })?.message ?? "Could not add task");

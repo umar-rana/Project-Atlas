@@ -10,6 +10,7 @@ import { TaskQuickAdd } from "./task-quick-add";
 import { BulkActionBar } from "./bulk-action-bar";
 import { EmptyState } from "@/components/composed/empty-state";
 import { InboxWelcomeBanner } from "./inbox-welcome-banner";
+import { MigrationSummaryModal } from "./migration-summary-modal";
 import { formatEstimatedTime, sumEstimatedMinutes } from "@/core/aggregation/time-format";
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
 
@@ -143,6 +144,11 @@ export interface TaskRow {
   is_blocked?: boolean;
   recurrence_rule?: string | null;
   recurrence_anchor?: string | null;
+  /** Discriminator — present and set to 'capture' for inbox Capture rows */
+  entity_type?: "task" | "capture";
+  /** State of the Capture (raw | proposed) — only present when entity_type === 'capture' */
+  capture_state?: string;
+  created_at?: Date | string;
 }
 
 interface TaskListProps {
@@ -202,7 +208,10 @@ export function TaskList({
   useMidnightRefresh(handleMidnight, isMidnightPerspective);
 
   const moveMut = trpc.tasks.move.useMutation({
-    onSettled: () => utils.tasks.list.invalidate(),
+    onSettled: () => {
+      utils.tasks.list.invalidate();
+      utils.capture.listInbox.invalidate();
+    },
   });
 
   const selectedTaskId = useTasksStore((s) => s.selectedTaskId);
@@ -226,6 +235,20 @@ export function TaskList({
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+
+  const inboxCapturesQuery = trpc.capture.listInbox.useQuery(
+    { limit: 200 },
+    { enabled: perspective === "inbox", staleTime: 15_000 },
+  );
+
+  const migrationSummaryQuery = trpc.capture.getMigrationSummary.useQuery(undefined, {
+    enabled: perspective === "inbox",
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
+  const dismissMigration = trpc.capture.dismissMigrationSummary.useMutation();
+  const [migrationModalDismissed, setMigrationModalDismissed] = React.useState(false);
 
   const inboxHintsQuery = trpc.capture.inboxProjectHints.useQuery(undefined, {
     enabled: perspective === "inbox",
@@ -274,8 +297,41 @@ export function TaskList({
   }, [highlightId, query.data, query.isLoading, setSelectedTaskId]);
 
   const tasks = React.useMemo<TaskRow[]>(() => {
+    const rawList = (query.data as TaskRow[] | undefined) ?? [];
+
+    let list: TaskRow[];
+    if (perspective === "inbox") {
+      const captureRows: TaskRow[] = (inboxCapturesQuery.data ?? []).map((c) => ({
+        id: c.id,
+        title: c.title ?? c.raw_text ?? "(untitled capture)",
+        notes: null,
+        status: "active",
+        flagged: false,
+        project_id: null,
+        parent_id: null,
+        defer_date: null,
+        due_date: c.due_date ?? null,
+        estimated_minutes: null,
+        contexts: [],
+        tags: [],
+        project: null,
+        created_at: c.created_at,
+        entity_type: "capture" as const,
+        capture_state: c.state,
+      }));
+      const taskRows: TaskRow[] = rawList.map((t) => ({ ...t, entity_type: "task" as const }));
+      const combined = [...captureRows, ...taskRows];
+      combined.sort((a, b) => {
+        const ad = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bd = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bd - ad;
+      });
+      list = combined;
+    } else {
+      list = rawList;
+    }
+
     const now = new Date();
-    const list = (query.data as TaskRow[] | undefined) ?? [];
     const annotated = showDeferred && perspective === "project"
       ? list.map((t) => {
           const d = t.defer_date ? new Date(t.defer_date) : null;
@@ -297,7 +353,7 @@ export function TaskList({
       sorted.sort((a, b) => Number(b.flagged) - Number(a.flagged));
     }
     return sorted;
-  }, [query.data, sortBy, showDeferred, perspective]);
+  }, [query.data, inboxCapturesQuery.data, sortBy, showDeferred, perspective]);
   const dragId = React.useRef<string | null>(null);
   const dropTargetId = React.useRef<string | null>(null);
 
@@ -348,7 +404,7 @@ export function TaskList({
         }
       } else if (e.key === " " || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d")) {
         const t = currentTasks[currentFocusedIdx];
-        if (t) {
+        if (t && t.entity_type !== "capture") {
           e.preventDefault();
           if (t.status === "completed") {
             void utils.client.tasks.uncomplete.mutate({ id: t.id }).then(() => {
@@ -366,7 +422,7 @@ export function TaskList({
         }
       } else if (e.key.toLowerCase() === "f") {
         const t = currentTasks[currentFocusedIdx];
-        if (t) {
+        if (t && t.entity_type !== "capture") {
           e.preventDefault();
           void utils.client.tasks.update.mutate({ id: t.id, flagged: !t.flagged }).then(() => {
             utils.tasks.list.invalidate();
@@ -483,8 +539,22 @@ export function TaskList({
     return base;
   }
 
+  const showMigrationModal =
+    perspective === "inbox" &&
+    !migrationModalDismissed &&
+    !!migrationSummaryQuery.data;
+
   return (
     <div className="flex h-full flex-col">
+      {showMigrationModal && migrationSummaryQuery.data && (
+        <MigrationSummaryModal
+          summary={migrationSummaryQuery.data}
+          onClose={() => {
+            setMigrationModalDismissed(true);
+            dismissMigration.mutate();
+          }}
+        />
+      )}
       <header className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
         <div className="min-w-0">
           {title ? (

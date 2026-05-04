@@ -45,13 +45,12 @@ export function CaptureModal(): React.ReactElement {
 
   const preview = trpc.capture.preview.useMutation();
 
-  async function attachFilesToTask(taskId: string, files: File[]) {
+  async function attachFilesToCapture(captureId: string, files: File[]) {
     for (const file of files) {
       const form = new FormData();
       form.append("file", file);
-      form.append("task_id", taskId);
-      form.append("parent_type", "Task");
-      form.append("parent_id", taskId);
+      form.append("parent_type", "Capture");
+      form.append("parent_id", captureId);
       try {
         await fetch("/api/attachments/upload", { method: "POST", body: form });
       } catch { /* ignore */ }
@@ -65,8 +64,9 @@ export function CaptureModal(): React.ReactElement {
     onSuccess: async (data) => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
-      if (stagedFiles.length > 0 && data.taskId) {
-        await attachFilesToTask(data.taskId, stagedFiles);
+      utils.capture.listInbox.invalidate();
+      if (stagedFiles.length > 0 && data.captureId) {
+        await attachFilesToCapture(data.captureId, stagedFiles);
       }
       const message = data.basic_parse ? "Captured (basic parse)" : "Captured to Inbox";
       toast.success(message, {
