@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { TasksShell } from "@/components/tasks/tasks-shell";
 import { TaskList } from "@/components/tasks/task-list";
+import { ProcessInboxButton } from "@/components/tasks/process-inbox-button";
 
 export default function InboxPage() {
   const searchParams = useSearchParams();
@@ -17,6 +18,7 @@ export default function InboxPage() {
         emptyTitle="Inbox zero"
         emptyBody="Capture a task with ⌘⇧I or use the quick-add bar above."
         highlightId={taskId}
+        headerExtra={<ProcessInboxButton />}
       />
     </TasksShell>
   );

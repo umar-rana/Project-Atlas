@@ -871,10 +871,508 @@ export const captureRouter = router({
           state: true,
           migration_source: true,
           ai_parsed: true,
+          parser_proposal: true,
           created_at: true,
         },
       });
       return captures;
+    }),
+
+  // ── Processing mode disposition procedures ───────────────────────────────
+
+  processToTask: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        notes: z.string().max(50_000).nullable().optional(),
+        project_id: z.string().uuid().nullable().optional(),
+        context_ids: z.array(z.string().uuid()).default([]),
+        tag_ids: z.array(z.string().uuid()).default([]),
+        due_date: z.string().datetime().nullable().optional(),
+        defer_date: z.string().datetime().nullable().optional(),
+        estimated_minutes: z.number().int().min(0).nullable().optional(),
+        flagged: z.boolean().default(false),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true, state: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      if (input.project_id) {
+        const proj = await db.project.findFirst({
+          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!proj) throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
+      }
+      if (input.context_ids.length > 0) {
+        const count = await db.context.count({ where: { id: { in: input.context_ids }, user_id: ctx.user.id, deleted_at: null } });
+        if (count !== input.context_ids.length) throw new TRPCError({ code: "FORBIDDEN", message: "One or more contexts not found or not owned by user" });
+      }
+      if (input.tag_ids.length > 0) {
+        const count = await db.tag.count({ where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null } });
+        if (count !== input.tag_ids.length) throw new TRPCError({ code: "FORBIDDEN", message: "One or more tags not found or not owned by user" });
+      }
+
+      const taskId = newId();
+      const now = new Date();
+
+      await db.$transaction([
+        db.task.create({
+          data: {
+            id: taskId,
+            user_id: ctx.user.id,
+            title: input.title,
+            notes: input.notes ?? undefined,
+            project_id: input.project_id ?? undefined,
+            flagged: input.flagged,
+            due_date: input.due_date ? new Date(input.due_date) : undefined,
+            defer_date: input.defer_date ? new Date(input.defer_date) : undefined,
+            estimated_minutes: input.estimated_minutes ?? undefined,
+            status: "active",
+          },
+        }),
+        ...input.context_ids.map((ctxId) =>
+          db.contextOnTask.create({ data: { task_id: taskId, context_id: ctxId } }),
+        ),
+        ...input.tag_ids.map((tagId) =>
+          db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
+        ),
+        db.capture.update({
+          where: { id: input.capture_id },
+          data: {
+            state: "processed",
+            processed_at: now,
+            processed_to_type: "task",
+            processed_to_id: taskId,
+          },
+        }),
+      ]);
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "task", task_id: taskId },
+      }).catch((err: unknown) => log.warn({ err }, "processToTask audit log failed"));
+
+      return { taskId };
+    }),
+
+  processToNote: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        purpose: z.enum(["note", "meeting_note", "project_brief", "reading_note"]).default("note"),
+        project_id: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true, raw_text: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      if (input.project_id) {
+        const proj = await db.project.findFirst({
+          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!proj) throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
+      }
+
+      const noteId = newId();
+      const now = new Date();
+      const bodyText = capture.raw_text ?? "";
+
+      await db.$transaction([
+        db.note.create({
+          data: {
+            id: noteId,
+            user_id: ctx.user.id,
+            title: input.title,
+            purpose: input.purpose,
+            project_id: input.project_id ?? undefined,
+            body_text: bodyText,
+            body_json: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }] }),
+            body_markdown: bodyText,
+          },
+        }),
+        db.capture.update({
+          where: { id: input.capture_id },
+          data: {
+            state: "processed",
+            processed_at: now,
+            processed_to_type: "note",
+            processed_to_id: noteId,
+          },
+        }),
+      ]);
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "note", note_id: noteId, purpose: input.purpose },
+      }).catch((err: unknown) => log.warn({ err }, "processToNote audit log failed"));
+
+      return { noteId };
+    }),
+
+  processToProject: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+        existing_project_id: z.string().uuid().optional(),
+        new_project_name: z.string().min(1).max(200).optional(),
+        new_project_type: z.enum(["project", "area"]).default("project").optional(),
+        target_type: z.enum(["task", "note", "brief"]),
+        title: z.string().min(1).max(500),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true, raw_text: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      let projectId: string;
+      if (input.existing_project_id) {
+        const proj = await db.project.findFirst({
+          where: { id: input.existing_project_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!proj) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        projectId = proj.id;
+      } else if (input.new_project_name) {
+        const existing = await db.project.findFirst({
+          where: { user_id: ctx.user.id, title: input.new_project_name, deleted_at: null },
+          select: { id: true },
+        });
+        if (existing) {
+          projectId = existing.id;
+        } else {
+          const created = await db.project.create({
+            data: { id: newId(), user_id: ctx.user.id, title: input.new_project_name, type: input.new_project_type ?? "project" },
+          });
+          projectId = created.id;
+        }
+      } else {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Must provide existing_project_id or new_project_name" });
+      }
+
+      const now = new Date();
+      let entityId: string;
+
+      if (input.target_type === "task") {
+        entityId = newId();
+        await db.$transaction([
+          db.task.create({
+            data: {
+              id: entityId,
+              user_id: ctx.user.id,
+              title: input.title,
+              project_id: projectId,
+              status: "active",
+            },
+          }),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: { state: "processed", processed_at: now, processed_to_type: "project_task", processed_to_id: entityId },
+          }),
+        ]);
+      } else {
+        const purpose = input.target_type === "brief" ? "project_brief" : "note";
+        entityId = newId();
+        const bodyText = capture.raw_text ?? "";
+        await db.$transaction([
+          db.note.create({
+            data: {
+              id: entityId,
+              user_id: ctx.user.id,
+              title: input.title,
+              purpose,
+              project_id: projectId,
+              body_text: bodyText,
+              body_json: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }] }),
+              body_markdown: bodyText,
+            },
+          }),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: { state: "processed", processed_at: now, processed_to_type: "project_note", processed_to_id: entityId },
+          }),
+        ]);
+      }
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "project", project_id: projectId, target_type: input.target_type, entity_id: entityId },
+      }).catch((err: unknown) => log.warn({ err }, "processToProject audit log failed"));
+
+      return { projectId, entityId };
+    }),
+
+  processToSomeday: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        notes: z.string().max(50_000).nullable().optional(),
+        tag_ids: z.array(z.string().uuid()).default([]),
+        someday_review_date: z.string().datetime().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      if (input.tag_ids.length > 0) {
+        const count = await db.tag.count({ where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null } });
+        if (count !== input.tag_ids.length) throw new TRPCError({ code: "FORBIDDEN", message: "One or more tags not found or not owned by user" });
+      }
+
+      const taskId = newId();
+      const now = new Date();
+
+      await db.$transaction([
+        db.task.create({
+          data: {
+            id: taskId,
+            user_id: ctx.user.id,
+            title: input.title,
+            notes: input.notes ?? undefined,
+            is_someday: true,
+            someday_review_date: input.someday_review_date ? new Date(input.someday_review_date) : undefined,
+            status: "active",
+          },
+        }),
+        ...input.tag_ids.map((tagId) =>
+          db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
+        ),
+        db.capture.update({
+          where: { id: input.capture_id },
+          data: { state: "processed", processed_at: now, processed_to_type: "someday", processed_to_id: taskId },
+        }),
+      ]);
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "someday", task_id: taskId },
+      }).catch((err: unknown) => log.warn({ err }, "processToSomeday audit log failed"));
+
+      return { taskId };
+    }),
+
+  processToWaitingFor: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+        title: z.string().min(1).max(500),
+        delegated_to_text: z.string().max(500).optional(),
+        follow_up_date: z.string().datetime().nullable().optional(),
+        notes: z.string().max(50_000).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      const taskId = newId();
+      const now = new Date();
+
+      await db.$transaction([
+        db.task.create({
+          data: {
+            id: taskId,
+            user_id: ctx.user.id,
+            title: input.title,
+            notes: input.notes ?? undefined,
+            delegated_to_text: input.delegated_to_text ?? undefined,
+            follow_up_date: input.follow_up_date ? new Date(input.follow_up_date) : undefined,
+            status: "active",
+          },
+        }),
+        db.capture.update({
+          where: { id: input.capture_id },
+          data: { state: "processed", processed_at: now, processed_to_type: "waiting_for", processed_to_id: taskId },
+        }),
+      ]);
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "waiting_for", task_id: taskId, delegated_to: input.delegated_to_text },
+      }).catch((err: unknown) => log.warn({ err }, "processToWaitingFor audit log failed"));
+
+      return { taskId };
+    }),
+
+  processToTwoMinuteDone: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+        title: z.string().min(1).max(500),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      const taskId = newId();
+      const now = new Date();
+
+      await db.$transaction([
+        db.task.create({
+          data: {
+            id: taskId,
+            user_id: ctx.user.id,
+            title: input.title,
+            status: "completed",
+            completed_at: now,
+          },
+        }),
+        db.capture.update({
+          where: { id: input.capture_id },
+          data: { state: "processed", processed_at: now, processed_to_type: "two_minute_done", processed_to_id: taskId },
+        }),
+      ]);
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "two_minute_done", task_id: taskId, note: "completed via 2-minute rule" },
+      }).catch((err: unknown) => log.warn({ err }, "processToTwoMinuteDone audit log failed"));
+
+      return { taskId };
+    }),
+
+  processToTrash: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        select: { id: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+
+      const now = new Date();
+      await db.capture.update({
+        where: { id: input.capture_id },
+        data: { state: "processed", processed_at: now, processed_to_type: "trashed", processed_to_id: null },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_processed",
+        meta: { disposition: "trashed" },
+      }).catch((err: unknown) => log.warn({ err }, "processToTrash audit log failed"));
+
+      return { ok: true };
+    }),
+
+  undoLastProcessing: protectedProcedure
+    .input(
+      z.object({
+        capture_id: z.string().uuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const capture = await db.capture.findFirst({
+        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true, state: true, processed_at: true, processed_to_type: true, processed_to_id: true },
+      });
+      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found" });
+      if (capture.state !== "processed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Capture is not in processed state" });
+      }
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      if (!capture.processed_at || capture.processed_at < fiveMinutesAgo) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Undo window has expired (5 minutes)" });
+      }
+
+      const mostRecentProcessed = await db.capture.findFirst({
+        where: { user_id: ctx.user.id, state: "processed", deleted_at: null },
+        orderBy: { processed_at: "desc" },
+        select: { id: true },
+      });
+      if (!mostRecentProcessed || mostRecentProcessed.id !== input.capture_id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Can only undo the most recently processed capture" });
+      }
+
+      const ops: Promise<unknown>[] = [];
+
+      const entityType = capture.processed_to_type;
+      const entityId = capture.processed_to_id;
+
+      if (entityId && (entityType === "task" || entityType === "someday" || entityType === "waiting_for" || entityType === "two_minute_done" || entityType === "project_task")) {
+        ops.push(
+          db.task.updateMany({
+            where: { id: entityId, user_id: ctx.user.id },
+            data: { deleted_at: new Date() },
+          }),
+        );
+      } else if (entityId && (entityType === "note" || entityType === "project_note")) {
+        ops.push(
+          db.note.updateMany({
+            where: { id: entityId, user_id: ctx.user.id },
+            data: { deleted_at: new Date() },
+          }),
+        );
+      }
+
+      ops.push(
+        db.capture.update({
+          where: { id: input.capture_id },
+          data: { state: "proposed", processed_at: null, processed_to_type: null, processed_to_id: null },
+        }),
+      );
+
+      await Promise.all(ops);
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Capture",
+        entity_id: input.capture_id,
+        action: "capture_undo",
+        meta: { reverted_from: entityType, entity_id: entityId },
+      }).catch((err: unknown) => log.warn({ err }, "undoLastProcessing audit log failed"));
+
+      return { ok: true };
     }),
 });
 

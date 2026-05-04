@@ -184,6 +184,7 @@ export function TasksCommands(): null {
         { id: "t-quickact",  label: "Quick actions (focused row)",       group: "Task list", keys: ["."] },
         { id: "t-enter",     label: "Open inspector (focused row)",      group: "Task list", keys: ["↵"] },
         { id: "t-inspect",   label: "Open inspector (focused row)",      group: "Inspector", keys: ["cmd", "I"] },
+        { id: "t-process",   label: "Process Inbox",                     group: "Global",     keys: ["cmd", "shift", "P"] },
       ],
       [],
     ),

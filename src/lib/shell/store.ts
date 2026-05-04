@@ -11,12 +11,14 @@ interface ShellStore {
   inspectorOpen: boolean;
   inspectorPinned: boolean;
   helpOpen: boolean;
+  processingModeOpen: boolean;
   setCommandPaletteOpen: (v: boolean) => void;
   setShortcutsOverlayOpen: (v: boolean) => void;
   setCaptureModalOpen: (v: boolean) => void;
   setInspectorOpen: (v: boolean) => void;
   setInspectorPinned: (v: boolean) => void;
   setHelpOpen: (v: boolean) => void;
+  setProcessingModeOpen: (v: boolean) => void;
 }
 
 export const useShellStore = create<ShellStore>()(
@@ -29,12 +31,14 @@ export const useShellStore = create<ShellStore>()(
       inspectorOpen: false,
       inspectorPinned: false,
       helpOpen: false,
+      processingModeOpen: false,
       setCommandPaletteOpen: (v) => set({ commandPaletteOpen: v }),
       setShortcutsOverlayOpen: (v) => set({ shortcutsOverlayOpen: v }),
       setCaptureModalOpen: (v) => set({ captureModalOpen: v }),
       setInspectorOpen: (v) => set({ inspectorOpen: v }),
       setInspectorPinned: (v) => set({ inspectorPinned: v }),
       setHelpOpen: (v) => set({ helpOpen: v }),
+      setProcessingModeOpen: (v) => set({ processingModeOpen: v }),
     }),
     {
       name: "atlas-shell-prefs",

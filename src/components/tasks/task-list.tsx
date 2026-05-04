@@ -163,6 +163,7 @@ interface TaskListProps {
   emptyTitle?: string;
   emptyBody?: string;
   highlightId?: string | null;
+  headerExtra?: React.ReactNode;
 }
 
 export function TaskList({
@@ -177,6 +178,7 @@ export function TaskList({
   emptyTitle = "Nothing here",
   emptyBody = "Use the quick-add bar to capture a task.",
   highlightId,
+  headerExtra,
 }: TaskListProps): React.ReactElement {
   const [showDeferred, setShowDeferred] = React.useState(false);
 
@@ -565,6 +567,7 @@ export function TaskList({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
+          {headerExtra}
           <label className="flex items-center gap-1 font-ui text-2xs text-text-tertiary">
             Sort
             <select

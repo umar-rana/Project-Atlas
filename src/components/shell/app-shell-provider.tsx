@@ -25,6 +25,14 @@ const CaptureModal = dynamic(
   },
 );
 
+const ProcessingModeDynamic = dynamic(
+  () => import("@/components/tasks/processing-mode").then((m) => m.ProcessingMode),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
+
 const HelpShellDynamic = dynamic(
   () => import("@/components/help/help-shell").then((m) => m.HelpShell),
   {
@@ -78,6 +86,7 @@ function GlobalShortcuts(): null {
   const setInspectorOpen = useShellStore((s) => s.setInspectorOpen);
   const inspectorOpen = useShellStore((s) => s.inspectorOpen);
   const setHelpOpen = useShellStore((s) => s.setHelpOpen);
+  const setProcessingModeOpen = useShellStore((s) => s.setProcessingModeOpen);
 
   React.useEffect(() => {
     const handle = (e: KeyboardEvent) => {
@@ -111,6 +120,12 @@ function GlobalShortcuts(): null {
         return;
       }
 
+      if (meta && e.shiftKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        setProcessingModeOpen(true);
+        return;
+      }
+
       if (meta && e.key === "\\") {
         e.preventDefault();
         setInspectorOpen(!inspectorOpen);
@@ -119,7 +134,7 @@ function GlobalShortcuts(): null {
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
-  }, [router, setShortcutsOverlayOpen, setCaptureModalOpen, setInspectorOpen, inspectorOpen, setHelpOpen]);
+  }, [router, setShortcutsOverlayOpen, setCaptureModalOpen, setInspectorOpen, inspectorOpen, setHelpOpen, setProcessingModeOpen]);
 
   return null;
 }
@@ -227,6 +242,7 @@ function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.R
       <KeyboardShortcutsOverlay />
       <LazyCapture />
       <LazyHelp />
+      <ProcessingModeDynamic />
     </>
   );
 }
