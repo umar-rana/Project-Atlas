@@ -1,11 +1,64 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { BubbleMenu } from "@tiptap/react/menus";
+import { BubbleMenuPlugin, type BubbleMenuPluginProps } from "@tiptap/extension-bubble-menu";
+import { PluginKey } from "@tiptap/pm/state";
+import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
 import type { EditorState } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
 import { cn } from "@/lib/utils";
+
+type BubbleMenuProps = {
+  editor: Editor;
+  shouldShow?: BubbleMenuPluginProps["shouldShow"];
+  options?: BubbleMenuPluginProps["options"];
+  children: React.ReactNode;
+};
+
+const BUBBLE_MENU_PLUGIN_KEY = new PluginKey("editorBubbleMenu");
+
+function BubbleMenu({ editor, shouldShow = null, options, children }: BubbleMenuProps) {
+  const menuEl = useRef<HTMLDivElement | null>(null);
+  const shouldShowRef = useRef(shouldShow);
+  const optionsRef = useRef(options);
+  shouldShowRef.current = shouldShow;
+  optionsRef.current = options;
+  const [mounted, setMounted] = useState(false);
+
+  if (!menuEl.current && typeof document !== "undefined") {
+    menuEl.current = document.createElement("div");
+  }
+
+  useEffect(() => {
+    const el = menuEl.current;
+    if (!el || editor.isDestroyed) return;
+    el.style.visibility = "hidden";
+    el.style.position = "absolute";
+
+    const plugin = BubbleMenuPlugin({
+      pluginKey: BUBBLE_MENU_PLUGIN_KEY,
+      editor,
+      element: el,
+      shouldShow: shouldShowRef.current ?? null,
+      options: optionsRef.current,
+    });
+
+    editor.registerPlugin(plugin);
+    setMounted(true);
+
+    return () => {
+      setMounted(false);
+      editor.unregisterPlugin(BUBBLE_MENU_PLUGIN_KEY);
+      window.requestAnimationFrame(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      });
+    };
+  }, [editor]); // only re-register when editor instance changes
+
+  if (!mounted || !menuEl.current) return null;
+  return createPortal(children, menuEl.current);
+}
 
 type BlockType =
   | "paragraph"

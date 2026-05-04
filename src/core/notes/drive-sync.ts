@@ -1,4 +1,5 @@
 import "server-only";
+import { Readable } from "stream";
 import { getDriveClient } from "@/core/drive/client";
 import { createLogger } from "@/core/logging";
 
@@ -74,7 +75,6 @@ export async function createNoteFile(
   content: string,
   parentFolderId: string,
 ): Promise<string> {
-  const { Readable } = await import("stream");
   const driveClient = await getDriveClient(userId);
   const body = Buffer.from(content, "utf-8");
   const mimeType = "text/markdown";
@@ -95,7 +95,6 @@ export async function updateNoteFile(
   filename: string,
   content: string,
 ): Promise<string> {
-  const { Readable } = await import("stream");
   const driveClient = await getDriveClient(userId);
   const body = Buffer.from(content, "utf-8");
   const mimeType = "text/markdown";

@@ -8,6 +8,45 @@ import { NotesShell } from "@/components/notes/notes-shell";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { NoteMetadataPanel } from "@/components/notes/note-metadata-panel";
 
+type ErrorBoundaryState = { error: Error | null };
+
+class NoteEditorErrorBoundary extends React.Component<
+  { children: React.ReactNode; onBack: () => void },
+  ErrorBoundaryState
+> {
+  constructor(props: { children: React.ReactNode; onBack: () => void }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { error };
+  }
+
+  override render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
+          <p className="font-ui text-sm text-text-tertiary">
+            Something went wrong loading the editor.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              this.setState({ error: null });
+              this.props.onBack();
+            }}
+            className="rounded-sm px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+          >
+            Go back
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function NoteEditorPage() {
   const { noteId } = useParams<{ noteId: string }>();
   const router = useRouter();
@@ -51,12 +90,14 @@ export default function NoteEditorPage() {
             <p className="font-ui text-sm text-text-tertiary">Note not found.</p>
           </div>
         ) : (
-          <NoteEditor
-            noteId={note.id}
-            initialJson={note.body_json}
-            initialTitle={note.title}
-            className="flex-1"
-          />
+          <NoteEditorErrorBoundary onBack={() => router.back()}>
+            <NoteEditor
+              noteId={note.id}
+              initialJson={note.body_json}
+              initialTitle={note.title}
+              className="flex-1"
+            />
+          </NoteEditorErrorBoundary>
         )}
       </div>
     </NotesShell>
