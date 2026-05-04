@@ -329,9 +329,9 @@ export function TableGrid({
       ref={gridRef}
       data-grid-bg="true"
       onClick={handleGridClick}
-      className="relative overflow-auto"
+      className="relative overflow-x-auto"
     >
-      <table className="border-collapse" style={{ tableLayout: "fixed", minWidth: "100%" }}>
+      <table className="border-collapse" style={{ tableLayout: "fixed" }}>
         <colgroup>
           <col style={{ width: 36 }} />
           {columns.map((col) => (
@@ -343,11 +343,11 @@ export function TableGrid({
         {/* Header */}
         <thead>
           <tr style={{ height: HEADER_HEIGHT }}>
-            <th className="border-b border-r border-border-subtle bg-surface-sunken" />
+            <th className="border-b-2 border-r border-border-default bg-surface-sunken" />
             {columns.map((col, idx) => (
               <th
                 key={col.id}
-                className="border-b border-r border-border-subtle bg-surface-sunken"
+                className="border-b-2 border-r border-border-default bg-surface-sunken"
               >
                 <div className="group flex h-full items-center gap-1 px-2">
                   {renamingCol === col.id ? (
@@ -368,22 +368,22 @@ export function TableGrid({
                         }
                         if (e.key === "Escape") setRenamingCol(null);
                       }}
-                      className="min-w-0 flex-1 bg-transparent font-ui text-xs font-medium text-text-primary focus:outline-none"
+                      className="min-w-0 flex-1 bg-transparent font-ui text-xs font-semibold text-text-primary focus:outline-none"
                     />
                   ) : (
                     <button
                       type="button"
                       onClick={() => handleColumnSort(col.id)}
-                      className="flex min-w-0 flex-1 items-center gap-1 font-ui text-xs hover:text-text-primary"
+                      className="flex min-w-0 flex-1 items-center gap-1.5 font-ui text-xs hover:text-text-primary"
                     >
-                      <span className="truncate font-semibold text-text-primary">{col.name}</span>
+                      <span className="truncate font-semibold text-text-primary tracking-wide uppercase text-[11px]">{col.name}</span>
                       <span className="shrink-0 text-2xs text-text-disabled capitalize">
                         {COLUMN_TYPES.find((t) => t.value === col.type)?.label ?? col.type}
                       </span>
                       {sort.column_id === col.id && (
                         sort.direction === "asc"
-                          ? <ChevronUp size={10} className="shrink-0 text-accent-primary" />
-                          : <ChevronDown size={10} className="shrink-0 text-accent-primary" />
+                          ? <ChevronUp size={11} className="shrink-0 text-accent-primary" />
+                          : <ChevronDown size={11} className="shrink-0 text-accent-primary" />
                       )}
                     </button>
                   )}
@@ -442,7 +442,7 @@ export function TableGrid({
                 </div>
               </th>
             ))}
-            <th className="border-b border-border-subtle bg-surface-sunken">
+            <th className="border-b-2 border-border-default bg-surface-sunken">
               {addingColumn ? (
                 <form
                   onSubmit={(e) => {
@@ -491,15 +491,15 @@ export function TableGrid({
             <tr>
               <td />
               <td colSpan={columns.length + 1}>
-                <div className="flex flex-col items-center gap-3 py-12 text-center">
-                  <p className="font-ui text-sm text-text-disabled">No rows yet</p>
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <p className="font-ui text-xs font-medium text-text-disabled">No rows yet</p>
                   <button
                     type="button"
                     onClick={() => addRow.mutate({ table_id: tableId })}
                     disabled={addRow.isPending}
-                    className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                    className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
                   >
-                    <Plus size={12} /> Add row
+                    <Plus size={12} /> Add first row
                   </button>
                 </div>
               </td>
@@ -509,12 +509,12 @@ export function TableGrid({
             <tr>
               <td />
               <td colSpan={columns.length + 1}>
-                <div className="flex flex-col items-center gap-3 py-12 text-center">
-                  <p className="font-ui text-sm text-text-disabled">No rows match the current filter</p>
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <p className="font-ui text-xs font-medium text-text-disabled">No rows match the current filter</p>
                   <button
                     type="button"
                     onClick={() => onFilterChange(null)}
-                    className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                    className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
                   >
                     Clear filter
                   </button>
@@ -549,7 +549,7 @@ export function TableGrid({
               onDragEnd={() => { setDraggingRowId(null); setDragOverRowId(null); }}
             >
               {/* Row handle */}
-              <td className="border-b border-r border-border-subtle bg-surface-sunken">
+              <td className="border-b border-r border-border-default bg-surface-sunken">
                 <div className="flex h-full items-center justify-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -589,22 +589,22 @@ export function TableGrid({
                 <td
                   key={col.id}
                   onClick={() => handleCellClick(row.id, col.id)}
-                  className="relative border-b border-r border-border-subtle bg-surface-base overflow-hidden"
+                  className="relative border-b border-r border-border-default bg-surface-base overflow-hidden"
                   style={{ height: ROW_HEIGHT }}
                 >
                   {renderCell(row, col)}
                 </td>
               ))}
 
-              <td className="border-b border-border-subtle bg-surface-base" />
+              <td className="border-b border-border-default bg-surface-base" />
             </tr>
           ))}
 
           {/* Add row — only when there are visible rows (empty state has its own add button) */}
           {visibleRows.length > 0 && (
             <tr>
-              <td className="border-b border-r border-border-subtle bg-surface-sunken" />
-              <td colSpan={columns.length + 1} className="border-b border-border-subtle">
+              <td className="border-b border-r border-border-default bg-surface-sunken" />
+              <td colSpan={columns.length + 1} className="border-b border-border-default">
                 <button
                   type="button"
                   onClick={() => addRow.mutate({ table_id: tableId })}
@@ -622,12 +622,12 @@ export function TableGrid({
         {/* Footer */}
         <tfoot className="sticky bottom-0 z-10">
           <tr style={{ height: FOOTER_HEIGHT }}>
-            <td className="border-t border-r border-border-subtle bg-surface-sunken" />
+            <td className="border-t border-r border-border-default bg-surface-sunken" />
             {columns.map((col) => {
               const agg = col.aggregation as AggregationType | null;
               const result = computeAggregation(col.type, agg, visibleRows, col.id);
               return (
-                <td key={col.id} className="border-t border-r border-border-subtle bg-surface-sunken px-2">
+                <td key={col.id} className="border-t border-r border-border-default bg-surface-sunken px-2">
                   {result ? (
                     <div className="flex items-center justify-end gap-1">
                       <span className="font-ui text-2xs text-text-disabled">{AGGREGATION_LABELS[agg!]}</span>
@@ -637,7 +637,7 @@ export function TableGrid({
                 </td>
               );
             })}
-            <td className="border-t border-border-subtle bg-surface-sunken" />
+            <td className="border-t border-border-default bg-surface-sunken" />
           </tr>
         </tfoot>
       </table>

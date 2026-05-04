@@ -7,6 +7,17 @@ import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/react";
 import type { EditorState } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
+import {
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  Code,
+  Link,
+  ChevronDown,
+  X,
+  Highlighter,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type BubbleMenuProps = {
@@ -27,20 +38,23 @@ function BubbleMenu({ editor, shouldShow = null, options, children }: BubbleMenu
   const [mounted, setMounted] = useState(false);
 
   if (!menuEl.current && typeof document !== "undefined") {
-    menuEl.current = document.createElement("div");
+    const el = document.createElement("div");
+    el.style.visibility = "hidden";
+    el.style.position = "absolute";
+    el.style.zIndex = "80";
+    menuEl.current = el;
   }
 
   useEffect(() => {
     const el = menuEl.current;
     if (!el || editor.isDestroyed) return;
-    el.style.visibility = "hidden";
-    el.style.position = "absolute";
 
     const plugin = BubbleMenuPlugin({
       pluginKey: BUBBLE_MENU_PLUGIN_KEY,
       editor,
       element: el,
       shouldShow: shouldShowRef.current ?? null,
+      updateDelay: 0,
       options: optionsRef.current,
     });
 
@@ -54,7 +68,7 @@ function BubbleMenu({ editor, shouldShow = null, options, children }: BubbleMenu
         if (el.parentNode) el.parentNode.removeChild(el);
       });
     };
-  }, [editor]); // only re-register when editor instance changes
+  }, [editor]);
 
   if (!mounted || !menuEl.current) return null;
   return createPortal(children, menuEl.current);
@@ -379,10 +393,18 @@ export function EditorBubbleMenu({ editor }: Props) {
   return (
     <BubbleMenu
       editor={editor}
-      options={{ placement: "top", flip: true }}
+      options={{
+        placement: "top",
+        flip: {},
+        offset: 8,
+        shift: {},
+      }}
       shouldShow={shouldShow}
     >
-      <div className="flex items-center rounded-lg border border-border-default bg-surface-raised shadow-2">
+      <div
+        className="flex items-center rounded-lg border border-border-default bg-surface-raised shadow-2 animate-in fade-in-0 zoom-in-95 duration-100"
+        onMouseDown={(e) => e.preventDefault()}
+      >
         {mode === "toolbar" && (
           <>
             <button
@@ -395,9 +417,9 @@ export function EditorBubbleMenu({ editor }: Props) {
                 "border-r border-border-default",
               )}
             >
-              <span className="font-mono">{activeBlockDef?.icon ?? "¶"}</span>
+              <span className="font-mono text-[11px]">{activeBlockDef?.icon ?? "¶"}</span>
               <span className="max-w-[60px] truncate">{activeBlockDef?.label ?? "Text"}</span>
-              <span className="text-[10px]">▾</span>
+              <ChevronDown size={11} className="shrink-0 opacity-60" />
             </button>
 
             <div className="flex items-center gap-0.5 px-1">
@@ -406,58 +428,54 @@ export function EditorBubbleMenu({ editor }: Props) {
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 title="Bold (⌘B)"
               >
-                <strong>B</strong>
+                <Bold size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("italic")}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 title="Italic (⌘I)"
               >
-                <em>I</em>
+                <Italic size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("underline")}
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
                 title="Underline (⌘U)"
               >
-                <span className="underline">U</span>
+                <Underline size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("strike")}
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 title="Strikethrough (⌘⇧S)"
               >
-                <span className="line-through">S</span>
+                <Strikethrough size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("code")}
                 onClick={() => editor.chain().focus().toggleCode().run()}
                 title="Inline Code (⌘E)"
-                className="font-mono text-xs"
               >
-                {"<>"}
+                <Code size={13} strokeWidth={2.5} />
               </ToolbarButton>
             </div>
 
-            <div className="mx-0.5 h-5 w-px bg-border-subtle" />
+            <div className="mx-0.5 h-4 w-px bg-border-default" />
 
             <div className="flex items-center gap-0.5 px-1">
               <ToolbarButton
                 active={!!activeHighlight}
                 onClick={() => setMode("color")}
-                title="Highlight color"
+                title="Colour & highlight"
               >
-                <span
-                  className="inline-block h-4 w-4 rounded-sm border border-border-default"
-                  style={{ backgroundColor: activeHighlight ?? "#fef08a" }}
-                />
+                <Highlighter size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("link")}
                 onClick={() => setMode("link")}
                 title="Link (⌘K)"
               >
-                🔗
+                <Link size={13} strokeWidth={2.5} />
               </ToolbarButton>
             </div>
           </>
@@ -482,7 +500,7 @@ export function EditorBubbleMenu({ editor }: Props) {
             onClick={closePopover}
             className="flex h-7 w-7 items-center justify-center rounded-r-lg border-l border-border-default text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring"
           >
-            ✕
+            <X size={13} strokeWidth={2.5} />
           </button>
         )}
       </div>

@@ -311,17 +311,19 @@ export default function TableEditorPage() {
           className="flex-1 overflow-auto"
           onClick={() => { setShowSortPanel(false); setShowFilterPanel(false); }}
         >
-          <TableGrid
-            tableId={tableId}
-            columns={columns as any}
-            rows={rows as any}
-            sort={sort}
-            filter={filter}
-            currencySymbol={currencySymbol}
-            onSortChange={handleSortChange}
-            onFilterChange={handleFilterChange}
-            onRefresh={() => utils.tables.get.invalidate({ id: tableId })}
-          />
+          <div className="mx-auto max-w-5xl px-4 py-4">
+            <TableGrid
+              tableId={tableId}
+              columns={columns as any}
+              rows={rows as any}
+              sort={sort}
+              filter={filter}
+              currencySymbol={currencySymbol}
+              onSortChange={handleSortChange}
+              onFilterChange={handleFilterChange}
+              onRefresh={() => utils.tables.get.invalidate({ id: tableId })}
+            />
+          </div>
         </div>
       </div>
     </NotesShell>
