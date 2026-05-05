@@ -780,6 +780,16 @@ export const captureRouter = router({
       const updated = await db.capture.update({
         where: { id: input.id },
         data,
+        select: {
+          id: true,
+          raw_text: true,
+          title: true,
+          tags: true,
+          due_date: true,
+          action_items: true,
+          ai_parsed: true,
+          created_at: true,
+        },
       });
       return updated;
     }),
