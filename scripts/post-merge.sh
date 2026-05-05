@@ -66,3 +66,6 @@ if [ "$SUCCESS" != "true" ]; then
   echo "ERROR: prisma migrate deploy failed after $MAX_RETRIES attempts." >&2
   exit 1
 fi
+
+# Verify Wave 1 GTD Inbox columns are present (migration 20260504000000_gtd_inbox_wave1).
+node scripts/verify-wave1-schema.mjs

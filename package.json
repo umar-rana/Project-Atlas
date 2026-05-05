@@ -20,6 +20,7 @@
     "storybook:sweep": "node scripts/storybook-theme-sweep.mjs",
     "storybook:sweep:overlays": "node scripts/storybook-overlay-sweep.mjs",
     "validate:migrations": "node scripts/validate-migrations.mjs",
+    "validate:wave1-schema": "node scripts/verify-wave1-schema.mjs",
     "validate-tokens": "npx ts-node --project tsconfig.scripts.json scripts/validate-token-references.ts"
   },
   "dependencies": {
