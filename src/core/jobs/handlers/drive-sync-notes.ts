@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/core/db";
+import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { generateNoteFilename, generateNoteFrontmatter, purposeFolderName } from "@/core/notes/filename";
 import {
@@ -342,6 +342,24 @@ export async function handleDriveSyncNotes(): Promise<DriveSyncNotesResult> {
         "drive-sync-notes: stopped early for user due to quota limit — remaining notes will sync next hour",
       );
     }
+
+    await db.syncState.upsert({
+      where: {
+        user_id_provider_resource_type: {
+          user_id: userId,
+          provider: "google_drive",
+          resource_type: "notes",
+        },
+      },
+      create: {
+        id: newId(),
+        user_id: userId,
+        provider: "google_drive",
+        resource_type: "notes",
+        last_synced: new Date(),
+      },
+      update: { last_synced: new Date() },
+    });
 
     log.info(
       { userId, synced: totalSynced, deleted: totalDeleted, errors: totalErrors },

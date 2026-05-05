@@ -1049,6 +1049,10 @@ function IntegrationsSection({
   }, [driveBanner]);
 
   const { data: driveStatus } = trpc.drive.linkStatus.useQuery();
+  const { data: driveSyncStatus } = trpc.drive.syncStatus.useQuery(undefined, {
+    enabled: !!driveStatus?.linked,
+    refetchOnWindowFocus: false,
+  });
   const unlinkDrive = trpc.drive.unlink.useMutation({
     onSuccess: () => utils.drive.linkStatus.invalidate(),
   });
@@ -1123,6 +1127,21 @@ function IntegrationsSection({
                 <p className="pl-4 font-ui text-xs text-text-secondary capitalize">
                   Type: <span className="font-medium text-text-primary">{driveStatus.config?.drive_type ?? "personal"}</span>
                 </p>
+                {driveSyncStatus?.lastSynced ? (
+                  <p className="pl-4 font-ui text-xs text-text-tertiary">
+                    Last synced{" "}
+                    <span className="font-medium text-text-secondary">
+                      {new Date(driveSyncStatus.lastSynced).toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="pl-4 font-ui text-xs text-text-tertiary">
+                    Not yet synced — first sync runs hourly
+                  </p>
+                )}
               </div>
               <div className="flex flex-shrink-0 gap-2">
                 <button

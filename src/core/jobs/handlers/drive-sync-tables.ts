@@ -1,7 +1,10 @@
 import "server-only";
-import { db } from "@/core/db";
+import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { exportTableJson, exportTableCsv } from "@/core/tables/export";
+import { pushBufferToDrive } from "@/core/drive/sync";
+import { updateFile } from "@/core/drive/primitives";
+import { refreshDriveTokenIfNeeded } from "@/core/drive/client";
 
 const log = createLogger({ module: "jobs/drive-sync-tables" });
 
@@ -44,6 +47,14 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
       continue;
     }
 
+    try {
+      await refreshDriveTokenIfNeeded(userId);
+    } catch (refreshErr) {
+      log.error({ userId, err: refreshErr }, "drive-sync-tables: token refresh failed — skipping user");
+      totalErrors++;
+      continue;
+    }
+
     const tables = await db.table.findMany({
       where: { user_id: userId, deleted_at: null },
       include: {
@@ -62,6 +73,9 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
     });
 
     log.info({ userId, count: tables.length }, "drive-sync-tables: syncing tables");
+
+    let userSynced = 0;
+    let userErrors = 0;
 
     for (const table of tables) {
       try {
@@ -89,14 +103,59 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
         const jsonContent = exportTableJson(tableData);
         const csvContent = exportTableCsv(tableData);
 
-        log.info({ userId, tableId: table.id, tableName: table.name, jsonBytes: jsonContent.length, csvBytes: csvContent.length }, "drive-sync-tables: exported table content");
+        const jsonBuffer = Buffer.from(jsonContent, "utf-8");
+        const csvBuffer = Buffer.from(csvContent, "utf-8");
+
+        const safeTableName = table.name.replace(/[^a-zA-Z0-9_\- ]/g, "_").trim() || "table";
+        const jsonFilename = `${safeTableName}.json`;
+        const csvFilename = `${safeTableName}.csv`;
+
+        let jsonFileId: string;
+        let csvFileId: string;
+
+        if (table.drive_json_file_id) {
+          const updated = await updateFile(userId, table.drive_json_file_id, jsonFilename, jsonBuffer, "application/json");
+          jsonFileId = updated.id ?? table.drive_json_file_id;
+          log.debug({ userId, tableId: table.id, jsonFilename }, "drive-sync-tables: updated JSON file in Drive");
+        } else {
+          const result = await pushBufferToDrive({
+            userId,
+            driveParentId: tablesFolderId,
+            filename: jsonFilename,
+            mimeType: "application/json",
+            data: jsonBuffer,
+          });
+          jsonFileId = result.driveFileId;
+          log.debug({ userId, tableId: table.id, jsonFilename }, "drive-sync-tables: created JSON file in Drive");
+        }
+
+        if (table.drive_csv_file_id) {
+          const updated = await updateFile(userId, table.drive_csv_file_id, csvFilename, csvBuffer, "text/csv");
+          csvFileId = updated.id ?? table.drive_csv_file_id;
+          log.debug({ userId, tableId: table.id, csvFilename }, "drive-sync-tables: updated CSV file in Drive");
+        } else {
+          const result = await pushBufferToDrive({
+            userId,
+            driveParentId: tablesFolderId,
+            filename: csvFilename,
+            mimeType: "text/csv",
+            data: csvBuffer,
+          });
+          csvFileId = result.driveFileId;
+          log.debug({ userId, tableId: table.id, csvFilename }, "drive-sync-tables: created CSV file in Drive");
+        }
 
         await db.table.update({
           where: { id: table.id },
-          data: { drive_synced_at: new Date(), drive_sync_error: null },
+          data: {
+            drive_json_file_id: jsonFileId,
+            drive_csv_file_id: csvFileId,
+            drive_synced_at: new Date(),
+            drive_sync_error: null,
+          },
         });
 
-        totalSynced++;
+        userSynced++;
       } catch (err) {
         log.error({ userId, tableId: table.id, err }, "drive-sync-tables: error syncing table");
 
@@ -105,9 +164,28 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
           data: { drive_sync_error: String(err) },
         });
 
-        totalErrors++;
+        userErrors++;
       }
     }
+
+    if (userSynced > 0 || userErrors === 0) {
+      await db.syncState.upsert({
+        where: { user_id_provider_resource_type: { user_id: userId, provider: "google_drive", resource_type: "tables" } },
+        create: {
+          id: newId(),
+          user_id: userId,
+          provider: "google_drive",
+          resource_type: "tables",
+          last_synced: new Date(),
+        },
+        update: { last_synced: new Date() },
+      });
+    }
+
+    totalSynced += userSynced;
+    totalErrors += userErrors;
+
+    log.info({ userId, synced: userSynced, errors: userErrors }, "drive-sync-tables: finished user");
   }
 
   log.info({ totalSynced, totalErrors }, "drive-sync-tables: complete");

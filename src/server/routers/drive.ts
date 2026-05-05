@@ -4,6 +4,9 @@ import { linkDrive, unlinkDrive, verifyDriveConfig } from "@/core/drive/linking"
 import { listSharedDrives, browseFolder, createFolder } from "@/core/drive/primitives";
 import { z } from "zod";
 
+const DRIVE_RESOURCE_TYPES = ["notes", "tables", "attachments"] as const;
+type DriveResourceType = typeof DRIVE_RESOURCE_TYPES[number];
+
 export const driveRouter = router({
   linkStatus: protectedProcedure.query(async ({ ctx }) => {
     const [config, tokenExists] = await Promise.all([
@@ -70,5 +73,30 @@ export const driveRouter = router({
 
   verify: protectedProcedure.query(async ({ ctx }) => {
     return verifyDriveConfig(ctx.user.id);
+  }),
+
+  syncStatus: protectedProcedure.query(async ({ ctx }) => {
+    const states = await db.syncState.findMany({
+      where: {
+        user_id: ctx.user.id,
+        provider: "google_drive",
+        resource_type: { in: [...DRIVE_RESOURCE_TYPES] },
+      },
+      select: { resource_type: true, last_synced: true },
+    });
+
+    const byType = Object.fromEntries(
+      states.map((s) => [s.resource_type as DriveResourceType, s.last_synced]),
+    ) as Partial<Record<DriveResourceType, Date | null>>;
+
+    const allTimestamps = states
+      .map((s) => s.last_synced)
+      .filter((d): d is Date => d !== null);
+
+    const lastSynced = allTimestamps.length > 0
+      ? new Date(Math.max(...allTimestamps.map((d) => d.getTime())))
+      : null;
+
+    return { byType, lastSynced };
   }),
 });

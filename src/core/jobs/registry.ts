@@ -1,5 +1,6 @@
 import { handleDriveSyncNotes } from "./handlers/drive-sync-notes";
 import { handleDriveSyncTables } from "./handlers/drive-sync-tables";
+import { handleDriveSyncAttachments } from "./handlers/drive-sync-attachments";
 import { handleSessionCleanup } from "./handlers/session-cleanup";
 import { handleTrashRetention } from "./handlers/trash-retention";
 import { handleAttachmentCleanup } from "./handlers/attachment-cleanup";
@@ -30,6 +31,12 @@ export const JOB_REGISTRY: JobDefinition[] = [
     cron: "0 * * * *",
     description: "Sync tables to Google Drive hourly (exports JSON schema + CSV for each table)",
     handler: handleDriveSyncTables,
+  },
+  {
+    name: "drive-sync-attachments",
+    cron: "0 * * * *",
+    description: "Sync new attachments to Google Drive hourly",
+    handler: handleDriveSyncAttachments,
   },
   {
     name: "session-cleanup",
