@@ -94,6 +94,7 @@ export default function NoteEditorPage() {
             <NoteEditor
               noteId={note.id}
               initialJson={note.body_json}
+              initialMarkdown={note.body_markdown ?? undefined}
               initialTitle={note.title}
               className="flex-1"
             />

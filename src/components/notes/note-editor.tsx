@@ -34,11 +34,27 @@ type SaveStatus = "saved" | "saving" | "error" | "idle";
 type Props = {
   noteId: string;
   initialJson?: string;
+  initialMarkdown?: string;
   initialTitle?: string;
   placeholder?: string;
   className?: string;
   readOnly?: boolean;
 };
+
+function markdownToTiptapFallback(markdown: string): object {
+  const paragraphs = markdown
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => ({
+      type: "paragraph",
+      content: [{ type: "text", text: block }],
+    }));
+  return {
+    type: "doc",
+    content: paragraphs.length > 0 ? paragraphs : [{ type: "paragraph" }],
+  };
+}
 
 type PickerPosition = { top: number; left: number };
 
@@ -98,6 +114,7 @@ async function uploadFileToNote(
 export function NoteEditor({
   noteId,
   initialJson,
+  initialMarkdown,
   initialTitle,
   placeholder,
   className,
@@ -168,14 +185,24 @@ export function NoteEditor({
       SlashCommandExtension,
     ],
     content: (() => {
-      if (!initialJson || initialJson === "{}") {
-        return { type: "doc", content: [{ type: "paragraph" }] };
+      if (initialJson && initialJson !== "{}") {
+        try {
+          const parsed = JSON.parse(initialJson) as { type?: string; content?: unknown[] };
+          const isValidDoc =
+            parsed.type === "doc" &&
+            Array.isArray(parsed.content) &&
+            parsed.content.length > 0;
+          if (isValidDoc) {
+            return parsed;
+          }
+        } catch {
+          // fall through to markdown fallback
+        }
       }
-      try {
-        return JSON.parse(initialJson);
-      } catch {
-        return { type: "doc", content: [{ type: "paragraph" }] };
+      if (initialMarkdown && initialMarkdown.trim()) {
+        return markdownToTiptapFallback(initialMarkdown);
       }
+      return { type: "doc", content: [{ type: "paragraph" }] };
     })(),
     editable: !readOnly,
 

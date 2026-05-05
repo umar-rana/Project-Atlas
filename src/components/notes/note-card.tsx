@@ -63,7 +63,7 @@ export function NoteCard({
   const utils = trpc.useUtils();
   const [inspectorOpen, setInspectorOpen] = React.useState(false);
 
-  const foldersQuery = trpc.notesFolder.list.useQuery(undefined, { enabled: false });
+  const foldersQuery = trpc.notesFolder.list.useQuery(undefined, { enabled: true });
 
   const deleteNote = trpc.notes.delete.useMutation({
     onSuccess: () => {
@@ -140,16 +140,16 @@ export function NoteCard({
           </div>
 
           <div className="relative z-10 shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-            <DropdownMenu
-              onOpenChange={(open) => {
-                if (open) foldersQuery.refetch();
-              }}
-            >
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   className="flex size-6 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
                   aria-label="Note actions"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   <MoreHorizontal size={14} />
                 </button>

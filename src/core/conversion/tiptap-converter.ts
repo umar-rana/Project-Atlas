@@ -174,6 +174,12 @@ function tokensToNodes(tokens: TokensList | Token[]): TiptapNode[] {
           })),
         ],
       });
+    } else if (token.type === "html") {
+      const t = token as { type: "html"; text: string };
+      const stripped = t.text.replace(/<[^>]*>/g, "").trim();
+      if (stripped) {
+        nodes.push({ type: "paragraph", content: [{ type: "text", text: stripped }] });
+      }
     } else if (token.type === "space") {
       // skip
     }
@@ -183,10 +189,25 @@ function tokensToNodes(tokens: TokensList | Token[]): TiptapNode[] {
 }
 
 /**
+ * Returns true if a TipTap node tree contains at least one non-empty text leaf.
+ */
+function hasTextContent(nodes: TiptapNode[]): boolean {
+  for (const node of nodes) {
+    if (node.text && node.text.length > 0) return true;
+    if (node.content && hasTextContent(node.content)) return true;
+  }
+  return false;
+}
+
+/**
  * Converts a markdown string to a TipTap document JSON object.
+ * Always returns a document with at least one paragraph node.
+ * If conversion produces no text content, falls back to plain-text paragraphs
+ * derived directly from the raw markdown.
  */
 export function markdownToTiptap(markdown: string): TiptapDocument {
-  if (!markdown.trim()) {
+  const trimmed = markdown.trim();
+  if (!trimmed) {
     return { type: "doc", content: [{ type: "paragraph" }] };
   }
 
@@ -194,9 +215,22 @@ export function markdownToTiptap(markdown: string): TiptapDocument {
   const tokens = lexer.lex(markdown);
   const nodes = tokensToNodes(tokens);
 
+  if (nodes.length > 0 && hasTextContent(nodes)) {
+    return { type: "doc", content: nodes };
+  }
+
+  const fallbackParagraphs = trimmed
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => ({
+      type: "paragraph" as const,
+      content: [{ type: "text", text: block }],
+    }));
+
   return {
     type: "doc",
-    content: nodes.length > 0 ? nodes : [{ type: "paragraph" }],
+    content: fallbackParagraphs.length > 0 ? fallbackParagraphs : [{ type: "paragraph" }],
   };
 }
 
