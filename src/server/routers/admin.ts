@@ -6,6 +6,11 @@ import { withDeleted } from "@/core/db/soft-delete";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
 import { verifyIsOrphan, reattachOrphanData, flagForRecoveryNotification } from "@/core/auth/orphan-recovery";
+import {
+  runInboxMigrationDryRun,
+  runInboxMigrationForUser,
+  saveMigrationSummaryForUser,
+} from "@/core/capture/inbox-migration";
 import type { Prisma } from "@prisma/client";
 
 const log = createLogger({ module: "admin-router" });
@@ -897,4 +902,66 @@ export const adminRouter = router({
         return { ok: true };
       }),
   }),
+
+  runMigrationForAllUsers: adminProcedure
+    .input(
+      z.object({
+        dry_run: z.boolean().default(true),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const users = await db.user.findMany({
+        where: { deleted_at: null },
+        select: { id: true, email: true },
+      });
+
+      const userIds = users.map((u) => u.id);
+
+      if (input.dry_run) {
+        const result = await runInboxMigrationDryRun(userIds);
+        return {
+          dry_run: true as const,
+          userCount: users.length,
+          totalCategoryA: Object.values(result.byUser).reduce((sum, u) => sum + u.categoryA, 0),
+          totalCategoryB: Object.values(result.byUser).reduce((sum, u) => sum + u.categoryB, 0),
+          totalItems: Object.values(result.byUser).reduce((sum, u) => sum + u.total, 0),
+        };
+      }
+
+      let totalConverted = 0;
+      let totalKept = 0;
+      let totalErrors = 0;
+      const ranAt = new Date().toISOString();
+
+      for (const user of users) {
+        try {
+          const result = await runInboxMigrationForUser(user.id);
+          totalConverted += result.converted;
+          totalKept += result.kept;
+          totalErrors += result.errors;
+          await saveMigrationSummaryForUser(user.id, {
+            converted: result.converted,
+            kept: result.kept,
+            errors: result.errors,
+            ranAt,
+          });
+        } catch (err) {
+          log.error({ userId: user.id, err }, "Error migrating inbox for user");
+          totalErrors += 1;
+        }
+      }
+
+      log.info(
+        { adminUserId: ctx.user.id, totalConverted, totalKept, totalErrors },
+        "Admin ran inbox migration for all users",
+      );
+
+      return {
+        dry_run: false as const,
+        userCount: users.length,
+        totalConverted,
+        totalKept,
+        totalErrors,
+      };
+    }),
 });
