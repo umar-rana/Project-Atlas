@@ -66,6 +66,7 @@ function TaskListItemImpl({
   const toggleExpandedParent = useTasksStore((s) => s.toggleExpandedParent);
   const expandedParentIds = useTasksStore((s) => s.expandedParentIds);
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
+  const toggleSelected = useTasksStore((s) => s.toggleSelected);
 
   const isCapture = task.entity_type === "capture";
 
@@ -249,23 +250,20 @@ function TaskListItemImpl({
         <GripVertical size={12} aria-hidden />
       </span>
       {isCapture ? (
-        <span
-          role="checkbox"
-          aria-checked={isMultiSelected}
-          aria-label="Select capture"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMultiToggle(task, e);
-          }}
-          className={cn(
-            "shrink-0 cursor-pointer rounded-full border px-1.5 py-px font-ui text-2xs font-medium transition-colors",
-            isMultiSelected
-              ? "border-accent-primary bg-accent-primary text-text-on-accent"
-              : "border-accent-info/40 bg-accent-info-muted text-accent-info hover:border-accent-primary/60 hover:bg-accent-primary/10",
-          )}
-        >
-          {isMultiSelected ? "✓" : "New"}
-        </span>
+        (hovered || isMultiSelected) ? (
+          <Checkbox
+            checked={isMultiSelected}
+            onCheckedChange={() => toggleSelected(task.id)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={isMultiSelected ? "Deselect capture" : "Select capture"}
+          />
+        ) : (
+          <span
+            className="shrink-0 inline-flex items-center rounded-full border border-accent-info/40 bg-accent-info-muted px-1.5 py-px font-ui text-2xs font-medium text-accent-info"
+          >
+            New
+          </span>
+        )
       ) : (
         <>
           <Checkbox
