@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { X, Undo2 } from "lucide-react";
+import { X, Undo2, Sparkles } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { useShellStore } from "@/lib/shell/store";
 import { cn } from "@/lib/utils";
@@ -37,10 +37,20 @@ interface ParserProposal {
   project_hint?: string | null;
   tags?: string[];
   contexts?: string[];
+  person_refs?: string[];
   flagged?: boolean;
   estimated_minutes?: number | null;
   parse_tier?: string;
   local_confidence?: number;
+}
+
+function deriveProposedDisposition(p: ParserProposal): Disposition | null {
+  if (p.project_hint) return "project";
+  if (p.person_refs && p.person_refs.length > 0) return "waiting";
+  const lowerTags = (p.tags ?? []).map((t) => t.toLowerCase());
+  if (lowerTags.some((t) => t === "someday" || t === "maybe")) return "someday";
+  if (p.title || p.due_date || p.flagged) return "task";
+  return null;
 }
 
 let savedCaptureId: string | null = null;
@@ -87,6 +97,7 @@ function ProcessingModeInner({
   });
 
   const [disposition, setDisposition] = React.useState<Disposition>(null);
+  const [isAiSuggested, setIsAiSuggested] = React.useState(false);
   const [lastProcessedId, setLastProcessedId] = React.useState<string | null>(null);
   const [canUndo, setCanUndo] = React.useState(false);
 
@@ -111,8 +122,25 @@ function ProcessingModeInner({
   const currentCapture = captures.find((c) => c.id === currentCaptureId) ?? captures[0] ?? null;
   const proposal = currentCapture?.parser_proposal as ParserProposal | null | undefined;
 
+  React.useEffect(() => {
+    if (!proposal) {
+      setDisposition(null);
+      setIsAiSuggested(false);
+      return;
+    }
+    const suggested = deriveProposedDisposition(proposal);
+    if (suggested) {
+      setDisposition(suggested);
+      setIsAiSuggested(true);
+    } else {
+      setDisposition(null);
+      setIsAiSuggested(false);
+    }
+  }, [currentCaptureId, proposal]);
+
   function advance() {
     setDisposition(null);
+    setIsAiSuggested(false);
     const currentIndex = captures.findIndex((c) => c.id === currentCaptureId);
     const nextCapture = captures[currentIndex + 1] ?? null;
     if (nextCapture) {
@@ -131,6 +159,12 @@ function ProcessingModeInner({
 
   function handleCancel() {
     setDisposition(null);
+    setIsAiSuggested(false);
+  }
+
+  function handleManualDisposition(disp: Disposition) {
+    setDisposition(disp);
+    setIsAiSuggested(false);
   }
 
   function handleUndo() {
@@ -148,6 +182,7 @@ function ProcessingModeInner({
         if (disposition) {
           e.preventDefault();
           setDisposition(null);
+          setIsAiSuggested(false);
         } else {
           e.preventDefault();
           onClose();
@@ -183,7 +218,7 @@ function ProcessingModeInner({
       const disp = KEY_MAP[e.key.toLowerCase()];
       if (disp) {
         e.preventDefault();
-        setDisposition(disp);
+        handleManualDisposition(disp);
       }
     }
     window.addEventListener("keydown", handleKey);
@@ -248,11 +283,22 @@ function ProcessingModeInner({
           />
 
           {disposition ? (
-            <div className="rounded-lg border border-border-default bg-surface-overlay px-6 py-5">
+            <div className={cn(
+              "rounded-lg border bg-surface-overlay px-6 py-5",
+              isAiSuggested ? "border-accent-info/40" : "border-border-default",
+            )}>
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-ui text-sm font-semibold text-text-primary">
-                  {DISPOSITION_LABELS[disposition]}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-ui text-sm font-semibold text-text-primary">
+                    {DISPOSITION_LABELS[disposition]}
+                  </h3>
+                  {isAiSuggested && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-accent-info/40 bg-accent-info/10 px-2 py-0.5 font-ui text-2xs font-medium text-accent-info">
+                      <Sparkles size={9} aria-hidden />
+                      AI suggestion
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   onClick={handleCancel}
@@ -343,7 +389,7 @@ function ProcessingModeInner({
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setDisposition(disp)}
+                  onClick={() => handleManualDisposition(disp)}
                   className={cn(
                     "flex items-center gap-2 rounded-md border px-3 py-2 font-ui text-sm transition-colors hover:bg-surface-hover",
                     disp === "trash"
