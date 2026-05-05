@@ -37,8 +37,9 @@ function CaptureEditForm({
   );
 
   const utils = trpc.useUtils();
-  const updateMutation = trpc.capture.update.useMutation({
-    onSuccess: (updated) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateMutation = (trpc.capture.update.useMutation as any)({
+    onSuccess: (updated: Capture) => {
       void utils.capture.list.invalidate();
       onSave(updated);
     },
