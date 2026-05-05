@@ -36,7 +36,7 @@ export const aiRouter = router({
       return fromZonedTime(startOfDay(zonedMonthStart), timezone);
     })();
 
-    const [allTime, daily, weekly, monthly, byTask] = await Promise.all([
+    const [allTime, daily, weekly, monthly, byTask, failureCount, recentErrors] = await Promise.all([
       db.aICallLog.aggregate({
         where: { user_id: userId },
         _count: { id: true },
@@ -63,6 +63,15 @@ export const aiRouter = router({
         _count: { id: true },
         _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
         orderBy: { _sum: { cost_usd: "desc" } },
+      }),
+      db.aICallLog.count({
+        where: { user_id: userId, success: false },
+      }),
+      db.aICallLog.findMany({
+        where: { user_id: userId, success: false },
+        orderBy: { created_at: "desc" },
+        take: 5,
+        select: { id: true, task: true, error: true, created_at: true },
       }),
     ]);
 
@@ -98,6 +107,13 @@ export const aiRouter = router({
         inputTokens: t._sum.input_tokens ?? 0,
         outputTokens: t._sum.output_tokens ?? 0,
         costUsd: t._sum.cost_usd ?? 0,
+      })),
+      failureCount,
+      recentErrors: recentErrors.map((e) => ({
+        id: e.id,
+        task: e.task,
+        error: e.error ?? "Unknown error",
+        createdAt: e.created_at.toISOString(),
       })),
     };
   }),

@@ -39,14 +39,26 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 interface StatCardProps {
   label: string;
   calls: number;
   tokens: number;
   cost: number;
+  failures?: number;
 }
 
-function StatCard({ label, calls, tokens, cost }: StatCardProps) {
+function StatCard({ label, calls, tokens, cost, failures }: StatCardProps) {
   return (
     <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
@@ -57,6 +69,12 @@ function StatCard({ label, calls, tokens, cost }: StatCardProps) {
           <span className="text-2xl font-bold tabular-nums text-text-primary">{calls}</span>
           <span className="text-xs text-text-secondary">calls</span>
         </div>
+        {failures != null && failures > 0 && (
+          <div className="flex items-baseline justify-between">
+            <span className="text-sm font-semibold tabular-nums text-red-400">{failures}</span>
+            <span className="text-xs text-red-400/70">failed</span>
+          </div>
+        )}
         <div className="flex items-baseline justify-between">
           <span className="text-lg font-semibold tabular-nums text-text-primary">
             {formatTokens(tokens)}
@@ -138,9 +156,34 @@ export function UsageClient() {
                 calls={data.allTime.calls}
                 tokens={data.allTime.inputTokens + data.allTime.outputTokens}
                 cost={data.allTime.costUsd}
+                failures={data.failureCount}
               />
             </div>
           </section>
+
+          {data.recentErrors.length > 0 && (
+            <section className="mb-8">
+              <h2 className="mb-3 text-sm font-semibold text-text-secondary">Recent errors</h2>
+              <div className="overflow-hidden rounded-xl border border-red-500/20 bg-surface-raised shadow-1">
+                {data.recentErrors.map((err, i) => (
+                  <div
+                    key={err.id}
+                    className={`px-4 py-3 ${i < data.recentErrors.length - 1 ? "border-b border-border-subtle" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-mono text-xs text-text-secondary">{err.task}</span>
+                        <p className="mt-0.5 truncate text-sm text-red-400">{err.error}</p>
+                      </div>
+                      <span className="shrink-0 text-xs text-text-tertiary">
+                        {formatRelativeTime(err.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="mb-8">
             <h2 className="mb-3 text-sm font-semibold text-text-secondary">
