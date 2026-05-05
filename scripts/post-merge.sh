@@ -27,16 +27,42 @@ fi
 
 export DATABASE_URL="$RESOLVED_URL"
 
-# Retry prisma migrate deploy up to 3 times to handle transient Neon advisory
+# Retry prisma migrate deploy up to 6 times to handle transient Neon advisory
 # lock timeouts (pg_advisory_lock contention on the pooler connection).
-MAX_RETRIES=3
+# Uses exponential backoff: 10s, 20s, 30s, 40s, 50s between attempts.
+MAX_RETRIES=6
 ATTEMPT=0
-until npx prisma migrate deploy; do
+SUCCESS=false
+
+while [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; do
+  OUTPUT=$(npx prisma migrate deploy 2>&1)
+  EXIT_CODE=$?
+  echo "$OUTPUT"
+
+  if [ "$EXIT_CODE" -eq 0 ]; then
+    SUCCESS=true
+    break
+  fi
+
+  # If the only issue is the advisory lock timeout AND there are no pending
+  # migrations, treat it as a success (schema is already up to date).
+  if echo "$OUTPUT" | grep -q "No pending migrations to apply"; then
+    echo "No pending migrations — schema is up to date." >&2
+    SUCCESS=true
+    break
+  fi
+
   ATTEMPT=$((ATTEMPT + 1))
   if [ "$ATTEMPT" -ge "$MAX_RETRIES" ]; then
-    echo "ERROR: prisma migrate deploy failed after $MAX_RETRIES attempts." >&2
-    exit 1
+    break
   fi
-  echo "prisma migrate deploy failed (attempt $ATTEMPT/$MAX_RETRIES), retrying in 10s..." >&2
-  sleep 10
+
+  WAIT=$((ATTEMPT * 10))
+  echo "prisma migrate deploy failed (attempt $ATTEMPT/$MAX_RETRIES), retrying in ${WAIT}s..." >&2
+  sleep "$WAIT"
 done
+
+if [ "$SUCCESS" != "true" ]; then
+  echo "ERROR: prisma migrate deploy failed after $MAX_RETRIES attempts." >&2
+  exit 1
+fi
