@@ -50,7 +50,7 @@ the same wording.
 
 Total: **40 component source files / 69 stories**, every one rendered in
 both `data-theme="dark"` and `data-theme="light"`. (Full story id list is
-captured in `/tmp/story_ids.txt`.) Note: `replit.md` historically rounded
+captured in `/tmp/story_ids.txt`.) Note: `README.md` historically rounded
 this to "41" — the source‑of‑truth count from `src/components/**` is 40.
 
 ### Primitives — `src/components/ui/` (27)
