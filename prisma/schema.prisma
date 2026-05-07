@@ -736,7 +736,7 @@ model TableColumn {
   id          String    @id @db.Uuid
   table_id    String    @db.Uuid
   name        String
-  type        String    // text | number | date | checkbox | single_select | currency
+  type        String    // text | number | date | checkbox | single_select | currency | multi_select
   position    Decimal   @default(0) @db.Decimal(20, 10)
   config      Json      @default("{}") // type-specific config: { options, decimal_places, etc. }
   aggregation String?   // sum | average | count | min | max | checked_ratio | none

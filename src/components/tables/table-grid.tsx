@@ -19,11 +19,25 @@ import { NumberCell } from "./cells/number-cell";
 import { DateCell } from "./cells/date-cell";
 import { CheckboxCell } from "./cells/checkbox-cell";
 import { SingleSelectCell } from "./cells/single-select-cell";
+import { MultiSelectCell } from "./cells/multi-select-cell";
 import { CurrencyCell } from "./cells/currency-cell";
 import { computeAggregation, getAvailableAggregations, AGGREGATION_LABELS } from "@/core/tables/aggregations";
 import { sortRows } from "@/core/tables/sort";
 import { filterRows } from "@/core/tables/filter";
 import { DEFAULT_AGGREGATIONS, COLUMN_TYPES } from "@/core/tables/types";
+import { uuidv7 } from "uuidv7";
+
+// Stratum viz palette — CSS token references cycling for inline-created options
+const OPTION_PALETTE = [
+  "var(--viz-1)",
+  "var(--viz-2)",
+  "var(--viz-3)",
+  "var(--viz-4)",
+  "var(--viz-5)",
+  "var(--viz-6)",
+  "var(--viz-7)",
+  "var(--viz-8)",
+] as const;
 import type {
   TableColumnData,
   TableRowData,
@@ -33,7 +47,9 @@ import type {
   AggregationType,
   ColumnConfig,
   SingleSelectOption,
+  MultiSelectValue,
 } from "@/core/tables/types";
+import { isMultiSelectValue } from "@/core/tables/types";
 
 import {
   DropdownMenu,
@@ -79,6 +95,10 @@ export function TableGrid({
   const [renameDraft, setRenameDraft] = React.useState("");
   const [draggingRowId, setDraggingRowId] = React.useState<string | null>(null);
   const [dragOverRowId, setDragOverRowId] = React.useState<string | null>(null);
+  // Extra options added inline by the user (not yet refreshed from server)
+  const [extraOptions, setExtraOptions] = React.useState<Record<string, SingleSelectOption[]>>({});
+  // Tracks which column ids had their options updated and should have extraOptions cleared on next refresh
+  const pendingOptionsClear = React.useRef<Set<string>>(new Set());
   const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(
     () => Object.fromEntries(columns.map((c) => [c.id, c.width || 160])),
   );
@@ -117,7 +137,18 @@ export function TableGrid({
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore -- TS2589: tRPC type inference depth; safe at runtime
   const updateColumn = trpc.tables.updateColumn.useMutation({
-    onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
+    onSuccess: () => {
+      if (pendingOptionsClear.current.size > 0) {
+        const toClear = new Set(pendingOptionsClear.current);
+        pendingOptionsClear.current.clear();
+        setExtraOptions((prev) => {
+          const next = { ...prev };
+          toClear.forEach((id) => delete next[id]);
+          return next;
+        });
+      }
+      utils.tables.get.invalidate({ id: tableId });
+    },
     onError: (_err: unknown, vars: { id: string; width?: number }) => {
       if (vars.width !== undefined) {
         const col = columns.find((c) => c.id === vars.id);
@@ -360,6 +391,40 @@ export function TableGrid({
             onCommit={(v) => handleCellCommit(row.id, col.id, v)}
           />
         );
+      case "multi_select": {
+        // Merge server options with locally-created (not-yet-refreshed) options,
+        // deduplicating by id so a server refresh never produces duplicate chips.
+        const serverIds = new Set(opts.map((o) => o.id));
+        const msOpts = [
+          ...opts,
+          ...(extraOptions[col.id] ?? []).filter((o) => !serverIds.has(o.id)),
+        ];
+        const msValue = isMultiSelectValue(rawValue) ? rawValue : null;
+        return (
+          <MultiSelectCell
+            {...commonProps}
+            value={msValue}
+            options={msOpts}
+            onCommit={(v: MultiSelectValue | null) => handleCellCommit(row.id, col.id, v)}
+            onCreateOption={(label: string): SingleSelectOption => {
+              const colorIndex = msOpts.length % OPTION_PALETTE.length;
+              const color = OPTION_PALETTE[colorIndex];
+              const newOpt: SingleSelectOption = { id: uuidv7(), label, color };
+              setExtraOptions((prev) => ({
+                ...prev,
+                [col.id]: [...(prev[col.id] ?? []), newOpt],
+              }));
+              const mergedOptions = [...msOpts, newOpt];
+              pendingOptionsClear.current.add(col.id);
+              updateColumn.mutate({
+                id: col.id,
+                config: { ...(col.config as Record<string, unknown>), options: mergedOptions },
+              });
+              return newOpt;
+            }}
+          />
+        );
+      }
       default:
         return null;
     }

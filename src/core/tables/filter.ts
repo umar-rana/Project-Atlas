@@ -1,9 +1,14 @@
 import type { ColumnType, CellValue, FilterState, TableRowData, TableColumnData } from "./types";
+import { isMultiSelectValue, isMultiSelectEmpty } from "./types";
 
 function testFilter(type: ColumnType, value: CellValue, state: FilterState): boolean {
   const { operator, value: filterValue } = state;
 
-  const isEmpty = value === null || value === undefined || value === "";
+  // Empty detection — multi_select needs special handling
+  const isEmpty =
+    type === "multi_select"
+      ? isMultiSelectEmpty(value)
+      : value === null || value === undefined || value === "";
 
   switch (operator) {
     case "is_empty":
@@ -29,6 +34,26 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
         default:
           return true;
       }
+
+    case "multi_select": {
+      if (!isMultiSelectValue(value)) return false;
+      const selectedIds = value.option_ids;
+      const filterIds: string[] = Array.isArray(filterValue)
+        ? (filterValue as string[])
+        : typeof filterValue === "string" && filterValue
+          ? [filterValue]
+          : [];
+      if (filterIds.length === 0) return true;
+
+      switch (operator) {
+        case "contains_any_of":
+          return filterIds.some((id) => selectedIds.includes(id));
+        case "contains_all_of":
+          return filterIds.every((id) => selectedIds.includes(id));
+        default:
+          return true;
+      }
+    }
 
     case "number":
     case "currency": {

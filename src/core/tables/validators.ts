@@ -1,4 +1,5 @@
-import type { ColumnType, CellValue } from "./types";
+import type { ColumnType, CellValue, SingleSelectOption } from "./types";
+import { isMultiSelectValue, isMultiSelectEmpty } from "./types";
 
 export interface ValidationResult {
   valid: boolean;
@@ -43,6 +44,15 @@ export function validateCellValue(type: ColumnType, value: unknown): ValidationR
       if (typeof value !== "string") return { valid: false, error: "Single select value must be a string (option ID)" };
       return { valid: true, normalized: value };
 
+    case "multi_select": {
+      if (isMultiSelectValue(value)) {
+        const ids = value.option_ids.filter((id) => typeof id === "string");
+        if (ids.length === 0) return { valid: true, normalized: null };
+        return { valid: true, normalized: { option_ids: ids } };
+      }
+      return { valid: false, error: "Multi-select value must be an object with option_ids array" };
+    }
+
     default:
       return { valid: false, error: `Unknown column type: ${type}` };
   }
@@ -60,12 +70,19 @@ export function deserializeCellValue(type: ColumnType, raw: unknown): CellValue 
       return typeof raw === "number" ? raw : null;
     case "checkbox":
       return typeof raw === "boolean" ? raw : null;
+    case "multi_select":
+      if (isMultiSelectValue(raw)) return raw;
+      return null;
     default:
       return typeof raw === "string" ? raw : null;
   }
 }
 
-export function formatCellValueForCsv(type: ColumnType, value: CellValue): string {
+export function formatCellValueForCsv(
+  type: ColumnType,
+  value: CellValue,
+  options?: SingleSelectOption[],
+): string {
   if (value === null || value === undefined) return "";
   switch (type) {
     case "checkbox":
@@ -73,6 +90,13 @@ export function formatCellValueForCsv(type: ColumnType, value: CellValue): strin
     case "number":
     case "currency":
       return String(value);
+    case "multi_select": {
+      if (!isMultiSelectValue(value) || isMultiSelectEmpty(value)) return "";
+      if (!options) return value.option_ids.join("|");
+      return value.option_ids
+        .map((id) => options.find((o) => o.id === id)?.label ?? id)
+        .join("|");
+    }
     default:
       return String(value);
   }

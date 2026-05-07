@@ -1,6 +1,7 @@
 import "server-only";
-import type { ColumnConfig, ColumnType } from "./types";
+import type { ColumnConfig, ColumnType, SingleSelectOption } from "./types";
 import { formatCellValueForCsv, deserializeCellValue } from "./validators";
+import { isMultiSelectValue } from "./types";
 
 interface ExportColumn {
   id: string;
@@ -42,6 +43,13 @@ export function exportTableCsv(table: ExportTable): string {
     return cols.map((col) => {
       const cell = row.cells.find((c) => c.column_id === col.id);
       const rawVal = cell?.value ?? null;
+
+      if (col.type === "multi_select") {
+        const deserialized = deserializeCellValue(col.type, rawVal);
+        const options = (col.config.options ?? []) as SingleSelectOption[];
+        return csvEscape(formatCellValueForCsv(col.type, deserialized, options));
+      }
+
       const deserialized = deserializeCellValue(col.type, rawVal);
       return csvEscape(formatCellValueForCsv(col.type, deserialized));
     }).join(",");
@@ -72,6 +80,20 @@ export function exportTableJson(table: ExportTable): string {
       config: col.config,
       aggregation: col.aggregation ?? null,
       width: col.width,
+    })),
+    rows: table.rows.map((row) => ({
+      id: row.id,
+      cells: cols.map((col) => {
+        const cell = row.cells.find((c) => c.column_id === col.id);
+        const rawVal = cell?.value ?? null;
+        if (col.type === "multi_select") {
+          if (isMultiSelectValue(rawVal)) {
+            return { column_id: col.id, option_ids: rawVal.option_ids };
+          }
+          return { column_id: col.id, option_ids: [] };
+        }
+        return { column_id: col.id, value: rawVal };
+      }),
     })),
     row_count: table.rows.length,
   };

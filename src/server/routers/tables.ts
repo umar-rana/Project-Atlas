@@ -7,7 +7,7 @@ import { logActivity } from "@/core/audit";
 import { validateCellValue } from "@/core/tables/validators";
 import type { ColumnType } from "@/core/tables/types";
 
-const COLUMN_TYPES = ["text", "number", "date", "checkbox", "single_select", "currency"] as const;
+const COLUMN_TYPES = ["text", "number", "date", "checkbox", "single_select", "currency", "multi_select"] as const;
 const AGGREGATION_TYPES = ["sum", "average", "count", "min", "max", "checked_ratio", "none"] as const;
 
 function toNumber(d: Prisma.Decimal | null): number {

@@ -1,12 +1,28 @@
-import type { ColumnType, CellValue, SortState, TableRowData, TableColumnData } from "./types";
+import type { ColumnType, CellValue, SortState, TableRowData, TableColumnData, SingleSelectOption } from "./types";
+import { isMultiSelectValue, isMultiSelectEmpty } from "./types";
 
-function compareCellValues(type: ColumnType, a: CellValue, b: CellValue, direction: "asc" | "desc"): number {
-  const nullA = a === null || a === undefined || a === "";
-  const nullB = b === null || b === undefined || b === "";
+function getFirstMultiSelectLabel(value: CellValue, options: SingleSelectOption[]): string | null {
+  if (!isMultiSelectValue(value) || isMultiSelectEmpty(value)) return null;
+  const firstId = value.option_ids[0];
+  if (!firstId) return null;
+  return options.find((o) => o.id === firstId)?.label ?? null;
+}
 
+function compareCellValues(
+  type: ColumnType,
+  a: CellValue,
+  b: CellValue,
+  direction: "asc" | "desc",
+  options?: SingleSelectOption[],
+): number {
+  // Empty detection — multi_select needs special handling
+  const nullA = type === "multi_select" ? isMultiSelectEmpty(a) : (a === null || a === undefined || a === "");
+  const nullB = type === "multi_select" ? isMultiSelectEmpty(b) : (b === null || b === undefined || b === "");
+
+  // Empty cells always last on asc, first on desc
   if (nullA && nullB) return 0;
-  if (nullA) return 1;
-  if (nullB) return -1;
+  if (nullA) return direction === "asc" ? 1 : -1;
+  if (nullB) return direction === "asc" ? -1 : 1;
 
   let result = 0;
 
@@ -15,6 +31,13 @@ function compareCellValues(type: ColumnType, a: CellValue, b: CellValue, directi
     case "single_select":
       result = String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
       break;
+
+    case "multi_select": {
+      const labelA = getFirstMultiSelectLabel(a, options ?? []) ?? "";
+      const labelB = getFirstMultiSelectLabel(b, options ?? []) ?? "";
+      result = labelA.localeCompare(labelB, undefined, { sensitivity: "base" });
+      break;
+    }
 
     case "number":
     case "currency":
@@ -46,9 +69,11 @@ export function sortRows(
   const col = columns.find((c) => c.id === sort.column_id);
   if (!col) return rows;
 
+  const options = (col.config.options ?? []) as SingleSelectOption[];
+
   return [...rows].sort((a, b) => {
     const cellA = a.cells.find((c) => c.column_id === sort.column_id);
     const cellB = b.cells.find((c) => c.column_id === sort.column_id);
-    return compareCellValues(col.type, cellA?.value ?? null, cellB?.value ?? null, sort.direction);
+    return compareCellValues(col.type, cellA?.value ?? null, cellB?.value ?? null, sort.direction, options);
   });
 }

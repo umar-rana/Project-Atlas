@@ -55,6 +55,7 @@ export default function TableEditorPage() {
   const [filterColId, setFilterColId] = React.useState<string>("");
   const [filterOp, setFilterOp] = React.useState<FilterOperator>("contains");
   const [filterVal, setFilterVal] = React.useState<string>("");
+  const [filterMultiIds, setFilterMultiIds] = React.useState<string[]>([]);
 
   const utils = trpc.useUtils();
 
@@ -71,12 +72,16 @@ export default function TableEditorPage() {
   function applyFilter() {
     if (!filterColId) return;
     const col = table?.columns.find((c) => c.id === filterColId);
-    const val = filterOp === "is_empty" || filterOp === "is_not_empty"
-      ? null
-      : (col?.type === "number" || col?.type === "currency") ? parseFloat(filterVal) || null
-      : col?.type === "checkbox" ? filterVal === "true"
-      : filterVal || null;
-    handleFilterChange({ column_id: filterColId, operator: filterOp, value: val });
+    if (filterOp === "is_empty" || filterOp === "is_not_empty") {
+      handleFilterChange({ column_id: filterColId, operator: filterOp, value: null });
+    } else if (filterOp === "contains_any_of" || filterOp === "contains_all_of") {
+      handleFilterChange({ column_id: filterColId, operator: filterOp, value: filterMultiIds });
+    } else {
+      const val = (col?.type === "number" || col?.type === "currency") ? parseFloat(filterVal) || null
+        : col?.type === "checkbox" ? filterVal === "true"
+        : filterVal || null;
+      handleFilterChange({ column_id: filterColId, operator: filterOp, value: val });
+    }
     setShowFilterPanel(false);
   }
 
@@ -129,7 +134,7 @@ export default function TableEditorPage() {
     ...row,
     cells: row.cells.map((cell) => ({
       ...cell,
-      value: cell.value as string | number | boolean | null,
+      value: cell.value as string | number | boolean | { option_ids: string[] } | null,
     })),
   }));
 
@@ -247,6 +252,7 @@ export default function TableEditorPage() {
                     value={filterColId}
                     onChange={(e) => {
                       setFilterColId(e.target.value);
+                      setFilterMultiIds([]);
                       const col = table.columns.find((c) => c.id === e.target.value);
                       const firstOp = getOperatorsForType(col?.type as ColumnType ?? "text")[0];
                       if (firstOp) setFilterOp(firstOp);
@@ -271,7 +277,7 @@ export default function TableEditorPage() {
                         ))}
                       </select>
 
-                      {filterOp !== "is_empty" && filterOp !== "is_not_empty" && (
+                      {filterOp !== "is_empty" && filterOp !== "is_not_empty" && filterOp !== "contains_any_of" && filterOp !== "contains_all_of" && (
                         <input
                           value={filterVal}
                           onChange={(e) => setFilterVal(e.target.value)}
@@ -279,6 +285,33 @@ export default function TableEditorPage() {
                           className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
                         />
                       )}
+                      {(filterOp === "contains_any_of" || filterOp === "contains_all_of") && (() => {
+                        const col = table.columns.find((c) => c.id === filterColId);
+                        const opts = ((col?.config as Record<string, unknown>)?.options ?? []) as Array<{ id: string; label: string; color?: string }>;
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {opts.length === 0 && (
+                              <span className="font-ui text-xs text-text-disabled">No options defined for this column</span>
+                            )}
+                            {opts.map((opt) => {
+                              const active = filterMultiIds.includes(opt.id);
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => setFilterMultiIds((prev) =>
+                                    active ? prev.filter((id) => id !== opt.id) : [...prev, opt.id]
+                                  )}
+                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-xs border ${active ? "border-accent-primary bg-accent-primary-subtle text-accent-primary" : "border-border-default bg-surface-base text-text-secondary"}`}
+                                >
+                                  {opt.color && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: opt.color }} />}
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex gap-2">
                         <button

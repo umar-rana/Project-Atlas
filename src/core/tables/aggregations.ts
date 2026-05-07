@@ -1,4 +1,5 @@
 import type { ColumnType, CellValue, AggregationType, TableRowData, TableColumnData } from "./types";
+import { isMultiSelectEmpty } from "./types";
 
 export function computeAggregation(
   type: ColumnType,
@@ -8,9 +9,12 @@ export function computeAggregation(
 ): string | null {
   if (!aggregation || aggregation === "none") return null;
 
-  const values = rows
-    .map((r) => r.cells.find((c) => c.column_id === columnId)?.value ?? null)
-    .filter((v) => v !== null && v !== undefined && v !== "");
+  const allValues = rows.map((r) => r.cells.find((c) => c.column_id === columnId)?.value ?? null);
+
+  const values = allValues.filter((v) => {
+    if (type === "multi_select") return !isMultiSelectEmpty(v);
+    return v !== null && v !== undefined && v !== "";
+  });
 
   if (values.length === 0) return null;
 
@@ -94,6 +98,7 @@ export function getAvailableAggregations(type: ColumnType): AggregationType[] {
       return ["none", "count", "checked_ratio"];
     case "text":
     case "single_select":
+    case "multi_select":
       return ["none", "count"];
     default:
       return ["none", "count"];
