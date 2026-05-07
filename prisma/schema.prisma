@@ -652,6 +652,7 @@ model Note {
   folder            NotesFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   project           Project?     @relation(fields: [project_id], references: [id], onDelete: SetNull)
   tag_on_notes      TagOnNote[]
+  versions          NoteVersion[]
 
   // Partial unique index (only one brief per project) is enforced via raw SQL:
   // CREATE UNIQUE INDEX note_project_brief_unique ON "Note" (project_id) WHERE is_project_brief = true;
@@ -676,6 +677,29 @@ model TagOnNote {
   @@id([tag_id, note_id])
   @@index([note_id])
   @@index([tag_id])
+}
+
+// ─── NoteVersion ──────────────────────────────────────────────────────────────
+// Stores full JSON snapshots of note body at each version point.
+// Storage trade-off: full body_json per version (no delta compression).
+// Delta compression is deferred to Wave 4d.
+// Retention: max 50 versions per note; version_number=1 (anchor) is always preserved.
+
+model NoteVersion {
+  id             String    @id @db.Uuid
+  note_id        String    @db.Uuid
+  version_number Int
+  body_json      String    @default("{}")
+  body_text      String    @default("")
+  body_markdown  String    @default("")
+  change_summary String?
+  created_by     String    @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamptz
+
+  note           Note      @relation(fields: [note_id], references: [id], onDelete: Cascade)
+
+  @@unique([note_id, version_number])
+  @@index([note_id, version_number])
 }
 
 // ─── Link ────────────────────────────────────────────────────────────────────

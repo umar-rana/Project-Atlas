@@ -2,11 +2,21 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Camera, History } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { NotesShell } from "@/components/notes/notes-shell";
 import { NoteEditor } from "@/components/notes/note-editor";
 import { NoteMetadataPanel } from "@/components/notes/note-metadata-panel";
+import { SaveSnapshotDialog } from "@/components/notes/save-snapshot-dialog";
+import { VersionHistoryPanel } from "@/components/notes/version-history-panel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Hint } from "@/components/ui/hint";
 
 type ErrorBoundaryState = { error: Error | null };
 
@@ -54,6 +64,9 @@ export default function NoteEditorPage() {
   const noteQuery = trpc.notes.get.useQuery({ id: noteId });
   const note = noteQuery.data;
 
+  const [saveSnapshotOpen, setSaveSnapshotOpen] = React.useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = React.useState(false);
+
   const metaPanel = note ? (
     <NoteMetadataPanel
       noteId={note.id}
@@ -79,6 +92,47 @@ export default function NoteEditorPage() {
             <ArrowLeft size={13} />
             Back
           </button>
+
+          <div className="ml-auto flex items-center gap-1">
+            {note && (
+              <>
+                <Hint label="Save snapshot" side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setSaveSnapshotOpen(true)}
+                    className="flex items-center gap-1.5 rounded-sm px-2 py-1 font-ui text-xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    <Camera size={13} />
+                  </button>
+                </Hint>
+
+                <Hint label="Note actions" side="bottom">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                        aria-label="Note actions"
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem onClick={() => setSaveSnapshotOpen(true)}>
+                        <Camera size={13} className="mr-2" />
+                        Save snapshot
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setVersionHistoryOpen(true)}>
+                        <History size={13} className="mr-2" />
+                        Version history
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </Hint>
+              </>
+            )}
+          </div>
         </div>
 
         {noteQuery.isLoading ? (
@@ -101,6 +155,24 @@ export default function NoteEditorPage() {
           </NoteEditorErrorBoundary>
         )}
       </div>
+
+      {note && (
+        <>
+          <SaveSnapshotDialog
+            open={saveSnapshotOpen}
+            onOpenChange={setSaveSnapshotOpen}
+            noteId={note.id}
+          />
+          <VersionHistoryPanel
+            open={versionHistoryOpen}
+            onOpenChange={setVersionHistoryOpen}
+            noteId={note.id}
+            onRestored={() => {
+              void noteQuery.refetch();
+            }}
+          />
+        </>
+      )}
     </NotesShell>
   );
 }

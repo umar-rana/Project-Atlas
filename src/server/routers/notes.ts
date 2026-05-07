@@ -8,6 +8,7 @@ import { extractReferenceNodes } from "@/core/links/resolver";
 import { syncLinksForSource } from "@/core/links/service";
 import { createLogger } from "@/core/logging";
 import { detectEmbedProvider, getOembedEndpoint } from "@/core/notes/embed-providers";
+import { createSnapshot } from "@/core/notes/versioning";
 
 const log = createLogger({ module: "notes-router" });
 
@@ -260,6 +261,20 @@ export const notesRouter = router({
         } catch (err) {
           log.warn({ err, note_id: input.id }, "Non-fatal: link graph sync failed for note update");
         }
+      }
+
+      if (input.body_json !== undefined) {
+        void createSnapshot(
+          input.id,
+          ctx.user.id,
+          {
+            body_json: updated.body_json,
+            body_text: updated.body_text,
+            body_markdown: updated.body_markdown,
+          },
+        ).catch((err: unknown) => {
+          log.warn({ err, note_id: input.id }, "Non-fatal: background snapshot failed for note update");
+        });
       }
 
       return updated;
@@ -676,4 +691,124 @@ export const notesRouter = router({
 
       return { ok: true };
     }),
+
+  versions: router({
+    list: protectedProcedure
+      .input(z.object({ noteId: z.string().uuid() }))
+      .query(async ({ ctx, input }) => {
+        const note = await db.note.findFirst({
+          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+        return db.noteVersion.findMany({
+          where: { note_id: input.noteId },
+          orderBy: { version_number: "desc" },
+          select: {
+            version_number: true,
+            change_summary: true,
+            created_by: true,
+            created_at: true,
+          },
+        });
+      }),
+
+    get: protectedProcedure
+      .input(z.object({ noteId: z.string().uuid(), versionNumber: z.number().int() }))
+      .query(async ({ ctx, input }) => {
+        const note = await db.note.findFirst({
+          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const version = await db.noteVersion.findFirst({
+          where: { note_id: input.noteId, version_number: input.versionNumber },
+        });
+        if (!version) throw new TRPCError({ code: "NOT_FOUND" });
+
+        return version;
+      }),
+
+    restore: protectedProcedure
+      .input(z.object({ noteId: z.string().uuid(), versionNumber: z.number().int() }))
+      .mutation(async ({ ctx, input }) => {
+        const note = await db.note.findFirst({
+          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const version = await db.noteVersion.findFirst({
+          where: { note_id: input.noteId, version_number: input.versionNumber },
+        });
+        if (!version) throw new TRPCError({ code: "NOT_FOUND" });
+
+        await db.note.update({
+          where: { id: input.noteId },
+          data: {
+            body_json: version.body_json,
+            body_text: version.body_text,
+            body_markdown: version.body_markdown,
+            word_count: version.body_text.split(/\s+/).filter(Boolean).length,
+          },
+        });
+
+        await createSnapshot(
+          input.noteId,
+          ctx.user.id,
+          {
+            body_json: version.body_json,
+            body_text: version.body_text,
+            body_markdown: version.body_markdown,
+          },
+          { manual: true, changeSummary: `Restored from version ${input.versionNumber}` },
+        );
+
+        try {
+          await logActivity({
+            user_id: ctx.user.id,
+            entity_type: "Note",
+            entity_id: input.noteId,
+            action: "note_version_restored",
+            meta: {
+              restored_from_version: input.versionNumber,
+            },
+          });
+        } catch (err) {
+          log.warn({ err, note_id: input.noteId }, "Non-fatal: audit log failed for note version restore");
+        }
+
+        return { ok: true };
+      }),
+
+    saveSnapshot: protectedProcedure
+      .input(
+        z.object({
+          noteId: z.string().uuid(),
+          changeSummary: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const note = await db.note.findFirst({
+          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true, body_json: true, body_text: true, body_markdown: true },
+        });
+        if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+        await createSnapshot(
+          input.noteId,
+          ctx.user.id,
+          {
+            body_json: note.body_json,
+            body_text: note.body_text,
+            body_markdown: note.body_markdown,
+          },
+          { manual: true, changeSummary: input.changeSummary },
+        );
+
+        return { ok: true };
+      }),
+  }),
 });
