@@ -5,6 +5,7 @@ import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
+import { recomputeAndPersist, recomputeNextFollowUpAt } from "@/core/people/last-contact";
 import {
   PersonCreateSchema,
   PersonUpdateSchema,
@@ -23,6 +24,18 @@ import {
 } from "@/core/people/validation";
 
 const log = createLogger({ module: "people-router" });
+
+// Normalize interaction kind: lowercase, alphanumeric + spaces + hyphens, 1-32 chars
+function normalizeKind(kind: string): string {
+  return kind.toLowerCase().replace(/[^a-z0-9\s-]/g, "").trim().slice(0, 32);
+}
+
+const INTERACTION_KIND_SCHEMA = z
+  .string()
+  .min(1)
+  .max(32)
+  .transform(normalizeKind)
+  .refine((v) => v.length >= 1, { message: "Kind must not be empty after normalization" });
 
 let parsePhoneNumber: ((number: string, region?: string) => { number: string } | undefined) | null = null;
 
@@ -214,6 +227,12 @@ export const peopleRouter = router({
           skills: { where: { deleted_at: null }, orderBy: { name: "asc" } },
           interests: { where: { deleted_at: null }, orderBy: { name: "asc" } },
           tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+          interactions: {
+            where: { deleted_at: null },
+            select: { id: true, kind: true, occurred_at: true, deleted_at: true },
+            orderBy: { occurred_at: "desc" },
+            take: 100,
+          },
         },
       });
       if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -269,6 +288,9 @@ export const peopleRouter = router({
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
+      const cadenceDaysChanged =
+        data.cadence_days !== undefined && data.cadence_days !== existing.cadence_days;
+
       const person = await db.person.update({
         where: { id },
         data: {
@@ -282,12 +304,14 @@ export const peopleRouter = router({
           ...(data.biography !== undefined ? { biography: data.biography } : {}),
           ...(data.photo_url !== undefined ? { photo_url: data.photo_url || null } : {}),
           ...(data.relationship_type !== undefined ? { relationship_type: data.relationship_type } : {}),
-          ...(data.cadence_days !== undefined ? { cadence_days: data.cadence_days } : {}),
-          ...(data.next_follow_up_at !== undefined ? { next_follow_up_at: data.next_follow_up_at ? new Date(data.next_follow_up_at) : null } : {}),
-          ...(data.last_contacted_at !== undefined ? { last_contacted_at: data.last_contacted_at ? new Date(data.last_contacted_at) : null } : {}),
+          ...(data.cadence_days !== undefined ? { cadence_days: data.cadence_days ?? null } : {}),
           ...(data.external_data !== undefined ? { external_data: data.external_data !== null ? (data.external_data as Prisma.InputJsonValue) : Prisma.DbNull } : {}),
         },
       });
+
+      if (cadenceDaysChanged) {
+        await recomputeAndPersist(id);
+      }
 
       await logActivity({
         user_id: ctx.user.id,
@@ -299,6 +323,173 @@ export const peopleRouter = router({
       }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
 
       return person;
+    }),
+
+  // ─── Set last contact override ────────────────────────────────────────────────
+  setLastContactOverride: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      last_contacted_at: z.string().datetime().nullable(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const person = await db.person.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true, cadence_days: true },
+      });
+      if (!person) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const lastContactAt = input.last_contacted_at ? new Date(input.last_contacted_at) : null;
+
+      let nextFollowUpAt: Date | null = null;
+      if (lastContactAt && person.cadence_days) {
+        nextFollowUpAt = new Date(
+          lastContactAt.getTime() + person.cadence_days * 24 * 60 * 60 * 1000,
+        );
+      }
+
+      await db.person.update({
+        where: { id: input.id },
+        data: { last_contacted_at: lastContactAt, next_follow_up_at: nextFollowUpAt },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Person",
+        entity_id: input.id,
+        action: "person_last_contact_override_set",
+        meta: { last_contacted_at: input.last_contacted_at },
+      }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+      return { ok: true };
+    }),
+
+  // ─── Snooze follow-up ─────────────────────────────────────────────────────────
+  snoozeFollowUp: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      snooze_until: z.string().datetime(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const person = await db.person.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true },
+      });
+      if (!person) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const snoozeUntil = new Date(input.snooze_until);
+      const now = new Date();
+      const snooze_days = Math.round((snoozeUntil.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+
+      await db.person.update({
+        where: { id: input.id },
+        data: { followup_snooze_until: snoozeUntil },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Person",
+        entity_id: input.id,
+        action: "person_followup_snoozed",
+        meta: { snooze_days, snooze_until: input.snooze_until },
+      }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+      return { ok: true };
+    }),
+
+  // ─── Dismiss cadence suggestion ───────────────────────────────────────────────
+  dismissCadenceSuggestion: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      suggested_value: z.number().int().min(1).max(3650),
+      interaction_count: z.number().int().min(0),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const person = await db.person.findFirst({
+        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true },
+      });
+      if (!person) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.person.update({
+        where: { id: input.id },
+        data: {
+          cadence_suggestion_dismissed_at: new Date(),
+          cadence_suggestion_dismissed_value: input.suggested_value,
+          cadence_suggestion_dismissed_interaction_count: input.interaction_count,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Person",
+        entity_id: input.id,
+        action: "person_cadence_suggestion_dismissed",
+        meta: { suggested_value: input.suggested_value },
+      }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+      return { ok: true };
+    }),
+
+  // ─── Follow-up list query ──────────────────────────────────────────────────────
+  followUpList: protectedProcedure
+    .input(z.object({
+      relationship_type: z.string().max(100).optional(),
+      tag_ids: z.array(z.string().uuid()).optional(),
+      sort: z.enum(["most_overdue", "alphabetical"]).default("most_overdue"),
+      limit: z.number().int().min(1).max(200).default(50),
+      cursor: z.string().uuid().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const where = {
+        user_id: ctx.user.id,
+        deleted_at: null as null,
+        next_follow_up_at: { not: null, lte: now },
+        OR: [
+          { followup_snooze_until: null },
+          { followup_snooze_until: { lte: now } },
+        ],
+        ...(input.relationship_type ? { relationship_type: input.relationship_type } : {}),
+        ...(input.tag_ids?.length
+          ? { AND: input.tag_ids.map((tag_id) => ({ tags: { some: { tag_id } } })) }
+          : {}),
+      };
+
+      const orderBy =
+        input.sort === "alphabetical"
+          ? [{ display_name: "asc" as const }, { family_name: "asc" as const }, { id: "asc" as const }]
+          : [{ next_follow_up_at: "asc" as const }, { id: "asc" as const }];
+
+      const people = await db.person.findMany({
+        where,
+        orderBy,
+        take: input.limit + 1,
+        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+        select: {
+          id: true,
+          handle: true,
+          display_name: true,
+          given_name: true,
+          family_name: true,
+          nickname: true,
+          photo_url: true,
+          relationship_type: true,
+          cadence_days: true,
+          last_contacted_at: true,
+          next_follow_up_at: true,
+          followup_snooze_until: true,
+          tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
+        },
+      });
+
+      const total = await db.person.count({ where });
+
+      let nextCursor: string | undefined;
+      if (people.length > input.limit) {
+        nextCursor = people.pop()!.id;
+      }
+
+      return { people, nextCursor, total };
     }),
 
   delete: protectedProcedure
@@ -348,6 +539,203 @@ export const peopleRouter = router({
       }
     }
     return [...seen.keys()];
+  }),
+
+  // ─── Interactions sub-router ─────────────────────────────────────────────────
+  interactions: router({
+    list: protectedProcedure
+      .input(z.object({
+        person_id: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).default(20),
+        cursor: z.string().uuid().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const person = await db.person.findFirst({
+          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!person) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const rows = await db.personInteraction.findMany({
+          where: { person_id: input.person_id, deleted_at: null },
+          orderBy: { occurred_at: "desc" },
+          take: input.limit + 1,
+          ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+        });
+
+        let nextCursor: string | undefined;
+        if (rows.length > input.limit) {
+          nextCursor = rows.pop()!.id;
+        }
+
+        return { interactions: rows, nextCursor };
+      }),
+
+    byId: protectedProcedure
+      .input(z.object({ id: z.string().uuid() }))
+      .query(async ({ ctx, input }) => {
+        const row = await db.personInteraction.findFirst({
+          where: { id: input.id, person: { user_id: ctx.user.id }, deleted_at: null },
+        });
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+        return row;
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        person_id: z.string().uuid(),
+        kind: INTERACTION_KIND_SCHEMA,
+        occurred_at: z.string().datetime(),
+        duration_minutes: z.number().int().min(0).max(1440).optional(),
+        location: z.string().max(500).optional(),
+        notes: z.string().max(10000).optional(),
+        source_capture_id: z.string().uuid().optional(),
+        source_task_id: z.string().uuid().optional(),
+      }).refine(
+        (d) => new Date(d.occurred_at).getTime() <= Date.now() + 5 * 60 * 1000,
+        { message: "occurred_at cannot be more than 5 minutes in the future", path: ["occurred_at"] },
+      ))
+      .mutation(async ({ ctx, input }) => {
+        const person = await db.person.findFirst({
+          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!person) throw new TRPCError({ code: "NOT_FOUND" });
+
+        if (input.source_capture_id) {
+          const c = await db.capture.findFirst({ where: { id: input.source_capture_id, user_id: ctx.user.id, deleted_at: null }, select: { id: true } });
+          if (!c) throw new TRPCError({ code: "BAD_REQUEST", message: "source_capture_id not found" });
+        }
+        if (input.source_task_id) {
+          const t = await db.task.findFirst({ where: { id: input.source_task_id, user_id: ctx.user.id, deleted_at: null }, select: { id: true } });
+          if (!t) throw new TRPCError({ code: "BAD_REQUEST", message: "source_task_id not found" });
+        }
+
+        const id = newId();
+        const row = await db.personInteraction.create({
+          data: {
+            id,
+            person_id: input.person_id,
+            kind: input.kind,
+            occurred_at: new Date(input.occurred_at),
+            duration_minutes: input.duration_minutes,
+            location: input.location,
+            notes: input.notes,
+            source_capture_id: input.source_capture_id,
+            source_task_id: input.source_task_id,
+          },
+        });
+
+        await recomputeAndPersist(input.person_id);
+
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "PersonInteraction",
+          entity_id: id,
+          action: "person_interaction_create",
+          meta: { person_id: input.person_id, kind: input.kind, occurred_at: input.occurred_at },
+        }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+        return row;
+      }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.string().uuid(),
+        kind: INTERACTION_KIND_SCHEMA.optional(),
+        occurred_at: z.string().datetime().optional(),
+        duration_minutes: z.number().int().min(0).max(1440).nullable().optional(),
+        location: z.string().max(500).nullable().optional(),
+        notes: z.string().max(10000).nullable().optional(),
+      }).refine(
+        (d) => !d.occurred_at || new Date(d.occurred_at).getTime() <= Date.now() + 5 * 60 * 1000,
+        { message: "occurred_at cannot be more than 5 minutes in the future", path: ["occurred_at"] },
+      ))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        const row = await db.personInteraction.findFirst({
+          where: { id, person: { user_id: ctx.user.id }, deleted_at: null },
+          select: { id: true, person_id: true },
+        });
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const updated = await db.personInteraction.update({
+          where: { id },
+          data: {
+            ...(data.kind !== undefined ? { kind: data.kind } : {}),
+            ...(data.occurred_at !== undefined ? { occurred_at: new Date(data.occurred_at) } : {}),
+            ...(data.duration_minutes !== undefined ? { duration_minutes: data.duration_minutes } : {}),
+            ...(data.location !== undefined ? { location: data.location } : {}),
+            ...(data.notes !== undefined ? { notes: data.notes } : {}),
+          },
+        });
+
+        await recomputeAndPersist(row.person_id);
+
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "PersonInteraction",
+          entity_id: id,
+          action: "person_interaction_update",
+          meta: { person_id: row.person_id },
+        }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+        return updated;
+      }),
+
+    remove: protectedProcedure
+      .input(z.object({ id: z.string().uuid() }))
+      .mutation(async ({ ctx, input }) => {
+        const row = await db.personInteraction.findFirst({
+          where: { id: input.id, person: { user_id: ctx.user.id }, deleted_at: null },
+          select: { id: true, person_id: true },
+        });
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+        await db.personInteraction.update({
+          where: { id: input.id },
+          data: { deleted_at: new Date() },
+        });
+
+        await recomputeAndPersist(row.person_id);
+
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "PersonInteraction",
+          entity_id: input.id,
+          action: "person_interaction_remove",
+          meta: { person_id: row.person_id },
+        }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+        return { ok: true };
+      }),
+
+    restore: protectedProcedure
+      .input(z.object({ id: z.string().uuid() }))
+      .mutation(async ({ ctx, input }) => {
+        const row = await db.personInteraction.findFirst({
+          where: { id: input.id, person: { user_id: ctx.user.id } },
+          select: { id: true, person_id: true },
+        });
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+        await db.personInteraction.update({
+          where: { id: input.id },
+          data: { deleted_at: null },
+        });
+
+        await recomputeAndPersist(row.person_id);
+
+        await logActivity({
+          user_id: ctx.user.id,
+          entity_type: "PersonInteraction",
+          entity_id: input.id,
+          action: "person_interaction_restore",
+          meta: { person_id: row.person_id },
+        }).catch((err: unknown) => log.warn({ err }, "audit log failed"));
+
+        return { ok: true };
+      }),
   }),
 
   // ─── Email sub-router ────────────────────────────────────────────────────────

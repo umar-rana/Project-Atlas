@@ -46,7 +46,17 @@ const TOC = [
   { id: "relations", label: "Relations" },
   { id: "skills", label: "Skills" },
   { id: "interests", label: "Interests" },
+  { id: "cadence", label: "Follow-up" },
 ];
+
+const CADENCE_PRESETS = [
+  { label: "None", value: null },
+  { label: "Weekly", value: 7 },
+  { label: "Monthly", value: 30 },
+  { label: "Quarterly", value: 90 },
+  { label: "Yearly", value: 365 },
+  { label: "Custom", value: -1 },
+] as const;
 
 interface Props {
   mode: "create" | "edit";
@@ -84,6 +94,10 @@ export function PersonForm({ mode, personId }: Props) {
   const [interests, setInterests] = useState<Chip[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [interestInput, setInterestInput] = useState("");
+
+  // Cadence
+  const [cadencePreset, setCadencePreset] = useState<null | number | -1>(null);
+  const [cadenceCustom, setCadenceCustom] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -134,6 +148,7 @@ export function PersonForm({ mode, personId }: Props) {
       display_name: string | null; honorific_prefix: string | null; given_name: string | null;
       middle_name: string | null; family_name: string | null; honorific_suffix: string | null;
       nickname: string | null; biography: string | null; photo_url: string | null; relationship_type: string | null;
+      cadence_days: number | null | undefined;
       emails: { id: string; email: string; type: string; is_primary: boolean }[];
       phones: { id: string; number: string; type: string; is_primary: boolean }[];
       addresses: { id: string; type: string; street: string | null; city: string | null; region: string | null; postal_code: string | null; country_code: string | null; country_name: string | null; is_primary: boolean }[];
@@ -163,6 +178,19 @@ export function PersonForm({ mode, personId }: Props) {
     setRelations(p.relations.map((r) => ({ id: r.id, related_person_id: r.related_person_id ?? undefined, related_text: r.related_text ?? "", type: r.type, use_picker: !!r.related_person_id })));
     setSkills(p.skills.map((s) => ({ id: s.id, name: s.name })));
     setInterests(p.interests.map((i) => ({ id: i.id, name: i.name })));
+
+    const cd = p.cadence_days ?? null;
+    if (cd === null) {
+      setCadencePreset(null);
+    } else {
+      const preset = CADENCE_PRESETS.find((x) => x.value === cd && x.value !== null && x.value !== -1);
+      if (preset) {
+        setCadencePreset(cd);
+      } else {
+        setCadencePreset(-1);
+        setCadenceCustom(String(cd));
+      }
+    }
   }, [existingPerson]);
 
   const markDirty = useCallback(() => setIsDirty(true), []);
@@ -212,6 +240,17 @@ export function PersonForm({ mode, personId }: Props) {
     setSubmitting(true);
 
     try {
+      // Compute cadence_days from form state
+      let cadenceDaysValue: number | null | undefined = undefined;
+      if (cadencePreset === null) {
+        cadenceDaysValue = null;
+      } else if (cadencePreset === -1) {
+        const parsed = parseInt(cadenceCustom, 10);
+        cadenceDaysValue = !isNaN(parsed) && parsed >= 1 && parsed <= 3650 ? parsed : null;
+      } else {
+        cadenceDaysValue = cadencePreset as number;
+      }
+
       const coreData = {
         display_name: displayName || undefined,
         honorific_prefix: honorificPrefix || undefined,
@@ -223,6 +262,7 @@ export function PersonForm({ mode, personId }: Props) {
         biography: biography || undefined,
         photo_url: photoUrl || undefined,
         relationship_type: relationshipType || undefined,
+        ...(cadenceDaysValue !== undefined ? { cadence_days: cadenceDaysValue } : {}),
       };
 
       let pid: string;
@@ -687,6 +727,48 @@ export function PersonForm({ mode, personId }: Props) {
                 {allSkills.filter((s) => s.toLowerCase().includes(skillInput.toLowerCase())).map((s) => <option key={s} value={s} />)}
               </datalist>
             </div>
+          </section>
+
+          {/* Follow-up Cadence section */}
+          <section id="section-cadence">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-text-disabled mb-3">Follow-up Cadence</h2>
+            <p className="text-xs text-text-tertiary mb-3">
+              Set how often you want to stay in touch. Atlas will show this person on your follow-up list when the cadence period has passed.
+            </p>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {CADENCE_PRESETS.map((preset) => {
+                const isActive = cadencePreset === preset.value;
+                return (
+                  <button
+                    key={String(preset.value)}
+                    type="button"
+                    onClick={() => { setCadencePreset(preset.value as number | null); markDirty(); }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md border text-xs transition-colors",
+                      isActive
+                        ? "border-accent-primary bg-accent-primary-subtle text-accent-primary font-medium"
+                        : "border-border-default text-text-tertiary hover:text-text-primary hover:border-border-strong",
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+            {cadencePreset === -1 && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  className={cn(INPUT, "w-32")}
+                  value={cadenceCustom}
+                  onChange={(e) => { setCadenceCustom(e.target.value); markDirty(); }}
+                  placeholder="Days"
+                  min={1}
+                  max={3650}
+                />
+                <span className="text-xs text-text-tertiary">days between follow-ups (1–3650)</span>
+              </div>
+            )}
           </section>
 
           {/* Interests section */}

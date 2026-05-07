@@ -5,11 +5,14 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { PersonAvatar } from "@/components/people/person-avatar";
+import { InteractionLog } from "@/components/people/interaction-log";
+import { CadenceSuggestionBanner } from "@/components/people/cadence-banner";
+import { LogInteractionModal } from "@/components/people/log-interaction-modal";
 import { deriveDisplayName } from "@/core/people/validation";
 import { EmptyState } from "@/components/composed/empty-state";
 import { Hint } from "@/components/ui/hint";
 import { useLocale } from "@/core/locale/hooks";
-import { formatDate } from "@/core/locale/formatters";
+import { formatDate, formatRelativeDate } from "@/core/locale/formatters";
 import {
   User,
   Mail,
@@ -33,6 +36,9 @@ import {
   Plus,
   X,
   File,
+  Activity,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +85,14 @@ type PersonView = {
   given_name: string | null; middle_name: string | null; family_name: string | null;
   honorific_suffix: string | null; nickname: string | null; biography: string | null;
   photo_url: string | null; relationship_type: string | null;
+  cadence_days: number | null;
+  last_contacted_at: Date | string | null;
+  next_follow_up_at: Date | string | null;
+  followup_snooze_until: Date | string | null;
+  cadence_suggestion_dismissed_at: Date | string | null;
+  cadence_suggestion_dismissed_value: number | null;
+  cadence_suggestion_dismissed_interaction_count: number | null;
+  interactions: { id: string; kind: string; occurred_at: Date | string; deleted_at: Date | string | null }[];
   emails: { id: string; email: string; type: string; is_primary: boolean }[];
   phones: { id: string; number: string; e164_normalized: string | null; type: string; is_primary: boolean }[];
   addresses: { id: string; type: string; street: string | null; city: string | null; region: string | null; postal_code: string | null; country_code: string | null; country_name: string | null; formatted: string | null; is_primary: boolean }[];
@@ -383,6 +397,83 @@ function TagManager({
   );
 }
 
+function LastContactOverride({ personId, currentOverride }: { personId: string; currentOverride: Date | string | null }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  const utils = trpc.useUtils();
+
+  const overrideMutation = trpc.people.setLastContactOverride.useMutation({
+    onSuccess: () => {
+      void utils.people.get.invalidate({ id: personId });
+      setOpen(false);
+      setValue("");
+    },
+  });
+
+  function handleSave() {
+    const iso = value ? new Date(value + "T12:00:00").toISOString() : null;
+    overrideMutation.mutate({ id: personId, last_contacted_at: iso });
+  }
+
+  function handleClear() {
+    overrideMutation.mutate({ id: personId, last_contacted_at: null });
+    setOpen(false);
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setValue(currentOverride ? new Date(currentOverride as string).toISOString().slice(0, 10) : "");
+          setOpen(true);
+        }}
+        className="text-2xs text-text-disabled hover:text-text-tertiary transition-colors ml-1"
+        title="Override last contact date"
+      >
+        Edit
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 ml-1">
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        max={new Date().toISOString().slice(0, 10)}
+        className="text-2xs border border-border-default rounded px-1.5 py-0.5 bg-surface-base text-text-primary outline-none"
+      />
+      <button
+        type="button"
+        disabled={overrideMutation.isPending}
+        onClick={handleSave}
+        className="text-2xs text-accent-primary hover:underline disabled:opacity-50"
+      >
+        Save
+      </button>
+      {currentOverride && (
+        <button
+          type="button"
+          disabled={overrideMutation.isPending}
+          onClick={handleClear}
+          className="text-2xs text-text-disabled hover:text-text-tertiary disabled:opacity-50"
+        >
+          Clear
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen(false)}
+        className="text-2xs text-text-disabled hover:text-text-tertiary"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export default function PersonDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -531,7 +622,53 @@ export default function PersonDetailPage() {
                   {p.relationship_type.replace(/-/g, " ")}
                 </span>
               )}
+              {(p.last_contacted_at || p.cadence_days) && (() => {
+                const now = new Date();
+                const lastAt = p.last_contacted_at ? new Date(p.last_contacted_at as string) : null;
+                const nextAt = p.next_follow_up_at ? new Date(p.next_follow_up_at as string) : null;
+                const cadence = p.cadence_days;
+
+                let statusText: string;
+                if (!cadence && lastAt) {
+                  // State 2: no cadence, has last contact
+                  statusText = `Last contacted ${formatRelativeDate(lastAt, locale)}`;
+                } else if (cadence && !lastAt) {
+                  // State 3: has cadence, no last contact
+                  const cadenceStr = cadence === 7 ? "weekly" : cadence === 30 ? "monthly" : cadence === 90 ? "quarterly" : cadence === 365 ? "yearly" : `every ${cadence} days`;
+                  statusText = `No contact yet · ${cadenceStr}`;
+                } else if (cadence && lastAt && nextAt) {
+                  const diffDays = Math.floor((now.getTime() - nextAt.getTime()) / (24 * 60 * 60 * 1000));
+                  if (diffDays < 0) {
+                    // State 4: on track
+                    statusText = `On track · next ${formatRelativeDate(nextAt, locale)}`;
+                  } else if (diffDays === 0) {
+                    // State 5: due today
+                    statusText = `Due today · last ${formatRelativeDate(lastAt, locale)}`;
+                  } else {
+                    // State 6: overdue
+                    const label = diffDays === 1 ? "1 day overdue" : `${diffDays} days overdue`;
+                    statusText = `${label} · last ${formatRelativeDate(lastAt, locale)}`;
+                  }
+                } else {
+                  statusText = "";
+                }
+
+                return statusText ? (
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    <span className="text-xs text-text-tertiary">{statusText}</span>
+                    <LastContactOverride personId={p.id} currentOverride={p.last_contacted_at} />
+                  </div>
+                ) : null;
+              })()}
               <TagManager personId={p.id} currentTags={p.tags} />
+              <CadenceSuggestionBanner
+                personId={p.id}
+                cadenceDays={p.cadence_days}
+                interactions={p.interactions ?? []}
+                dismissedAt={p.cadence_suggestion_dismissed_at}
+                dismissedValue={p.cadence_suggestion_dismissed_value}
+                dismissedInteractionCount={p.cadence_suggestion_dismissed_interaction_count}
+              />
             </div>
           </div>
 
@@ -707,10 +844,27 @@ export default function PersonDetailPage() {
                 </div>
               </Section>
 
-              <Section id="interactions" title="Interactions" icon={<Users size={14} />}>
-                <div className="rounded-lg border border-dashed border-border-subtle bg-surface-sunken px-4 py-6 text-center">
-                  <p className="text-sm text-text-tertiary">Interaction timeline coming in Wave 5a-ii.</p>
-                  <p className="text-xs text-text-disabled mt-1">Calls, meetings, emails, and touchpoint history will appear here.</p>
+              <Section id="interactions" title="Interactions" icon={<Activity size={14} />}>
+                {/* Cadence summary row */}
+                {(p.cadence_days || p.last_contacted_at) && (
+                  <div className="mb-3 rounded-md bg-surface-sunken border border-border-subtle px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    {p.cadence_days && (
+                      <span className="text-xs text-text-secondary">
+                        <span className="text-text-disabled mr-1">Cadence:</span>
+                        {p.cadence_days === 7 ? "Weekly" : p.cadence_days === 30 ? "Monthly" : p.cadence_days === 90 ? "Quarterly" : p.cadence_days === 365 ? "Yearly" : `Every ${p.cadence_days} days`}
+                      </span>
+                    )}
+                    {p.next_follow_up_at && (
+                      <span className="text-xs text-text-secondary">
+                        <span className="text-text-disabled mr-1">Follow-up:</span>
+                        {new Date(p.next_follow_up_at as string) <= new Date() ? "Overdue — " : ""}
+                        {formatRelativeDate(p.next_follow_up_at, locale)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="mt-3">
+                  <InteractionLog personId={p.id} personName={displayName} />
                 </div>
               </Section>
             </div>

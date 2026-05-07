@@ -88,7 +88,7 @@ export const PersonCreateSchema = z.object({
   biography: z.string().max(10000).optional(),
   photo_url: z.string().url().max(2000).optional().or(z.literal("")),
   relationship_type: z.string().max(100).optional(),
-  cadence_days: z.number().int().min(1).max(3650).optional(),
+  cadence_days: z.number().int().min(1).max(3650).nullable().optional(),
   next_follow_up_at: z.string().datetime().optional(),
   last_contacted_at: z.string().datetime().optional(),
   external_data: z.record(z.unknown()).optional(),

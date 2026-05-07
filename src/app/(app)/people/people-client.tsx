@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { PersonCard } from "@/components/people/person-card";
 import { EmptyState } from "@/components/composed/empty-state";
-import { Users, LayoutGrid, List, Plus, Search, Tag, X } from "lucide-react";
+import { Users, LayoutGrid, List, Plus, Search, Tag, X, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/ui/hint";
 import Link from "next/link";
@@ -81,6 +81,11 @@ export function PeopleClient() {
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle shrink-0">
         <h1 className="font-semibold text-text-primary text-md flex-1">People</h1>
+        <Hint label="Follow-up queue">
+          <Link href="/people/follow-up" className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-primary transition-colors">
+            <Bell size={16} />
+          </Link>
+        </Hint>
         <Hint label="Add person">
           <Link href="/people/new" className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-primary transition-colors">
             <Plus size={16} />

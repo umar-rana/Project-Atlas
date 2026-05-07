@@ -269,10 +269,14 @@ model Person {
   // Relationship
   relationship_type   String?   // friend | colleague | family | client | advisor | mentor | acquaintance | custom
 
-  // Cadence / follow-up (populated in Wave 5a-ii)
-  cadence_days        Int?
-  next_follow_up_at   DateTime? @db.Timestamptz
-  last_contacted_at   DateTime? @db.Timestamptz
+  // Cadence / follow-up (Wave 5a-ii)
+  cadence_days                        Int?
+  last_contacted_at                   DateTime? @db.Timestamptz  // = MAX(occurred_at) across non-deleted interactions; also accepts manual override
+  next_follow_up_at                   DateTime? @db.Timestamptz  // = last_contacted_at + cadence_days (null when either is null)
+  followup_snooze_until               DateTime? @db.Timestamptz  // snooze follow-up until this date
+  cadence_suggestion_dismissed_at                  DateTime? @db.Timestamptz  // when user last dismissed cadence suggestion
+  cadence_suggestion_dismissed_value               Int?                       // median gap (days) at time of dismissal
+  cadence_suggestion_dismissed_interaction_count   Int?                       // non-deleted interaction count at dismissal time
 
   // External data blob for sync provenance
   external_data       Json?
@@ -293,11 +297,13 @@ model Person {
   skills              PersonSkill[]
   interests           PersonInterest[]
   tags                TagOnPerson[]
+  interactions        PersonInteraction[]
 
   @@unique([user_id, handle])
   @@index([user_id])
   @@index([user_id, relationship_type])
   @@index([user_id, next_follow_up_at])
+  @@index([user_id, followup_snooze_until])
   @@index([deleted_at])
 }
 
@@ -510,6 +516,39 @@ model PersonInterest {
   person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
 
   @@index([person_id])
+  @@index([deleted_at])
+}
+
+// ─── PersonInteraction ────────────────────────────────────────────────────────
+// MAINTENANCE NOTE: PersonInteraction cascades through person_id → person.user_id.
+// It does NOT have a direct user_id column, so reattachOrphanData() handles it
+// indirectly via person reattachment. No explicit entry needed.
+
+model PersonInteraction {
+  id                String    @id @db.Uuid
+  person_id         String    @db.Uuid
+
+  // What kind of interaction this was (normalized lowercase, 1-32 chars)
+  kind              String    // meeting | call | message | email | coffee | lunch | dinner | note | other | custom
+
+  occurred_at       DateTime  @db.Timestamptz
+  duration_minutes  Int?      // 0–1440
+  location          String?   // free text, max 500 chars
+  notes             String?   // max 10 000 chars
+
+  // Optional links back to source entities (same user validated in router)
+  source_capture_id String?   @db.Uuid
+  source_task_id    String?   @db.Uuid
+
+  deleted_at        DateTime? @db.Timestamptz
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+
+  person            Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([person_id, occurred_at])
+  @@index([person_id, deleted_at])
   @@index([deleted_at])
 }
 
