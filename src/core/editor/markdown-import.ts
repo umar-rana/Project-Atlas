@@ -1,3 +1,5 @@
+import { detectEmbedProvider } from "@/core/notes/embed-providers";
+
 type TiptapMark = {
   type: string;
   attrs?: Record<string, unknown>;
@@ -141,6 +143,25 @@ function parseBlock(line: string): TiptapNode | null {
 
   if (/^---$/.test(line.trim())) {
     return { type: "horizontalRule" };
+  }
+
+  const standaloneLinkMatch = /^\[([^\]]*)\]\(([^)]+)\)$/.exec(line.trim());
+  if (standaloneLinkMatch) {
+    const title = standaloneLinkMatch[1] ?? "";
+    const href = standaloneLinkMatch[2] ?? "";
+    const detected = detectEmbedProvider(href);
+    if (detected) {
+      return {
+        type: "embed",
+        attrs: {
+          provider: detected.provider,
+          url: detected.canonical_url,
+          embed_url: detected.embed_url,
+          title,
+          thumbnail_url: "",
+        },
+      };
+    }
   }
 
   return null;

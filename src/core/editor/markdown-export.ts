@@ -148,6 +148,12 @@ function nodeToMarkdown(node: TiptapNode, listDepth = 0, ordered = false, index 
       return `[[${displayText}|${targetId}|${targetType}]]`;
     }
 
+    case "embed": {
+      const title = (node.attrs?.title as string) || "Embed";
+      const url = (node.attrs?.url as string) ?? "";
+      return `[${title}](${url})`;
+    }
+
     default:
       if (node.content) {
         return (node.content ?? []).map((n) => nodeToMarkdown(n, listDepth)).join("");

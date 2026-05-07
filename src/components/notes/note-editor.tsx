@@ -20,6 +20,7 @@ import {
 } from "@/core/editor/slash-command-extension";
 import { ReferencePicker, type ReferenceItem } from "./reference-picker";
 import { SlashCommandMenu } from "./slash-command-menu";
+import { EmbedDialog } from "./embed-dialog";
 import { EditorBubbleMenu } from "./editor-bubble-menu";
 import { EditorBlockHandle } from "./editor-block-handle";
 import { tiptapToMarkdown } from "@/core/editor/markdown-export";
@@ -169,6 +170,11 @@ export function NoteEditor({
     query: string;
     from: number;
     position: PickerPosition;
+  } | null>(null);
+
+  const [embedDialogState, setEmbedDialogState] = useState<{
+    from: number;
+    queryLength: number;
   } | null>(null);
 
   const saveNote = useCallback(
@@ -504,6 +510,14 @@ export function NoteEditor({
     }
   }, [editor]);
 
+  const handleEmbedCommand = useCallback((from: number, query: string) => {
+    setEmbedDialogState({ from, queryLength: query.length });
+  }, []);
+
+  const handleEmbedClose = useCallback(() => {
+    setEmbedDialogState(null);
+  }, []);
+
   const handleReferenceNodeClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       const target = e.target as HTMLElement;
@@ -695,6 +709,16 @@ export function NoteEditor({
           editor={editor}
           from={slashMenuState.from}
           onClose={handleSlashClose}
+          onEmbedCommand={handleEmbedCommand}
+        />
+      )}
+
+      {embedDialogState && editor && (
+        <EmbedDialog
+          editor={editor}
+          from={embedDialogState.from}
+          queryLength={embedDialogState.queryLength}
+          onClose={handleEmbedClose}
         />
       )}
 

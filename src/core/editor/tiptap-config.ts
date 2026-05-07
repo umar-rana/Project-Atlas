@@ -1,4 +1,5 @@
 import StarterKit from "@tiptap/starter-kit";
+import { EmbedNode } from "./embed-extension";
 import Link from "@tiptap/extension-link";
 import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import TaskList from "@tiptap/extension-task-list";
@@ -83,5 +84,6 @@ export function buildExtensions(placeholder?: string) {
     Placeholder.configure({
       placeholder: placeholder ?? "Start writing…",
     }),
+    EmbedNode,
   ];
 }

@@ -7,6 +7,7 @@ import { logActivity } from "@/core/audit";
 import { extractReferenceNodes } from "@/core/links/resolver";
 import { syncLinksForSource } from "@/core/links/service";
 import { createLogger } from "@/core/logging";
+import { detectEmbedProvider, getOembedEndpoint } from "@/core/notes/embed-providers";
 
 const log = createLogger({ module: "notes-router" });
 
@@ -443,6 +444,46 @@ export const notesRouter = router({
     const total = Object.values(result).reduce((a, b) => a + b, 0);
     return { ...result, total };
   }),
+
+  resolveEmbed: protectedProcedure
+    .input(z.object({ url: z.string().url() }))
+    .query(async ({ input }) => {
+      const detection = detectEmbedProvider(input.url);
+      if (!detection) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "URL is not from a supported embed provider.",
+        });
+      }
+
+      let title: string | null = null;
+      let thumbnail_url: string | null = null;
+
+      const oembedUrl = getOembedEndpoint(input.url);
+      if (oembedUrl) {
+        try {
+          const res = await fetch(oembedUrl, {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(5000),
+          });
+          if (res.ok) {
+            const data = (await res.json()) as Record<string, unknown>;
+            if (typeof data["title"] === "string") title = data["title"];
+            if (typeof data["thumbnail_url"] === "string") thumbnail_url = data["thumbnail_url"];
+          }
+        } catch {
+          log.warn({ url: input.url }, "oEmbed fetch failed — continuing without metadata");
+        }
+      }
+
+      return {
+        provider: detection.provider,
+        embed_url: detection.embed_url,
+        canonical_url: detection.canonical_url,
+        title,
+        thumbnail_url,
+      };
+    }),
 
   search: protectedProcedure
     .input(

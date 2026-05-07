@@ -9,7 +9,7 @@ type SlashCommand = {
   label: string;
   description: string;
   icon: string;
-  action: (editor: Editor) => void;
+  action: (editor: Editor, from: number, query: string) => void;
 };
 
 const SLASH_COMMANDS: SlashCommand[] = [
@@ -92,6 +92,15 @@ const SLASH_COMMANDS: SlashCommand[] = [
     action: (editor) =>
       editor.chain().focus().setHorizontalRule().run(),
   },
+  {
+    id: "embed",
+    label: "Embed",
+    description: "YouTube, Vimeo, Spotify, Loom and more",
+    icon: "⊞",
+    action: (_editor, _from, _query) => {
+      // The embed command is handled externally via onEmbedCommand
+    },
+  },
 ];
 
 type Props = {
@@ -100,9 +109,10 @@ type Props = {
   editor: Editor;
   from: number;
   onClose: () => void;
+  onEmbedCommand?: (from: number, query: string) => void;
 };
 
-export function SlashCommandMenu({ query, position, editor, from, onClose }: Props) {
+export function SlashCommandMenu({ query, position, editor, from, onClose, onEmbedCommand }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -118,16 +128,21 @@ export function SlashCommandMenu({ query, position, editor, from, onClose }: Pro
 
   const executeCommand = useCallback(
     (cmd: SlashCommand) => {
+      if (cmd.id === "embed") {
+        onClose();
+        onEmbedCommand?.(from, query);
+        return;
+      }
       const triggerLength = 1 + query.length;
       editor
         .chain()
         .focus()
         .deleteRange({ from: from, to: from + triggerLength })
         .run();
-      cmd.action(editor);
+      cmd.action(editor, from, query);
       onClose();
     },
-    [editor, from, query, onClose],
+    [editor, from, query, onClose, onEmbedCommand],
   );
 
   useEffect(() => {
