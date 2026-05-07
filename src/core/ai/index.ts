@@ -12,6 +12,7 @@ const TASK_MODEL_MAP: Record<string, ModelId> = {
   test: "claude-haiku-4-5",
   capture_parse: "claude-haiku-4-5",
   capture_parse_v2: "claude-haiku-4-5",
+  help_chat: "claude-haiku-4-5",
   default: "claude-haiku-4-5",
 };
 
@@ -53,6 +54,119 @@ export interface CompleteResult {
   outputTokens: number;
   costUsd: number;
   durationMs: number;
+}
+
+export interface CompleteStreamOptions {
+  task: string;
+  systemPrompt: string;
+  messages: Anthropic.MessageParam[];
+  userId?: string;
+  maxTokens?: number;
+  model?: ModelId;
+  onComplete?: (result: CompleteResult) => Promise<void>;
+}
+
+/**
+ * Streams a response from Anthropic while writing an AICallLog row on
+ * completion.  The caller receives a ReadableStream that yields raw text
+ * chunks exactly as the existing /api/help/chat route did before.
+ *
+ * Cost and token data flow through to AICallLog so the call appears on
+ * /usage and counts against ai_budget_usd.  An optional onComplete
+ * callback lets callers write additional records (e.g. AuditLog) once
+ * usage figures are known.
+ */
+export function completeStream(opts: CompleteStreamOptions): ReadableStream<Uint8Array> {
+  const model: ModelId =
+    opts.model ?? ((TASK_MODEL_MAP[opts.task] ?? TASK_MODEL_MAP["default"]) as ModelId);
+  const maxTokens = opts.maxTokens ?? 1024;
+  const start = Date.now();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        const client = getClient();
+        const sdkStream = await client.messages.stream({
+          model,
+          max_tokens: maxTokens,
+          system: opts.systemPrompt,
+          messages: opts.messages,
+        });
+
+        for await (const chunk of sdkStream) {
+          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+            controller.enqueue(new TextEncoder().encode(chunk.delta.text));
+          }
+        }
+
+        const finalMessage = await sdkStream.finalMessage();
+        const durationMs = Date.now() - start;
+        const inputTokens = finalMessage.usage.input_tokens;
+        const outputTokens = finalMessage.usage.output_tokens;
+        const costUsd =
+          inputTokens * INPUT_COST_PER_TOKEN[model] + outputTokens * OUTPUT_COST_PER_TOKEN[model];
+        const content =
+          finalMessage.content[0]?.type === "text" ? finalMessage.content[0].text : "";
+
+        try {
+          await db.aICallLog.create({
+            data: {
+              id: newId(),
+              user_id: opts.userId ?? null,
+              task: opts.task,
+              model,
+              input_tokens: inputTokens,
+              output_tokens: outputTokens,
+              cost_usd: costUsd,
+              duration_ms: durationMs,
+              success: true,
+            },
+          });
+        } catch (logErr) {
+          log.warn({ logErr }, "Failed to write AICallLog for streamed response");
+        }
+
+        log.info(
+          { task: opts.task, model, inputTokens, outputTokens, costUsd, durationMs },
+          "AI stream completed",
+        );
+
+        if (opts.onComplete) {
+          try {
+            await opts.onComplete({ content, model, inputTokens, outputTokens, costUsd, durationMs });
+          } catch (cbErr) {
+            log.warn({ cbErr }, "onComplete callback failed");
+          }
+        }
+
+        controller.close();
+      } catch (err) {
+        const durationMs = Date.now() - start;
+        try {
+          await db.aICallLog.create({
+            data: {
+              id: newId(),
+              user_id: opts.userId ?? null,
+              task: opts.task,
+              model,
+              input_tokens: 0,
+              output_tokens: 0,
+              cost_usd: 0,
+              duration_ms: durationMs,
+              success: false,
+              error: err instanceof Error ? err.message : String(err),
+            },
+          });
+        } catch (logErr) {
+          log.warn({ logErr }, "Failed to log AI stream failure to DB");
+        }
+        log.error({ err, task: opts.task, model, durationMs }, "AI stream failed");
+        controller.error(err);
+      }
+    },
+  });
+
+  return stream;
 }
 
 export async function complete(opts: CompleteOptions): Promise<CompleteResult> {

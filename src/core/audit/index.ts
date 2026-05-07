@@ -31,6 +31,7 @@ const AUDITED_ENTITIES = new Set([
   "PersonInteraction",
   "CalendarEvent",
   "GoogleCalendar",
+  "HelpChat",
 ]);
 
 export interface ActivityEvent {

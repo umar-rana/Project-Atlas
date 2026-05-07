@@ -14,6 +14,17 @@ const devOrigins = (() => {
   return Array.from(origins);
 })();
 
+// Baseline security headers applied on all routes.
+// Intentionally deferred (separate sprints):
+//   - Strict-Transport-Security (HSTS): add after HTTPS deployment is confirmed
+//   - Content-Security-Policy script-src: requires nonce-based middleware
+//   - Permissions-Policy: not in this baseline
+const SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+];
+
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['uuidv7'],
@@ -43,13 +54,22 @@ const nextConfig = {
     ],
   },
   async headers() {
-    if (isProd) return [];
-    return [
+    const entries = [
       {
         source: "/:path*",
-        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+        headers: SECURITY_HEADERS,
       },
     ];
+
+    if (!isProd) {
+      // Prepend security headers; keep existing Cache-Control dev header
+      entries.push({
+        source: "/:path*",
+        headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
+      });
+    }
+
+    return entries;
   },
 };
 

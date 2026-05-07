@@ -66,8 +66,8 @@ function verifyResendSignature(body: string, request: NextRequest): boolean {
   const secret = process.env.RESEND_WEBHOOK_SECRET;
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
-      log.error({}, "RESEND_WEBHOOK_SECRET not set in production — rejecting inbound email");
-      return false;
+      log.error({}, "RESEND_WEBHOOK_SECRET not set in production — refusing to process inbound email");
+      throw new Error("RESEND_WEBHOOK_SECRET is required in production");
     }
     log.warn({}, "RESEND_WEBHOOK_SECRET not set — skipping signature verification (dev only)");
     return true;
