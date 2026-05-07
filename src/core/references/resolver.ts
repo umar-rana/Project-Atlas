@@ -131,10 +131,7 @@ export async function resolveAndApplyReferences(opts: {
 /**
  * Decrement usage_count for the given tag IDs (used on task delete).
  */
-export async function releaseTagReferences(opts: {
-  tagIds: string[];
-  tx?: Tx;
-}): Promise<void> {
+export async function releaseTagReferences(opts: { tagIds: string[]; tx?: Tx }): Promise<void> {
   if (opts.tagIds.length === 0) return;
   const tx = opts.tx ?? db;
   await tx.tag.updateMany({

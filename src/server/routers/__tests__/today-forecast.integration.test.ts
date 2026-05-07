@@ -8,10 +8,7 @@ import { forecastRouter } from "@/server/routers/forecast";
 // Uses the same URL-resolution order as @/core/db so both clients target the
 // same database (DATABASE_URL_NEON takes precedence when set).
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });
@@ -98,11 +95,23 @@ describe("Today perspective — tasksRouter.list", () => {
     ] = await Promise.all([
       insertTask({ title: "T: Due today", due_date: todayStart() }),
       insertTask({ title: "T: Overdue", due_date: daysFromToday(-2) }),
-      insertTask({ title: "T: Flagged + future due_date", due_date: daysFromToday(5), flagged: true }),
-      insertTask({ title: "T: Flagged + deferred tomorrow", flagged: true, defer_date: daysFromToday(1) }),
+      insertTask({
+        title: "T: Flagged + future due_date",
+        due_date: daysFromToday(5),
+        flagged: true,
+      }),
+      insertTask({
+        title: "T: Flagged + deferred tomorrow",
+        flagged: true,
+        defer_date: daysFromToday(1),
+      }),
       insertTask({ title: "T: Due tomorrow", due_date: daysFromToday(1) }),
       insertTask({ title: "T: No date no flag" }),
-      insertTask({ title: "T: Due today deferred tomorrow", due_date: todayStart(), defer_date: daysFromToday(1) }),
+      insertTask({
+        title: "T: Due today deferred tomorrow",
+        due_date: todayStart(),
+        defer_date: daysFromToday(1),
+      }),
     ]);
   });
 
@@ -166,10 +175,22 @@ describe("Forecast week — forecastRouter.week", () => {
       insertTask({ title: "F: Due tomorrow", due_date: daysFromToday(1) }),
       insertTask({ title: "F: Due in 5 days", due_date: daysFromToday(5) }),
       insertTask({ title: "F: Overdue 3 days ago", due_date: daysFromToday(-3) }),
-      insertTask({ title: "F: Deferred to tomorrow (no due_date)", due_date: null, defer_date: daysFromToday(1) }),
-      insertTask({ title: "F: Due tomorrow + deferred to 8 days", due_date: daysFromToday(1), defer_date: daysFromToday(8) }),
+      insertTask({
+        title: "F: Deferred to tomorrow (no due_date)",
+        due_date: null,
+        defer_date: daysFromToday(1),
+      }),
+      insertTask({
+        title: "F: Due tomorrow + deferred to 8 days",
+        due_date: daysFromToday(1),
+        defer_date: daysFromToday(8),
+      }),
       insertTask({ title: "F: Due in 8 days (outside 7-day range)", due_date: daysFromToday(8) }),
-      insertTask({ title: "F: Completed due tomorrow", due_date: daysFromToday(1), status: "completed" }),
+      insertTask({
+        title: "F: Completed due tomorrow",
+        due_date: daysFromToday(1),
+        status: "completed",
+      }),
       insertTask({ title: "F: Boundary due today", due_date: todayStart() }),
     ]);
   });

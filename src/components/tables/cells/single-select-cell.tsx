@@ -15,7 +15,15 @@ interface SingleSelectCellProps {
   onCancel: () => void;
 }
 
-export function SingleSelectCell({ value, options, isSelected, isEditing, onStartEdit, onCommit, onCancel }: SingleSelectCellProps) {
+export function SingleSelectCell({
+  value,
+  options,
+  isSelected,
+  isEditing,
+  onStartEdit,
+  onCommit,
+  onCancel,
+}: SingleSelectCellProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const selectedOption = options.find((o) => o.id === value);
 
@@ -32,7 +40,10 @@ export function SingleSelectCell({ value, options, isSelected, isEditing, onStar
 
   if (isEditing) {
     return (
-      <div ref={containerRef} className="absolute inset-x-0 top-0 z-overlay min-w-[160px] rounded-md border border-border-default bg-surface-raised shadow-2">
+      <div
+        ref={containerRef}
+        className="absolute inset-x-0 top-0 z-overlay min-w-[160px] rounded-md border border-border-default bg-surface-raised shadow-2"
+      >
         <div className="max-h-48 overflow-y-auto py-1">
           <button
             type="button"
@@ -48,11 +59,16 @@ export function SingleSelectCell({ value, options, isSelected, isEditing, onStar
               onClick={() => onCommit(opt.id)}
               className={cn(
                 "flex w-full items-center gap-2 px-3 py-1.5 text-left font-ui text-sm hover:bg-surface-hover",
-                opt.id === value ? "bg-accent-primary-subtle text-accent-primary" : "text-text-primary",
+                opt.id === value
+                  ? "bg-accent-primary-subtle text-accent-primary"
+                  : "text-text-primary",
               )}
             >
               {opt.color && (
-                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: opt.color }} />
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: opt.color }}
+                />
               )}
               {opt.label}
             </button>
@@ -74,12 +90,17 @@ export function SingleSelectCell({ value, options, isSelected, isEditing, onStar
       )}
     >
       {selectedOption ? (
-        <span className={cn(
-          "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-ui text-xs",
-          "bg-surface-sunken text-text-primary",
-        )}>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-ui text-xs",
+            "bg-surface-sunken text-text-primary",
+          )}
+        >
           {selectedOption.color && (
-            <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: selectedOption.color }} />
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: selectedOption.color }}
+            />
           )}
           {selectedOption.label}
         </span>

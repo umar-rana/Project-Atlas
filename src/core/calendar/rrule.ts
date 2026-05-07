@@ -1,4 +1,4 @@
-import { RRule, RRuleSet } from "rrule";
+import { RRule } from "rrule";
 
 export interface ExpandedEvent {
   id: string;
@@ -36,15 +36,17 @@ export function getHumanReadableRRule(rule: string): string {
   }
 }
 
-export function expandEventsInWindow<T extends {
-  id: string;
-  start_at: Date;
-  end_at: Date;
-  recurrence_rule: string | null;
-  recurrence_master_id: string | null;
-  status: string;
-  deleted_at: Date | null;
-}>(
+export function expandEventsInWindow<
+  T extends {
+    id: string;
+    start_at: Date;
+    end_at: Date;
+    recurrence_rule: string | null;
+    recurrence_master_id: string | null;
+    status: string;
+    deleted_at: Date | null;
+  },
+>(
   events: T[],
   windowStart: Date,
   windowEnd: Date,
@@ -61,9 +63,7 @@ export function expandEventsInWindow<T extends {
     }
   }
 
-  const nonRecurringEvents = events.filter(
-    (e) => !e.recurrence_rule && !e.recurrence_master_id,
-  );
+  const nonRecurringEvents = events.filter((e) => !e.recurrence_rule && !e.recurrence_master_id);
 
   for (const event of nonRecurringEvents) {
     if (event.start_at <= windowEnd && event.end_at >= windowStart) {

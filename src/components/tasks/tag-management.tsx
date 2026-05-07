@@ -48,13 +48,7 @@ type TagStat = {
   color: string | null;
 };
 
-function RenameInline({
-  tag,
-  onDone,
-}: {
-  tag: TagStat;
-  onDone: () => void;
-}) {
+function RenameInline({ tag, onDone }: { tag: TagStat; onDone: () => void }) {
   const utils = trpc.useUtils();
   const [value, setValue] = React.useState(tag.name);
   const rename = trpc.tags.rename.useMutation({
@@ -71,7 +65,10 @@ function RenameInline({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = value.trim();
-    if (!trimmed || trimmed === tag.name) { onDone(); return; }
+    if (!trimmed || trimmed === tag.name) {
+      onDone();
+      return;
+    }
     rename.mutate({ id: tag.id, new_name: trimmed });
   }
 
@@ -128,7 +125,12 @@ function MergeDialog({
   const options = allTags.filter((t) => t.id !== source.id);
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Merge #{source.name}</DialogTitle>
@@ -172,13 +174,7 @@ function MergeDialog({
   );
 }
 
-function DeleteDialog({
-  tag,
-  onClose,
-}: {
-  tag: TagStat;
-  onClose: () => void;
-}) {
+function DeleteDialog({ tag, onClose }: { tag: TagStat; onClose: () => void }) {
   const utils = trpc.useUtils();
   const del = trpc.tags.delete.useMutation({
     onSuccess: () => {
@@ -193,15 +189,22 @@ function DeleteDialog({
   });
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Delete #{tag.name}?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-text-secondary">
           This tag is used on{" "}
-          <strong>{tag.usage_count} {tag.usage_count === 1 ? "task" : "tasks"}</strong>.
-          Deleting it will remove it from all those tasks. This cannot be undone.
+          <strong>
+            {tag.usage_count} {tag.usage_count === 1 ? "task" : "tasks"}
+          </strong>
+          . Deleting it will remove it from all those tasks. This cannot be undone.
         </p>
         <DialogFooter>
           <Button variant="ghost" size="md" onClick={onClose}>
@@ -243,18 +246,27 @@ function BulkDeleteDialog({
     onError: () => toast.error("Failed to delete tags"),
   });
 
-  const totalUsage = allTags.filter((t) => ids.includes(t.id)).reduce((sum, t) => sum + t.usage_count, 0);
+  const totalUsage = allTags
+    .filter((t) => ids.includes(t.id))
+    .reduce((sum, t) => sum + t.usage_count, 0);
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Delete {ids.length} tags?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-text-secondary">
           These tags are used across{" "}
-          <strong>{totalUsage} task association{totalUsage !== 1 ? "s" : ""}</strong>.
-          Deleting them will remove them from all affected tasks. This cannot be undone.
+          <strong>
+            {totalUsage} task association{totalUsage !== 1 ? "s" : ""}
+          </strong>
+          . Deleting them will remove them from all affected tasks. This cannot be undone.
         </p>
         <DialogFooter>
           <Button variant="ghost" size="md" onClick={onClose}>
@@ -309,7 +321,9 @@ function BulkMergeDialog({
       toast.success(`Merged ${succeeded} tag${succeeded !== 1 ? "s" : ""}`);
       onClose();
     } else if (succeeded > 0) {
-      toast.error(`Merged ${succeeded} tag${succeeded !== 1 ? "s" : ""}, but ${errors.length} failed: ${errors[0]}`);
+      toast.error(
+        `Merged ${succeeded} tag${succeeded !== 1 ? "s" : ""}, but ${errors.length} failed: ${errors[0]}`,
+      );
       onClose();
     } else {
       toast.error(`Merge failed: ${errors[0]}`);
@@ -319,7 +333,12 @@ function BulkMergeDialog({
   const options = allTags.filter((t) => ids.includes(t.id));
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Merge {ids.length} tags</DialogTitle>
@@ -388,16 +407,19 @@ function CreateTagDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Create tag</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="font-ui text-xs font-medium text-text-primary">
-              Tag name
-            </label>
+            <label className="font-ui text-xs font-medium text-text-primary">Tag name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -420,7 +442,7 @@ function CreateTagDialog({ onClose }: { onClose: () => void }) {
                   className={cn(
                     "size-5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
                     colorDotClass(c),
-                    color === c && "ring-2 ring-offset-1 ring-accent-primary",
+                    color === c && "ring-2 ring-accent-primary ring-offset-1",
                   )}
                 />
               ))}
@@ -430,7 +452,7 @@ function CreateTagDialog({ onClose }: { onClose: () => void }) {
                 onClick={() => setColor(null)}
                 className={cn(
                   "size-5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110",
-                  color === null && "ring-2 ring-offset-1 ring-accent-primary",
+                  color === null && "ring-2 ring-accent-primary ring-offset-1",
                 )}
               />
               {color ? (
@@ -561,7 +583,7 @@ export function TagManagement(): React.ReactElement {
       <div className="flex items-center gap-3 border-b border-border-subtle px-6 py-4">
         <TagIcon size={18} className="text-text-tertiary" />
         <h1 className="font-ui text-lg font-semibold text-text-primary">Manage tags</h1>
-        <span className="ml-1 rounded-full bg-surface-raised px-2 py-0.5 font-mono text-2xs text-text-secondary tabular-nums">
+        <span className="ml-1 rounded-full bg-surface-raised px-2 py-0.5 font-mono text-2xs tabular-nums text-text-secondary">
           {allTags.length}
         </span>
         <div className="flex-1" />
@@ -573,15 +595,16 @@ export function TagManagement(): React.ReactElement {
 
       {/* Cleanup candidates section */}
       {cleanupCandidates.length > 0 ? (
-        <div className="border-b border-border-subtle bg-surface-raised/50">
+        <div className="bg-surface-raised/50 border-b border-border-subtle">
           <button
             type="button"
             onClick={() => setCleanupExpanded((v) => !v)}
             className="flex w-full items-center gap-2 px-6 py-2.5 text-left"
           >
-            <AlertTriangle size={13} className="text-accent-warning shrink-0" />
+            <AlertTriangle size={13} className="shrink-0 text-accent-warning" />
             <span className="flex-1 font-ui text-xs font-medium text-text-secondary">
-              {cleanupCandidates.length} single-use tag{cleanupCandidates.length !== 1 ? "s" : ""} (used exactly once) — review candidates
+              {cleanupCandidates.length} single-use tag{cleanupCandidates.length !== 1 ? "s" : ""}{" "}
+              (used exactly once) — review candidates
             </span>
             <ChevronDown
               size={12}
@@ -598,7 +621,10 @@ export function TagManagement(): React.ReactElement {
                   key={t.id}
                   className="inline-flex items-center gap-1 rounded-full border border-border-default bg-surface-base px-2 py-0.5 font-ui text-xs text-text-secondary"
                 >
-                  <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.color))} aria-hidden />
+                  <span
+                    className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.color))}
+                    aria-hidden
+                  />
                   #{t.name}
                   <span className="font-mono text-3xs text-text-tertiary">({t.usage_count})</span>
                 </span>
@@ -615,27 +641,15 @@ export function TagManagement(): React.ReactElement {
             {selected.size} selected
           </span>
           <div className="flex-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setBulkMerging(true)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setBulkMerging(true)}>
             <Merge size={13} />
             Merge into…
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setBulkDeleting(true)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setBulkDeleting(true)}>
             <Trash2 size={13} />
             Delete
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelected(new Set())}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
             <X size={13} />
             Clear
           </Button>
@@ -669,7 +683,8 @@ export function TagManagement(): React.ReactElement {
                     type="checkbox"
                     checked={selected.size === filtered.length && filtered.length > 0}
                     ref={(el) => {
-                      if (el) el.indeterminate = selected.size > 0 && selected.size < filtered.length;
+                      if (el)
+                        el.indeterminate = selected.size > 0 && selected.size < filtered.length;
                     }}
                     onChange={toggleAll}
                     className="size-3.5 rounded-sm accent-accent-primary"
@@ -710,11 +725,23 @@ export function TagManagement(): React.ReactElement {
                     ) : coloringTagId === tag.id ? (
                       <div className="flex flex-col gap-1.5">
                         <span className="flex items-center gap-1.5 font-ui text-sm text-text-primary">
-                          <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(tag.color))} aria-hidden />
+                          <span
+                            className={cn("size-2 shrink-0 rounded-full", colorDotClass(tag.color))}
+                            aria-hidden
+                          />
                           #{tag.name}
                         </span>
                         <div className="flex items-center gap-1">
-                          {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map((c) => (
+                          {[
+                            "blue",
+                            "green",
+                            "amber",
+                            "red",
+                            "purple",
+                            "teal",
+                            "pink",
+                            "orange",
+                          ].map((c) => (
                             <button
                               key={c}
                               type="button"
@@ -724,7 +751,7 @@ export function TagManagement(): React.ReactElement {
                               className={cn(
                                 "size-4 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
                                 colorDotClass(c),
-                                tag.color === c && "ring-2 ring-offset-1 ring-accent-primary",
+                                tag.color === c && "ring-2 ring-accent-primary ring-offset-1",
                               )}
                             />
                           ))}
@@ -746,10 +773,17 @@ export function TagManagement(): React.ReactElement {
                       </div>
                     ) : (
                       <span className="flex items-center gap-1.5 font-ui text-sm text-text-primary">
-                        <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(tag.color))} aria-hidden />
+                        <span
+                          className={cn("size-2 shrink-0 rounded-full", colorDotClass(tag.color))}
+                          aria-hidden
+                        />
                         #{tag.name}
                         {tag.usage_count === 1 ? (
-                          <AlertTriangle size={11} className="text-accent-warning" aria-label="Low use" />
+                          <AlertTriangle
+                            size={11}
+                            className="text-accent-warning"
+                            aria-label="Low use"
+                          />
                         ) : null}
                       </span>
                     )}
@@ -801,32 +835,30 @@ export function TagManagement(): React.ReactElement {
       </div>
 
       {mergingTag ? (
-        <MergeDialog
-          source={mergingTag}
-          allTags={allTags}
-          onClose={() => setMergingTag(null)}
-        />
+        <MergeDialog source={mergingTag} allTags={allTags} onClose={() => setMergingTag(null)} />
       ) : null}
-      {deletingTag ? (
-        <DeleteDialog tag={deletingTag} onClose={() => setDeletingTag(null)} />
-      ) : null}
+      {deletingTag ? <DeleteDialog tag={deletingTag} onClose={() => setDeletingTag(null)} /> : null}
       {bulkDeleting ? (
         <BulkDeleteDialog
           ids={Array.from(selected)}
           allTags={allTags}
-          onClose={() => { setBulkDeleting(false); setSelected(new Set()); }}
+          onClose={() => {
+            setBulkDeleting(false);
+            setSelected(new Set());
+          }}
         />
       ) : null}
       {bulkMerging ? (
         <BulkMergeDialog
           ids={Array.from(selected)}
           allTags={allTags}
-          onClose={() => { setBulkMerging(false); setSelected(new Set()); }}
+          onClose={() => {
+            setBulkMerging(false);
+            setSelected(new Set());
+          }}
         />
       ) : null}
-      {showCreateDialog ? (
-        <CreateTagDialog onClose={() => setShowCreateDialog(false)} />
-      ) : null}
+      {showCreateDialog ? <CreateTagDialog onClose={() => setShowCreateDialog(false)} /> : null}
     </div>
   );
 }

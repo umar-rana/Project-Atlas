@@ -96,7 +96,13 @@ export async function syncEventsForCalendar(
   let nextSyncToken: string | null = null;
 
   do {
-    let response: { data: { items?: calendar_v3.Schema$Event[]; nextPageToken?: string | null; nextSyncToken?: string | null } } | null = null;
+    let response: {
+      data: {
+        items?: calendar_v3.Schema$Event[];
+        nextPageToken?: string | null;
+        nextSyncToken?: string | null;
+      };
+    } | null = null;
     try {
       if (existingSyncToken && !pageToken) {
         response = await cal.events.list({
@@ -315,7 +321,10 @@ export async function syncAllCalendarsForUser(userId: string): Promise<{
         },
       });
     } catch (err) {
-      log.error({ err, userId, calendarId: calendar.id }, "Error syncing calendar events — skipping");
+      log.error(
+        { err, userId, calendarId: calendar.id },
+        "Error syncing calendar events — skipping",
+      );
     }
   }
 

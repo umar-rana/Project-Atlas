@@ -38,13 +38,15 @@ function SettingsRow({
           destructive ? "bg-accent-danger/10" : "bg-surface-raised",
         )}
       >
-        <Icon size={16} aria-hidden className={destructive ? "text-accent-danger" : "text-text-secondary"} />
+        <Icon
+          size={16}
+          aria-hidden
+          className={destructive ? "text-accent-danger" : "text-text-secondary"}
+        />
       </span>
       <div className="min-w-0 flex-1">
         <p className="font-ui text-sm font-medium">{label}</p>
-        {sublabel ? (
-          <p className="font-ui text-xs text-text-tertiary">{sublabel}</p>
-        ) : null}
+        {sublabel ? <p className="font-ui text-xs text-text-tertiary">{sublabel}</p> : null}
       </div>
     </button>
   );
@@ -136,14 +138,18 @@ export default function MobileSettingsPage() {
                 />
               ) : (
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-raised font-ui text-lg font-semibold text-text-secondary">
-                  {(user.firstName?.[0] ?? user.emailAddresses[0]?.emailAddress?.[0] ?? "?").toUpperCase()}
+                  {(
+                    user.firstName?.[0] ??
+                    user.emailAddresses[0]?.emailAddress?.[0] ??
+                    "?"
+                  ).toUpperCase()}
                 </span>
               )}
               <div className="min-w-0">
                 <p className="font-ui text-base font-semibold text-text-primary">
                   {user.firstName && user.lastName
                     ? `${user.firstName} ${user.lastName}`
-                    : user.firstName ?? "User"}
+                    : (user.firstName ?? "User")}
                 </p>
                 <p className="truncate font-ui text-sm text-text-tertiary">
                   {user.primaryEmailAddress?.emailAddress}
@@ -193,18 +199,11 @@ export default function MobileSettingsPage() {
 
         <div className="mt-4">
           <div className="divide-y divide-border-subtle">
-            <SettingsRow
-              icon={LogOut}
-              label="Sign out"
-              onClick={handleSignOut}
-              destructive
-            />
+            <SettingsRow icon={LogOut} label="Sign out" onClick={handleSignOut} destructive />
           </div>
         </div>
 
-        <p className="px-4 py-6 text-center font-ui text-xs text-text-disabled">
-          Atlas · Mobile
-        </p>
+        <p className="px-4 py-6 text-center font-ui text-xs text-text-disabled">Atlas · Mobile</p>
       </div>
     </div>
   );

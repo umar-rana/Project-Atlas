@@ -26,7 +26,8 @@ function getGroup(task: SomedayTask): Group {
   if (!task.someday_review_date) return "indefinite";
   const d = new Date(task.someday_review_date);
   const now = new Date();
-  if (isPast(d) || isWithinInterval(d, { start: startOfDay(now), end: now })) return "due_for_review";
+  if (isPast(d) || isWithinInterval(d, { start: startOfDay(now), end: now }))
+    return "due_for_review";
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
   if (d <= endOfMonth) return "this_month";
   const threeMonths = addMonths(now, 3);
@@ -43,7 +44,13 @@ const GROUP_LABELS: Record<Group, string> = {
 
 const GROUP_ORDER: Group[] = ["due_for_review", "this_month", "within_three_months", "indefinite"];
 
-function SomedayTaskCard({ task, onPromote }: { task: SomedayTask; onPromote: (id: string) => void }) {
+function SomedayTaskCard({
+  task,
+  onPromote,
+}: {
+  task: SomedayTask;
+  onPromote: (id: string) => void;
+}) {
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
   const selectedTaskId = useTasksStore((s) => s.selectedTaskId);
   const isSelected = selectedTaskId === task.id;
@@ -56,25 +63,30 @@ function SomedayTaskCard({ task, onPromote }: { task: SomedayTask; onPromote: (i
       role="row"
       onClick={() => setSelectedTaskId(task.id)}
       className={cn(
-        "group flex items-start gap-3 border-b border-border-subtle px-3 py-2.5 cursor-pointer hover:bg-surface-hover transition-colors",
+        "group flex cursor-pointer items-start gap-3 border-b border-border-subtle px-3 py-2.5 transition-colors hover:bg-surface-hover",
         isSelected && "bg-accent-primary-subtle",
       )}
     >
       <Archive size={14} className="mt-0.5 shrink-0 text-text-tertiary" aria-hidden />
-      <div className="flex-1 min-w-0">
-        <p className="font-ui text-sm text-text-primary truncate">{task.title}</p>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-ui text-sm text-text-primary">{task.title}</p>
+        <div className="mt-0.5 flex flex-wrap items-center gap-2">
           {reviewDate && (
-            <span className={cn(
-              "font-ui text-2xs flex items-center gap-0.5",
-              isOverdue ? "text-accent-danger" : "text-text-tertiary",
-            )}>
+            <span
+              className={cn(
+                "flex items-center gap-0.5 font-ui text-2xs",
+                isOverdue ? "text-accent-danger" : "text-text-tertiary",
+              )}
+            >
               <Calendar size={10} />
               {reviewDate.toLocaleDateString()}
             </span>
           )}
           {task.tags.map((t) => (
-            <span key={t.tag.id} className="rounded-full bg-surface-raised px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">
+            <span
+              key={t.tag.id}
+              className="rounded-full bg-surface-raised px-1.5 py-0.5 font-ui text-2xs text-text-tertiary"
+            >
               #{t.tag.name}
             </span>
           ))}
@@ -85,9 +97,12 @@ function SomedayTaskCard({ task, onPromote }: { task: SomedayTask; onPromote: (i
       </div>
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); onPromote(task.id); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPromote(task.id);
+        }}
         title="Promote to active"
-        className="hidden group-hover:flex shrink-0 items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary hover:bg-accent-success-muted hover:text-accent-success hover:border-accent-success/30 transition-colors"
+        className="hover:border-accent-success/30 hidden shrink-0 items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-success-muted hover:text-accent-success group-hover:flex"
       >
         <ArrowUpCircle size={11} />
         Promote
@@ -115,7 +130,8 @@ export function SomedayPerspective(): React.ReactElement {
   const tasks = React.useMemo(() => {
     let list = (query.data ?? []) as SomedayTask[];
     if (tagFilter) list = list.filter((t) => t.tags.some((tg) => tg.tag.id === tagFilter));
-    if (contextFilter) list = list.filter((t) => t.contexts.some((c) => c.context.id === contextFilter));
+    if (contextFilter)
+      list = list.filter((t) => t.contexts.some((c) => c.context.id === contextFilter));
     if (projectFilter) list = list.filter((t) => t.project?.id === projectFilter);
     return list;
   }, [query.data, tagFilter, contextFilter, projectFilter]);
@@ -128,14 +144,19 @@ export function SomedayPerspective(): React.ReactElement {
       map.get(g)!.push(t);
     }
     for (const [g, list] of map) {
-      map.set(g, list.sort((a, b) => {
-        if (a.someday_review_date && b.someday_review_date) {
-          return new Date(a.someday_review_date).getTime() - new Date(b.someday_review_date).getTime();
-        }
-        if (a.someday_review_date) return -1;
-        if (b.someday_review_date) return 1;
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      }));
+      map.set(
+        g,
+        list.sort((a, b) => {
+          if (a.someday_review_date && b.someday_review_date) {
+            return (
+              new Date(a.someday_review_date).getTime() - new Date(b.someday_review_date).getTime()
+            );
+          }
+          if (a.someday_review_date) return -1;
+          if (b.someday_review_date) return 1;
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        }),
+      );
     }
     return map;
   }, [tasks]);
@@ -173,11 +194,13 @@ export function SomedayPerspective(): React.ReactElement {
           <h1 className="font-ui text-base font-semibold text-text-primary">Someday / Maybe</h1>
           <p className="font-ui text-2xs text-text-tertiary">Ideas and tasks for the future.</p>
         </div>
-        <span className="font-mono text-2xs text-text-tertiary tabular-nums">{totalCount} {totalCount === 1 ? "item" : "items"}</span>
+        <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+          {totalCount} {totalCount === 1 ? "item" : "items"}
+        </span>
       </header>
 
       {(allTags.length > 0 || allContexts.length > 0 || allProjects.length > 0) && (
-        <div className="flex items-center gap-1.5 border-b border-border-subtle px-3 py-1.5 flex-wrap">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border-subtle px-3 py-1.5">
           <span className="font-ui text-2xs text-text-tertiary">Filter:</span>
           {allTags.map((t) => (
             <button
@@ -227,7 +250,11 @@ export function SomedayPerspective(): React.ReactElement {
           {(tagFilter || contextFilter || projectFilter) && (
             <button
               type="button"
-              onClick={() => { setTagFilter(null); setContextFilter(null); setProjectFilter(null); }}
+              onClick={() => {
+                setTagFilter(null);
+                setContextFilter(null);
+                setProjectFilter(null);
+              }}
               className="rounded-full bg-surface-hover px-2 py-0.5 font-ui text-2xs text-text-secondary hover:bg-border-subtle"
             >
               Clear
@@ -255,7 +282,7 @@ export function SomedayPerspective(): React.ReactElement {
             if (items.length === 0) return null;
             return (
               <div key={group}>
-                <div className="sticky top-0 z-10 bg-surface-base/95 backdrop-blur-sm px-3 py-1 border-b border-border-subtle">
+                <div className="bg-surface-base/95 sticky top-0 z-10 border-b border-border-subtle px-3 py-1 backdrop-blur-sm">
                   <p className="font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
                     {GROUP_LABELS[group]}
                     <span className="ml-1.5 font-mono font-normal">({items.length})</span>

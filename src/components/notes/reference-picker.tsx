@@ -34,17 +34,16 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 function useNoteResults(query: string, enabled: boolean): ReferenceItem[] {
-  const { data } = trpc.notes.search.useQuery(
-    { query, limit: 8 },
-    { enabled },
+  const { data } = trpc.notes.search.useQuery({ query, limit: 8 }, { enabled });
+  return (data ?? []).map(
+    (n): ReferenceItem => ({
+      id: n.id,
+      display_text: n.title || "Untitled",
+      target_type: "note",
+      subtitle: n.body_text?.slice(0, 60) ?? undefined,
+      group: "Notes",
+    }),
   );
-  return (data ?? []).map((n): ReferenceItem => ({
-    id: n.id,
-    display_text: n.title || "Untitled",
-    target_type: "note",
-    subtitle: n.body_text?.slice(0, 60) ?? undefined,
-    group: "Notes",
-  }));
 }
 
 function useTaskResults(query: string, enabled: boolean): ReferenceItem[] {
@@ -52,43 +51,44 @@ function useTaskResults(query: string, enabled: boolean): ReferenceItem[] {
     { query: query || " ", limit: 5 },
     { enabled: enabled && query.length > 0 },
   );
-  return (data ?? []).map((t): ReferenceItem => ({
-    id: t.id,
-    display_text: t.title,
-    target_type: "task",
-    subtitle: t.project_title ?? undefined,
-    group: "Tasks",
-  }));
+  return (data ?? []).map(
+    (t): ReferenceItem => ({
+      id: t.id,
+      display_text: t.title,
+      target_type: "task",
+      subtitle: t.project_title ?? undefined,
+      group: "Tasks",
+    }),
+  );
 }
 
 function useProjectResults(query: string, enabled: boolean): ReferenceItem[] {
   const { data } = trpc.projects.list.useQuery({}, { enabled });
   const q = query.toLowerCase();
-  const filtered = (data ?? []).filter(
-    (p) => !q || p.title.toLowerCase().includes(q),
-  ).slice(0, 5);
-  return filtered.map((p): ReferenceItem => ({
-    id: p.id,
-    display_text: p.title,
-    target_type: "project",
-    group: "Projects",
-  }));
+  const filtered = (data ?? []).filter((p) => !q || p.title.toLowerCase().includes(q)).slice(0, 5);
+  return filtered.map(
+    (p): ReferenceItem => ({
+      id: p.id,
+      display_text: p.title,
+      target_type: "project",
+      group: "Projects",
+    }),
+  );
 }
 
 function useTagResults(query: string, enabled: boolean): ReferenceItem[] {
-  const { data } = trpc.tags.search.useQuery(
-    { query, limit: 10 },
-    { enabled },
-  );
+  const { data } = trpc.tags.search.useQuery({ query, limit: 10 }, { enabled });
   const q = query.toLowerCase();
   const filtered = q
     ? (data ?? []).filter((t) => t.name.toLowerCase().includes(q))
     : (data ?? []).slice(0, 10);
-  return filtered.map((t): ReferenceItem => ({
-    id: t.id,
-    display_text: t.name,
-    target_type: "tag",
-  }));
+  return filtered.map(
+    (t): ReferenceItem => ({
+      id: t.id,
+      display_text: t.name,
+      target_type: "tag",
+    }),
+  );
 }
 
 function useContextResults(query: string, enabled: boolean): ReferenceItem[] {
@@ -97,22 +97,24 @@ function useContextResults(query: string, enabled: boolean): ReferenceItem[] {
   const filtered = q
     ? (data ?? []).filter((c) => c.name.toLowerCase().includes(q))
     : (data ?? []).slice(0, 10);
-  return filtered.map((c): ReferenceItem => ({
-    id: c.id,
-    display_text: c.name,
-    target_type: "context",
-  }));
+  return filtered.map(
+    (c): ReferenceItem => ({
+      id: c.id,
+      display_text: c.name,
+      target_type: "context",
+    }),
+  );
 }
 
 function usePersonResults(query: string, enabled: boolean): ReferenceItem[] {
-  const { data } = trpc.people.search.useQuery(
-    { query, limit: 8 },
-    { enabled },
-  );
+  const { data } = trpc.people.search.useQuery({ query, limit: 8 }, { enabled });
   return (data ?? []).map((p): ReferenceItem => {
-    const displayName = [p.display_name, p.given_name, p.family_name].filter(Boolean)[0] ?? p.handle;
+    const displayName =
+      [p.display_name, p.given_name, p.family_name].filter(Boolean)[0] ?? p.handle;
     const org = p.organizations[0];
-    const subtitle = org ? [org.title, org.name].filter(Boolean).join(" @ ") : (p.emails[0]?.email ?? undefined);
+    const subtitle = org
+      ? [org.title, org.name].filter(Boolean).join(" @ ")
+      : (p.emails[0]?.email ?? undefined);
     return {
       id: p.id,
       display_text: displayName,
@@ -124,17 +126,16 @@ function usePersonResults(query: string, enabled: boolean): ReferenceItem[] {
 }
 
 function useTableResults(query: string, enabled: boolean): ReferenceItem[] {
-  const { data } = trpc.tables.search.useQuery(
-    { query, limit: 8 },
-    { enabled },
+  const { data } = trpc.tables.search.useQuery({ query, limit: 8 }, { enabled });
+  return (data ?? []).map(
+    (t): ReferenceItem => ({
+      id: t.id,
+      display_text: t.name,
+      target_type: "table",
+      subtitle: t.description?.slice(0, 60) ?? undefined,
+      group: "Tables",
+    }),
   );
-  return (data ?? []).map((t): ReferenceItem => ({
-    id: t.id,
-    display_text: t.name,
-    target_type: "table",
-    subtitle: t.description?.slice(0, 60) ?? undefined,
-    group: "Tables",
-  }));
 }
 
 function useReferenceResults(trigger: ReferencePickerType, query: string): ReferenceItem[] {
@@ -194,8 +195,7 @@ export function ReferencePicker({
   const listRef = useRef<HTMLDivElement>(null);
   const results = useReferenceResults(trigger, query);
 
-  const hasCreateAction =
-    (trigger === "note") || (trigger === "person" && !!query.trim());
+  const hasCreateAction = trigger === "note" || (trigger === "person" && !!query.trim());
   const totalItems = results.length + (hasCreateAction ? 1 : 0);
   const grouped = groupItems(results);
 
@@ -245,7 +245,7 @@ export function ReferencePicker({
     return (
       <div
         style={{ top: position.top, left: position.left }}
-        className="fixed z-overlay rounded-lg border border-border-default bg-surface-raised p-3 text-sm text-text-tertiary shadow-2 min-w-[200px]"
+        className="fixed z-overlay min-w-[200px] rounded-lg border border-border-default bg-surface-raised p-3 text-sm text-text-tertiary shadow-2"
       >
         No {TRIGGER_LABELS[trigger].toLowerCase()} found
       </div>
@@ -255,7 +255,7 @@ export function ReferencePicker({
   return (
     <div
       style={{ top: position.top, left: position.left }}
-      className="fixed z-overlay overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2 min-w-[260px] max-w-[380px]"
+      className="fixed z-overlay min-w-[260px] max-w-[380px] overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2"
     >
       <div className="border-b border-border-default bg-surface-sunken px-3 py-1.5 text-xs font-medium text-text-tertiary">
         {TRIGGER_LABELS[trigger]}
@@ -265,7 +265,7 @@ export function ReferencePicker({
         {grouped.map(({ group, items, startIndex }) => (
           <div key={group}>
             {(trigger === "note" || trigger === "person") && (
-              <div className="px-3 pt-2 pb-0.5 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+              <div className="px-3 pb-0.5 pt-2 text-xs font-semibold uppercase tracking-wider text-text-tertiary">
                 {group}
               </div>
             )}
@@ -277,19 +277,19 @@ export function ReferencePicker({
                   type="button"
                   data-idx={globalIdx}
                   className={cn(
-                    "w-full text-left px-3 py-2 flex items-start gap-2 transition-colors duration-fast hover:bg-surface-hover",
+                    "flex w-full items-start gap-2 px-3 py-2 text-left transition-colors duration-fast hover:bg-surface-hover",
                     globalIdx === activeIndex && "bg-surface-hover",
                   )}
                   onMouseEnter={() => setActiveIndex(globalIdx)}
                   onClick={() => handleSelect(globalIdx)}
                 >
-                  <span className="text-xs w-4 flex-shrink-0 mt-0.5 text-text-tertiary">
+                  <span className="mt-0.5 w-4 flex-shrink-0 text-xs text-text-tertiary">
                     {TYPE_ICONS[item.target_type] ?? "·"}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{item.display_text}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{item.display_text}</div>
                     {item.subtitle && (
-                      <div className="text-xs text-text-tertiary truncate">{item.subtitle}</div>
+                      <div className="truncate text-xs text-text-tertiary">{item.subtitle}</div>
                     )}
                   </div>
                 </button>
@@ -302,13 +302,13 @@ export function ReferencePicker({
             type="button"
             data-idx={results.length}
             className={cn(
-              "w-full text-left px-3 py-2 flex items-center gap-2 transition-colors duration-fast hover:bg-surface-hover text-sm text-text-primary border-t border-border-default mt-1",
+              "mt-1 flex w-full items-center gap-2 border-t border-border-default px-3 py-2 text-left text-sm text-text-primary transition-colors duration-fast hover:bg-surface-hover",
               activeIndex === results.length && "bg-surface-hover",
             )}
             onMouseEnter={() => setActiveIndex(results.length)}
             onClick={() => handleSelect(results.length)}
           >
-            <span className="text-xs w-4 flex-shrink-0">＋</span>
+            <span className="w-4 flex-shrink-0 text-xs">＋</span>
             <span>Create note{query ? `: "${query}"` : ""}</span>
           </button>
         )}
@@ -317,13 +317,13 @@ export function ReferencePicker({
             type="button"
             data-idx={results.length}
             className={cn(
-              "w-full text-left px-3 py-2 flex items-center gap-2 transition-colors duration-fast hover:bg-surface-hover text-sm text-text-primary border-t border-border-default mt-1",
+              "mt-1 flex w-full items-center gap-2 border-t border-border-default px-3 py-2 text-left text-sm text-text-primary transition-colors duration-fast hover:bg-surface-hover",
               activeIndex === results.length && "bg-surface-hover",
             )}
             onMouseEnter={() => setActiveIndex(results.length)}
             onClick={() => handleSelect(results.length)}
           >
-            <span className="text-xs w-4 flex-shrink-0">＋</span>
+            <span className="w-4 flex-shrink-0 text-xs">＋</span>
             <span>Create person: &ldquo;{query}&rdquo;</span>
           </button>
         )}

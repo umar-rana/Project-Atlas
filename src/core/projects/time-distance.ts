@@ -1,7 +1,7 @@
 /**
  * Returns a relative time phrase for a future or past date from `to` (default: now).
  * Used for target dates.
- * 
+ *
  * Examples:
  *   future: "today", "tomorrow", "3 days away", "2 weeks away", "5 months away"
  *   past:   "today", "yesterday", "passed 3 days ago", "passed 2 weeks ago"
@@ -36,7 +36,7 @@ export function timeDistance(from: Date, to: Date = new Date()): string {
 
 /**
  * Returns "last activity" relative phrase for a past date within 30 days, or null.
- * 
+ *
  * Examples: "today", "yesterday", "3 days ago", "2 weeks ago"
  * Returns null if older than 30 days.
  */

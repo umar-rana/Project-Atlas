@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/core/db";

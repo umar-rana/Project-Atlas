@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { google } from "googleapis";
 import { db, newId } from "@/core/db";
 import { decryptToken, encryptToken } from "./encrypt";
@@ -32,7 +32,9 @@ function getOAuthClient() {
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
 
   if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error("Google OAuth env vars not configured (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI)");
+    throw new Error(
+      "Google OAuth env vars not configured (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI)",
+    );
   }
 
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
@@ -169,7 +171,9 @@ export async function refreshDriveTokenIfNeeded(userId: string): Promise<void> {
   }
 
   if (!newTokens.access_token) {
-    throw new Error("Drive OAuth refresh returned no access_token — re-link Google Drive to restore sync");
+    throw new Error(
+      "Drive OAuth refresh returned no access_token — re-link Google Drive to restore sync",
+    );
   }
 
   const merged = { ...tokenData, ...newTokens };

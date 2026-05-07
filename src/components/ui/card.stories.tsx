@@ -20,7 +20,9 @@ export const Default: Story = {
       </CardBody>
       <CardFooter>
         <span className="text-xs text-text-tertiary">3 collaborators</span>
-        <Button size="sm" variant="ghost">Open</Button>
+        <Button size="sm" variant="ghost">
+          Open
+        </Button>
       </CardFooter>
     </Card>
   ),
@@ -29,8 +31,12 @@ export const Default: Story = {
 export const Interactive: Story = {
   render: () => (
     <div className="flex gap-3">
-      <Card interactive className="w-60"><CardTitle>Hoverable</CardTitle></Card>
-      <Card selected className="w-60"><CardTitle>Selected</CardTitle></Card>
+      <Card interactive className="w-60">
+        <CardTitle>Hoverable</CardTitle>
+      </Card>
+      <Card selected className="w-60">
+        <CardTitle>Selected</CardTitle>
+      </Card>
     </div>
   ),
 };

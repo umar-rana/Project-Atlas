@@ -44,7 +44,7 @@ export function EntityLink({
       href={href}
       data-kind={kind}
       className={cn(
-        "inline-flex h-control-pill items-center gap-1 rounded-sm border border-border-subtle bg-surface-raised px-1.5 align-middle font-ui text-2xs font-medium leading-none text-text-secondary no-underline whitespace-nowrap",
+        "inline-flex h-control-pill items-center gap-1 whitespace-nowrap rounded-sm border border-border-subtle bg-surface-raised px-1.5 align-middle font-ui text-2xs font-medium leading-none text-text-secondary no-underline",
         "transition-colors duration-fast ease-standard",
         "hover:border-border-default hover:text-text-primary",
         "focus-visible:focus-ring",

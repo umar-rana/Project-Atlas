@@ -38,8 +38,9 @@ export const DropdownMenuContent = React.forwardRef<
   );
 });
 
-export interface DropdownMenuItemProps
-  extends React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> {
+export interface DropdownMenuItemProps extends React.ComponentPropsWithoutRef<
+  typeof DropdownMenuPrimitive.Item
+> {
   destructive?: boolean;
   shortcut?: React.ReactNode;
   inset?: boolean;
@@ -92,7 +93,11 @@ export const DropdownMenuRadioItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
 >(function DropdownMenuRadioItem({ className, children, ...props }, ref) {
   return (
-    <DropdownMenuPrimitive.RadioItem ref={ref} className={cn(itemClass, "pl-7", className)} {...props}>
+    <DropdownMenuPrimitive.RadioItem
+      ref={ref}
+      className={cn(itemClass, "pl-7", className)}
+      {...props}
+    >
       <span className="absolute left-2 inline-flex">
         <DropdownMenuPrimitive.ItemIndicator>
           <Circle size={6} className="fill-current" />
@@ -110,7 +115,10 @@ export const DropdownMenuLabel = React.forwardRef<
   return (
     <DropdownMenuPrimitive.Label
       ref={ref}
-      className={cn("px-2 py-1.5 text-3xs font-medium uppercase tracking-caps text-text-tertiary", className)}
+      className={cn(
+        "px-2 py-1.5 text-3xs font-medium uppercase tracking-caps text-text-tertiary",
+        className,
+      )}
       {...props}
     />
   );
@@ -120,7 +128,13 @@ export const DropdownMenuSeparator = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
 >(function DropdownMenuSeparator({ className, ...props }, ref) {
-  return <DropdownMenuPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-border-subtle", className)} {...props} />;
+  return (
+    <DropdownMenuPrimitive.Separator
+      ref={ref}
+      className={cn("-mx-1 my-1 h-px bg-border-subtle", className)}
+      {...props}
+    />
+  );
 });
 
 export const DropdownMenuSubTrigger = React.forwardRef<
@@ -141,7 +155,11 @@ export const DropdownMenuSubContent = React.forwardRef<
 >(function DropdownMenuSubContent({ className, ...props }, ref) {
   return (
     <DropdownMenuPrimitive.Portal>
-      <DropdownMenuPrimitive.SubContent ref={ref} className={cn(menuContentClass, className)} {...props} />
+      <DropdownMenuPrimitive.SubContent
+        ref={ref}
+        className={cn(menuContentClass, className)}
+        {...props}
+      />
     </DropdownMenuPrimitive.Portal>
   );
 });

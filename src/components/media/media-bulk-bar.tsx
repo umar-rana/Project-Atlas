@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Tag, CheckSquare, Trash2, Unlink, Vault } from "lucide-react";
+import { CheckSquare, Trash2, Unlink, Vault } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "sonner";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -49,9 +49,7 @@ export function MediaBulkBar({ selectedIds, onClear, onComplete }: MediaBulkBarP
 
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2 shadow-md">
-      <span className="font-ui text-xs font-medium text-text-primary">
-        {count} selected
-      </span>
+      <span className="font-ui text-xs font-medium text-text-primary">{count} selected</span>
       <div className="h-4 w-px bg-border-subtle" />
 
       <button
@@ -78,7 +76,7 @@ export function MediaBulkBar({ selectedIds, onClear, onComplete }: MediaBulkBarP
         <button
           type="button"
           disabled
-          className="flex items-center gap-1.5 rounded-sm px-2 py-1 font-ui text-xs text-text-disabled cursor-not-allowed opacity-50"
+          className="flex cursor-not-allowed items-center gap-1.5 rounded-sm px-2 py-1 font-ui text-xs text-text-disabled opacity-50"
         >
           <Vault size={12} />
           Promote to Vault
@@ -93,7 +91,7 @@ export function MediaBulkBar({ selectedIds, onClear, onComplete }: MediaBulkBarP
           }
         }}
         disabled={bulkDelete.isPending}
-        className="flex items-center gap-1.5 rounded-sm px-2 py-1 font-ui text-xs text-accent-danger hover:bg-accent-danger/10 disabled:opacity-50"
+        className="hover:bg-accent-danger/10 flex items-center gap-1.5 rounded-sm px-2 py-1 font-ui text-xs text-accent-danger disabled:opacity-50"
       >
         <Trash2 size={12} />
         Delete

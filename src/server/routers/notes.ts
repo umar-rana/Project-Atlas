@@ -18,9 +18,7 @@ export const notesRouter = router({
       z.object({
         folder_id: z.string().uuid().nullable().optional(),
         project_id: z.string().uuid().nullable().optional(),
-        purpose: z
-          .enum(["note", "meeting_note", "project_brief", "reading_note"])
-          .optional(),
+        purpose: z.enum(["note", "meeting_note", "project_brief", "reading_note"]).optional(),
         is_project_brief: z.boolean().optional(),
         tag_ids: z.array(z.string().uuid()).optional(),
         limit: z.number().int().min(1).max(200).default(50),
@@ -34,7 +32,9 @@ export const notesRouter = router({
         ...(input.folder_id !== undefined ? { folder_id: input.folder_id } : {}),
         ...(input.project_id !== undefined ? { project_id: input.project_id } : {}),
         ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
-        ...(input.is_project_brief !== undefined ? { is_project_brief: input.is_project_brief } : {}),
+        ...(input.is_project_brief !== undefined
+          ? { is_project_brief: input.is_project_brief }
+          : {}),
         ...(input.tag_ids?.length
           ? {
               AND: input.tag_ids.map((tag_id) => ({
@@ -100,9 +100,7 @@ export const notesRouter = router({
         title: z.string().max(500).default(""),
         folder_id: z.string().uuid().nullable().optional(),
         project_id: z.string().uuid().nullable().optional(),
-        purpose: z
-          .enum(["note", "meeting_note", "project_brief", "reading_note"])
-          .default("note"),
+        purpose: z.enum(["note", "meeting_note", "project_brief", "reading_note"]).default("note"),
         body_json: z.string().optional(),
         body_text: z.string().optional(),
         body_markdown: z.string().optional(),
@@ -125,9 +123,7 @@ export const notesRouter = router({
       }
 
       const noteId = newId();
-      const wordCount = input.body_text
-        ? input.body_text.split(/\s+/).filter(Boolean).length
-        : 0;
+      const wordCount = input.body_text ? input.body_text.split(/\s+/).filter(Boolean).length : 0;
 
       const note = await db.$transaction(async (tx) => {
         const created = await tx.note.create({
@@ -186,9 +182,7 @@ export const notesRouter = router({
         body_markdown: z.string().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         project_id: z.string().uuid().nullable().optional(),
-        purpose: z
-          .enum(["note", "meeting_note", "project_brief", "reading_note"])
-          .optional(),
+        purpose: z.enum(["note", "meeting_note", "project_brief", "reading_note"]).optional(),
         pinned: z.boolean().optional(),
       }),
     )
@@ -223,9 +217,7 @@ export const notesRouter = router({
       }
       if (input.body_markdown !== undefined) data.body_markdown = input.body_markdown;
       if (input.folder_id !== undefined) {
-        data.folder = input.folder_id
-          ? { connect: { id: input.folder_id } }
-          : { disconnect: true };
+        data.folder = input.folder_id ? { connect: { id: input.folder_id } } : { disconnect: true };
       }
       if (input.project_id !== undefined) {
         data.project = input.project_id
@@ -264,16 +256,15 @@ export const notesRouter = router({
       }
 
       if (input.body_json !== undefined) {
-        void createSnapshot(
-          input.id,
-          ctx.user.id,
-          {
-            body_json: updated.body_json,
-            body_text: updated.body_text,
-            body_markdown: updated.body_markdown,
-          },
-        ).catch((err: unknown) => {
-          log.warn({ err, note_id: input.id }, "Non-fatal: background snapshot failed for note update");
+        void createSnapshot(input.id, ctx.user.id, {
+          body_json: updated.body_json,
+          body_text: updated.body_text,
+          body_markdown: updated.body_markdown,
+        }).catch((err: unknown) => {
+          log.warn(
+            { err, note_id: input.id },
+            "Non-fatal: background snapshot failed for note update",
+          );
         });
       }
 
@@ -409,12 +400,8 @@ export const notesRouter = router({
         orderBy: { created_at: "desc" },
       });
 
-      const noteIds = links
-        .filter((l) => l.source_type === "Note")
-        .map((l) => l.source_id);
-      const taskIds = links
-        .filter((l) => l.source_type === "Task")
-        .map((l) => l.source_id);
+      const noteIds = links.filter((l) => l.source_type === "Note").map((l) => l.source_id);
+      const taskIds = links.filter((l) => l.source_type === "Task").map((l) => l.source_id);
 
       const [sourceNotes, sourceTasks] = await Promise.all([
         noteIds.length
@@ -595,7 +582,9 @@ export const notesRouter = router({
 
       if (existing) {
         await db.$transaction([
-          db.tagOnNote.delete({ where: { tag_id_note_id: { tag_id: input.tag_id, note_id: input.note_id } } }),
+          db.tagOnNote.delete({
+            where: { tag_id_note_id: { tag_id: input.tag_id, note_id: input.note_id } },
+          }),
           db.tag.update({ where: { id: input.tag_id }, data: { usage_count: { decrement: 1 } } }),
         ]);
         try {
@@ -607,7 +596,10 @@ export const notesRouter = router({
             meta: { tag_id: input.tag_id, tag_name: tag.name },
           });
         } catch (err) {
-          log.warn({ err, note_id: input.note_id }, "Non-fatal: audit log failed for note removeTag");
+          log.warn(
+            { err, note_id: input.note_id },
+            "Non-fatal: audit log failed for note removeTag",
+          );
         }
       }
 
@@ -674,7 +666,9 @@ export const notesRouter = router({
               action: "note_tag_added",
               meta: { tag_id },
             });
-          } catch { /* non-fatal */ }
+          } catch {
+            /* non-fatal */
+          }
         }
         for (const tag_id of toRemove) {
           try {
@@ -685,7 +679,9 @@ export const notesRouter = router({
               action: "note_tag_removed",
               meta: { tag_id },
             });
-          } catch { /* non-fatal */ }
+          } catch {
+            /* non-fatal */
+          }
         }
       });
 
@@ -777,7 +773,10 @@ export const notesRouter = router({
             },
           });
         } catch (err) {
-          log.warn({ err, note_id: input.noteId }, "Non-fatal: audit log failed for note version restore");
+          log.warn(
+            { err, note_id: input.noteId },
+            "Non-fatal: audit log failed for note version restore",
+          );
         }
 
         return { ok: true };

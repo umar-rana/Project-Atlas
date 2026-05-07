@@ -13,9 +13,7 @@ export type ReferencePickerState = {
   to: number;
 };
 
-export const REFERENCE_PICKER_PLUGIN_KEY = new PluginKey<ReferencePickerState>(
-  "referencePicker",
-);
+export const REFERENCE_PICKER_PLUGIN_KEY = new PluginKey<ReferencePickerState>("referencePicker");
 
 export const ReferenceNode = Node.create({
   name: "reference",
@@ -32,7 +30,7 @@ export const ReferenceNode = Node.create({
   },
 
   parseHTML() {
-    return [{ tag: 'span[data-reference]' }];
+    return [{ tag: "span[data-reference]" }];
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -91,7 +89,11 @@ export const ReferencePickerExtension = Extension.create({
             if (event.key === "Escape") {
               view.dispatch(
                 view.state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {
-                  active: false, trigger: "note", query: "", from: 0, to: 0,
+                  active: false,
+                  trigger: "note",
+                  query: "",
+                  from: 0,
+                  to: 0,
                 }),
               );
               return true;
@@ -101,7 +103,11 @@ export const ReferencePickerExtension = Extension.create({
               if (pickerState.query === "") {
                 view.dispatch(
                   view.state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {
-                    active: false, trigger: "note", query: "", from: 0, to: 0,
+                    active: false,
+                    trigger: "note",
+                    query: "",
+                    from: 0,
+                    to: 0,
                   }),
                 );
               } else {
@@ -151,13 +157,13 @@ export const ReferencePickerExtension = Extension.create({
               return false;
             }
 
-            const textBefore =
-              state.doc.textBetween(Math.max(0, from - 2), from, "") + text;
+            const textBefore = state.doc.textBetween(Math.max(0, from - 2), from, "") + text;
 
             // Check two-character triggers first (e.g. @@)
             for (const [triggerStr, triggerType] of Object.entries(DOUBLE_TRIGGER_MAP)) {
               if (textBefore.endsWith(triggerStr)) {
-                const charBeforeTrigger = from > 1 ? state.doc.textBetween(from - 2, from - 1, "") : "";
+                const charBeforeTrigger =
+                  from > 1 ? state.doc.textBetween(from - 2, from - 1, "") : "";
                 if (charBeforeTrigger === "" || /\s/.test(charBeforeTrigger)) {
                   view.dispatch(
                     state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {

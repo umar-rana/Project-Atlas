@@ -8,7 +8,12 @@ import { cn } from "@/lib/utils";
 import { CalendarEventDetail } from "@/components/calendar/calendar-event-detail";
 import { BlockTimeForm } from "@/components/calendar/block-time-form";
 import { toast } from "@/lib/toast";
-import { Calendar as BigCalendar, dateFnsLocalizer, type View, type SlotInfo } from "react-big-calendar";
+import {
+  Calendar as BigCalendar,
+  dateFnsLocalizer,
+  type View,
+  type SlotInfo,
+} from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 const localizer = dateFnsLocalizer({
@@ -28,14 +33,23 @@ function parseViewParam(p: string | null): ViewType {
 
 function formatHeaderTitle(view: ViewType, anchor: Date): string {
   if (view === "day") {
-    return anchor.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    return anchor.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   }
   if (view === "week") {
     const start = startOfWeek(anchor, { weekStartsOn: 1 });
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
     const startStr = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    const endStr = end.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    const endStr = end.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
     return `${startStr} – ${endStr}`;
   }
   return anchor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
@@ -77,7 +91,12 @@ type CalEvent = {
   organizer_name: string | null;
   _originalId?: string;
   _virtualDate?: Date;
-  calendar?: { id: string; name: string; google_color_id: string | null; color_override: string | null } | null;
+  calendar?: {
+    id: string;
+    name: string;
+    google_color_id: string | null;
+    color_override: string | null;
+  } | null;
   attendees?: Array<{
     id: string;
     email: string;
@@ -85,7 +104,12 @@ type CalEvent = {
     response_status: string;
     is_organizer: boolean;
     is_self: boolean;
-    person?: { id: string; display_name: string | null; given_name: string | null; family_name: string | null } | null;
+    person?: {
+      id: string;
+      display_name: string | null;
+      given_name: string | null;
+      family_name: string | null;
+    } | null;
   }>;
   linked_task?: { id: string; title: string; status: string } | null;
   linked_project?: { id: string; title: string; color: string | null } | null;
@@ -125,7 +149,10 @@ function CustomEventComponent({ event }: { event: RBCEvent }) {
   const isCancelled = orig.status === "cancelled";
   return (
     <span
-      className={cn("block truncate px-1 font-ui text-xs font-medium", isCancelled && "line-through opacity-60")}
+      className={cn(
+        "block truncate px-1 font-ui text-xs font-medium",
+        isCancelled && "line-through opacity-60",
+      )}
       style={{ color: `var(--${color}-fill)` }}
       title={event.title}
     >
@@ -166,19 +193,29 @@ export default function CalendarPage() {
       params.delete("calendars");
     }
     router.replace(`/calendar?${params.toString()}`, { scroll: false });
-    setTimeout(() => { isUpdatingUrl.current = false; }, 100);
+    setTimeout(() => {
+      isUpdatingUrl.current = false;
+    }, 100);
   }, [view, anchor, selectedCalIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { start, end } = getWindowForView(view, anchor);
 
-  const { data: calendars = [] } = trpc.calendar.calendars.list.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const { data: calendars = [] } = trpc.calendar.calendars.list.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
 
-  const { data: events = [], isLoading, refetch } = trpc.calendar.events.list.useQuery(
+  const {
+    data: events = [],
+    isLoading,
+    refetch,
+  } = trpc.calendar.events.list.useQuery(
     { start, end, calendar_ids: selectedCalIds.length > 0 ? selectedCalIds : undefined },
     { staleTime: 2 * 60_000 },
   );
 
-  const { data: calStatus } = trpc.calendar.connected.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const { data: calStatus } = trpc.calendar.connected.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
 
   const [selectedEvent, setSelectedEvent] = React.useState<CalEvent | null>(null);
   const [blockFormOpen, setBlockFormOpen] = React.useState(false);
@@ -195,7 +232,10 @@ export default function CalendarPage() {
     onSuccess: (task) => {
       utils.tasks.list.invalidate();
       if (selectedEvent) {
-        linkEventMut.mutate({ id: selectedEvent._originalId ?? selectedEvent.id, linked_task_id: task.id });
+        linkEventMut.mutate({
+          id: selectedEvent._originalId ?? selectedEvent.id,
+          linked_task_id: task.id,
+        });
       }
     },
   });
@@ -277,7 +317,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-surface-base">
-      <div className="flex items-center justify-between border-b border-border-default px-4 py-2 flex-shrink-0">
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-border-default px-4 py-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-0.5">
             <button
@@ -318,14 +358,18 @@ export default function CalendarPage() {
             </button>
           )}
           <button
-            onClick={() => { setBlockFormStart(undefined); setBlockFormEnd(undefined); setBlockFormOpen(true); }}
+            onClick={() => {
+              setBlockFormStart(undefined);
+              setBlockFormEnd(undefined);
+              setBlockFormOpen(true);
+            }}
             className="flex items-center gap-1.5 rounded-lg bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover"
           >
             <Plus size={13} />
             Block time
           </button>
 
-          <div className="flex rounded-lg border border-border-default overflow-hidden">
+          <div className="flex overflow-hidden rounded-lg border border-border-default">
             {(["day", "week", "month"] as const).map((v) => (
               <button
                 key={v}
@@ -345,19 +389,22 @@ export default function CalendarPage() {
       </div>
 
       {!calStatus?.connected && (
-        <div className="flex items-center gap-2 border-b border-border-subtle bg-surface-sunken px-4 py-2 flex-shrink-0">
-          <Calendar size={13} className="text-text-tertiary flex-shrink-0" />
+        <div className="flex flex-shrink-0 items-center gap-2 border-b border-border-subtle bg-surface-sunken px-4 py-2">
+          <Calendar size={13} className="flex-shrink-0 text-text-tertiary" />
           <span className="font-ui text-xs text-text-tertiary">
             Google Calendar not connected — showing Atlas time blocks only.
           </span>
-          <a href="/settings?section=integrations" className="font-ui text-xs text-accent-primary hover:underline flex-shrink-0">
+          <a
+            href="/settings?section=integrations"
+            className="flex-shrink-0 font-ui text-xs text-accent-primary hover:underline"
+          >
             Connect →
           </a>
         </div>
       )}
 
       {calendars.length > 1 && (
-        <div className="flex items-center gap-1.5 border-b border-border-subtle bg-surface-sunken px-4 py-1.5 flex-shrink-0 overflow-x-auto">
+        <div className="flex flex-shrink-0 items-center gap-1.5 overflow-x-auto border-b border-border-subtle bg-surface-sunken px-4 py-1.5">
           <span className="flex-shrink-0 font-ui text-2xs text-text-tertiary">Filter:</span>
           {calendars.map((cal) => {
             const active = selectedCalIds.includes(cal.id);
@@ -372,14 +419,14 @@ export default function CalendarPage() {
                   )
                 }
                 className={cn(
-                  "flex-shrink-0 flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-2xs border transition-colors",
+                  "flex flex-shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-ui text-2xs transition-colors",
                   active
-                    ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
+                    ? "bg-accent-primary/10 border-accent-primary text-accent-primary"
                     : "border-border-subtle text-text-secondary hover:bg-surface-hover",
                 )}
               >
                 <span
-                  className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                  className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
                   style={{ background: calColor ?? "var(--text-disabled)" }}
                 />
                 {cal.name}
@@ -390,7 +437,7 @@ export default function CalendarPage() {
             <button
               type="button"
               onClick={() => setSelectedCalIds([])}
-              className="flex-shrink-0 font-ui text-2xs text-text-tertiary hover:text-text-primary ml-1"
+              className="ml-1 flex-shrink-0 font-ui text-2xs text-text-tertiary hover:text-text-primary"
             >
               Clear
             </button>
@@ -398,7 +445,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden atlas-calendar">
+      <div className="atlas-calendar flex flex-1 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <p className="font-ui text-sm text-text-tertiary">Loading calendar…</p>

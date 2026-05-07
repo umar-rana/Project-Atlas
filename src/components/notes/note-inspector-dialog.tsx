@@ -1,10 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { trpc } from "@/lib/trpc/client";
 import { NoteMetadataPanel } from "./note-metadata-panel";
@@ -16,21 +13,30 @@ interface NoteInspectorDialogProps {
   onClose: () => void;
 }
 
-export function NoteInspectorDialog({ noteId, open, onClose }: NoteInspectorDialogProps): React.ReactElement {
+export function NoteInspectorDialog({
+  noteId,
+  open,
+  onClose,
+}: NoteInspectorDialogProps): React.ReactElement {
   const noteQuery = trpc.notes.get.useQuery({ id: noteId }, { enabled: open });
 
   const note = noteQuery.data;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm" hideClose className="flex h-[80vh] flex-col overflow-hidden p-0">
         <header className="flex items-center gap-2 border-b border-border-subtle px-3 py-2">
           <div className="min-w-0 flex-1">
             <h2 className="m-0 truncate font-ui text-sm font-semibold text-text-primary">
-              {note ? (note.title.trim() || "Untitled") : "Loading…"}
+              {note ? note.title.trim() || "Untitled" : "Loading…"}
             </h2>
             {note ? (
-              <p className="m-0 font-ui text-2xs text-text-tertiary capitalize">
+              <p className="m-0 font-ui text-2xs capitalize text-text-tertiary">
                 {note.purpose.replace(/_/g, " ")}
               </p>
             ) : null}

@@ -62,10 +62,18 @@ export default function TrashPage() {
         <header className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
           <div>
             <h1 className="font-ui text-base font-semibold text-text-primary">Trash</h1>
-            <p className="font-ui text-2xs text-text-tertiary">Restore or permanently delete tasks.</p>
+            <p className="font-ui text-2xs text-text-tertiary">
+              Restore or permanently delete tasks.
+            </p>
           </div>
 
-          <AlertDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setConfirmInput(""); }}>
+          <AlertDialog
+            open={open}
+            onOpenChange={(v) => {
+              setOpen(v);
+              if (!v) setConfirmInput("");
+            }}
+          >
             <AlertDialogTrigger asChild>
               <button
                 type="button"
@@ -81,19 +89,31 @@ export default function TrashPage() {
                 <AlertDialogDescription asChild>
                   <div className="space-y-3">
                     <p>
-                      This will permanently and irrecoverably delete the following from your account.
-                      This action cannot be undone.
+                      This will permanently and irrecoverably delete the following from your
+                      account. This action cannot be undone.
                     </p>
                     {totalCount > 0 && (
-                      <ul className="list-disc pl-5 font-ui text-sm text-text-primary space-y-0.5">
-                        <EntityCountLine label={counts.tasks === 1 ? "task" : "tasks"} count={counts.tasks} />
-                        <EntityCountLine label={counts.projects === 1 ? "project" : "projects"} count={counts.projects} />
-                        <EntityCountLine label={counts.notes === 1 ? "note" : "notes"} count={counts.notes} />
-                        <EntityCountLine label={counts.attachments === 1 ? "attachment" : "attachments"} count={counts.attachments} />
+                      <ul className="list-disc space-y-0.5 pl-5 font-ui text-sm text-text-primary">
+                        <EntityCountLine
+                          label={counts.tasks === 1 ? "task" : "tasks"}
+                          count={counts.tasks}
+                        />
+                        <EntityCountLine
+                          label={counts.projects === 1 ? "project" : "projects"}
+                          count={counts.projects}
+                        />
+                        <EntityCountLine
+                          label={counts.notes === 1 ? "note" : "notes"}
+                          count={counts.notes}
+                        />
+                        <EntityCountLine
+                          label={counts.attachments === 1 ? "attachment" : "attachments"}
+                          count={counts.attachments}
+                        />
                       </ul>
                     )}
                     <div>
-                      <label className="block font-ui text-xs text-text-secondary mb-1">
+                      <label className="mb-1 block font-ui text-xs text-text-secondary">
                         Type <strong>DELETE</strong> to confirm:
                       </label>
                       <input
@@ -129,10 +149,16 @@ export default function TrashPage() {
         </header>
 
         {list.isLoading ? (
-          <div className="flex flex-1 items-center justify-center font-ui text-2xs text-text-tertiary">Loading…</div>
+          <div className="flex flex-1 items-center justify-center font-ui text-2xs text-text-tertiary">
+            Loading…
+          </div>
         ) : tasks.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
-            <EmptyState icon={<Inbox size={28} />} title="Trash is empty" body="Deleted tasks land here for 30 days." />
+            <EmptyState
+              icon={<Inbox size={28} />}
+              title="Trash is empty"
+              body="Deleted tasks land here for 30 days."
+            />
           </div>
         ) : (
           <div role="grid" className="flex-1 overflow-y-auto">

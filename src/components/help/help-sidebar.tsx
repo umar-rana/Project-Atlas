@@ -77,8 +77,7 @@ export function HelpSidebar({
                 <ul>
                   {section.articles.map((article) => {
                     const isActive =
-                      activeSectionId === section.id &&
-                      activeArticleId === article.id;
+                      activeSectionId === section.id && activeArticleId === article.id;
                     return (
                       <li key={article.id}>
                         <button
@@ -135,9 +134,7 @@ export function HelpSidebar({
           <Sparkles size={12} aria-hidden />
           Ask AI
         </button>
-        <p className="text-center font-mono text-2xs text-text-tertiary">
-          Atlas Help · v1.0
-        </p>
+        <p className="text-center font-mono text-2xs text-text-tertiary">Atlas Help · v1.0</p>
       </div>
     </aside>
   );

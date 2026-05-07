@@ -19,7 +19,10 @@ function useAtlasTheme(): "dark" | "light" {
   React.useEffect(() => {
     setTheme(read());
     const observer = new MutationObserver(() => setTheme(read()));
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
     return () => observer.disconnect();
   }, [read]);
   return theme;

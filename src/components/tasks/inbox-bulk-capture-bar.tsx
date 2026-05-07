@@ -13,10 +13,19 @@ interface InboxBulkCaptureBarProps {
 
 type BulkDisposition = "task" | "note" | "someday" | "trash";
 
-const DISPOSITION_OPTIONS: { value: BulkDisposition; label: string; icon: React.ReactNode; danger?: boolean }[] = [
+const DISPOSITION_OPTIONS: {
+  value: BulkDisposition;
+  label: string;
+  icon: React.ReactNode;
+  danger?: boolean;
+}[] = [
   { value: "task", label: "Make all tasks", icon: <Archive size={12} /> },
   { value: "note", label: "Make all notes", icon: <FileText size={12} /> },
-  { value: "someday", label: "Defer all to Someday", icon: <Archive size={12} className="text-accent-info" /> },
+  {
+    value: "someday",
+    label: "Defer all to Someday",
+    icon: <Archive size={12} className="text-accent-info" />,
+  },
   { value: "trash", label: "Trash all", icon: <Trash2 size={12} />, danger: true },
 ];
 
@@ -42,14 +51,15 @@ function ConfirmDialog({
 }) {
   const option = DISPOSITION_OPTIONS.find((o) => o.value === disposition)!;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onCancel}
+    >
       <div
         className="w-full max-w-sm rounded-xl border border-border-default bg-surface-overlay p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="mb-1 font-ui text-base font-semibold text-text-primary">
-          {option.label}
-        </h3>
+        <h3 className="mb-1 font-ui text-base font-semibold text-text-primary">{option.label}</h3>
         <p className="mb-4 font-ui text-sm text-text-secondary">
           This will apply to <strong>{count}</strong> {count === 1 ? "capture" : "captures"}.{" "}
           {DISPOSITION_DESCRIPTIONS[disposition]}
@@ -70,7 +80,7 @@ function ConfirmDialog({
             className={cn(
               "rounded-md px-3 py-1.5 font-ui text-sm font-medium disabled:opacity-50",
               disposition === "trash"
-                ? "bg-accent-danger text-white hover:bg-accent-danger/90"
+                ? "hover:bg-accent-danger/90 bg-accent-danger text-white"
                 : "bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover",
             )}
           >
@@ -82,7 +92,10 @@ function ConfirmDialog({
   );
 }
 
-export function InboxBulkCaptureBar({ captureIds, onClear }: InboxBulkCaptureBarProps): React.ReactElement | null {
+export function InboxBulkCaptureBar({
+  captureIds,
+  onClear,
+}: InboxBulkCaptureBarProps): React.ReactElement | null {
   const utils = trpc.useUtils();
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [pendingDisposition, setPendingDisposition] = React.useState<BulkDisposition | null>(null);
@@ -142,7 +155,7 @@ export function InboxBulkCaptureBar({ captureIds, onClear }: InboxBulkCaptureBar
               {dropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                  <div className="absolute bottom-full right-0 z-50 mb-1 w-52 rounded-md border border-border-default bg-surface-overlay shadow-lg py-1">
+                  <div className="absolute bottom-full right-0 z-50 mb-1 w-52 rounded-md border border-border-default bg-surface-overlay py-1 shadow-lg">
                     {DISPOSITION_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}

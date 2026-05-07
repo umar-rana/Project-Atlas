@@ -41,29 +41,31 @@ export const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<
   },
 );
 
-export const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  function CardTitle({ className, ...props }, ref) {
-    return (
-      <h3
-        ref={ref}
-        className={cn("m-0 font-ui text-sm font-semibold leading-snug text-text-primary", className)}
-        {...props}
-      />
-    );
-  },
-);
+export const CardTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(function CardTitle({ className, ...props }, ref) {
+  return (
+    <h3
+      ref={ref}
+      className={cn("m-0 font-ui text-sm font-semibold leading-snug text-text-primary", className)}
+      {...props}
+    />
+  );
+});
 
-export const CardSubtitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  function CardSubtitle({ className, ...props }, ref) {
-    return (
-      <p
-        ref={ref}
-        className={cn("m-0 font-ui text-xs leading-snug text-text-tertiary", className)}
-        {...props}
-      />
-    );
-  },
-);
+export const CardSubtitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(function CardSubtitle({ className, ...props }, ref) {
+  return (
+    <p
+      ref={ref}
+      className={cn("m-0 font-ui text-xs leading-snug text-text-tertiary", className)}
+      {...props}
+    />
+  );
+});
 
 export const CardBody = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   function CardBody({ className, ...props }, ref) {

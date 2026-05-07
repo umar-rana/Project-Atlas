@@ -13,10 +13,7 @@ import {
 } from "@/core/projects/type-validation";
 
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });
@@ -115,7 +112,12 @@ describe("projects.distinctTypes", () => {
       insertProject({ user_id: dtUser.id, title: "DT: Area 1", type: "area" }),
       insertProject({ user_id: dtUser.id, title: "DT: Area 2", type: "area" }),
       insertProject({ user_id: dtUser.id, title: "DT: Habit 1", type: "habit" }),
-      insertProject({ user_id: dtUser.id, title: "DT: Deleted goal", type: "goal", deleted_at: new Date() }),
+      insertProject({
+        user_id: dtUser.id,
+        title: "DT: Deleted goal",
+        type: "goal",
+        deleted_at: new Date(),
+      }),
     ]);
   });
 
@@ -259,7 +261,12 @@ describe("projects.get — task_counts metrics", () => {
       insertTask({ project_id: projectId, title: "Active task 3", status: "active" }),
       insertTask({ project_id: projectId, title: "Completed task 1", status: "completed" }),
       insertTask({ project_id: projectId, title: "Completed task 2", status: "completed" }),
-      insertTask({ project_id: projectId, title: "Active deferred task", status: "active", defer_date: futureDate }),
+      insertTask({
+        project_id: projectId,
+        title: "Active deferred task",
+        status: "active",
+        defer_date: futureDate,
+      }),
     ]);
 
     const parentTaskId = await insertTask({
@@ -606,7 +613,11 @@ describe("habit→goal migration SQL", () => {
     expect(after?.type).toBe("goal");
 
     const auditEntries = await rawDb.auditLog.findMany({
-      where: { user_id: migrationUser.id, entity_id: habitProjectId, action: "project_type_migrated" },
+      where: {
+        user_id: migrationUser.id,
+        entity_id: habitProjectId,
+        action: "project_type_migrated",
+      },
     });
     expect(auditEntries.length).toBeGreaterThanOrEqual(1);
     expect(auditEntries[0]!.meta).toMatchObject({ from: "habit", to: "goal" });
@@ -685,12 +696,24 @@ describe("projects tracker — setTracker / clearTracker / get", () => {
     ]);
 
     await Promise.all([
-      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[0]!.id, column_id: numberColumnId, value: 10 } }),
-      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[1]!.id, column_id: numberColumnId, value: 20 } }),
-      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[2]!.id, column_id: numberColumnId, value: 30 } }),
-      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[0]!.id, column_id: checkboxColumnId, value: true } }),
-      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[1]!.id, column_id: checkboxColumnId, value: false } }),
-      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[2]!.id, column_id: checkboxColumnId, value: false } }),
+      rawDb.tableCell.create({
+        data: { id: uuidv7(), row_id: rows[0]!.id, column_id: numberColumnId, value: 10 },
+      }),
+      rawDb.tableCell.create({
+        data: { id: uuidv7(), row_id: rows[1]!.id, column_id: numberColumnId, value: 20 },
+      }),
+      rawDb.tableCell.create({
+        data: { id: uuidv7(), row_id: rows[2]!.id, column_id: numberColumnId, value: 30 },
+      }),
+      rawDb.tableCell.create({
+        data: { id: uuidv7(), row_id: rows[0]!.id, column_id: checkboxColumnId, value: true },
+      }),
+      rawDb.tableCell.create({
+        data: { id: uuidv7(), row_id: rows[1]!.id, column_id: checkboxColumnId, value: false },
+      }),
+      rawDb.tableCell.create({
+        data: { id: uuidv7(), row_id: rows[2]!.id, column_id: checkboxColumnId, value: false },
+      }),
     ]);
   });
 
@@ -889,13 +912,15 @@ describe("projects tracker — setTracker / clearTracker / get", () => {
   });
 
   it("clearTracker rejects unknown project (NOT_FOUND)", async () => {
-    await expect(
-      makeProjectsCaller().clearTracker({ project_id: uuidv7() }),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(makeProjectsCaller().clearTracker({ project_id: uuidv7() })).rejects.toMatchObject(
+      { code: "NOT_FOUND" },
+    );
   });
 
   it("get returns null tracker when no tracker is configured", async () => {
-    await makeProjectsCaller().clearTracker({ project_id: trackerProjectId }).catch(() => {});
+    await makeProjectsCaller()
+      .clearTracker({ project_id: trackerProjectId })
+      .catch(() => {});
     const stored = await rawDb.project.findUniqueOrThrow({ where: { id: trackerProjectId } });
     expect(stored.tracker_table_id).toBeNull();
     const result = await makeProjectsCaller().get({ id: trackerProjectId });
@@ -903,7 +928,9 @@ describe("projects tracker — setTracker / clearTracker / get", () => {
   });
 
   it("setTracker writes audit log entry (project_tracker_set)", async () => {
-    await makeProjectsCaller().clearTracker({ project_id: trackerProjectId }).catch(() => {});
+    await makeProjectsCaller()
+      .clearTracker({ project_id: trackerProjectId })
+      .catch(() => {});
     await makeProjectsCaller().setTracker({
       project_id: trackerProjectId,
       table_id: tableId,
@@ -1103,7 +1130,9 @@ describe("projects tracker — setTracker / clearTracker / get", () => {
         position: 20,
       },
     });
-    const row = await rawDb.tableRow.create({ data: { id: uuidv7(), table_id: tableId, position: 100 } });
+    const row = await rawDb.tableRow.create({
+      data: { id: uuidv7(), table_id: tableId, position: 100 },
+    });
     await rawDb.tableCell.create({
       data: { id: uuidv7(), row_id: row.id, column_id: currencyCol.id, value: 49.99 },
     });

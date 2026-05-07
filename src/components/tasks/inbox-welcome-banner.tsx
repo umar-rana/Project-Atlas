@@ -27,8 +27,7 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
       if (localStorage.getItem(dismissedKey(user.id)) === "true") {
         setDismissed(true);
       }
-    } catch {
-    }
+    } catch {}
   }, [user]);
 
   function handleDismiss() {
@@ -36,8 +35,7 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
     if (!user) return;
     try {
       localStorage.setItem(dismissedKey(user.id), "true");
-    } catch {
-    }
+    } catch {}
   }
 
   if (dismissed) return null;
@@ -52,9 +50,7 @@ export function InboxWelcomeBanner(): React.ReactElement | null {
       <div className="flex items-start gap-2.5 px-3 py-2.5">
         <Sparkles size={13} className="mt-0.5 shrink-0 text-accent-primary" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="font-ui text-xs font-semibold text-text-primary">
-            Welcome to your inbox
-          </p>
+          <p className="font-ui text-xs font-semibold text-text-primary">Welcome to your inbox</p>
           <p className="mt-0.5 font-ui text-2xs text-text-secondary">
             Capture anything on your mind and it will land here for triage.
           </p>

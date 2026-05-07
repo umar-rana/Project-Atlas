@@ -125,13 +125,23 @@ describe("evaluateFormula", () => {
   describe("custom functions", () => {
     it("IF — true branch", () => {
       const cells = [makeCell("price", 10)];
-      const result = evaluateFormula('IF({Price} > 5, "expensive", "cheap")', cells, allColumns, "text");
+      const result = evaluateFormula(
+        'IF({Price} > 5, "expensive", "cheap")',
+        cells,
+        allColumns,
+        "text",
+      );
       expect(result.value).toBe("expensive");
     });
 
     it("IF — false branch", () => {
       const cells = [makeCell("price", 2)];
-      const result = evaluateFormula('IF({Price} > 5, "expensive", "cheap")', cells, allColumns, "text");
+      const result = evaluateFormula(
+        'IF({Price} > 5, "expensive", "cheap")',
+        cells,
+        allColumns,
+        "text",
+      );
       expect(result.value).toBe("cheap");
     });
 
@@ -184,11 +194,13 @@ describe("evaluateFormula", () => {
     });
 
     it("DAYS_BETWEEN", () => {
-      const cells = [
-        makeCell("date", "2024-01-01"),
-        makeCell("qty", 0),
-      ];
-      const result = evaluateFormula('DAYS_BETWEEN({Date}, "2024-01-11")', cells, allColumns, "number");
+      const cells = [makeCell("date", "2024-01-01"), makeCell("qty", 0)];
+      const result = evaluateFormula(
+        'DAYS_BETWEEN({Date}, "2024-01-11")',
+        cells,
+        allColumns,
+        "number",
+      );
       expect(result.value).toBe(10);
     });
 
@@ -257,7 +269,12 @@ describe("validateFormula", () => {
   const columns = [
     { id: "col1", name: "Revenue", type: "number", config: {} },
     { id: "col2", name: "Cost", type: "number", config: {} },
-    { id: "col3", name: "Profit", type: "formula", config: { expression: "{Revenue} - {Cost}", return_type: "number" } },
+    {
+      id: "col3",
+      name: "Profit",
+      type: "formula",
+      config: { expression: "{Revenue} - {Cost}", return_type: "number" },
+    },
   ];
 
   it("passes for a valid expression", () => {

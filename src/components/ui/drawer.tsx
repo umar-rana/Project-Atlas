@@ -9,8 +9,9 @@ export const Drawer = DialogPrimitive.Root;
 export const DrawerTrigger = DialogPrimitive.Trigger;
 export const DrawerClose = DialogPrimitive.Close;
 
-export interface DrawerContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+export interface DrawerContentProps extends React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> {
   side?: "right" | "left";
   width?: number | string;
 }
@@ -18,7 +19,10 @@ export interface DrawerContentProps
 export const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DrawerContentProps
->(function DrawerContent({ className, side = "right", width = 360, style, children, ...props }, ref) {
+>(function DrawerContent(
+  { className, side = "right", width = 360, style, children, ...props },
+  ref,
+) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-drawer-backdrop bg-surface-scrim-drawer data-[state=open]:animate-atlas-fade-in" />
@@ -54,10 +58,7 @@ export function DrawerHeader({
 }: DrawerHeaderProps) {
   return (
     <div
-      className={cn(
-        "flex items-center gap-2 border-b border-border-subtle px-4 py-3",
-        className,
-      )}
+      className={cn("flex items-center gap-2 border-b border-border-subtle px-4 py-3", className)}
       {...props}
     >
       <div className="flex-1">{children}</div>

@@ -89,7 +89,10 @@ export function ProjectNotesSection({ projectId }: { projectId: string }) {
               {note.is_project_brief ? (
                 <Star size={12} className="shrink-0 text-amber-500" aria-label="Project brief" />
               ) : (
-                <FileText size={12} className="shrink-0 text-text-disabled group-hover:text-text-tertiary" />
+                <FileText
+                  size={12}
+                  className="shrink-0 text-text-disabled group-hover:text-text-tertiary"
+                />
               )}
               <span className="flex-1 truncate">{note.title || "Untitled note"}</span>
               {note.purpose && note.purpose !== "note" && (

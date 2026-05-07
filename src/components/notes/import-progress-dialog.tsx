@@ -3,20 +3,13 @@
 import * as React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Upload, CheckCircle, AlertTriangle, FileText, File } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import { ClaudeConversationDialog } from "./claude-conversation-dialog";
 import { ImportConflictDialog } from "./import-conflict-dialog";
 
 type ImportFormat = "md" | "docx";
-type ImportStep =
-  | "idle"
-  | "uploading"
-  | "claude_choice"
-  | "conflict"
-  | "done"
-  | "error";
+type ImportStep = "idle" | "uploading" | "claude_choice" | "conflict" | "done" | "error";
 
 interface ImportProgressDialogProps {
   open: boolean;
@@ -80,7 +73,13 @@ export function ImportProgressDialog({
     }
   }, [open, step]);
 
-  async function doImport(file: File, claudeMode?: string, conflictResolution?: string, newTitle?: string, conflictingNoteId?: string) {
+  async function doImport(
+    file: File,
+    claudeMode?: string,
+    conflictResolution?: string,
+    newTitle?: string,
+    conflictingNoteId?: string,
+  ) {
     setStep("uploading");
     setProgress(10);
 
@@ -103,7 +102,7 @@ export function ImportProgressDialog({
       });
       setProgress(80);
 
-      const data = await res.json() as {
+      const data = (await res.json()) as {
         requiresClaudeDialog?: boolean;
         requiresConflictResolution?: boolean;
         conflictingNoteId?: string;
@@ -230,11 +229,14 @@ export function ImportProgressDialog({
 
   return (
     <>
-      <Dialog.Root open={open && step !== "claude_choice" && step !== "conflict"} onOpenChange={onOpenChange}>
+      <Dialog.Root
+        open={open && step !== "claude_choice" && step !== "conflict"}
+        onOpenChange={onOpenChange}
+      >
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border-default bg-surface-base p-6 shadow-xl focus:outline-none">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <Dialog.Title className="font-ui text-sm font-semibold text-text-primary">
                 Import {formatLabel} file
               </Dialog.Title>
@@ -266,7 +268,9 @@ export function ImportProgressDialog({
                   <FormatIcon size={24} className="text-accent-primary" />
                 </div>
                 <div className="text-center">
-                  <p className="font-ui text-sm text-text-primary">Select a {formatLabel} file to import</p>
+                  <p className="font-ui text-sm text-text-primary">
+                    Select a {formatLabel} file to import
+                  </p>
                   <p className="mt-1 font-ui text-2xs text-text-disabled">
                     {format === "md" ? "Maximum size: 5 MB" : "Maximum size: 50 MB"}
                   </p>
@@ -302,7 +306,9 @@ export function ImportProgressDialog({
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <CheckCircle size={20} className="shrink-0 text-green-400" />
-                  <p className="font-ui text-sm font-medium text-text-primary">Import successful!</p>
+                  <p className="font-ui text-sm font-medium text-text-primary">
+                    Import successful!
+                  </p>
                 </div>
 
                 {warnings.length > 0 && (
@@ -312,7 +318,9 @@ export function ImportProgressDialog({
                       <div className="flex flex-col gap-1">
                         <p className="font-ui text-2xs font-medium text-amber-300">Import notes:</p>
                         {warnings.map((w, i) => (
-                          <p key={i} className="font-ui text-2xs text-amber-200/80">{w}</p>
+                          <p key={i} className="font-ui text-2xs text-amber-200/80">
+                            {w}
+                          </p>
                         ))}
                       </div>
                     </div>

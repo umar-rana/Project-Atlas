@@ -91,7 +91,10 @@ describe("runTier2 — limit check gate", () => {
   });
 
   it("returns parsed: null immediately when limit check disallows", async () => {
-    mockCheckCaptureParseLimits.mockResolvedValue({ allowed: false, reason: "Daily limit reached" });
+    mockCheckCaptureParseLimits.mockResolvedValue({
+      allowed: false,
+      reason: "Daily limit reached",
+    });
 
     const { runTier2 } = await import("./tier-2-ai");
     const result = await runTier2("do something", makePartial(), "user-id");
@@ -183,7 +186,11 @@ describe("runTier2 — successful parse merges with Tier 1", () => {
     });
 
     const { runTier2 } = await import("./tier-2-ai");
-    const tier1 = makePartial({ title: "buy groceries", tags: ["errands"], entity_refs: ["store"] });
+    const tier1 = makePartial({
+      title: "buy groceries",
+      tags: ["errands"],
+      entity_refs: ["store"],
+    });
     const result = await runTier2("buy groceries", tier1, "user-id");
 
     expect(result.parsed).not.toBeNull();

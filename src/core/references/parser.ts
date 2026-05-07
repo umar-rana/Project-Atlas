@@ -22,9 +22,7 @@ const ENTITY_RE = /(^|[^\\])\[\[([^\[\]\n]+?)\]\]/g;
  * ignored.
  */
 function stripCode(text: string): string {
-  return text
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`\n]+`/g, " ");
+  return text.replace(/```[\s\S]*?```/g, " ").replace(/`[^`\n]+`/g, " ");
 }
 
 function dedupe(arr: string[]): string[] {

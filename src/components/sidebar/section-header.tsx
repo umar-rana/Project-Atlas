@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { ChevronRight, ChevronDown, Plus, Settings2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function SectionHeader({
   label,
@@ -46,16 +45,17 @@ export function SectionHeader({
             <Settings2 size={11} />
           </button>
         ) : null}
-        {addElement ?? (onAdd ? (
-          <button
-            type="button"
-            onClick={onAdd}
-            aria-label={`Add ${label.toLowerCase()}`}
-            className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-          >
-            <Plus size={11} />
-          </button>
-        ) : null)}
+        {addElement ??
+          (onAdd ? (
+            <button
+              type="button"
+              onClick={onAdd}
+              aria-label={`Add ${label.toLowerCase()}`}
+              className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            >
+              <Plus size={11} />
+            </button>
+          ) : null)}
       </div>
     </div>
   );
@@ -77,8 +77,7 @@ export function useSidebarSection(key: string, defaultOpen: boolean) {
     setOpenRaw(value);
     try {
       window.localStorage.setItem(storageKey, String(value));
-    } catch {
-    }
+    } catch {}
   }
 
   return [open, setOpen] as const;

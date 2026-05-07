@@ -41,11 +41,17 @@ describe("Tag gating — explicit #tag extraction", () => {
 describe("Tag gating — explicit vs AI-suggested invariant", () => {
   it("ensures tier1.tags only contains #tag-syntax extracted tags (not NLP entities)", () => {
     // Even when the text mentions domain words, tier1 tags must be empty without #
-    const result1 = runTier1("prepare tax documents for April filing", { userTimezone: "UTC", projectTitles: [] });
+    const result1 = runTier1("prepare tax documents for April filing", {
+      userTimezone: "UTC",
+      projectTitles: [],
+    });
     expect(result1.tags).toHaveLength(0);
 
     // With explicit syntax, tags appear
-    const result2 = runTier1("prepare tax documents #finance #taxes", { userTimezone: "UTC", projectTitles: [] });
+    const result2 = runTier1("prepare tax documents #finance #taxes", {
+      userTimezone: "UTC",
+      projectTitles: [],
+    });
     expect(result2.tags).toContain("finance");
     expect(result2.tags).toContain("taxes");
   });

@@ -73,7 +73,10 @@ function inlineTokensToNodes(tokens: Token[]): TiptapNode[] {
       for (const child of children) {
         nodes.push({
           ...child,
-          marks: [...(child.marks ?? []), { type: "link", attrs: { href: t.href, target: "_blank" } }],
+          marks: [
+            ...(child.marks ?? []),
+            { type: "link", attrs: { href: t.href, target: "_blank" } },
+          ],
         });
       }
     } else if (token.type === "image") {
@@ -128,7 +131,11 @@ function tokensToNodes(tokens: TokensList | Token[]): TiptapNode[] {
         content: innerNodes.length > 0 ? innerNodes : [{ type: "paragraph" }],
       });
     } else if (token.type === "list") {
-      const t = token as { type: "list"; ordered: boolean; items: { tokens: Token[]; task: boolean; checked?: boolean }[] };
+      const t = token as {
+        type: "list";
+        ordered: boolean;
+        items: { tokens: Token[]; task: boolean; checked?: boolean }[];
+      };
       const listType = t.ordered ? "orderedList" : "bulletList";
       nodes.push({
         type: listType,

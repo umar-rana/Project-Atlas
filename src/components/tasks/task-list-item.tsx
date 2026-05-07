@@ -1,7 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Flag, GripVertical, CheckSquare, Unlock, ChevronRight, RefreshCw, Paperclip } from "lucide-react";
+import {
+  Flag,
+  GripVertical,
+  CheckSquare,
+  Unlock,
+  ChevronRight,
+  RefreshCw,
+  Paperclip,
+} from "lucide-react";
 import { isPast, isToday, isTomorrow, addDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -77,7 +85,8 @@ function TaskListItemImpl({
   const [fileDragOver, setFileDragOver] = React.useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = React.useState(false);
 
-  const showQuickActions = (hovered || anyPopoverOpen || !!quickActionsFocused) && !inTrash && !isCapture;
+  const showQuickActions =
+    (hovered || anyPopoverOpen || !!quickActionsFocused) && !inTrash && !isCapture;
 
   React.useEffect(() => {
     setTitleDraft(task.title);
@@ -140,9 +149,7 @@ function TaskListItemImpl({
 
   const isSubtask = task.parent_id != null;
   const showParentRef =
-    isSubtask &&
-    task.parent != null &&
-    (perspective === "today" || perspective === "flagged");
+    isSubtask && task.parent != null && (perspective === "today" || perspective === "flagged");
 
   function commitTitle() {
     setEditing(false);
@@ -161,7 +168,10 @@ function TaskListItemImpl({
       data-task-id={task.id}
       draggable={!inTrash && !isCapture}
       onDragStart={(e) => {
-        if (isCapture) { e.preventDefault(); return; }
+        if (isCapture) {
+          e.preventDefault();
+          return;
+        }
         e.dataTransfer.setData("text/plain", task.id);
         onDragStart?.(task.id);
       }}
@@ -232,17 +242,17 @@ function TaskListItemImpl({
         isFocused && "ring-1 ring-inset ring-border-focus",
         task.is_blocked && "opacity-50",
         isSubtask && "pl-6",
-        fileDragOver && "ring-2 ring-inset ring-accent-info bg-accent-info-muted",
+        fileDragOver && "bg-accent-info-muted ring-2 ring-inset ring-accent-info",
       )}
     >
       {fileDragOver && (
-        <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-accent-info-muted/60 font-ui text-xs font-medium text-accent-info">
+        <span className="bg-accent-info-muted/60 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm font-ui text-xs font-medium text-accent-info">
           <Paperclip size={12} className="mr-1" />
           Drop to attach
         </span>
       )}
       {isUploadingFiles && !fileDragOver && (
-        <span className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-surface-base/70 font-ui text-xs text-text-tertiary">
+        <span className="bg-surface-base/70 pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm font-ui text-xs text-text-tertiary">
           Attaching…
         </span>
       )}
@@ -250,7 +260,7 @@ function TaskListItemImpl({
         <GripVertical size={12} aria-hidden />
       </span>
       {isCapture ? (
-        (hovered || isMultiSelected) ? (
+        hovered || isMultiSelected ? (
           <Checkbox
             checked={isMultiSelected}
             onCheckedChange={() => toggleSelected(task.id)}
@@ -258,9 +268,7 @@ function TaskListItemImpl({
             aria-label={isMultiSelected ? "Deselect capture" : "Select capture"}
           />
         ) : (
-          <span
-            className="shrink-0 inline-flex items-center rounded-full border border-accent-info/40 bg-accent-info-muted px-1.5 py-px font-ui text-2xs font-medium text-accent-info"
-          >
+          <span className="border-accent-info/40 inline-flex shrink-0 items-center rounded-full border bg-accent-info-muted px-1.5 py-px font-ui text-2xs font-medium text-accent-info">
             New
           </span>
         )
@@ -285,7 +293,9 @@ function TaskListItemImpl({
             }}
             className={cn(
               "shrink-0 rounded-sm p-0.5 transition-colors",
-              task.flagged ? "text-accent-warning" : "text-text-tertiary opacity-0 group-hover:opacity-100 hover:text-text-secondary",
+              task.flagged
+                ? "text-accent-warning"
+                : "text-text-tertiary opacity-0 hover:text-text-secondary group-hover:opacity-100",
             )}
           >
             <Flag size={12} fill={task.flagged ? "currentColor" : "none"} />
@@ -344,13 +354,22 @@ function TaskListItemImpl({
             </span>
           ) : null}
           {task.contexts.map((ct) => (
-            <span key={ct.context.id} className="inline-flex items-center rounded-sm bg-accent-info-muted px-1 py-px text-accent-info">
+            <span
+              key={ct.context.id}
+              className="inline-flex items-center rounded-sm bg-accent-info-muted px-1 py-px text-accent-info"
+            >
               @{ct.context.name}
             </span>
           ))}
           {task.tags.map((tg) => (
-            <span key={tg.tag.id} className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-1 py-px">
-              <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(tg.tag.color))} aria-hidden />
+            <span
+              key={tg.tag.id}
+              className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-1 py-px"
+            >
+              <span
+                className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(tg.tag.color))}
+                aria-hidden
+              />
               #{tg.tag.name}
             </span>
           ))}

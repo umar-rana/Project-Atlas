@@ -24,7 +24,8 @@ ${HELP_DOCS_CORPUS}
 
 function getClient(): Anthropic {
   return new Anthropic({
-    baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ?? process.env.ANTHROPIC_BASE_URL ?? undefined,
+    baseURL:
+      process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ?? process.env.ANTHROPIC_BASE_URL ?? undefined,
     apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ?? process.env.ANTHROPIC_API_KEY,
   });
 }
@@ -69,10 +70,7 @@ export async function POST(req: NextRequest) {
         });
 
         for await (const chunk of sdkStream) {
-          if (
-            chunk.type === "content_block_delta" &&
-            chunk.delta.type === "text_delta"
-          ) {
+          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
             controller.enqueue(new TextEncoder().encode(chunk.delta.text));
           }
         }

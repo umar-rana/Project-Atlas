@@ -76,13 +76,19 @@ export function RelationshipTypePicker({
           )}
         >
           <span>{value ?? placeholder}</span>
-          <svg className="h-4 w-4 text-text-tertiary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="h-4 w-4 text-text-tertiary"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path d="M6 9l6 6 6-6" />
           </svg>
         </button>
 
         {open && (
-          <div className="absolute z-dropdown top-full mt-1 w-full overflow-hidden rounded-md border border-border-default bg-surface-raised shadow-2">
+          <div className="z-dropdown absolute top-full mt-1 w-full overflow-hidden rounded-md border border-border-default bg-surface-raised shadow-2">
             <div className="max-h-56 overflow-y-auto py-1">
               {adaptedList.map((type) => (
                 <button
@@ -97,10 +103,13 @@ export function RelationshipTypePicker({
                   {type.replace(/-/g, " ")}
                 </button>
               ))}
-              <div className="border-t border-border-subtle mt-1 pt-1">
+              <div className="mt-1 border-t border-border-subtle pt-1">
                 <button
                   type="button"
-                  onClick={() => { setOpen(false); setCustomOpen(true); }}
+                  onClick={() => {
+                    setOpen(false);
+                    setCustomOpen(true);
+                  }}
                   className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover"
                 >
                   Custom type…
@@ -126,8 +135,12 @@ export function RelationshipTypePicker({
             />
           </DialogBody>
           <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setCustomOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleCustomSubmit} disabled={!customInput.trim()}>Add</Button>
+            <Button variant="ghost" size="sm" onClick={() => setCustomOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleCustomSubmit} disabled={!customInput.trim()}>
+              Add
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -48,8 +48,7 @@ describe("parseDateWithChrono — common natural language dates", () => {
   it("parses 'next week' as a date in the next 7–14 days", () => {
     const result = runTier1("review the budget next week", opts);
     expect(result.due_date).toBeInstanceOf(Date);
-    const diffDays =
-      (result.due_date!.getTime() - FIXED_NOW.getTime()) / (1000 * 60 * 60 * 24);
+    const diffDays = (result.due_date!.getTime() - FIXED_NOW.getTime()) / (1000 * 60 * 60 * 24);
     expect(diffDays).toBeGreaterThan(0);
     expect(diffDays).toBeLessThanOrEqual(14);
   });
@@ -63,8 +62,7 @@ describe("parseDateWithChrono — common natural language dates", () => {
   it("parses 'in two weeks' as approximately 14 days from now", () => {
     const result = runTier1("schedule the review in two weeks", opts);
     expect(result.due_date).toBeInstanceOf(Date);
-    const diffDays =
-      (result.due_date!.getTime() - FIXED_NOW.getTime()) / (1000 * 60 * 60 * 24);
+    const diffDays = (result.due_date!.getTime() - FIXED_NOW.getTime()) / (1000 * 60 * 60 * 24);
     expect(diffDays).toBeGreaterThanOrEqual(13);
     expect(diffDays).toBeLessThanOrEqual(15);
   });

@@ -22,10 +22,14 @@ import { SingleSelectCell } from "./cells/single-select-cell";
 import { MultiSelectCell } from "./cells/multi-select-cell";
 import { CurrencyCell } from "./cells/currency-cell";
 import { FormulaCell } from "./cells/formula-cell";
-import { computeAggregation, getAvailableAggregations, AGGREGATION_LABELS } from "@/core/tables/aggregations";
+import {
+  computeAggregation,
+  getAvailableAggregations,
+  AGGREGATION_LABELS,
+} from "@/core/tables/aggregations";
 import { sortRows } from "@/core/tables/sort";
 import { filterRows } from "@/core/tables/filter";
-import { DEFAULT_AGGREGATIONS, COLUMN_TYPES } from "@/core/tables/types";
+import { COLUMN_TYPES } from "@/core/tables/types";
 import { uuidv7 } from "uuidv7";
 import type { FormulaReturnType } from "@/core/tables/formula-shared";
 
@@ -61,7 +65,10 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-interface CellPos { rowId: string; colId: string; }
+interface CellPos {
+  rowId: string;
+  colId: string;
+}
 
 interface TableGridProps {
   tableId: string;
@@ -94,7 +101,8 @@ export function TableGrid({
   const [newColName, setNewColName] = React.useState("");
   const [newColType, setNewColType] = React.useState<ColumnType>("text");
   const [newColFormula, setNewColFormula] = React.useState("");
-  const [newColFormulaReturnType, setNewColFormulaReturnType] = React.useState<FormulaReturnType>("text");
+  const [newColFormulaReturnType, setNewColFormulaReturnType] =
+    React.useState<FormulaReturnType>("text");
   const [newColFormulaDecimals, setNewColFormulaDecimals] = React.useState(2);
   const [formulaErrors, setFormulaErrors] = React.useState<string[]>([]);
   const [showAutocomplete, setShowAutocomplete] = React.useState(false);
@@ -107,18 +115,23 @@ export function TableGrid({
   const [extraOptions, setExtraOptions] = React.useState<Record<string, SingleSelectOption[]>>({});
   // Tracks which column ids had their options updated and should have extraOptions cleared on next refresh
   const pendingOptionsClear = React.useRef<Set<string>>(new Set());
-  const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(
-    () => Object.fromEntries(columns.map((c) => [c.id, c.width || 160])),
+  const [columnWidths, setColumnWidths] = React.useState<Record<string, number>>(() =>
+    Object.fromEntries(columns.map((c) => [c.id, c.width || 160])),
   );
   const gridRef = React.useRef<HTMLDivElement>(null);
-  const resizeRef = React.useRef<{ colId: string; startX: number; startWidth: number } | null>(null);
+  const resizeRef = React.useRef<{ colId: string; startX: number; startWidth: number } | null>(
+    null,
+  );
 
   const utils = trpc.useUtils();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const upsertCell = (trpc.tables.upsertCell as any).useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
-  }) as { mutate: (args: { row_id: string; column_id: string; value: unknown }) => void; isPending: boolean };
+  }) as {
+    mutate: (args: { row_id: string; column_id: string; value: unknown }) => void;
+    isPending: boolean;
+  };
 
   const addRow = trpc.tables.addRow.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
@@ -170,7 +183,16 @@ export function TableGrid({
         if (col) setColumnWidths((prev) => ({ ...prev, [vars.id]: col.width || 160 }));
       }
     },
-  }) as { mutate: (args: { id: string; name?: string; config?: Record<string, unknown>; aggregation?: string | null; width?: number }) => void; isPending: boolean };
+  }) as {
+    mutate: (args: {
+      id: string;
+      name?: string;
+      config?: Record<string, unknown>;
+      aggregation?: string | null;
+      width?: number;
+    }) => void;
+    isPending: boolean;
+  };
 
   const deleteColumn = trpc.tables.deleteColumn.useMutation({
     onSuccess: () => utils.tables.get.invalidate({ id: tableId }),
@@ -288,10 +310,26 @@ export function TableGrid({
       if (!selectedCell) return;
       const isEditing = editingCell !== null;
 
-      if (e.key === "ArrowDown" && !isEditing) { e.preventDefault(); moveSelection(1, 0); return; }
-      if (e.key === "ArrowUp" && !isEditing) { e.preventDefault(); moveSelection(-1, 0); return; }
-      if (e.key === "ArrowRight" && !isEditing) { e.preventDefault(); moveSelection(0, 1); return; }
-      if (e.key === "ArrowLeft" && !isEditing) { e.preventDefault(); moveSelection(0, -1); return; }
+      if (e.key === "ArrowDown" && !isEditing) {
+        e.preventDefault();
+        moveSelection(1, 0);
+        return;
+      }
+      if (e.key === "ArrowUp" && !isEditing) {
+        e.preventDefault();
+        moveSelection(-1, 0);
+        return;
+      }
+      if (e.key === "ArrowRight" && !isEditing) {
+        e.preventDefault();
+        moveSelection(0, 1);
+        return;
+      }
+      if (e.key === "ArrowLeft" && !isEditing) {
+        e.preventDefault();
+        moveSelection(0, -1);
+        return;
+      }
 
       if (e.key === "Tab" && !isEditing) {
         e.preventDefault();
@@ -478,7 +516,12 @@ export function TableGrid({
       reorderColumns.mutate({ table_id: tableId, column_id: colId, insert_after_id: insertAfter });
     } else if (direction === "right" && idx < columns.length - 1) {
       const insertAfter = columns[idx + 1]?.id;
-      if (insertAfter) reorderColumns.mutate({ table_id: tableId, column_id: colId, insert_after_id: insertAfter });
+      if (insertAfter)
+        reorderColumns.mutate({
+          table_id: tableId,
+          column_id: colId,
+          insert_after_id: insertAfter,
+        });
     }
   }
 
@@ -538,15 +581,18 @@ export function TableGrid({
                       onClick={() => handleColumnSort(col.id)}
                       className="flex min-w-0 flex-1 items-center gap-1.5 font-ui text-xs hover:text-text-primary"
                     >
-                      <span className="truncate font-semibold text-text-primary tracking-wide uppercase text-[11px]">{col.name}</span>
-                      <span className="shrink-0 text-2xs text-text-disabled capitalize">
+                      <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-primary">
+                        {col.name}
+                      </span>
+                      <span className="shrink-0 text-2xs capitalize text-text-disabled">
                         {COLUMN_TYPES.find((t) => t.value === col.type)?.label ?? col.type}
                       </span>
-                      {sort.column_id === col.id && (
-                        sort.direction === "asc"
-                          ? <ChevronUp size={11} className="shrink-0 text-accent-primary" />
-                          : <ChevronDown size={11} className="shrink-0 text-accent-primary" />
-                      )}
+                      {sort.column_id === col.id &&
+                        (sort.direction === "asc" ? (
+                          <ChevronUp size={11} className="shrink-0 text-accent-primary" />
+                        ) : (
+                          <ChevronDown size={11} className="shrink-0 text-accent-primary" />
+                        ))}
                     </button>
                   )}
 
@@ -560,13 +606,24 @@ export function TableGrid({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-44">
-                      <DropdownMenuItem onClick={() => { setRenamingCol(col.id); setRenameDraft(col.name); }}>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setRenamingCol(col.id);
+                          setRenameDraft(col.name);
+                        }}
+                      >
                         <Pencil size={12} className="mr-2" /> Rename
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleMoveColumn(col.id, "left")} disabled={idx === 0}>
+                      <DropdownMenuItem
+                        onClick={() => handleMoveColumn(col.id, "left")}
+                        disabled={idx === 0}
+                      >
                         <ArrowLeft size={12} className="mr-2" /> Move left
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleMoveColumn(col.id, "right")} disabled={idx === columns.length - 1}>
+                      <DropdownMenuItem
+                        onClick={() => handleMoveColumn(col.id, "right")}
+                        disabled={idx === columns.length - 1}
+                      >
                         <ArrowRight size={12} className="mr-2" /> Move right
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -576,7 +633,12 @@ export function TableGrid({
                           <button
                             key={agg}
                             type="button"
-                            onClick={() => updateColumn.mutate({ id: col.id, aggregation: agg === "none" ? null : agg })}
+                            onClick={() =>
+                              updateColumn.mutate({
+                                id: col.id,
+                                aggregation: agg === "none" ? null : agg,
+                              })
+                            }
                             className={cn(
                               "block w-full rounded-sm px-2 py-0.5 text-left font-ui text-xs",
                               (col.aggregation ?? "none") === agg
@@ -604,13 +666,13 @@ export function TableGrid({
                 </div>
                 <div
                   onMouseDown={(e) => handleResizeMouseDown(e, col.id)}
-                  className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize opacity-0 transition-opacity hover:opacity-100 hover:bg-accent-primary group-hover/th:opacity-40"
+                  className="absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize opacity-0 transition-opacity hover:bg-accent-primary hover:opacity-100 group-hover/th:opacity-40"
                 />
               </th>
             ))}
             <th className="border-b-2 border-border-default bg-surface-sunken">
               {addingColumn ? (
-                <div className="px-2 py-1.5 min-w-[260px]">
+                <div className="min-w-[260px] px-2 py-1.5">
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -629,7 +691,9 @@ export function TableGrid({
                           config: {
                             expression: expr,
                             return_type: newColFormulaReturnType,
-                            ...(newColFormulaReturnType === "number" ? { decimals: newColFormulaDecimals } : {}),
+                            ...(newColFormulaReturnType === "number"
+                              ? { decimals: newColFormulaDecimals }
+                              : {}),
                           },
                         });
                       } else {
@@ -656,20 +720,40 @@ export function TableGrid({
                         className="rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none"
                       >
                         {COLUMN_TYPES.map((t) => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
+                          <option key={t.value} value={t.value}>
+                            {t.label}
+                          </option>
                         ))}
                       </select>
-                      <button type="submit" disabled={addColumn.isPending} className="rounded-sm bg-accent-primary px-1.5 py-0.5 font-ui text-2xs text-text-on-accent disabled:opacity-50">Add</button>
-                      <button type="button" onClick={() => { setAddingColumn(false); setFormulaErrors([]); setNewColFormula(""); }} className="rounded-sm px-1 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover">✕</button>
+                      <button
+                        type="submit"
+                        disabled={addColumn.isPending}
+                        className="rounded-sm bg-accent-primary px-1.5 py-0.5 font-ui text-2xs text-text-on-accent disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddingColumn(false);
+                          setFormulaErrors([]);
+                          setNewColFormula("");
+                        }}
+                        className="rounded-sm px-1 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover"
+                      >
+                        ✕
+                      </button>
                     </div>
 
                     {newColType === "formula" && (
-                      <div className="flex flex-col gap-1.5 pt-1 border-t border-border-subtle">
+                      <div className="flex flex-col gap-1.5 border-t border-border-subtle pt-1">
                         <div className="flex items-center gap-1">
                           <span className="font-ui text-2xs text-text-disabled">Returns</span>
                           <select
                             value={newColFormulaReturnType}
-                            onChange={(e) => setNewColFormulaReturnType(e.target.value as FormulaReturnType)}
+                            onChange={(e) =>
+                              setNewColFormulaReturnType(e.target.value as FormulaReturnType)
+                            }
                             className="rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none"
                           >
                             <option value="text">Text</option>
@@ -712,12 +796,14 @@ export function TableGrid({
                             }}
                             placeholder="e.g. {Price} * {Qty}"
                             rows={2}
-                            className="w-full rounded-sm bg-surface-base px-2 py-1 font-mono text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary resize-none"
+                            className="w-full resize-none rounded-sm bg-surface-base px-2 py-1 font-mono text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
                           />
                           {showAutocomplete && (
                             <div className="absolute left-0 top-full z-50 mt-0.5 max-h-40 w-full overflow-y-auto rounded-sm border border-border-default bg-surface-overlay shadow-2">
                               {columns
-                                .filter((c) => c.name.toLowerCase().includes(autocompleteFilter.toLowerCase()))
+                                .filter((c) =>
+                                  c.name.toLowerCase().includes(autocompleteFilter.toLowerCase()),
+                                )
                                 .map((c) => (
                                   <button
                                     key={c.id}
@@ -725,7 +811,10 @@ export function TableGrid({
                                     onMouseDown={(e) => {
                                       e.preventDefault();
                                       const lastBrace = newColFormula.lastIndexOf("{");
-                                      const before = lastBrace !== -1 ? newColFormula.slice(0, lastBrace) : newColFormula;
+                                      const before =
+                                        lastBrace !== -1
+                                          ? newColFormula.slice(0, lastBrace)
+                                          : newColFormula;
                                       setNewColFormula(before + "{" + c.name + "}");
                                       setShowAutocomplete(false);
                                       setAutocompleteFilter("");
@@ -733,11 +822,25 @@ export function TableGrid({
                                     className="flex w-full items-center gap-2 px-2 py-1 text-left font-ui text-xs hover:bg-surface-hover"
                                   >
                                     <span className="text-text-primary">{c.name}</span>
-                                    <span className="text-text-disabled capitalize">{c.type}</span>
+                                    <span className="capitalize text-text-disabled">{c.type}</span>
                                   </button>
                                 ))}
-                              {["IF", "CONCAT", "ROUND", "ABS", "MIN", "MAX", "DAYS_BETWEEN", "NOW", "LEN", "UPPER", "LOWER"]
-                                .filter((fn) => fn.toLowerCase().includes(autocompleteFilter.toLowerCase()))
+                              {[
+                                "IF",
+                                "CONCAT",
+                                "ROUND",
+                                "ABS",
+                                "MIN",
+                                "MAX",
+                                "DAYS_BETWEEN",
+                                "NOW",
+                                "LEN",
+                                "UPPER",
+                                "LOWER",
+                              ]
+                                .filter((fn) =>
+                                  fn.toLowerCase().includes(autocompleteFilter.toLowerCase()),
+                                )
                                 .map((fn) => (
                                   <button
                                     key={fn}
@@ -745,7 +848,10 @@ export function TableGrid({
                                     onMouseDown={(e) => {
                                       e.preventDefault();
                                       const lastBrace = newColFormula.lastIndexOf("{");
-                                      const before = lastBrace !== -1 ? newColFormula.slice(0, lastBrace) : newColFormula;
+                                      const before =
+                                        lastBrace !== -1
+                                          ? newColFormula.slice(0, lastBrace)
+                                          : newColFormula;
                                       setNewColFormula(before + fn + "(");
                                       setShowAutocomplete(false);
                                       setAutocompleteFilter("");
@@ -762,31 +868,56 @@ export function TableGrid({
                         {formulaErrors.length > 0 && (
                           <div className="rounded-sm bg-accent-danger-muted px-2 py-1">
                             {formulaErrors.map((err, i) => (
-                              <p key={i} className="font-ui text-2xs text-accent-danger">{err}</p>
+                              <p key={i} className="font-ui text-2xs text-accent-danger">
+                                {err}
+                              </p>
                             ))}
                           </div>
                         )}
                         <div className="rounded-sm bg-surface-sunken px-2 py-1.5">
-                          <p className="mb-1 font-ui text-2xs font-semibold text-text-disabled">Available columns</p>
-                          <div className="flex flex-wrap gap-1 mb-1.5">
-                            {columns.filter((c) => c.type !== "formula").map((c) => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setNewColFormula((prev) => prev + "{" + c.name + "}");
-                                }}
-                                className="rounded-xs bg-surface-active px-1.5 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
-                              >
-                                {"{" + c.name + "}"}
-                              </button>
-                            ))}
+                          <p className="mb-1 font-ui text-2xs font-semibold text-text-disabled">
+                            Available columns
+                          </p>
+                          <div className="mb-1.5 flex flex-wrap gap-1">
+                            {columns
+                              .filter((c) => c.type !== "formula")
+                              .map((c) => (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setNewColFormula((prev) => prev + "{" + c.name + "}");
+                                  }}
+                                  className="rounded-xs bg-surface-active px-1.5 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+                                >
+                                  {"{" + c.name + "}"}
+                                </button>
+                              ))}
                           </div>
-                          <p className="mb-1 font-ui text-2xs font-semibold text-text-disabled">Functions</p>
+                          <p className="mb-1 font-ui text-2xs font-semibold text-text-disabled">
+                            Functions
+                          </p>
                           <div className="flex flex-wrap gap-1">
-                            {["IF(cond, t, f)", "CONCAT(a, b)", "ROUND(n, d)", "ABS(n)", "MIN(a, b)", "MAX(a, b)", "DAYS_BETWEEN(d1, d2)", "NOW()", "LEN(s)", "UPPER(s)", "LOWER(s)"].map((fn) => (
-                              <span key={fn} className="rounded-xs bg-surface-active px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">{fn}</span>
+                            {[
+                              "IF(cond, t, f)",
+                              "CONCAT(a, b)",
+                              "ROUND(n, d)",
+                              "ABS(n)",
+                              "MIN(a, b)",
+                              "MAX(a, b)",
+                              "DAYS_BETWEEN(d1, d2)",
+                              "NOW()",
+                              "LEN(s)",
+                              "UPPER(s)",
+                              "LOWER(s)",
+                            ].map((fn) => (
+                              <span
+                                key={fn}
+                                className="rounded-xs bg-surface-active px-1.5 py-0.5 font-ui text-2xs text-text-tertiary"
+                              >
+                                {fn}
+                              </span>
                             ))}
                           </div>
                         </div>
@@ -797,7 +928,12 @@ export function TableGrid({
               ) : (
                 <button
                   type="button"
-                  onClick={() => { setAddingColumn(true); setNewColName(""); setFormulaErrors([]); setNewColFormula(""); }}
+                  onClick={() => {
+                    setAddingColumn(true);
+                    setNewColName("");
+                    setFormulaErrors([]);
+                    setNewColFormula("");
+                  }}
                   className="flex h-full w-full items-center gap-1 px-2 font-ui text-xs text-text-disabled hover:text-text-tertiary"
                 >
                   <Plus size={12} /> Add column
@@ -832,7 +968,9 @@ export function TableGrid({
               <td />
               <td colSpan={columns.length + 1}>
                 <div className="flex flex-col items-center gap-2 py-10 text-center">
-                  <p className="font-ui text-xs font-medium text-text-disabled">No rows match the current filter</p>
+                  <p className="font-ui text-xs font-medium text-text-disabled">
+                    No rows match the current filter
+                  </p>
                   <button
                     type="button"
                     onClick={() => onFilterChange(null)}
@@ -855,7 +993,10 @@ export function TableGrid({
               )}
               draggable={!sort.column_id}
               onDragStart={() => setDraggingRowId(row.id)}
-              onDragOver={(e) => { e.preventDefault(); setDragOverRowId(row.id); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverRowId(row.id);
+              }}
               onDragLeave={() => setDragOverRowId(null)}
               onDrop={(e) => {
                 e.preventDefault();
@@ -863,12 +1004,24 @@ export function TableGrid({
                 if (draggingRowId && draggingRowId !== row.id) {
                   const afterIdx = visibleRows.findIndex((r) => r.id === row.id);
                   const beforeIdx = visibleRows.findIndex((r) => r.id === draggingRowId);
-                  const insertAfterId = beforeIdx < afterIdx ? row.id : (afterIdx > 0 ? (visibleRows[afterIdx - 1]?.id ?? null) : null);
-                  reorderRows.mutate({ table_id: tableId, row_id: draggingRowId, insert_after_id: insertAfterId });
+                  const insertAfterId =
+                    beforeIdx < afterIdx
+                      ? row.id
+                      : afterIdx > 0
+                        ? (visibleRows[afterIdx - 1]?.id ?? null)
+                        : null;
+                  reorderRows.mutate({
+                    table_id: tableId,
+                    row_id: draggingRowId,
+                    insert_after_id: insertAfterId,
+                  });
                 }
                 setDraggingRowId(null);
               }}
-              onDragEnd={() => { setDraggingRowId(null); setDragOverRowId(null); }}
+              onDragEnd={() => {
+                setDraggingRowId(null);
+                setDragOverRowId(null);
+              }}
             >
               {/* Row handle */}
               <td className="border-b border-r border-border-default bg-surface-sunken">
@@ -884,17 +1037,31 @@ export function TableGrid({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onClick={() => addRow.mutate({ table_id: tableId, insert_after_id: rowIdx > 0 ? (visibleRows[rowIdx - 1]?.id ?? undefined) : undefined })}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          addRow.mutate({
+                            table_id: tableId,
+                            insert_after_id:
+                              rowIdx > 0 ? (visibleRows[rowIdx - 1]?.id ?? undefined) : undefined,
+                          })
+                        }
+                      >
                         Insert row above
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => addRow.mutate({ table_id: tableId, insert_after_id: row.id })}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          addRow.mutate({ table_id: tableId, insert_after_id: row.id })
+                        }
+                      >
                         Insert row below
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-accent-danger focus:text-accent-danger"
                         onClick={() => {
-                          const hasData = row.cells.some((c) => c.value !== null && c.value !== undefined && c.value !== "");
+                          const hasData = row.cells.some(
+                            (c) => c.value !== null && c.value !== undefined && c.value !== "",
+                          );
                           if (!hasData || confirm("Delete this row?")) {
                             deleteRow.mutate({ id: row.id });
                           }
@@ -911,7 +1078,7 @@ export function TableGrid({
                 <td
                   key={col.id}
                   onClick={() => handleCellClick(row.id, col.id)}
-                  className="relative border-b border-r border-border-default bg-surface-base overflow-hidden"
+                  className="relative overflow-hidden border-b border-r border-border-default bg-surface-base"
                   style={{ height: ROW_HEIGHT }}
                 >
                   {renderCell(row, col)}
@@ -944,16 +1111,23 @@ export function TableGrid({
         {/* Footer */}
         <tfoot className="sticky bottom-0 z-10">
           <tr style={{ height: FOOTER_HEIGHT }}>
-            <td className="border-t border-r border-border-default bg-surface-sunken" />
+            <td className="border-r border-t border-border-default bg-surface-sunken" />
             {columns.map((col) => {
               const agg = col.aggregation as AggregationType | null;
               const result = computeAggregation(col.type, agg, visibleRows, col.id);
               return (
-                <td key={col.id} className="border-t border-r border-border-default bg-surface-sunken px-2">
+                <td
+                  key={col.id}
+                  className="border-r border-t border-border-default bg-surface-sunken px-2"
+                >
                   {result ? (
                     <div className="flex items-center justify-end gap-1">
-                      <span className="font-ui text-2xs text-text-disabled">{AGGREGATION_LABELS[agg!]}</span>
-                      <span className="font-ui text-xs font-medium tabular-nums text-text-primary">{result}</span>
+                      <span className="font-ui text-2xs text-text-disabled">
+                        {AGGREGATION_LABELS[agg!]}
+                      </span>
+                      <span className="font-ui text-xs font-medium tabular-nums text-text-primary">
+                        {result}
+                      </span>
                     </div>
                   ) : null}
                 </td>

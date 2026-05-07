@@ -38,9 +38,7 @@ export default function ProjectsIndexPage() {
 
   const typeCounts = distinctTypes.data ?? [];
 
-  const emptyTitle = activeType
-    ? `No ${displayType(activeType)} projects yet`
-    : "No projects yet";
+  const emptyTitle = activeType ? `No ${displayType(activeType)} projects yet` : "No projects yet";
 
   const emptyBody = activeType
     ? `You don't have any ${displayType(activeType).toLowerCase()} projects. Create one to get started.`
@@ -74,9 +72,7 @@ export default function ProjectsIndexPage() {
           </div>
         </header>
 
-        {typeCounts.length > 0 && (
-          <ProjectTypeFilterPills typeCounts={typeCounts} />
-        )}
+        {typeCounts.length > 0 && <ProjectTypeFilterPills typeCounts={typeCounts} />}
 
         {adding ? (
           <div className="border-b border-border-subtle bg-surface-raised p-3">
@@ -86,11 +82,7 @@ export default function ProjectsIndexPage() {
 
         {(projects.data ?? []).length === 0 && !adding ? (
           <div className="flex flex-1 items-center justify-center">
-            <EmptyState
-              icon={<Folder size={28} />}
-              title={emptyTitle}
-              body={emptyBody}
-            />
+            <EmptyState icon={<Folder size={28} />} title={emptyTitle} body={emptyBody} />
           </div>
         ) : (
           <ul className="flex-1 overflow-y-auto">
@@ -101,10 +93,15 @@ export default function ProjectsIndexPage() {
                   className="flex items-center gap-3 border-b border-border-subtle px-3 py-2 hover:bg-surface-hover"
                 >
                   <span
-                    className={cn("size-3 shrink-0 rounded-full", PROJECT_COLOR_DOTS[p.color ?? ""] ?? "bg-text-disabled")}
+                    className={cn(
+                      "size-3 shrink-0 rounded-full",
+                      PROJECT_COLOR_DOTS[p.color ?? ""] ?? "bg-text-disabled",
+                    )}
                     aria-hidden
                   />
-                  <span className="flex-1 truncate font-ui text-sm text-text-primary">{p.title}</span>
+                  <span className="flex-1 truncate font-ui text-sm text-text-primary">
+                    {p.title}
+                  </span>
                   <span className="inline-flex items-center gap-1 font-ui text-2xs uppercase tracking-caps text-text-tertiary">
                     <span
                       className="inline-block size-2 shrink-0 rounded-full"
@@ -114,8 +111,12 @@ export default function ProjectsIndexPage() {
                     <span>{getIcon(p.type ?? "project")}</span>
                     {displayType(p.type ?? "project")}
                   </span>
-                  <span className="font-ui text-2xs uppercase tracking-caps text-text-tertiary">{p.status.replace("_", " ")}</span>
-                  <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
+                  <span className="font-ui text-2xs uppercase tracking-caps text-text-tertiary">
+                    {p.status.replace("_", " ")}
+                  </span>
+                  <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                    {p.task_count}
+                  </span>
                 </Link>
               </li>
             ))}

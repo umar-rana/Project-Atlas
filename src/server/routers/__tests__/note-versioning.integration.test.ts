@@ -6,10 +6,7 @@ import { createSnapshot } from "@/core/notes/versioning";
 import { notesRouter } from "@/server/routers/notes";
 
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });
@@ -38,7 +35,8 @@ const testBody = {
 };
 
 const updatedBody = {
-  body_json: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"updated"}]}]}',
+  body_json:
+    '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"updated"}]}]}',
   body_text: "updated",
   body_markdown: "updated",
 };
@@ -146,7 +144,10 @@ describe("Note versioning — manual snapshot", () => {
   it("always creates a new version when manual=true (even within debounce window, with summary)", async () => {
     const noteId = await insertNote(testUser.id);
     await createSnapshot(noteId, testUser.id, testBody);
-    await createSnapshot(noteId, testUser.id, updatedBody, { manual: true, changeSummary: "My manual snapshot" });
+    await createSnapshot(noteId, testUser.id, updatedBody, {
+      manual: true,
+      changeSummary: "My manual snapshot",
+    });
 
     const versions = await rawDb.noteVersion.findMany({
       where: { note_id: noteId },
@@ -176,16 +177,29 @@ describe("Note versioning — retention cap", () => {
   it("deletes the oldest non-anchor version when count exceeds 50", async () => {
     const noteId = await insertNote(testUser.id);
 
-    await createSnapshot(noteId, testUser.id, testBody, { manual: true, changeSummary: "anchor v1" });
+    await createSnapshot(noteId, testUser.id, testBody, {
+      manual: true,
+      changeSummary: "anchor v1",
+    });
 
     for (let i = 2; i <= 50; i++) {
-      await createSnapshot(noteId, testUser.id, { ...testBody, body_text: `v${i}` }, { manual: true, changeSummary: `snapshot ${i}` });
+      await createSnapshot(
+        noteId,
+        testUser.id,
+        { ...testBody, body_text: `v${i}` },
+        { manual: true, changeSummary: `snapshot ${i}` },
+      );
     }
 
     let count = await rawDb.noteVersion.count({ where: { note_id: noteId } });
     expect(count).toBe(50);
 
-    await createSnapshot(noteId, testUser.id, { ...testBody, body_text: "v51" }, { manual: true, changeSummary: "snapshot 51" });
+    await createSnapshot(
+      noteId,
+      testUser.id,
+      { ...testBody, body_text: "v51" },
+      { manual: true, changeSummary: "snapshot 51" },
+    );
 
     count = await rawDb.noteVersion.count({ where: { note_id: noteId } });
     expect(count).toBe(50);
@@ -200,8 +214,14 @@ describe("Note versioning — retention cap", () => {
 describe("Note versioning — restore via tRPC", () => {
   it("creates a new version from the selected one and writes an audit log", async () => {
     const noteId = await insertNote(testUser.id);
-    await createSnapshot(noteId, testUser.id, testBody, { manual: true, changeSummary: "v1 manual" });
-    await createSnapshot(noteId, testUser.id, updatedBody, { manual: true, changeSummary: "v2 manual" });
+    await createSnapshot(noteId, testUser.id, testBody, {
+      manual: true,
+      changeSummary: "v1 manual",
+    });
+    await createSnapshot(noteId, testUser.id, updatedBody, {
+      manual: true,
+      changeSummary: "v2 manual",
+    });
 
     const caller = notesRouter.createCaller({ user: testUser });
     await caller.versions.restore({ noteId, versionNumber: 1 });

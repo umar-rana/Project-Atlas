@@ -28,16 +28,18 @@ export function getSuggestedTypes(existingTypes: TypeUsage[]): string[] {
   const existingByType = new Map(existingTypes.map((t) => [t.type, t.count]));
 
   // High-priority pool: used-curated + non-curated with count>=2, sorted by count desc
-  const usedCurated = CURATED_DEFAULTS
-    .filter((t) => existingByType.has(t))
-    .map((t) => ({ type: t, count: existingByType.get(t)! }));
+  const usedCurated = CURATED_DEFAULTS.filter((t) => existingByType.has(t)).map((t) => ({
+    type: t,
+    count: existingByType.get(t)!,
+  }));
 
   const highUsageCustom = existingTypes
     .filter((t) => !coreTypes.has(t.type) && !curatedSet.has(t.type) && t.count >= 2)
     .map((t) => ({ type: t.type, count: t.count }));
 
-  const priorityPool = [...usedCurated, ...highUsageCustom]
-    .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+  const priorityPool = [...usedCurated, ...highUsageCustom].sort(
+    (a, b) => b.count - a.count || a.type.localeCompare(b.type),
+  );
 
   // Low-priority fill: unused curated types, in original curated order
   const unusedCurated = CURATED_DEFAULTS.filter((t) => !existingByType.has(t));

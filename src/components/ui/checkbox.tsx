@@ -5,8 +5,9 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface CheckboxProps
-  extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
+export interface CheckboxProps extends React.ComponentPropsWithoutRef<
+  typeof CheckboxPrimitive.Root
+> {
   size?: "sm" | "md";
 }
 
@@ -33,7 +34,11 @@ export const Checkbox = React.forwardRef<
       {...props}
     >
       <CheckboxPrimitive.Indicator className="text-text-on-accent">
-        {props.checked === "indeterminate" ? <Minus size={10} strokeWidth={3} /> : <Check size={10} strokeWidth={3} />}
+        {props.checked === "indeterminate" ? (
+          <Minus size={10} strokeWidth={3} />
+        ) : (
+          <Check size={10} strokeWidth={3} />
+        )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

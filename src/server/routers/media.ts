@@ -10,9 +10,7 @@ type FileTypeCategory = "image" | "pdf" | "video" | "audio" | "doc" | "other";
  * Returns a Prisma `content_type` filter clause for a given category.
  * Mirrors the runtime logic in `classifyContentType` so counts are accurate.
  */
-function fileTypeToPrismaFilter(
-  fileType: FileTypeCategory,
-): Prisma.AttachmentWhereInput {
+function fileTypeToPrismaFilter(fileType: FileTypeCategory): Prisma.AttachmentWhereInput {
   switch (fileType) {
     case "image":
       return { content_type: { startsWith: "image/" } };
@@ -80,18 +78,22 @@ const attachmentSelect = {
 
 export const mediaRouter = router({
   list: protectedProcedure
-    .input(z.object({
-      page: z.number().int().min(1).default(1),
-      per_page: z.number().int().min(1).max(100).default(48),
-      file_type: z.enum(["image", "pdf", "video", "audio", "doc", "other"]).optional(),
-      source: z.enum(["tasks", "orphaned"]).optional(),
-      reviewed: z.boolean().optional(),
-      tag_id: z.string().uuid().optional(),
-      search: z.string().optional(),
-      date_from: z.string().optional(),
-      date_to: z.string().optional(),
-      sort: z.enum(["newest", "oldest", "largest", "smallest", "name_asc", "name_desc"]).default("newest"),
-    }))
+    .input(
+      z.object({
+        page: z.number().int().min(1).default(1),
+        per_page: z.number().int().min(1).max(100).default(48),
+        file_type: z.enum(["image", "pdf", "video", "audio", "doc", "other"]).optional(),
+        source: z.enum(["tasks", "orphaned"]).optional(),
+        reviewed: z.boolean().optional(),
+        tag_id: z.string().uuid().optional(),
+        search: z.string().optional(),
+        date_from: z.string().optional(),
+        date_to: z.string().optional(),
+        sort: z
+          .enum(["newest", "oldest", "largest", "smallest", "name_asc", "name_desc"])
+          .default("newest"),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const where: Prisma.AttachmentWhereInput = {
         user_id: ctx.user.id,
@@ -131,12 +133,17 @@ export const mediaRouter = router({
         | { filename: "asc" | "desc" };
 
       const orderBy: OrderByClause =
-        input.sort === "oldest" ? { created_at: "asc" } :
-        input.sort === "largest" ? { size_bytes: "desc" } :
-        input.sort === "smallest" ? { size_bytes: "asc" } :
-        input.sort === "name_asc" ? { filename: "asc" } :
-        input.sort === "name_desc" ? { filename: "desc" } :
-        { created_at: "desc" };
+        input.sort === "oldest"
+          ? { created_at: "asc" }
+          : input.sort === "largest"
+            ? { size_bytes: "desc" }
+            : input.sort === "smallest"
+              ? { size_bytes: "asc" }
+              : input.sort === "name_asc"
+                ? { filename: "asc" }
+                : input.sort === "name_desc"
+                  ? { filename: "desc" }
+                  : { created_at: "desc" };
 
       // Push file_type filter into the DB where clause so the count() is accurate
       // and we avoid fetching rows only to discard them in JS.
@@ -163,16 +170,15 @@ export const mediaRouter = router({
 
       const items = rawItems;
 
-      const taskIds = items
-        .filter((a) => a.task_id)
-        .map((a) => a.task_id as string);
+      const taskIds = items.filter((a) => a.task_id).map((a) => a.task_id as string);
 
-      const tasks = taskIds.length > 0
-        ? await db.task.findMany({
-            where: { id: { in: taskIds } },
-            select: { id: true, title: true, deleted_at: true },
-          })
-        : [];
+      const tasks =
+        taskIds.length > 0
+          ? await db.task.findMany({
+              where: { id: { in: taskIds } },
+              select: { id: true, title: true, deleted_at: true },
+            })
+          : [];
       const taskMap = new Map(tasks.map((t) => [t.id, t]));
 
       const enriched = items.map((a) => {
@@ -214,44 +220,43 @@ export const mediaRouter = router({
       };
     }),
 
-  stats: protectedProcedure
-    .query(async ({ ctx }) => {
-      const baseWhere = { user_id: ctx.user.id, deleted_at: null };
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    const baseWhere = { user_id: ctx.user.id, deleted_at: null };
 
-      const FILE_TYPES: FileTypeCategory[] = ["image", "pdf", "video", "audio", "doc", "other"];
+    const FILE_TYPES: FileTypeCategory[] = ["image", "pdf", "video", "audio", "doc", "other"];
 
-      // Use DB aggregates instead of fetching all rows into JS.
-      const [totals, unreviewedCount, orphanCount, ...typeAggs] = await Promise.all([
+    // Use DB aggregates instead of fetching all rows into JS.
+    const [totals, unreviewedCount, orphanCount, ...typeAggs] = await Promise.all([
+      db.attachment.aggregate({
+        _count: { id: true },
+        _sum: { size_bytes: true },
+        where: baseWhere,
+      }),
+      db.attachment.count({ where: { ...baseWhere, reviewed: false } }),
+      db.attachment.count({ where: { ...baseWhere, parent_type: null } }),
+      ...FILE_TYPES.map((ft) =>
         db.attachment.aggregate({
           _count: { id: true },
           _sum: { size_bytes: true },
-          where: baseWhere,
+          where: { ...baseWhere, ...fileTypeToPrismaFilter(ft) },
         }),
-        db.attachment.count({ where: { ...baseWhere, reviewed: false } }),
-        db.attachment.count({ where: { ...baseWhere, parent_type: null } }),
-        ...FILE_TYPES.map((ft) =>
-          db.attachment.aggregate({
-            _count: { id: true },
-            _sum: { size_bytes: true },
-            where: { ...baseWhere, ...fileTypeToPrismaFilter(ft) },
-          }),
-        ),
-      ]);
+      ),
+    ]);
 
-      const total_count = totals._count.id;
-      const total_bytes = totals._sum.size_bytes ?? 0;
-      const unreviewed_count = unreviewedCount;
-      const orphan_count = orphanCount;
+    const total_count = totals._count.id;
+    const total_bytes = totals._sum.size_bytes ?? 0;
+    const unreviewed_count = unreviewedCount;
+    const orphan_count = orphanCount;
 
-      const by_type: Record<string, { count: number; bytes: number }> = {};
-      FILE_TYPES.forEach((ft, i) => {
-        const agg = typeAggs[i]!;
-        by_type[ft] = {
-          count: agg._count.id,
-          bytes: agg._sum.size_bytes ?? 0,
-        };
-      });
+    const by_type: Record<string, { count: number; bytes: number }> = {};
+    FILE_TYPES.forEach((ft, i) => {
+      const agg = typeAggs[i]!;
+      by_type[ft] = {
+        count: agg._count.id,
+        bytes: agg._sum.size_bytes ?? 0,
+      };
+    });
 
-      return { total_count, total_bytes, unreviewed_count, orphan_count, by_type };
-    }),
+    return { total_count, total_bytes, unreviewed_count, orphan_count, by_type };
+  }),
 });

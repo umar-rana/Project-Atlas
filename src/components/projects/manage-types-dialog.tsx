@@ -6,12 +6,7 @@ import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { displayType } from "@/core/projects/type-suggestions";
 import { validateProjectType, normalizeProjectType } from "@/core/projects/type-validation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface TypeCount {
   type: string;
@@ -94,9 +89,7 @@ export function ManageTypesDialog({
     mergeTypes.mutate({ source: mode.source, target: mergeTarget });
   }
 
-  const mergeTargets = typeCounts.filter(
-    (t) => mode.kind === "merge" && t.type !== mode.source,
-  );
+  const mergeTargets = typeCounts.filter((t) => mode.kind === "merge" && t.type !== mode.source);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,7 +98,7 @@ export function ManageTypesDialog({
           <DialogTitle>Manage project types</DialogTitle>
         </DialogHeader>
 
-        <div className="mt-1 text-text-secondary font-ui text-xs">
+        <div className="mt-1 font-ui text-xs text-text-secondary">
           Rename a type across all projects, or merge one type into another.
         </div>
 
@@ -157,7 +150,8 @@ export function ManageTypesDialog({
                         <p className="font-ui text-2xs text-accent-danger">{renameError}</p>
                       )}
                       <p className="font-ui text-2xs text-text-disabled">
-                        Renames &quot;{displayType(type)}&quot; across all {count} project{count !== 1 ? "s" : ""}
+                        Renames &quot;{displayType(type)}&quot; across all {count} project
+                        {count !== 1 ? "s" : ""}
                       </p>
                     </form>
                   ) : isMerging ? (
@@ -190,10 +184,14 @@ export function ManageTypesDialog({
                             )}
                           >
                             {displayType(tgt)}
-                            <span className={cn(
-                              "font-mono text-3xs tabular-nums",
-                              mergeTarget === tgt ? "text-text-on-accent opacity-70" : "text-text-disabled",
-                            )}>
+                            <span
+                              className={cn(
+                                "font-mono text-3xs tabular-nums",
+                                mergeTarget === tgt
+                                  ? "text-text-on-accent opacity-70"
+                                  : "text-text-disabled",
+                              )}
+                            >
                               {tgtCount}
                             </span>
                           </button>
@@ -201,9 +199,14 @@ export function ManageTypesDialog({
                       </div>
                       {mergeTarget && (
                         <div className="flex items-start gap-1.5 rounded-sm bg-surface-raised px-2 py-1.5">
-                          <AlertTriangle size={11} className="mt-0.5 shrink-0 text-accent-warning" />
+                          <AlertTriangle
+                            size={11}
+                            className="mt-0.5 shrink-0 text-accent-warning"
+                          />
                           <p className="font-ui text-2xs text-text-secondary">
-                            All {count} project{count !== 1 ? "s" : ""} in &quot;{displayType(type)}&quot; will move to &quot;{displayType(mergeTarget)}&quot;. This cannot be undone.
+                            All {count} project{count !== 1 ? "s" : ""} in &quot;{displayType(type)}
+                            &quot; will move to &quot;{displayType(mergeTarget)}&quot;. This cannot
+                            be undone.
                           </p>
                         </div>
                       )}
@@ -221,12 +224,21 @@ export function ManageTypesDialog({
                       <span className="flex-1 font-ui text-sm text-text-primary">
                         {displayType(type)}
                       </span>
-                      <span className="font-mono text-2xs text-text-disabled tabular-nums">
+                      <span className="font-mono text-2xs tabular-nums text-text-disabled">
                         {count}
                       </span>
-                      <div className={cn("flex items-center gap-1", mode.kind !== "idle" && !isBuiltIn && "opacity-30 pointer-events-none")}>
+                      <div
+                        className={cn(
+                          "flex items-center gap-1",
+                          mode.kind !== "idle" && !isBuiltIn && "pointer-events-none opacity-30",
+                        )}
+                      >
                         <span
-                          title={isBuiltIn ? `"${type}" is a built-in type and cannot be renamed` : undefined}
+                          title={
+                            isBuiltIn
+                              ? `"${type}" is a built-in type and cannot be renamed`
+                              : undefined
+                          }
                           className={cn(isBuiltIn && "cursor-default")}
                         >
                           <button
@@ -241,7 +253,11 @@ export function ManageTypesDialog({
                         </span>
                         {typeCounts.length > 1 && (
                           <span
-                            title={isBuiltIn ? `"${type}" is a built-in type and cannot be merged` : undefined}
+                            title={
+                              isBuiltIn
+                                ? `"${type}" is a built-in type and cannot be merged`
+                                : undefined
+                            }
                             className={cn(isBuiltIn && "cursor-default")}
                           >
                             <button

@@ -9,15 +9,7 @@ export const All: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
       {(
-        [
-          "active",
-          "pending",
-          "on-hold",
-          "blocked",
-          "complete",
-          "cancelled",
-          "archived",
-        ] as const
+        ["active", "pending", "on-hold", "blocked", "complete", "cancelled", "archived"] as const
       ).map((s) => (
         <StatusPill key={s} status={s} />
       ))}

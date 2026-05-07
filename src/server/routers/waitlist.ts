@@ -30,10 +30,7 @@ export const waitlistRouter = router({
           },
         });
       } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
           throw new TRPCError({
             code: "CONFLICT",
             message: "This email is already on the waitlist.",
@@ -79,10 +76,7 @@ export const waitlistRouter = router({
         log.info({ id: input.id, status: input.status }, "Waitlist entry status updated");
         return entry;
       } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2025"
-        ) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Waitlist entry not found.",

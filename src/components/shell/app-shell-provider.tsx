@@ -65,7 +65,7 @@ function WelcomeEffectInner(): null {
       toast.success("Welcome to Atlas!", { duration: 4000 });
       router.replace("/tasks", { scroll: false });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;
@@ -106,7 +106,10 @@ function GlobalShortcuts(): null {
 
       if (!meta && !e.altKey && e.key === "?") {
         const target = e.target as HTMLElement | null;
-        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        if (
+          target &&
+          (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+        ) {
           return;
         }
         e.preventDefault();
@@ -134,7 +137,15 @@ function GlobalShortcuts(): null {
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
-  }, [router, setShortcutsOverlayOpen, setCaptureModalOpen, setInspectorOpen, inspectorOpen, setHelpOpen, setProcessingModeOpen]);
+  }, [
+    router,
+    setShortcutsOverlayOpen,
+    setCaptureModalOpen,
+    setInspectorOpen,
+    inspectorOpen,
+    setHelpOpen,
+    setProcessingModeOpen,
+  ]);
 
   return null;
 }
@@ -231,7 +242,7 @@ function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.R
       >
         <div className="flex h-full min-h-0 w-full flex-col">
           <RecoveryBanner />
-          <div className="flex min-h-0 flex-1 w-full">
+          <div className="flex min-h-0 w-full flex-1">
             <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
             <InspectorSlot />
           </div>
@@ -247,12 +258,18 @@ function ShellInner({ user, isAdmin, children }: AppShellProviderProps): React.R
   );
 }
 
-export function AppShellProvider({ user, isAdmin, children }: AppShellProviderProps): React.ReactElement {
+export function AppShellProvider({
+  user,
+  isAdmin,
+  children,
+}: AppShellProviderProps): React.ReactElement {
   return (
     <TooltipPrimitive.Provider delayDuration={600} skipDelayDuration={200}>
       <CommandRegistryProvider>
         <ShortcutsRegistryProvider>
-          <ShellInner user={user} isAdmin={isAdmin}>{children}</ShellInner>
+          <ShellInner user={user} isAdmin={isAdmin}>
+            {children}
+          </ShellInner>
         </ShortcutsRegistryProvider>
       </CommandRegistryProvider>
     </TooltipPrimitive.Provider>

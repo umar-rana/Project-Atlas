@@ -5,11 +5,7 @@ export const metadata: Metadata = {
   title: "User Detail — Atlas Admin",
 };
 
-export default async function AdminUserDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return <AdminUserDetailClient id={id} />;
 }

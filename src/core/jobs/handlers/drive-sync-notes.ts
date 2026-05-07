@@ -1,7 +1,11 @@
 import "server-only";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
-import { generateNoteFilename, generateNoteFrontmatter, purposeFolderName } from "@/core/notes/filename";
+import {
+  generateNoteFilename,
+  generateNoteFrontmatter,
+  purposeFolderName,
+} from "@/core/notes/filename";
 import {
   createFolderCache,
   ensureNotesPurposeFolder,
@@ -50,12 +54,14 @@ function isQuotaError(err: unknown): boolean {
         if (errorBody && typeof errorBody === "object") {
           const errors = (errorBody as Record<string, unknown>)["errors"];
           if (Array.isArray(errors)) {
-            if (errors.some(
-              (item: unknown) =>
-                typeof item === "object" &&
-                item !== null &&
-                QUOTA_REASONS.has(String((item as Record<string, unknown>)["reason"] ?? "")),
-            )) {
+            if (
+              errors.some(
+                (item: unknown) =>
+                  typeof item === "object" &&
+                  item !== null &&
+                  QUOTA_REASONS.has(String((item as Record<string, unknown>)["reason"] ?? "")),
+              )
+            ) {
               return true;
             }
           }
@@ -68,17 +74,23 @@ function isQuotaError(err: unknown): boolean {
   if (topCode === 403) {
     const errors = e["errors"];
     if (Array.isArray(errors)) {
-      if (errors.some(
-        (item: unknown) =>
-          typeof item === "object" &&
-          item !== null &&
-          QUOTA_REASONS.has(String((item as Record<string, unknown>)["reason"] ?? "")),
-      )) {
+      if (
+        errors.some(
+          (item: unknown) =>
+            typeof item === "object" &&
+            item !== null &&
+            QUOTA_REASONS.has(String((item as Record<string, unknown>)["reason"] ?? "")),
+        )
+      ) {
         return true;
       }
     }
     const message = typeof e["message"] === "string" ? e["message"].toLowerCase() : "";
-    if (message.includes("ratelimit") || message.includes("quota") || message.includes("rate limit")) {
+    if (
+      message.includes("ratelimit") ||
+      message.includes("quota") ||
+      message.includes("rate limit")
+    ) {
       return true;
     }
   }
@@ -92,10 +104,7 @@ function isQuotaError(err: unknown): boolean {
  * backoff (1 s, then 2 s).  Non-quota errors are rethrown immediately without
  * waiting.
  */
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxAttempts = 3,
-): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -162,14 +171,19 @@ export async function handleDriveSyncNotes(): Promise<DriveSyncNotesResult> {
       await refreshDriveTokenIfNeeded(userId);
     } catch (refreshErr) {
       const message = refreshErr instanceof Error ? refreshErr.message : String(refreshErr);
-      log.error({ userId, err: refreshErr }, "drive-sync-notes: token refresh failed — skipping user");
+      log.error(
+        { userId, err: refreshErr },
+        "drive-sync-notes: token refresh failed — skipping user",
+      );
       totalErrors++;
       // Store the auth error on the user's notes so it surfaces in the UI,
       // but don't abort the whole job for other users.
-      await db.note.updateMany({
-        where: { user_id: userId, deleted_at: null },
-        data: { drive_sync_error: `Auth: ${message}` },
-      }).catch(() => {});
+      await db.note
+        .updateMany({
+          where: { user_id: userId, deleted_at: null },
+          data: { drive_sync_error: `Auth: ${message}` },
+        })
+        .catch(() => {});
       continue;
     }
 
@@ -210,14 +224,19 @@ export async function handleDriveSyncNotes(): Promise<DriveSyncNotesResult> {
           data: { drive_file_id: null, drive_synced_at: new Date(), drive_sync_error: null },
         });
         totalDeleted++;
-        log.info({ userId, noteId: note.id }, "drive-sync-notes: deleted Drive file for soft-deleted note");
+        log.info(
+          { userId, noteId: note.id },
+          "drive-sync-notes: deleted Drive file for soft-deleted note",
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         log.error({ userId, noteId: note.id, err }, "drive-sync-notes: error deleting Drive file");
-        await db.note.update({
-          where: { id: note.id },
-          data: { drive_sync_error: message },
-        }).catch(() => {});
+        await db.note
+          .update({
+            where: { id: note.id },
+            data: { drive_sync_error: message },
+          })
+          .catch(() => {});
         totalErrors++;
       }
     }
@@ -254,13 +273,7 @@ export async function handleDriveSyncNotes(): Promise<DriveSyncNotesResult> {
         });
 
         const purposeFolderId = await withRetry(() =>
-          ensureNotesPurposeFolder(
-            userId,
-            notesFolderId,
-            purposeName,
-            sharedDriveId,
-            folderCache,
-          ),
+          ensureNotesPurposeFolder(userId, notesFolderId, purposeName, sharedDriveId, folderCache),
         );
 
         let driveFileId: string;
@@ -283,18 +296,27 @@ export async function handleDriveSyncNotes(): Promise<DriveSyncNotesResult> {
             driveFileId = await withRetry(() =>
               createNoteFile(userId, filename, content, purposeFolderId),
             );
-            log.debug({ userId, noteId: note.id, filename }, "drive-sync-notes: recreated note in Drive (purpose change)");
+            log.debug(
+              { userId, noteId: note.id, filename },
+              "drive-sync-notes: recreated note in Drive (purpose change)",
+            );
           } else {
             driveFileId = await withRetry(() =>
               updateNoteFile(userId, note.drive_file_id!, filename, content),
             );
-            log.debug({ userId, noteId: note.id, filename }, "drive-sync-notes: updated note in Drive");
+            log.debug(
+              { userId, noteId: note.id, filename },
+              "drive-sync-notes: updated note in Drive",
+            );
           }
         } else {
           driveFileId = await withRetry(() =>
             createNoteFile(userId, filename, content, purposeFolderId),
           );
-          log.debug({ userId, noteId: note.id, filename }, "drive-sync-notes: created note in Drive");
+          log.debug(
+            { userId, noteId: note.id, filename },
+            "drive-sync-notes: created note in Drive",
+          );
         }
 
         await db.note.update({
@@ -318,20 +340,24 @@ export async function handleDriveSyncNotes(): Promise<DriveSyncNotesResult> {
             { userId, noteId: note.id, err },
             "drive-sync-notes: Drive quota/rate-limit still failing after retries — stopping sync for this user",
           );
-          await db.note.update({
-            where: { id: note.id },
-            data: { drive_sync_error: "Drive API quota exceeded — sync will retry next hour" },
-          }).catch(() => {});
+          await db.note
+            .update({
+              where: { id: note.id },
+              data: { drive_sync_error: "Drive API quota exceeded — sync will retry next hour" },
+            })
+            .catch(() => {});
           quotaExceeded = true;
           totalErrors++;
           continue;
         }
 
         log.error({ userId, noteId: note.id, err }, "drive-sync-notes: error syncing note");
-        await db.note.update({
-          where: { id: note.id },
-          data: { drive_sync_error: message },
-        }).catch(() => {});
+        await db.note
+          .update({
+            where: { id: note.id },
+            data: { drive_sync_error: message },
+          })
+          .catch(() => {});
         totalErrors++;
       }
     }

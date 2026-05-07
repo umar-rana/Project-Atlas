@@ -17,14 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-function TypeRow({ type, isSelected, children }: { type: string; isSelected: boolean; children: React.ReactNode }) {
-  return (
-    <div className={cn("group flex items-center gap-1.5", isSelected ? "font-semibold text-accent-primary" : "")}>
-      {children}
-    </div>
-  );
-}
-
 export function ProjectTypePicker({
   value,
   onChange,
@@ -57,11 +49,19 @@ export function ProjectTypePicker({
     onChange(type);
   }
 
-  const customTypes = existingTypes.filter((t) => t !== "project" && t !== "goal" && !suggestions.includes(t));
+  const customTypes = existingTypes.filter(
+    (t) => t !== "project" && t !== "goal" && !suggestions.includes(t),
+  );
 
   return (
     <div className="relative">
-      <DropdownMenu open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditingType(null); }}>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditingType(null);
+        }}
+      >
         <DropdownMenuTrigger
           disabled={disabled}
           className={cn(
@@ -81,7 +81,9 @@ export function ProjectTypePicker({
           <ChevronDown size={10} className="text-text-tertiary" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuLabel className="font-ui text-3xs uppercase tracking-caps text-text-disabled">Core</DropdownMenuLabel>
+          <DropdownMenuLabel className="font-ui text-3xs uppercase tracking-caps text-text-disabled">
+            Core
+          </DropdownMenuLabel>
           {["project", "goal"].map((t) => (
             <DropdownMenuItem
               key={t}
@@ -101,7 +103,9 @@ export function ProjectTypePicker({
           {suggestions.length > 0 && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="font-ui text-3xs uppercase tracking-caps text-text-disabled">Suggested</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-ui text-3xs uppercase tracking-caps text-text-disabled">
+                Suggested
+              </DropdownMenuLabel>
               {suggestions.map((s) => (
                 <DropdownMenuItem
                   key={s}
@@ -123,7 +127,9 @@ export function ProjectTypePicker({
           {customTypes.length > 0 && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="font-ui text-3xs uppercase tracking-caps text-text-disabled">Your types</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-ui text-3xs uppercase tracking-caps text-text-disabled">
+                Your types
+              </DropdownMenuLabel>
               {customTypes.map((t) => (
                 <div key={t} className="relative flex items-center">
                   <DropdownMenuItem
@@ -140,8 +146,12 @@ export function ProjectTypePicker({
                   </DropdownMenuItem>
                   <button
                     type="button"
-                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setEditingType(editingType === t ? null : t); }}
-                    className="mr-1 shrink-0 rounded p-0.5 text-text-disabled opacity-0 transition-opacity hover:bg-surface-hover hover:text-text-tertiary group-hover:opacity-100 peer-hover:opacity-100 focus:opacity-100"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEditingType(editingType === t ? null : t);
+                    }}
+                    className="mr-1 shrink-0 rounded p-0.5 text-text-disabled opacity-0 transition-opacity hover:bg-surface-hover hover:text-text-tertiary focus:opacity-100 group-hover:opacity-100 peer-hover:opacity-100"
                     style={{ opacity: editingType === t ? 1 : undefined }}
                     title="Customize icon & color"
                   >

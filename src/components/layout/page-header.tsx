@@ -30,7 +30,7 @@ export function PageHeader({
       {...props}
     >
       <div className="flex flex-col gap-3 mobile:flex-row mobile:items-start mobile:justify-between mobile:gap-4">
-        <div className="min-w-0 flex flex-col gap-1">
+        <div className="flex min-w-0 flex-col gap-1">
           <h1 className="m-0 truncate font-ui text-2xl font-semibold leading-tight tracking-tight text-text-primary">
             {title}
           </h1>

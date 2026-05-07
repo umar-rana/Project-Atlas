@@ -61,11 +61,7 @@ describe("classifyParsedTags — tag gating invariants", () => {
   });
 
   it("handles empty input gracefully", () => {
-    const { autoApply, suggestedNew } = classifyParsedTags(
-      [],
-      new Set(),
-      new Set(),
-    );
+    const { autoApply, suggestedNew } = classifyParsedTags([], new Set(), new Set());
     expect(autoApply).toHaveLength(0);
     expect(suggestedNew).toHaveLength(0);
   });

@@ -42,11 +42,14 @@ export function TemplatePicker({
   const [open, setOpen] = React.useState(false);
 
   const topN = trpc.taskTemplates.list.useQuery({ topN: 10 }, { staleTime: 30_000, enabled: open });
-  const all = trpc.taskTemplates.list.useQuery({ limit: 200 }, { staleTime: 30_000, enabled: open && showAll });
+  const all = trpc.taskTemplates.list.useQuery(
+    { limit: 200 },
+    { staleTime: 30_000, enabled: open && showAll },
+  );
 
   const templates = showAll ? (all.data ?? []) : (topN.data ?? []);
 
-  function handleSelect(template: typeof templates[0]) {
+  function handleSelect(template: (typeof templates)[0]) {
     onSelect(
       {
         title: template.name,

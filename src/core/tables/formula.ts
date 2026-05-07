@@ -59,7 +59,10 @@ function tokenizeExpression(expression: string): {
 
 // ─── Value coercion helpers ───────────────────────────────────────────────────
 
-function coerceForColumn(colType: ColumnType, rawValue: CellValue): number | string | boolean | null {
+function coerceForColumn(
+  colType: ColumnType,
+  rawValue: CellValue,
+): number | string | boolean | null {
   if (rawValue === null || rawValue === undefined) {
     switch (colType) {
       case "number":
@@ -96,11 +99,7 @@ function coerceResult(raw: unknown, returnType: FormulaReturnType, _decimals?: n
       return isNaN(n) ? null : n;
     }
     case "text":
-      return raw instanceof Date
-        ? raw.toISOString()
-        : typeof raw === "string"
-          ? raw
-          : String(raw);
+      return raw instanceof Date ? raw.toISOString() : typeof raw === "string" ? raw : String(raw);
     case "date": {
       if (raw instanceof Date) return raw.toISOString();
       if (typeof raw === "number") return new Date(raw).toISOString();
@@ -247,7 +246,10 @@ function topoSortFormulaCols<T extends { id: string; name: string; type: string;
   const deps = new Map<string, string[]>();
   for (const col of formulaCols) {
     const refs = extractColumnRefs((col.config as { expression?: string }).expression ?? "");
-    deps.set(col.id, refs.flatMap((r) => (byName.has(r) ? [byName.get(r)!] : [])));
+    deps.set(
+      col.id,
+      refs.flatMap((r) => (byName.has(r) ? [byName.get(r)!] : [])),
+    );
   }
 
   const visited = new Set<string>();
@@ -282,10 +284,19 @@ export function injectFormulaVirtualCells(
 
   const sorted = topoSortFormulaCols(formulaCols);
   const accumulated: TableCellData[] = [...regularCells];
-  const out: Array<{ id: string; row_id: string; column_id: string; value: CellValue | FormulaErrorValue }> = [];
+  const out: Array<{
+    id: string;
+    row_id: string;
+    column_id: string;
+    value: CellValue | FormulaErrorValue;
+  }> = [];
 
   for (const col of sorted) {
-    const cfg = col.config as { expression?: string; return_type?: FormulaReturnType; decimals?: number };
+    const cfg = col.config as {
+      expression?: string;
+      return_type?: FormulaReturnType;
+      decimals?: number;
+    };
     const result = evaluateFormula(
       cfg.expression ?? "",
       accumulated,
@@ -293,7 +304,12 @@ export function injectFormulaVirtualCells(
       cfg.return_type ?? "text",
       cfg.decimals,
     );
-    out.push({ id: `formula-${rowId}-${col.id}`, row_id: rowId, column_id: col.id, value: result.value });
+    out.push({
+      id: `formula-${rowId}-${col.id}`,
+      row_id: rowId,
+      column_id: col.id,
+      value: result.value,
+    });
     // Add to accumulated so subsequent formula columns can reference this one
     accumulated.push({ row_id: rowId, column_id: col.id, value: result.value as CellValue });
   }
@@ -422,7 +438,12 @@ export function validateFormula(
     if (!selfId && selfName) {
       hypothetical.push({ id: "__new__", name: selfName, type: "formula", config: { expression } });
     } else if (!selfId && !selfName) {
-      hypothetical.push({ id: "__new__", name: "__new__", type: "formula", config: { expression } });
+      hypothetical.push({
+        id: "__new__",
+        name: "__new__",
+        type: "formula",
+        config: { expression },
+      });
     }
 
     const graph = buildDependencyGraph(hypothetical);

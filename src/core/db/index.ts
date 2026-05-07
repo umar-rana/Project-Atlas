@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { createLogger } from "@/core/logging";
 import { uuidv7 } from "uuidv7";
@@ -46,7 +46,7 @@ function resolveDbUrl(): string {
   if (!url) {
     throw new Error(
       "DATABASE_URL_NEON is not set. Replit Postgres has been decommissioned; " +
-      "only Neon is supported. Set the DATABASE_URL_NEON secret to continue.",
+        "only Neon is supported. Set the DATABASE_URL_NEON secret to continue.",
     );
   }
   return url;
@@ -61,7 +61,10 @@ function createPrismaClient() {
     },
     log:
       process.env.NODE_ENV === "development"
-        ? [{ emit: "event", level: "warn" }, { emit: "event", level: "error" }]
+        ? [
+            { emit: "event", level: "warn" },
+            { emit: "event", level: "error" },
+          ]
         : [{ emit: "event", level: "error" }],
   });
 
@@ -113,10 +116,7 @@ function createPrismaClient() {
         } else if (!("deleted_at" in where)) {
           params.args.where = { ...where, deleted_at: null };
         }
-      } else if (
-        params.action === "update" ||
-        params.action === "updateMany"
-      ) {
+      } else if (params.action === "update" || params.action === "updateMany") {
         // Strip the `includeDeleted` marker so it never reaches Prisma.
         // updateMany does not auto-filter deleted rows.
         if (params.args) {
@@ -136,7 +136,10 @@ function createPrismaClient() {
       let beforeState: Record<string, unknown> | null = null;
       if (entityId) {
         try {
-          beforeState = (await client.user.findUnique({ where: { id: entityId } })) as Record<string, unknown> | null;
+          beforeState = (await client.user.findUnique({ where: { id: entityId } })) as Record<
+            string,
+            unknown
+          > | null;
         } catch {
           // Non-fatal; proceed without before state
         }
@@ -147,9 +150,7 @@ function createPrismaClient() {
       if (entityId) {
         try {
           const afterState = result as Record<string, unknown> | null;
-          const diff = beforeState && afterState
-            ? diffObjects(beforeState, afterState)
-            : null;
+          const diff = beforeState && afterState ? diffObjects(beforeState, afterState) : null;
 
           if (diff && Object.keys(diff).length > 0) {
             await client.auditLog.create({
@@ -181,8 +182,7 @@ function createPrismaClient() {
   return client;
 }
 
-export const db: PrismaClient =
-  globalThis.__atlasPrisma ?? createPrismaClient();
+export const db: PrismaClient = globalThis.__atlasPrisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalThis.__atlasPrisma = db;

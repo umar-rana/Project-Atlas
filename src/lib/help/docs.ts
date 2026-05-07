@@ -1,4 +1,14 @@
-import { BookOpen, CheckSquare, CalendarDays, Users, FileText, BookMarked, FolderOpen, Keyboard, Sparkles } from "lucide-react";
+import {
+  BookOpen,
+  CheckSquare,
+  CalendarDays,
+  Users,
+  FileText,
+  BookMarked,
+  FolderOpen,
+  Keyboard,
+  Sparkles,
+} from "lucide-react";
 import type { HelpSection } from "./types";
 
 export const HELP_SECTIONS: HelpSection[] = [

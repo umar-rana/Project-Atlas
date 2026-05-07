@@ -27,7 +27,9 @@ export const Default: Story = {
           <DialogTitle>Rename project</DialogTitle>
         </DialogHeader>
         <DialogBody>
-          <DialogDescription>This will rename the project across every workspace it appears in.</DialogDescription>
+          <DialogDescription>
+            This will rename the project across every workspace it appears in.
+          </DialogDescription>
         </DialogBody>
         <DialogFooter>
           <DialogClose asChild>

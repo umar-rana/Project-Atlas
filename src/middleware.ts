@@ -18,8 +18,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/cron/(.*)",
 ]);
 
-const MOBILE_UA_RE =
-  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+const MOBILE_UA_RE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 
 function isMobileRequest(req: NextRequest): boolean {
   const ua = req.headers.get("user-agent") ?? "";
@@ -86,7 +85,5 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|storybook).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|storybook).*)"],
 };

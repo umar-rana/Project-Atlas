@@ -30,9 +30,7 @@ function getCompatibleAggregations(
       return ["count", "checked_ratio"];
     case "formula": {
       const returnType = (columnConfig as { return_type?: string } | undefined)?.return_type;
-      return returnType === "number"
-        ? ["sum", "average", "count", "min", "max"]
-        : ["count"];
+      return returnType === "number" ? ["sum", "average", "count", "min", "max"] : ["count"];
     }
     default:
       return ["count"];
@@ -55,7 +53,11 @@ interface TrackerSettingsPanelProps {
   onSaved?: () => void;
 }
 
-export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: TrackerSettingsPanelProps) {
+export function TrackerSettingsPanel({
+  projectId,
+  currentTracker,
+  onSaved,
+}: TrackerSettingsPanelProps) {
   const utils = trpc.useUtils();
 
   const [tableId, setTableId] = React.useState(currentTracker?.table_id ?? "");
@@ -100,7 +102,10 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
   const selectedColumn = columnsQuery.data?.find((c) => c.id === columnId);
   const availableAggregations = selectedColumn
     ? AGGREGATION_OPTIONS.filter((a) =>
-        getCompatibleAggregations(selectedColumn.type, selectedColumn.config as Record<string, unknown>).includes(a.value),
+        getCompatibleAggregations(
+          selectedColumn.type,
+          selectedColumn.config as Record<string, unknown>,
+        ).includes(a.value),
       )
     : AGGREGATION_OPTIONS;
 
@@ -138,7 +143,10 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
   function handleAggregationChange(newAgg: AggregationValue | "") {
     setAggregation(newAgg);
     if (selectedColumn) {
-      const compatible = getCompatibleAggregations(selectedColumn.type, selectedColumn.config as Record<string, unknown>);
+      const compatible = getCompatibleAggregations(
+        selectedColumn.type,
+        selectedColumn.config as Record<string, unknown>,
+      );
       if (newAgg && !compatible.includes(newAgg)) {
         setColumnId("");
       }
@@ -160,7 +168,7 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
     });
   }
 
-  const hasExistingTracker = !!(currentTracker?.table_id);
+  const hasExistingTracker = !!currentTracker?.table_id;
   const isPending = setTracker.isPending || clearTracker.isPending;
 
   return (
@@ -237,9 +245,9 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
         </div>
 
         <div className="border-t border-border-subtle pt-2">
-          <div className="font-ui text-2xs text-text-tertiary mb-2">Target (optional)</div>
+          <div className="mb-2 font-ui text-2xs text-text-tertiary">Target (optional)</div>
           <div className="flex gap-2">
-            <div className="flex flex-col gap-1 flex-1">
+            <div className="flex flex-1 flex-col gap-1">
               <label className="font-ui text-2xs text-text-disabled">Value</label>
               <input
                 type="number"
@@ -250,11 +258,11 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
                 className={cn(
                   "h-7 rounded-sm border border-border-default bg-surface-base px-2 font-ui text-xs text-text-primary",
                   "focus:outline-none focus:ring-1 focus:ring-border-focus",
-                  "disabled:opacity-50 placeholder:text-text-disabled",
+                  "placeholder:text-text-disabled disabled:opacity-50",
                 )}
               />
             </div>
-            <div className="flex flex-col gap-1 flex-1">
+            <div className="flex flex-1 flex-col gap-1">
               <label className="font-ui text-2xs text-text-disabled">Label</label>
               <input
                 type="text"
@@ -266,7 +274,7 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
                 className={cn(
                   "h-7 rounded-sm border border-border-default bg-surface-base px-2 font-ui text-xs text-text-primary",
                   "focus:outline-none focus:ring-1 focus:ring-border-focus",
-                  "disabled:opacity-50 placeholder:text-text-disabled",
+                  "placeholder:text-text-disabled disabled:opacity-50",
                 )}
               />
             </div>
@@ -281,7 +289,7 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
           className={cn(
             "h-7 rounded-sm bg-accent-primary px-3 font-ui text-xs font-medium text-text-on-accent",
             "hover:bg-accent-primary-hover active:bg-accent-primary-active",
-            "disabled:opacity-40 disabled:cursor-not-allowed",
+            "disabled:cursor-not-allowed disabled:opacity-40",
             "focus:outline-none focus:ring-1 focus:ring-border-focus",
           )}
         >
@@ -294,7 +302,7 @@ export function TrackerSettingsPanel({ projectId, currentTracker, onSaved }: Tra
             className={cn(
               "h-7 rounded-sm border border-border-default px-3 font-ui text-xs text-text-secondary",
               "hover:bg-surface-hover hover:text-text-primary",
-              "disabled:opacity-40 disabled:cursor-not-allowed",
+              "disabled:cursor-not-allowed disabled:opacity-40",
               "focus:outline-none focus:ring-1 focus:ring-border-focus",
             )}
           >

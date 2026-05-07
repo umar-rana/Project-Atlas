@@ -26,8 +26,7 @@ const PROVIDERS: ProviderConfig[] = [
     name: "youtube",
     pattern:
       /^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/,
-    buildEmbedUrl: (m) =>
-      `https://www.youtube.com/embed/${m[1]}`,
+    buildEmbedUrl: (m) => `https://www.youtube.com/embed/${m[1]}`,
     oembedEndpoint: (url) =>
       `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
   },
@@ -35,20 +34,16 @@ const PROVIDERS: ProviderConfig[] = [
     name: "vimeo",
     pattern: /^https?:\/\/(?:www\.)?vimeo\.com\/(\d+)/,
     buildEmbedUrl: (m) => `https://player.vimeo.com/video/${m[1]}`,
-    oembedEndpoint: (url) =>
-      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
+    oembedEndpoint: (url) => `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
   },
   {
     name: "spotify",
-    pattern:
-      /^https?:\/\/open\.spotify\.com\/(track|album|episode|playlist)\/([A-Za-z0-9]+)/,
-    buildEmbedUrl: (m) =>
-      `https://open.spotify.com/embed/${m[1]}/${m[2]}`,
+    pattern: /^https?:\/\/open\.spotify\.com\/(track|album|episode|playlist)\/([A-Za-z0-9]+)/,
+    buildEmbedUrl: (m) => `https://open.spotify.com/embed/${m[1]}/${m[2]}`,
   },
   {
     name: "soundcloud",
-    pattern:
-      /^https?:\/\/(?:www\.)?soundcloud\.com\/[^/]+\/[^/?#]+/,
+    pattern: /^https?:\/\/(?:www\.)?soundcloud\.com\/[^/]+\/[^/?#]+/,
     buildEmbedUrl: (_m, originalUrl) =>
       `https://w.soundcloud.com/player/?url=${encodeURIComponent(originalUrl)}&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false`,
     oembedEndpoint: (url) =>
@@ -56,12 +51,9 @@ const PROVIDERS: ProviderConfig[] = [
   },
   {
     name: "twitter",
-    pattern:
-      /^https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[^/]+\/status\/(\d+)/,
-    buildEmbedUrl: (m) =>
-      `https://platform.twitter.com/embed/Tweet.html?dnt=true&id=${m[1]}`,
-    oembedEndpoint: (url) =>
-      `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`,
+    pattern: /^https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[^/]+\/status\/(\d+)/,
+    buildEmbedUrl: (m) => `https://platform.twitter.com/embed/Tweet.html?dnt=true&id=${m[1]}`,
+    oembedEndpoint: (url) => `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`,
   },
   {
     name: "github_gist",
@@ -79,8 +71,7 @@ const PROVIDERS: ProviderConfig[] = [
     name: "loom",
     pattern: /^https?:\/\/(?:www\.)?loom\.com\/share\/([A-Za-z0-9]+)/,
     buildEmbedUrl: (m) => `https://www.loom.com/embed/${m[1]}`,
-    oembedEndpoint: (url) =>
-      `https://www.loom.com/v1/oembed?url=${encodeURIComponent(url)}`,
+    oembedEndpoint: (url) => `https://www.loom.com/v1/oembed?url=${encodeURIComponent(url)}`,
   },
 ];
 

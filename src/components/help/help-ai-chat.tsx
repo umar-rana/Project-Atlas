@@ -23,7 +23,7 @@ function ThinkingDots(): React.ReactElement {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="size-1.5 rounded-full bg-text-tertiary animate-pulse"
+          className="size-1.5 animate-pulse rounded-full bg-text-tertiary"
           style={{ animationDelay: `${i * 150}ms` }}
         />
       ))}
@@ -134,14 +134,10 @@ export function HelpAIChat(): React.ReactElement {
               <span className="font-mono text-lg text-accent-primary">✦</span>
             </div>
             <div className="text-center">
-              <p className="font-ui text-sm font-medium text-text-primary">
-                How can I help you?
-              </p>
-              <p className="mt-1 font-ui text-xs text-text-tertiary">
-                Ask anything about Atlas
-              </p>
+              <p className="font-ui text-sm font-medium text-text-primary">How can I help you?</p>
+              <p className="mt-1 font-ui text-xs text-text-tertiary">Ask anything about Atlas</p>
             </div>
-            <div className="flex flex-col gap-2 w-full max-w-sm">
+            <div className="flex w-full max-w-sm flex-col gap-2">
               {SUGGESTED_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
@@ -159,10 +155,7 @@ export function HelpAIChat(): React.ReactElement {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={cn(
-                  "flex gap-3",
-                  msg.role === "user" ? "flex-row-reverse" : "flex-row",
-                )}
+                className={cn("flex gap-3", msg.role === "user" ? "flex-row-reverse" : "flex-row")}
               >
                 {msg.role === "assistant" && (
                   <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-primary-subtle font-mono text-xs text-accent-primary">
@@ -173,7 +166,7 @@ export function HelpAIChat(): React.ReactElement {
                   className={cn(
                     "max-w-[80%] rounded-xl px-3 py-2 font-ui text-sm leading-relaxed",
                     msg.role === "user"
-                      ? "bg-[var(--color-bg-elevated,theme(colors.neutral.800))] text-text-primary ml-auto"
+                      ? "ml-auto bg-[var(--color-bg-elevated,theme(colors.neutral.800))] text-text-primary"
                       : "bg-surface-subtle text-text-secondary",
                   )}
                 >
@@ -186,7 +179,7 @@ export function HelpAIChat(): React.ReactElement {
                 <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-primary-subtle font-mono text-xs text-accent-primary">
                   ✦
                 </div>
-                <div className="rounded-xl bg-surface-subtle px-3 py-2">
+                <div className="bg-surface-subtle rounded-xl px-3 py-2">
                   <ThinkingDots />
                 </div>
               </div>
@@ -197,7 +190,7 @@ export function HelpAIChat(): React.ReactElement {
       </div>
 
       <div className="border-t border-border-subtle p-4">
-        <div className="flex items-end gap-2 rounded-xl border border-border-subtle bg-surface-raised px-3 py-2 focus-within:border-accent-primary focus-within:ring-1 focus-within:ring-accent-primary/30">
+        <div className="focus-within:ring-accent-primary/30 flex items-end gap-2 rounded-xl border border-border-subtle bg-surface-raised px-3 py-2 focus-within:border-accent-primary focus-within:ring-1">
           <textarea
             ref={inputRef}
             value={input}

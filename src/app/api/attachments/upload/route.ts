@@ -106,7 +106,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   }
 
-  log.info({ path: result.path, userId: user.id, taskId, attachmentId: result.attachmentId }, "File uploaded via API");
+  log.info(
+    { path: result.path, userId: user.id, taskId, attachmentId: result.attachmentId },
+    "File uploaded via API",
+  );
 
   return NextResponse.json(result.attachment);
 }

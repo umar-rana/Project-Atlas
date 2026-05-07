@@ -37,10 +37,7 @@ export function TodayEventsWidget() {
           <Calendar size={12} />
           Today
         </h3>
-        <Link
-          href="/calendar"
-          className="font-ui text-2xs text-accent-primary hover:underline"
-        >
+        <Link href="/calendar" className="font-ui text-2xs text-accent-primary hover:underline">
           View calendar →
         </Link>
       </div>
@@ -53,23 +50,25 @@ export function TodayEventsWidget() {
         <p className="py-3 text-center font-ui text-sm text-text-disabled">No events today.</p>
       ) : (
         <div className="space-y-1">
-          {events.map((event: typeof events[0]) => {
+          {events.map((event: (typeof events)[0]) => {
             const color = calColorFill(event as typeof event & { source: string });
             return (
               <button
                 key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-surface-hover transition-colors"
+                className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-surface-hover"
               >
                 <span
                   className={cn("h-2 w-2 flex-shrink-0 rounded-full")}
                   style={{ background: `var(--${color}-fill)` }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className={cn(
-                    "truncate font-ui text-sm font-medium text-text-primary",
-                    event.status === "cancelled" && "line-through text-text-disabled",
-                  )}>
+                  <p
+                    className={cn(
+                      "truncate font-ui text-sm font-medium text-text-primary",
+                      event.status === "cancelled" && "text-text-disabled line-through",
+                    )}
+                  >
                     {event.title || "(No title)"}
                   </p>
                   <p className="font-ui text-2xs text-text-tertiary">

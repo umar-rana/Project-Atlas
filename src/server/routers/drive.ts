@@ -5,7 +5,7 @@ import { listSharedDrives, browseFolder, createFolder } from "@/core/drive/primi
 import { z } from "zod";
 
 const DRIVE_RESOURCE_TYPES = ["notes", "tables", "attachments"] as const;
-type DriveResourceType = typeof DRIVE_RESOURCE_TYPES[number];
+type DriveResourceType = (typeof DRIVE_RESOURCE_TYPES)[number];
 
 export const driveRouter = router({
   linkStatus: protectedProcedure.query(async ({ ctx }) => {
@@ -61,11 +61,13 @@ export const driveRouter = router({
   }),
 
   createFolder: protectedProcedure
-    .input(z.object({
-      parentId: z.string(),
-      name: z.string().min(1).max(255),
-      driveId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        parentId: z.string(),
+        name: z.string().min(1).max(255),
+        driveId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const folder = await createFolder(ctx.user.id, input.name, input.parentId, input.driveId);
       return { id: folder.id ?? null, name: folder.name ?? input.name };
@@ -89,13 +91,12 @@ export const driveRouter = router({
       states.map((s) => [s.resource_type as DriveResourceType, s.last_synced]),
     ) as Partial<Record<DriveResourceType, Date | null>>;
 
-    const allTimestamps = states
-      .map((s) => s.last_synced)
-      .filter((d): d is Date => d !== null);
+    const allTimestamps = states.map((s) => s.last_synced).filter((d): d is Date => d !== null);
 
-    const lastSynced = allTimestamps.length > 0
-      ? new Date(Math.max(...allTimestamps.map((d) => d.getTime())))
-      : null;
+    const lastSynced =
+      allTimestamps.length > 0
+        ? new Date(Math.max(...allTimestamps.map((d) => d.getTime())))
+        : null;
 
     return { byType, lastSynced };
   }),

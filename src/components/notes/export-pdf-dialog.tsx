@@ -76,7 +76,7 @@ export function ExportPdfDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border-default bg-surface-base p-6 shadow-xl focus:outline-none">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <Dialog.Title className="font-ui text-sm font-semibold text-text-primary">
               Export as PDF
             </Dialog.Title>
@@ -94,7 +94,7 @@ export function ExportPdfDialog({
           {step === "options" && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="font-ui text-2xs font-medium text-text-tertiary uppercase tracking-caps">
+                <label className="font-ui text-2xs font-medium uppercase tracking-caps text-text-tertiary">
                   Page size
                 </label>
                 <div className="grid grid-cols-4 gap-1">
@@ -106,7 +106,7 @@ export function ExportPdfDialog({
                       className={cn(
                         "rounded border px-2 py-1.5 font-ui text-2xs font-medium transition-colors",
                         pageSize === size
-                          ? "border-accent-primary bg-accent-primary-subtle/20 text-accent-primary"
+                          ? "bg-accent-primary-subtle/20 border-accent-primary text-accent-primary"
                           : "border-border-default text-text-secondary hover:border-border-focus",
                       )}
                     >
@@ -117,13 +117,28 @@ export function ExportPdfDialog({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="font-ui text-2xs font-medium text-text-tertiary uppercase tracking-caps">
+                <label className="font-ui text-2xs font-medium uppercase tracking-caps text-text-tertiary">
                   Options
                 </label>
                 {[
-                  { key: "includeAttachmentAppendix", label: "List attachments at end", value: includeAttachmentAppendix, set: setIncludeAttachmentAppendix },
-                  { key: "includeHeader", label: "Include header", value: includeHeader, set: setIncludeHeader },
-                  { key: "includeFooter", label: "Include footer with page numbers", value: includeFooter, set: setIncludeFooter },
+                  {
+                    key: "includeAttachmentAppendix",
+                    label: "List attachments at end",
+                    value: includeAttachmentAppendix,
+                    set: setIncludeAttachmentAppendix,
+                  },
+                  {
+                    key: "includeHeader",
+                    label: "Include header",
+                    value: includeHeader,
+                    set: setIncludeHeader,
+                  },
+                  {
+                    key: "includeFooter",
+                    label: "Include footer with page numbers",
+                    value: includeFooter,
+                    set: setIncludeFooter,
+                  },
                 ].map((opt) => (
                   <label key={opt.key} className="flex cursor-pointer items-center justify-between">
                     <span className="font-ui text-xs text-text-secondary">{opt.label}</span>

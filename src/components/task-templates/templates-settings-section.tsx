@@ -4,13 +4,7 @@ import * as React from "react";
 import { Plus, Pencil, Trash2, LayoutTemplate } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -62,7 +56,7 @@ export function TemplatesSettingsSection(): React.ReactElement {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-text-on-accent transition-colors hover:bg-accent-primary-hover"
           >
             <Plus size={13} aria-hidden />
             New template
@@ -88,7 +82,7 @@ export function TemplatesSettingsSection(): React.ReactElement {
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs text-text-secondary hover:bg-surface-hover transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs text-text-secondary transition-colors hover:bg-surface-hover"
           >
             <Plus size={12} aria-hidden />
             Create first template
@@ -134,7 +128,7 @@ export function TemplatesSettingsSection(): React.ReactElement {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <span className="font-ui text-xs text-text-tertiary tabular-nums">
+                    <span className="font-ui text-xs tabular-nums text-text-tertiary">
                       {template.usage_count}
                     </span>
                   </td>
@@ -146,13 +140,13 @@ export function TemplatesSettingsSection(): React.ReactElement {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <Hint label="Edit template" side="top">
                         <button
                           type="button"
                           onClick={() => setEditingId(template.id)}
                           aria-label={`Edit ${template.name}`}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
                         >
                           <Pencil size={13} />
                         </button>
@@ -162,7 +156,7 @@ export function TemplatesSettingsSection(): React.ReactElement {
                           type="button"
                           onClick={() => setDeletingId(template.id)}
                           aria-label={`Delete ${template.name}`}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-accent-danger transition-colors"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-accent-danger"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -192,7 +186,9 @@ export function TemplatesSettingsSection(): React.ReactElement {
 
       <Dialog
         open={editingId !== null}
-        onOpenChange={(open) => { if (!open) setEditingId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setEditingId(null);
+        }}
       >
         <DialogContent size="lg">
           <DialogHeader>
@@ -226,13 +222,16 @@ export function TemplatesSettingsSection(): React.ReactElement {
 
       <AlertDialog
         open={deletingId !== null}
-        onOpenChange={(open) => { if (!open) setDeletingId(null); }}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete template?</AlertDialogTitle>
             <AlertDialogDescription>
-              This template will be permanently removed. Existing tasks created from it are not affected.
+              This template will be permanently removed. Existing tasks created from it are not
+              affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

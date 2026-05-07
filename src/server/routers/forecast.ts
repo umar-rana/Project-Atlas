@@ -21,9 +21,9 @@ const FORECAST_TASK_SELECT = {
   contexts: { select: { context: { select: { id: true, name: true } } } },
 } satisfies Prisma.TaskSelect;
 
-async function applySequentialFilter<T extends { id: string; project_id: string | null; status: string; flagged: boolean }>(
-  tasks: T[],
-): Promise<T[]> {
+async function applySequentialFilter<
+  T extends { id: string; project_id: string | null; status: string; flagged: boolean },
+>(tasks: T[]): Promise<T[]> {
   const projectIds = [...new Set(tasks.map((t) => t.project_id).filter(Boolean))] as string[];
   if (!projectIds.length) return tasks;
 
@@ -102,57 +102,58 @@ export const forecastRouter = router({
 
       const now = new Date();
 
-      const [activeScheduled, deferredInRange, completedScheduled, overdueTasks] = await Promise.all([
-        // Tasks with a due_date falling in the forecast range that are already available.
-        db.task.findMany({
-          where: {
-            user_id: userId,
-            status: "active",
-            deleted_at: null,
-            due_date: { gte: start, lte: end },
-            OR: [{ defer_date: null }, { defer_date: { lte: now } }],
-          },
-          select: FORECAST_TASK_SELECT,
-          orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
-        }),
-        // Tasks with a defer_date in the future but within the range and no due_date — show
-        // them on the day they become available so you can plan ahead.
-        db.task.findMany({
-          where: {
-            user_id: userId,
-            status: "active",
-            deleted_at: null,
-            due_date: null,
-            defer_date: { gt: now, lte: end },
-          },
-          select: FORECAST_TASK_SELECT,
-          orderBy: [{ defer_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
-        }),
-        db.task.findMany({
-          where: {
-            user_id: userId,
-            status: "completed",
-            deleted_at: null,
-            due_date: { gte: start, lt: today },
-          },
-          select: FORECAST_TASK_SELECT,
-          orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
-        }),
-        isPastRange
-          ? Promise.resolve([])
-          : db.task.findMany({
-              where: {
-                user_id: userId,
-                status: "active",
-                deleted_at: null,
-                due_date: { lt: today },
-                OR: [{ defer_date: null }, { defer_date: { lte: now } }],
-              },
-              select: FORECAST_TASK_SELECT,
-              orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
-              take: 100,
-            }),
-      ]);
+      const [activeScheduled, deferredInRange, completedScheduled, overdueTasks] =
+        await Promise.all([
+          // Tasks with a due_date falling in the forecast range that are already available.
+          db.task.findMany({
+            where: {
+              user_id: userId,
+              status: "active",
+              deleted_at: null,
+              due_date: { gte: start, lte: end },
+              OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+            },
+            select: FORECAST_TASK_SELECT,
+            orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
+          }),
+          // Tasks with a defer_date in the future but within the range and no due_date — show
+          // them on the day they become available so you can plan ahead.
+          db.task.findMany({
+            where: {
+              user_id: userId,
+              status: "active",
+              deleted_at: null,
+              due_date: null,
+              defer_date: { gt: now, lte: end },
+            },
+            select: FORECAST_TASK_SELECT,
+            orderBy: [{ defer_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
+          }),
+          db.task.findMany({
+            where: {
+              user_id: userId,
+              status: "completed",
+              deleted_at: null,
+              due_date: { gte: start, lt: today },
+            },
+            select: FORECAST_TASK_SELECT,
+            orderBy: [{ due_date: "asc" }, { flagged: "desc" }, { position: "asc" }],
+          }),
+          isPastRange
+            ? Promise.resolve([])
+            : db.task.findMany({
+                where: {
+                  user_id: userId,
+                  status: "active",
+                  deleted_at: null,
+                  due_date: { lt: today },
+                  OR: [{ defer_date: null }, { defer_date: { lte: now } }],
+                },
+                select: FORECAST_TASK_SELECT,
+                orderBy: [{ due_date: "asc" }, { flagged: "desc" }],
+                take: 100,
+              }),
+        ]);
 
       // Merge: due_date-scheduled tasks come first; then future-deferred tasks that have no
       // due_date and aren't already in the due_date list (de-dupe by id).
@@ -184,10 +185,12 @@ export const forecastRouter = router({
         days.push({ date: key, tasks: dayTasks, event_count: 0 });
       }
 
-      const calendarConnected = await db.googleCalendarOAuthToken.findUnique({
-        where: { user_id: userId },
-        select: { id: true },
-      }).then(Boolean);
+      const calendarConnected = await db.googleCalendarOAuthToken
+        .findUnique({
+          where: { user_id: userId },
+          select: { id: true },
+        })
+        .then(Boolean);
 
       return {
         days,
@@ -255,10 +258,12 @@ export const forecastRouter = router({
         applySequentialFilter(rawOverdue),
       ]);
 
-      const calendarConnected = await db.googleCalendarOAuthToken.findUnique({
-        where: { user_id: userId },
-        select: { id: true },
-      }).then(Boolean);
+      const calendarConnected = await db.googleCalendarOAuthToken
+        .findUnique({
+          where: { user_id: userId },
+          select: { id: true },
+        })
+        .then(Boolean);
 
       return {
         date: dateKey(day),

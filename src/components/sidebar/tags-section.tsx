@@ -50,10 +50,15 @@ export function TagsSection({ pathname }: TagsSectionProps) {
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
                 )}
               >
-                <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(t.color))} aria-hidden />
+                <span
+                  className={cn("size-2 shrink-0 rounded-full", colorDotClass(t.color))}
+                  aria-hidden
+                />
                 <span className="flex-1 truncate">#{t.name}</span>
                 {t.usage_count > 0 ? (
-                  <span className="font-mono text-2xs text-text-tertiary tabular-nums">{t.usage_count}</span>
+                  <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                    {t.usage_count}
+                  </span>
                 ) : null}
               </Link>
             );

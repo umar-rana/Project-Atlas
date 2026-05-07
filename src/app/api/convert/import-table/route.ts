@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import Papa from "papaparse";
@@ -18,7 +18,13 @@ const MAX_ROWS = 10_000;
 const MAX_COLS = 50;
 
 const ALLOWED_COLUMN_TYPES = new Set<string>([
-  "text", "number", "currency", "date", "checkbox", "single_select", "multi_select",
+  "text",
+  "number",
+  "currency",
+  "date",
+  "checkbox",
+  "single_select",
+  "multi_select",
 ]);
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -49,7 +55,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: "File is too large. Maximum size is 10 MB." }, { status: 400 });
+    return NextResponse.json(
+      { error: "File is too large. Maximum size is 10 MB." },
+      { status: 400 },
+    );
   }
 
   const tableName = (formData.get("table_name") as string | null)?.trim();
@@ -60,7 +69,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const folderIdRaw = formData.get("folder_id") as string | null;
   const projectIdRaw = formData.get("project_id") as string | null;
   const folderId = folderIdRaw && folderIdRaw !== "null" && folderIdRaw !== "" ? folderIdRaw : null;
-  const projectId = projectIdRaw && projectIdRaw !== "null" && projectIdRaw !== "" ? projectIdRaw : null;
+  const projectId =
+    projectIdRaw && projectIdRaw !== "null" && projectIdRaw !== "" ? projectIdRaw : null;
 
   if (folderId) {
     const folder = await db.tablesFolder.findFirst({
@@ -92,7 +102,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const data = parsed.data as string[][];
 
   if (data.length < 2) {
-    return NextResponse.json({ error: "The CSV file has no data rows (only a header row was found)." }, { status: 400 });
+    return NextResponse.json(
+      { error: "The CSV file has no data rows (only a header row was found)." },
+      { status: 400 },
+    );
   }
 
   const csvHeaders = (data[0] ?? []).map((h) => h.trim() || "Column");
@@ -102,10 +115,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "The CSV file has no data rows." }, { status: 400 });
   }
   if (rows.length > MAX_ROWS) {
-    return NextResponse.json({ error: `Too many rows. Maximum is ${MAX_ROWS.toLocaleString()} rows.` }, { status: 400 });
+    return NextResponse.json(
+      { error: `Too many rows. Maximum is ${MAX_ROWS.toLocaleString()} rows.` },
+      { status: 400 },
+    );
   }
   if (csvHeaders.length > MAX_COLS) {
-    return NextResponse.json({ error: `Too many columns. Maximum is ${MAX_COLS}.` }, { status: 400 });
+    return NextResponse.json(
+      { error: `Too many columns. Maximum is ${MAX_COLS}.` },
+      { status: 400 },
+    );
   }
 
   let columns: { name: string; type: string }[];
@@ -116,11 +135,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       parsed2 = JSON.parse(rawColumns) as { name: string; type: string }[];
       if (!Array.isArray(parsed2) || parsed2.length === 0) throw new Error("empty");
       if (parsed2.length > MAX_COLS) {
-        return NextResponse.json({ error: `Too many columns. Maximum is ${MAX_COLS}.` }, { status: 400 });
+        return NextResponse.json(
+          { error: `Too many columns. Maximum is ${MAX_COLS}.` },
+          { status: 400 },
+        );
       }
       for (const c of parsed2) {
         if (!c.name || !c.type || !ALLOWED_COLUMN_TYPES.has(c.type)) {
-          return NextResponse.json({ error: `Invalid column definition: ${JSON.stringify(c)}` }, { status: 400 });
+          return NextResponse.json(
+            { error: `Invalid column definition: ${JSON.stringify(c)}` },
+            { status: 400 },
+          );
         }
       }
     } catch {

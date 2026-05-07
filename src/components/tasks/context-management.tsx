@@ -1,15 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Hash,
-  Search,
-  Trash2,
-  MoreHorizontal,
-  Check,
-  X,
-  Plus,
-} from "lucide-react";
+import { Hash, Search, Trash2, MoreHorizontal, Check, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
@@ -54,13 +46,7 @@ function colorDotClass(color: string | null) {
   return match ? match.cls : "bg-gray-400";
 }
 
-function RenameInline({
-  context,
-  onDone,
-}: {
-  context: ContextItem;
-  onDone: () => void;
-}) {
+function RenameInline({ context, onDone }: { context: ContextItem; onDone: () => void }) {
   const utils = trpc.useUtils();
   const [value, setValue] = React.useState(context.name);
   const rename = trpc.contexts.rename.useMutation({
@@ -75,7 +61,10 @@ function RenameInline({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = value.trim();
-    if (!trimmed || trimmed === context.name) { onDone(); return; }
+    if (!trimmed || trimmed === context.name) {
+      onDone();
+      return;
+    }
     rename.mutate({ id: context.id, new_name: trimmed });
   }
 
@@ -106,13 +95,7 @@ function RenameInline({
   );
 }
 
-function EditDialog({
-  context,
-  onClose,
-}: {
-  context: ContextItem;
-  onClose: () => void;
-}) {
+function EditDialog({ context, onClose }: { context: ContextItem; onClose: () => void }) {
   const utils = trpc.useUtils();
   const [name, setName] = React.useState(context.name);
   const [icon, setIcon] = React.useState(context.icon ?? "");
@@ -137,7 +120,12 @@ function EditDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Edit context</DialogTitle>
@@ -145,12 +133,7 @@ function EditDialog({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="mb-1 block font-ui text-xs font-medium text-text-primary">Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              size="md"
-              required
-            />
+            <Input value={name} onChange={(e) => setName(e.target.value)} size="md" required />
           </div>
           <div>
             <label className="mb-1 block font-ui text-xs font-medium text-text-primary">
@@ -165,7 +148,9 @@ function EditDialog({
             />
           </div>
           <div>
-            <label className="mb-2 block font-ui text-xs font-medium text-text-primary">Color</label>
+            <label className="mb-2 block font-ui text-xs font-medium text-text-primary">
+              Color
+            </label>
             <div className="flex flex-wrap gap-2">
               {COLOR_OPTIONS.map((c) => (
                 <button
@@ -176,7 +161,7 @@ function EditDialog({
                   className={cn(
                     "size-6 rounded-full transition-transform hover:scale-110",
                     c.cls,
-                    color === c.value && "ring-2 ring-offset-2 ring-accent-primary",
+                    color === c.value && "ring-2 ring-accent-primary ring-offset-2",
                   )}
                 />
               ))}
@@ -205,13 +190,7 @@ function EditDialog({
   );
 }
 
-function DeleteDialog({
-  context,
-  onClose,
-}: {
-  context: ContextItem;
-  onClose: () => void;
-}) {
+function DeleteDialog({ context, onClose }: { context: ContextItem; onClose: () => void }) {
   const utils = trpc.useUtils();
   const del = trpc.contexts.delete.useMutation({
     onSuccess: () => {
@@ -223,15 +202,22 @@ function DeleteDialog({
   });
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Delete &quot;{context.name}&quot;?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-text-secondary">
           This context is used on{" "}
-          <strong>{context.task_count} {context.task_count === 1 ? "task" : "tasks"}</strong>.
-          Deleting it will remove it from all those tasks. This cannot be undone.
+          <strong>
+            {context.task_count} {context.task_count === 1 ? "task" : "tasks"}
+          </strong>
+          . Deleting it will remove it from all those tasks. This cannot be undone.
         </p>
         <DialogFooter>
           <Button variant="ghost" size="md" onClick={onClose}>
@@ -311,7 +297,7 @@ export function ContextManagement(): React.ReactElement {
       <div className="flex items-center gap-3 border-b border-border-subtle px-6 py-4">
         <Hash size={18} className="text-text-tertiary" />
         <h1 className="font-ui text-lg font-semibold text-text-primary">Manage contexts</h1>
-        <span className="ml-1 rounded-full bg-surface-raised px-2 py-0.5 font-mono text-2xs text-text-secondary tabular-nums">
+        <span className="ml-1 rounded-full bg-surface-raised px-2 py-0.5 font-mono text-2xs tabular-nums text-text-secondary">
           {allContexts.length}
         </span>
       </div>
@@ -326,19 +312,13 @@ export function ContextManagement(): React.ReactElement {
           leftIcon={<Search size={13} />}
           containerClassName="flex-1"
         />
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setAddingContext(true)}
-        >
+        <Button variant="secondary" size="sm" onClick={() => setAddingContext(true)}>
           <Plus size={13} />
           Add context
         </Button>
       </div>
 
-      {addingContext ? (
-        <AddContextInline onDone={() => setAddingContext(false)} />
-      ) : null}
+      {addingContext ? <AddContextInline onDone={() => setAddingContext(false)} /> : null}
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-6">
@@ -361,10 +341,7 @@ export function ContextManagement(): React.ReactElement {
             </thead>
             <tbody>
               {filtered.map((ctx) => (
-                <tr
-                  key={ctx.id}
-                  className="group border-b border-border-subtle"
-                >
+                <tr key={ctx.id} className="group border-b border-border-subtle">
                   <td className="py-2">
                     {renamingId === ctx.id ? (
                       <RenameInline context={ctx} onDone={() => setRenamingId(null)} />

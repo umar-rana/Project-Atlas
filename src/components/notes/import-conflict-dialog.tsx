@@ -43,7 +43,7 @@ export function ImportConflictDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border-default bg-surface-base p-6 shadow-xl focus:outline-none">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle size={16} className="text-amber-400" />
               <Dialog.Title className="font-ui text-sm font-semibold text-text-primary">
@@ -62,10 +62,12 @@ export function ImportConflictDialog({
           </div>
 
           <p className="mb-4 font-ui text-xs text-text-secondary">
-            A note named <strong className="text-text-primary">&ldquo;{conflictingNoteTitle}&rdquo;</strong> already exists. How would you like to proceed?
+            A note named{" "}
+            <strong className="text-text-primary">&ldquo;{conflictingNoteTitle}&rdquo;</strong>{" "}
+            already exists. How would you like to proceed?
           </p>
 
-          <div className="flex flex-col gap-2 mb-4">
+          <div className="mb-4 flex flex-col gap-2">
             {/* Rename */}
             <button
               type="button"
@@ -73,7 +75,7 @@ export function ImportConflictDialog({
               className={cn(
                 "flex flex-col gap-2 rounded-md border p-3 text-left transition-colors",
                 resolution === "rename"
-                  ? "border-accent-primary bg-accent-primary-subtle/20"
+                  ? "bg-accent-primary-subtle/20 border-accent-primary"
                   : "border-border-default hover:border-border-focus",
               )}
             >
@@ -101,7 +103,9 @@ export function ImportConflictDialog({
                   : "border-border-default hover:border-border-focus",
               )}
             >
-              <span className="font-ui text-xs font-medium text-text-primary">Replace existing note</span>
+              <span className="font-ui text-xs font-medium text-text-primary">
+                Replace existing note
+              </span>
               <span className="font-ui text-2xs text-text-disabled">
                 The existing note will be moved to trash. This can be undone from the trash view.
               </span>
@@ -114,11 +118,13 @@ export function ImportConflictDialog({
               className={cn(
                 "flex flex-col gap-0.5 rounded-md border p-3 text-left transition-colors",
                 resolution === "skip"
-                  ? "border-accent-primary bg-accent-primary-subtle/20"
+                  ? "bg-accent-primary-subtle/20 border-accent-primary"
                   : "border-border-default hover:border-border-focus",
               )}
             >
-              <span className="font-ui text-xs font-medium text-text-primary">Skip this import</span>
+              <span className="font-ui text-xs font-medium text-text-primary">
+                Skip this import
+              </span>
               <span className="font-ui text-2xs text-text-disabled">
                 Cancel the import and keep the existing note unchanged.
               </span>
@@ -132,7 +138,11 @@ export function ImportConflictDialog({
               disabled={resolution === "rename" && !renameTitle.trim()}
               className="flex-1 rounded-md bg-accent-primary px-4 py-2 font-ui text-xs font-medium text-text-on-accent hover:bg-accent-primary-hover focus-visible:focus-ring disabled:opacity-50"
             >
-              {resolution === "rename" ? "Rename and import" : resolution === "replace" ? "Replace and import" : "Skip"}
+              {resolution === "rename"
+                ? "Rename and import"
+                : resolution === "replace"
+                  ? "Replace and import"
+                  : "Skip"}
             </button>
             <a
               href={`/notes/${conflictingNoteId}`}

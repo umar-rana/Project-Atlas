@@ -44,9 +44,7 @@ function MetricCard({
 }
 
 function SkeletonCard() {
-  return (
-    <div className="h-36 animate-pulse rounded-xl border border-white/10 bg-white/5" />
-  );
+  return <div className="h-36 animate-pulse rounded-xl border border-white/10 bg-white/5" />;
 }
 
 export function AdminDashboardClient() {
@@ -68,7 +66,7 @@ export function AdminDashboardClient() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="sm:grid-cols-2 lg:grid-cols-3 grid grid-cols-1 gap-4">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
         ) : data ? (

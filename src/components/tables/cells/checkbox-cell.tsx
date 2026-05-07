@@ -24,12 +24,14 @@ export function CheckboxCell({ value, isSelected, onCommit }: CheckboxCellProps)
         isSelected ? "bg-accent-primary-subtle ring-1 ring-inset ring-accent-primary" : "",
       )}
     >
-      <div className={cn(
-        "flex h-4 w-4 items-center justify-center rounded-sm border transition-colors",
-        checked
-          ? "border-accent-primary bg-accent-primary"
-          : "border-border-default bg-surface-base",
-      )}>
+      <div
+        className={cn(
+          "flex h-4 w-4 items-center justify-center rounded-sm border transition-colors",
+          checked
+            ? "border-accent-primary bg-accent-primary"
+            : "border-border-default bg-surface-base",
+        )}
+      >
         {checked && <Check size={10} className="text-text-on-accent" />}
       </div>
     </div>

@@ -124,9 +124,7 @@ export function runTier1(
 
   let workingText = quick.title;
 
-  let due_date: Date | undefined = quick.due_date
-    ? setEodIfMidnight(quick.due_date)
-    : undefined;
+  let due_date: Date | undefined = quick.due_date ? setEodIfMidnight(quick.due_date) : undefined;
 
   if (!due_date) {
     const chronoResult = parseDateWithChrono(workingText, options.userTimezone);

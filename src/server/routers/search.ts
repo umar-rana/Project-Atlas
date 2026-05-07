@@ -269,7 +269,7 @@ export const searchRouter = router({
         id: t.id,
         title: t.title,
         project_id: t.project_id,
-        project_title: t.project_id ? projectMap.get(t.project_id) ?? null : null,
+        project_title: t.project_id ? (projectMap.get(t.project_id) ?? null) : null,
         perspective: classify(t),
       }));
     }),

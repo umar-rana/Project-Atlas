@@ -62,17 +62,17 @@ export default async function RootLayout({
 
   return (
     <ClerkProvider
-        signInUrl="/sign-in"
-        signUpUrl="/sign-up"
-        signInFallbackRedirectUrl="/tasks"
-        signUpFallbackRedirectUrl="/tasks"
-      >
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      signInFallbackRedirectUrl="/tasks"
+      signUpFallbackRedirectUrl="/tasks"
+    >
       <html
         lang="en"
         suppressHydrationWarning
         className={`${fontUi.variable} ${fontReading.variable} ${fontMono.variable}`}
       >
-        <body className="bg-surface-base text-text-primary font-ui">
+        <body className="bg-surface-base font-ui text-text-primary">
           <a
             href="#main-content"
             className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-2 focus-visible:top-2 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-surface-base focus-visible:px-4 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus"
@@ -86,9 +86,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <ThemeCookieSync />
-            <TRPCProvider>
-              {children}
-            </TRPCProvider>
+            <TRPCProvider>{children}</TRPCProvider>
             <Toaster />
           </ThemeProvider>
         </body>

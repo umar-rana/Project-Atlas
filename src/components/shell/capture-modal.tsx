@@ -12,7 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { useShellStore } from "@/lib/shell/store";
 import { trpc } from "@/lib/trpc/client";
-import { CaptureReviewModal, type ParsedCaptureFields } from "@/components/tasks/capture-review-modal";
+import {
+  CaptureReviewModal,
+  type ParsedCaptureFields,
+} from "@/components/tasks/capture-review-modal";
 import { Paperclip, X as XIcon, LayoutTemplate } from "lucide-react";
 import { validateFile } from "@/core/attachments/validators";
 import { TemplatePicker } from "@/components/task-templates/template-picker";
@@ -40,10 +43,15 @@ export function CaptureModal(): React.ReactElement {
   const { data: userData } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
   const capturePrefs = React.useMemo(() => {
     const rawPrefs = (userData as { tasks_prefs?: unknown } | undefined)?.tasks_prefs;
-    const prefs = (rawPrefs !== null && typeof rawPrefs === "object" ? rawPrefs : {}) as Record<string, unknown>;
-    const cp = (prefs.capture_prefs !== null && typeof prefs.capture_prefs === "object"
-      ? prefs.capture_prefs
-      : {}) as Record<string, unknown>;
+    const prefs = (rawPrefs !== null && typeof rawPrefs === "object" ? rawPrefs : {}) as Record<
+      string,
+      unknown
+    >;
+    const cp = (
+      prefs.capture_prefs !== null && typeof prefs.capture_prefs === "object"
+        ? prefs.capture_prefs
+        : {}
+    ) as Record<string, unknown>;
     return {
       parseReviewModal: (cp.parse_review_modal as string | undefined) ?? "never",
     };
@@ -74,7 +82,9 @@ export function CaptureModal(): React.ReactElement {
       form.append("parent_id", captureId);
       try {
         await fetch("/api/attachments/upload", { method: "POST", body: form });
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     if (files.length > 0) {
       utils.tasks.list.invalidate();
@@ -195,7 +205,9 @@ export function CaptureModal(): React.ReactElement {
             tags: parsed.tags ?? [],
             contexts: parsed.contexts ?? [],
             flagged: parsed.flagged ?? false,
-            parse_tier: (parsed.parse_tier as "local_only" | "local_plus_ai" | "fallback_only") ?? "local_only",
+            parse_tier:
+              (parsed.parse_tier as "local_only" | "local_plus_ai" | "fallback_only") ??
+              "local_only",
             local_confidence: parsed.local_confidence ?? 0,
           });
           return;
@@ -240,7 +252,11 @@ export function CaptureModal(): React.ReactElement {
     setText(fields.title);
   }
 
-  const isPending = parseAndCreate.isPending || preview.isPending || commitReview.isPending || instantiateTemplate.isPending;
+  const isPending =
+    parseAndCreate.isPending ||
+    preview.isPending ||
+    commitReview.isPending ||
+    instantiateTemplate.isPending;
   const canCapture = pendingTemplate ? true : !!text.trim();
 
   return (
@@ -252,12 +268,19 @@ export function CaptureModal(): React.ReactElement {
           </DialogHeader>
           <div
             className="px-4 py-3"
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
             onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length) stageFiles(e.dataTransfer.files); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              if (e.dataTransfer.files.length) stageFiles(e.dataTransfer.files);
+            }}
           >
             {pendingTemplate && (
-              <div className="mb-2 flex items-center gap-1.5 rounded-md border border-accent-primary/30 bg-accent-primary-muted px-2.5 py-1.5">
+              <div className="border-accent-primary/30 mb-2 flex items-center gap-1.5 rounded-md border bg-accent-primary-muted px-2.5 py-1.5">
                 <LayoutTemplate size={12} className="text-accent-primary" aria-hidden />
                 <span className="font-ui text-xs text-accent-primary">
                   Template: {pendingTemplate.fields.title}
@@ -265,8 +288,11 @@ export function CaptureModal(): React.ReactElement {
                 <button
                   type="button"
                   aria-label="Clear template"
-                  onClick={() => { setPendingTemplate(null); setText(""); }}
-                  className="ml-auto text-accent-primary/60 hover:text-accent-primary"
+                  onClick={() => {
+                    setPendingTemplate(null);
+                    setText("");
+                  }}
+                  className="text-accent-primary/60 ml-auto hover:text-accent-primary"
                 >
                   <XIcon size={12} aria-hidden />
                 </button>
@@ -277,22 +303,28 @@ export function CaptureModal(): React.ReactElement {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={pendingTemplate
-                ? "Edit task title or press ⌘⏎ to capture…"
-                : "What's on your mind? Use #tag, ~~context, >>project, @person, today/tomorrow…"}
+              placeholder={
+                pendingTemplate
+                  ? "Edit task title or press ⌘⏎ to capture…"
+                  : "What's on your mind? Use #tag, ~~context, >>project, @person, today/tomorrow…"
+              }
               rows={5}
               className={`w-full resize-none rounded-md border bg-surface-base px-3 py-2 font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus ${isDragging ? "border-accent-primary" : "border-border-default"}`}
             />
             {!pendingTemplate && (
               <p className="mt-1 font-ui text-xs text-text-tertiary">
-                Press ⌘⏎ to capture · #tag · ~~context · &gt;&gt;project · @person · today / tomorrow / next monday
+                Press ⌘⏎ to capture · #tag · ~~context · &gt;&gt;project · @person · today /
+                tomorrow / next monday
               </p>
             )}
 
             {stagedFiles.length > 0 && (
               <ul className="mt-2 flex flex-col gap-1">
                 {stagedFiles.map((f, i) => (
-                  <li key={i} className="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-surface-raised px-2 py-1">
+                  <li
+                    key={i}
+                    className="flex items-center justify-between gap-2 rounded-sm border border-border-subtle bg-surface-raised px-2 py-1"
+                  >
                     <span className="truncate font-ui text-xs text-text-secondary">{f.name}</span>
                     <button
                       type="button"
@@ -315,22 +347,27 @@ export function CaptureModal(): React.ReactElement {
             >
               Cancel
             </button>
-            <TemplatePicker
-              onSelect={handleTemplateSelect}
-              side="top"
-              align="start"
-            />
+            <TemplatePicker onSelect={handleTemplateSelect} side="top" align="start" />
             <label className="cursor-pointer rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover">
-              <Paperclip size={14} className="inline mr-1" />
+              <Paperclip size={14} className="mr-1 inline" />
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
                 className="sr-only"
-                onChange={(e) => { if (e.target.files) { stageFiles(e.target.files); e.target.value = ""; } }}
+                onChange={(e) => {
+                  if (e.target.files) {
+                    stageFiles(e.target.files);
+                    e.target.value = "";
+                  }
+                }}
               />
               Attach
-              {stagedFiles.length > 0 && <span className="ml-1 rounded-full bg-accent-primary px-1.5 text-2xs text-white">{stagedFiles.length}</span>}
+              {stagedFiles.length > 0 && (
+                <span className="ml-1 rounded-full bg-accent-primary px-1.5 text-2xs text-white">
+                  {stagedFiles.length}
+                </span>
+              )}
             </label>
             <button
               type="button"

@@ -8,18 +8,31 @@ import { validateCellValue } from "@/core/tables/validators";
 import { injectFormulaVirtualCells, validateFormula } from "@/core/tables/formula";
 import type { ColumnType } from "@/core/tables/types";
 import type { TableCellData } from "@/core/tables/types";
-import { createLogger } from "@/core/logging";
 import {
   checkCsvImportRateLimit,
   RATE_LIMIT_ERROR_MESSAGE,
   runTableImport,
 } from "@/core/tables/csv-import-service";
 
-const log = createLogger({ module: "tables" });
-
-const COLUMN_TYPES = ["text", "number", "date", "checkbox", "single_select", "currency", "multi_select", "formula"] as const;
-const AGGREGATION_TYPES = ["sum", "average", "count", "min", "max", "checked_ratio", "none"] as const;
-
+const COLUMN_TYPES = [
+  "text",
+  "number",
+  "date",
+  "checkbox",
+  "single_select",
+  "currency",
+  "multi_select",
+  "formula",
+] as const;
+const AGGREGATION_TYPES = [
+  "sum",
+  "average",
+  "count",
+  "min",
+  "max",
+  "checked_ratio",
+  "none",
+] as const;
 
 function toNumber(d: Prisma.Decimal | null): number {
   return d ? parseFloat(d.toString()) : 0;
@@ -232,7 +245,9 @@ export const tablesRouter = router({
         data.folder = input.folder_id ? { connect: { id: input.folder_id } } : { disconnect: true };
       }
       if (input.project_id !== undefined) {
-        data.project = input.project_id ? { connect: { id: input.project_id } } : { disconnect: true };
+        data.project = input.project_id
+          ? { connect: { id: input.project_id } }
+          : { disconnect: true };
       }
 
       const updated = await db.table.update({ where: { id: input.id }, data });
@@ -308,7 +323,13 @@ export const tablesRouter = router({
         }));
 
         // Pass the new column's name as selfName so circular ref detection includes it
-        const errors = validateFormula(expression, returnType, colsForValidation, undefined, input.name);
+        const errors = validateFormula(
+          expression,
+          returnType,
+          colsForValidation,
+          undefined,
+          input.name,
+        );
         if (errors.length > 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -364,13 +385,16 @@ export const tablesRouter = router({
         where: { id: input.id, deleted_at: null },
         include: { table: { select: { user_id: true, id: true } } },
       });
-      if (!column || column.table.user_id !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!column || column.table.user_id !== ctx.user.id)
+        throw new TRPCError({ code: "NOT_FOUND" });
 
       // Validate formula config changes
       if (column.type === "formula" && input.config !== undefined) {
         const cfg = input.config as { expression?: string; return_type?: string };
-        const expression = cfg.expression ?? (column.config as { expression?: string }).expression ?? "";
-        const returnType = cfg.return_type ?? (column.config as { return_type?: string }).return_type ?? "text";
+        const expression =
+          cfg.expression ?? (column.config as { expression?: string }).expression ?? "";
+        const returnType =
+          cfg.return_type ?? (column.config as { return_type?: string }).return_type ?? "text";
 
         const tableColumns = await db.tableColumn.findMany({
           where: { table_id: column.table.id, deleted_at: null },
@@ -460,7 +484,8 @@ export const tablesRouter = router({
         where: { id: input.id, deleted_at: null },
         include: { table: { select: { user_id: true, id: true } } },
       });
-      if (!column || column.table.user_id !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!column || column.table.user_id !== ctx.user.id)
+        throw new TRPCError({ code: "NOT_FOUND" });
 
       await db.tableColumn.update({
         where: { id: input.id },
@@ -510,7 +535,9 @@ export const tablesRouter = router({
             select: { position: true },
           });
           if (nextRow) {
-            position = new Prisma.Decimal(afterRow.position).plus(new Prisma.Decimal(nextRow.position)).dividedBy(2);
+            position = new Prisma.Decimal(afterRow.position)
+              .plus(new Prisma.Decimal(nextRow.position))
+              .dividedBy(2);
           } else {
             position = new Prisma.Decimal(afterRow.position).plus(1000);
           }
@@ -651,12 +678,18 @@ export const tablesRouter = router({
 
       // Formula columns are read-only
       if (column.type === "formula") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Formula columns are read-only and cannot be edited directly." });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Formula columns are read-only and cannot be edited directly.",
+        });
       }
 
       const validation = validateCellValue(column.type as ColumnType, input.value);
       if (!validation.valid) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: validation.error ?? "Invalid cell value" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: validation.error ?? "Invalid cell value",
+        });
       }
 
       const cell = await db.tableCell.upsert({
@@ -665,10 +698,10 @@ export const tablesRouter = router({
           id: newId(),
           row_id: input.row_id,
           column_id: input.column_id,
-          value: validation.normalized as Prisma.InputJsonValue ?? Prisma.JsonNull,
+          value: (validation.normalized as Prisma.InputJsonValue) ?? Prisma.JsonNull,
         },
         update: {
-          value: validation.normalized as Prisma.InputJsonValue ?? Prisma.JsonNull,
+          value: (validation.normalized as Prisma.InputJsonValue) ?? Prisma.JsonNull,
         },
       });
 

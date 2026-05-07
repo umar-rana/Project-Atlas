@@ -109,7 +109,11 @@ export const captureRouter = router({
         const trimmed = ctxName.trim();
         if (!trimmed) continue;
         let ctxRow = await db.context.findFirst({
-          where: { user_id: ctx.user.id, name: { equals: trimmed, mode: "insensitive" }, deleted_at: null },
+          where: {
+            user_id: ctx.user.id,
+            name: { equals: trimmed, mode: "insensitive" },
+            deleted_at: null,
+          },
           select: { id: true },
         });
         if (!ctxRow) {
@@ -121,7 +125,11 @@ export const captureRouter = router({
           } catch {
             // Concurrent creation race — re-fetch
             ctxRow = await db.context.findFirst({
-              where: { user_id: ctx.user.id, name: { equals: trimmed, mode: "insensitive" }, deleted_at: null },
+              where: {
+                user_id: ctx.user.id,
+                name: { equals: trimmed, mode: "insensitive" },
+                deleted_at: null,
+              },
               select: { id: true },
             });
           }
@@ -289,30 +297,29 @@ export const captureRouter = router({
       return parseLog ?? null;
     }),
 
-  inboxProjectHints: protectedProcedure
-    .query(async ({ ctx }) => {
-      const inboxTasks = await db.task.findMany({
-        where: { user_id: ctx.user.id, project_id: null, status: "active", deleted_at: null },
-        select: { id: true },
-      });
+  inboxProjectHints: protectedProcedure.query(async ({ ctx }) => {
+    const inboxTasks = await db.task.findMany({
+      where: { user_id: ctx.user.id, project_id: null, status: "active", deleted_at: null },
+      select: { id: true },
+    });
 
-      const taskIds = inboxTasks.map((t) => t.id);
-      if (taskIds.length === 0) return {};
+    const taskIds = inboxTasks.map((t) => t.id);
+    if (taskIds.length === 0) return {};
 
-      const logs = await db.captureParseLog.findMany({
-        where: { user_id: ctx.user.id, task_id: { in: taskIds }, project_hint: { not: null } },
-        orderBy: { created_at: "desc" },
-        select: { task_id: true, project_hint: true },
-      });
+    const logs = await db.captureParseLog.findMany({
+      where: { user_id: ctx.user.id, task_id: { in: taskIds }, project_hint: { not: null } },
+      orderBy: { created_at: "desc" },
+      select: { task_id: true, project_hint: true },
+    });
 
-      const result: Record<string, string> = {};
-      for (const l of logs) {
-        if (l.task_id && l.project_hint && !result[l.task_id]) {
-          result[l.task_id] = l.project_hint;
-        }
+    const result: Record<string, string> = {};
+    for (const l of logs) {
+      if (l.task_id && l.project_hint && !result[l.task_id]) {
+        result[l.task_id] = l.project_hint;
       }
-      return result;
-    }),
+    }
+    return result;
+  }),
 
   logParseOverride: protectedProcedure
     .input(
@@ -359,7 +366,7 @@ export const captureRouter = router({
         where: { id: ctx.user.id },
         select: { tasks_prefs: true },
       });
-      const prefs = ((user?.tasks_prefs ?? {}) as Record<string, unknown>);
+      const prefs = (user?.tasks_prefs ?? {}) as Record<string, unknown>;
       await db.user.update({
         where: { id: ctx.user.id },
         data: {
@@ -385,18 +392,24 @@ export const captureRouter = router({
         where: { id: ctx.user.id },
         select: { tasks_prefs: true },
       });
-      const prefs = ((user?.tasks_prefs ?? {}) as Record<string, unknown>);
+      const prefs = (user?.tasks_prefs ?? {}) as Record<string, unknown>;
       const capturePrefs: Record<string, unknown> = {
         ...(typeof prefs.capture_prefs === "object" && prefs.capture_prefs !== null
           ? (prefs.capture_prefs as Record<string, unknown>)
           : {}),
       };
-      if (input.ai_capture_enabled !== undefined) capturePrefs.ai_capture_enabled = input.ai_capture_enabled;
-      if (input.parse_review_modal !== undefined) capturePrefs.parse_review_modal = input.parse_review_modal;
-      if (input.auto_create_tags !== undefined) capturePrefs.auto_create_tags = input.auto_create_tags;
-      if (input.auto_link_projects !== undefined) capturePrefs.auto_link_projects = input.auto_link_projects;
-      if (input.auto_link_people !== undefined) capturePrefs.auto_link_people = input.auto_link_people;
-      if (input.ai_fallback_enabled !== undefined) capturePrefs.ai_fallback_enabled = input.ai_fallback_enabled;
+      if (input.ai_capture_enabled !== undefined)
+        capturePrefs.ai_capture_enabled = input.ai_capture_enabled;
+      if (input.parse_review_modal !== undefined)
+        capturePrefs.parse_review_modal = input.parse_review_modal;
+      if (input.auto_create_tags !== undefined)
+        capturePrefs.auto_create_tags = input.auto_create_tags;
+      if (input.auto_link_projects !== undefined)
+        capturePrefs.auto_link_projects = input.auto_link_projects;
+      if (input.auto_link_people !== undefined)
+        capturePrefs.auto_link_people = input.auto_link_people;
+      if (input.ai_fallback_enabled !== undefined)
+        capturePrefs.ai_fallback_enabled = input.ai_fallback_enabled;
 
       await db.user.update({
         where: { id: ctx.user.id },
@@ -491,15 +504,29 @@ export const captureRouter = router({
       const aiLogs = logs.filter((l) => l.parse_tier !== "local_only");
       const avgLocalMs =
         localLogs.length > 0
-          ? Math.round(localLogs.reduce((s: number, l) => s + (l.parse_duration_ms ?? 0), 0) / localLogs.length)
+          ? Math.round(
+              localLogs.reduce((s: number, l) => s + (l.parse_duration_ms ?? 0), 0) /
+                localLogs.length,
+            )
           : 0;
       const avgAiMs =
         aiLogs.length > 0
-          ? Math.round(aiLogs.reduce((s: number, l) => s + (l.parse_duration_ms ?? 0), 0) / aiLogs.length)
+          ? Math.round(
+              aiLogs.reduce((s: number, l) => s + (l.parse_duration_ms ?? 0), 0) / aiLogs.length,
+            )
           : 0;
 
       if (total === 0) {
-        return { avgConfidence: 0, aiFailureRate: 0, aiAttempts: 0, aiFailures: 0, avgLocalMs: 0, avgAiMs: 0, total, days: input.days };
+        return {
+          avgConfidence: 0,
+          aiFailureRate: 0,
+          aiAttempts: 0,
+          aiFailures: 0,
+          avgLocalMs: 0,
+          avgAiMs: 0,
+          total,
+          days: input.days,
+        };
       }
 
       return {
@@ -549,7 +576,9 @@ export const captureRouter = router({
       });
 
       // Use distinct task count so one capture with multiple overridden fields counts once
-      const distinctOverriddenTasks = new Set(overrideEvents.map((e) => e.entity_id).filter(Boolean));
+      const distinctOverriddenTasks = new Set(
+        overrideEvents.map((e) => e.entity_id).filter(Boolean),
+      );
       const overrideRate = totalCaptures > 0 ? distinctOverriddenTasks.size / totalCaptures : 0;
 
       let previousOverrideRate: number | null = null;
@@ -703,7 +732,8 @@ export const captureRouter = router({
         },
       });
 
-      const header = "id,created_at,parse_tier,local_confidence,ai_used,ai_cost_usd,parse_duration_ms,source,title\n";
+      const header =
+        "id,created_at,parse_tier,local_confidence,ai_used,ai_cost_usd,parse_duration_ms,source,title\n";
       const rows = logs.map((l) => {
         const title = `"${(l.title ?? "").replace(/"/g, '""')}"`;
         return [
@@ -774,7 +804,8 @@ export const captureRouter = router({
       const data: Record<string, unknown> = {};
       if (input.title !== undefined) data.title = input.title;
       if (input.tags !== undefined) data.tags = input.tags;
-      if (input.due_date !== undefined) data.due_date = input.due_date ? new Date(input.due_date) : null;
+      if (input.due_date !== undefined)
+        data.due_date = input.due_date ? new Date(input.due_date) : null;
       if (input.action_items !== undefined) data.action_items = input.action_items;
 
       const updated = await db.capture.update({
@@ -845,16 +876,14 @@ export const captureRouter = router({
       };
     }),
 
-  getMigrationSummary: protectedProcedure
-    .query(async ({ ctx }) => {
-      return await readAndClearMigrationSummary(ctx.user.id);
-    }),
+  getMigrationSummary: protectedProcedure.query(async ({ ctx }) => {
+    return await readAndClearMigrationSummary(ctx.user.id);
+  }),
 
-  dismissMigrationSummary: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      await dismissMigrationSummary(ctx.user.id);
-      return { ok: true };
-    }),
+  dismissMigrationSummary: protectedProcedure.mutation(async ({ ctx }) => {
+    await dismissMigrationSummary(ctx.user.id);
+    return { ok: true };
+  }),
 
   listInbox: protectedProcedure
     .input(
@@ -907,25 +936,51 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true, state: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       if (input.project_id) {
         const proj = await db.project.findFirst({
           where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
           select: { id: true },
         });
-        if (!proj) throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
+        if (!proj)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Project not found or not owned by user",
+          });
       }
       if (input.context_ids.length > 0) {
-        const count = await db.context.count({ where: { id: { in: input.context_ids }, user_id: ctx.user.id, deleted_at: null } });
-        if (count !== input.context_ids.length) throw new TRPCError({ code: "FORBIDDEN", message: "One or more contexts not found or not owned by user" });
+        const count = await db.context.count({
+          where: { id: { in: input.context_ids }, user_id: ctx.user.id, deleted_at: null },
+        });
+        if (count !== input.context_ids.length)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "One or more contexts not found or not owned by user",
+          });
       }
       if (input.tag_ids.length > 0) {
-        const count = await db.tag.count({ where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null } });
-        if (count !== input.tag_ids.length) throw new TRPCError({ code: "FORBIDDEN", message: "One or more tags not found or not owned by user" });
+        const count = await db.tag.count({
+          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+        });
+        if (count !== input.tag_ids.length)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "One or more tags not found or not owned by user",
+          });
       }
 
       const taskId = newId();
@@ -985,17 +1040,31 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true, raw_text: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       if (input.project_id) {
         const proj = await db.project.findFirst({
           where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
           select: { id: true },
         });
-        if (!proj) throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
+        if (!proj)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Project not found or not owned by user",
+          });
       }
 
       const noteId = newId();
@@ -1011,7 +1080,10 @@ export const captureRouter = router({
             purpose: input.purpose,
             project_id: input.project_id ?? undefined,
             body_text: bodyText,
-            body_json: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }] }),
+            body_json: JSON.stringify({
+              type: "doc",
+              content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }],
+            }),
             body_markdown: bodyText,
           },
         }),
@@ -1050,10 +1122,20 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true, raw_text: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       let projectId: string;
       if (input.existing_project_id) {
@@ -1072,12 +1154,20 @@ export const captureRouter = router({
           projectId = existing.id;
         } else {
           const created = await db.project.create({
-            data: { id: newId(), user_id: ctx.user.id, title: input.new_project_name, type: input.new_project_type ?? "project" },
+            data: {
+              id: newId(),
+              user_id: ctx.user.id,
+              title: input.new_project_name,
+              type: input.new_project_type ?? "project",
+            },
           });
           projectId = created.id;
         }
       } else {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Must provide existing_project_id or new_project_name" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Must provide existing_project_id or new_project_name",
+        });
       }
 
       const now = new Date();
@@ -1097,7 +1187,12 @@ export const captureRouter = router({
           }),
           db.capture.update({
             where: { id: input.capture_id },
-            data: { state: "processed", processed_at: now, processed_to_type: "project_task", processed_to_id: entityId },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "project_task",
+              processed_to_id: entityId,
+            },
           }),
         ]);
       } else {
@@ -1113,13 +1208,21 @@ export const captureRouter = router({
               purpose,
               project_id: projectId,
               body_text: bodyText,
-              body_json: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }] }),
+              body_json: JSON.stringify({
+                type: "doc",
+                content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }],
+              }),
               body_markdown: bodyText,
             },
           }),
           db.capture.update({
             where: { id: input.capture_id },
-            data: { state: "processed", processed_at: now, processed_to_type: "project_note", processed_to_id: entityId },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "project_note",
+              processed_to_id: entityId,
+            },
           }),
         ]);
       }
@@ -1129,7 +1232,12 @@ export const captureRouter = router({
         entity_type: "Capture",
         entity_id: input.capture_id,
         action: "capture_processed",
-        meta: { disposition: "project", project_id: projectId, target_type: input.target_type, entity_id: entityId },
+        meta: {
+          disposition: "project",
+          project_id: projectId,
+          target_type: input.target_type,
+          entity_id: entityId,
+        },
       }).catch((err: unknown) => log.warn({ err }, "processToProject audit log failed"));
 
       return { projectId, entityId };
@@ -1147,14 +1255,30 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       if (input.tag_ids.length > 0) {
-        const count = await db.tag.count({ where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null } });
-        if (count !== input.tag_ids.length) throw new TRPCError({ code: "FORBIDDEN", message: "One or more tags not found or not owned by user" });
+        const count = await db.tag.count({
+          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+        });
+        if (count !== input.tag_ids.length)
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "One or more tags not found or not owned by user",
+          });
       }
 
       const taskId = newId();
@@ -1168,7 +1292,9 @@ export const captureRouter = router({
             title: input.title,
             notes: input.notes ?? undefined,
             is_someday: true,
-            someday_review_date: input.someday_review_date ? new Date(input.someday_review_date) : undefined,
+            someday_review_date: input.someday_review_date
+              ? new Date(input.someday_review_date)
+              : undefined,
             status: "active",
           },
         }),
@@ -1177,7 +1303,12 @@ export const captureRouter = router({
         ),
         db.capture.update({
           where: { id: input.capture_id },
-          data: { state: "processed", processed_at: now, processed_to_type: "someday", processed_to_id: taskId },
+          data: {
+            state: "processed",
+            processed_at: now,
+            processed_to_type: "someday",
+            processed_to_id: taskId,
+          },
         }),
       ]);
 
@@ -1211,10 +1342,20 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       const taskId = newId();
       const now = new Date();
@@ -1233,7 +1374,12 @@ export const captureRouter = router({
         }),
         db.capture.update({
           where: { id: input.capture_id },
-          data: { state: "processed", processed_at: now, processed_to_type: "waiting_for", processed_to_id: taskId },
+          data: {
+            state: "processed",
+            processed_at: now,
+            processed_to_type: "waiting_for",
+            processed_to_id: taskId,
+          },
         }),
       ]);
 
@@ -1242,14 +1388,22 @@ export const captureRouter = router({
         entity_type: "Capture",
         entity_id: input.capture_id,
         action: "capture_processed",
-        meta: { disposition: "waiting_for", task_id: taskId, delegated_to: input.delegated_to_text },
+        meta: {
+          disposition: "waiting_for",
+          task_id: taskId,
+          delegated_to: input.delegated_to_text,
+        },
       }).catch((err: unknown) => log.warn({ err }, "processToWaitingFor audit log failed"));
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Task",
         entity_id: taskId,
         action: "task_delegated",
-        meta: { from_capture: input.capture_id, delegated_to: input.delegated_to_text ?? null, follow_up_date: input.follow_up_date ?? null },
+        meta: {
+          from_capture: input.capture_id,
+          delegated_to: input.delegated_to_text ?? null,
+          follow_up_date: input.follow_up_date ?? null,
+        },
       }).catch((err: unknown) => log.warn({ err }, "task_delegated audit log failed"));
 
       return { taskId };
@@ -1264,10 +1418,20 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       const taskId = newId();
       const now = new Date();
@@ -1284,7 +1448,12 @@ export const captureRouter = router({
         }),
         db.capture.update({
           where: { id: input.capture_id },
-          data: { state: "processed", processed_at: now, processed_to_type: "two_minute_done", processed_to_id: taskId },
+          data: {
+            state: "processed",
+            processed_at: now,
+            processed_to_type: "two_minute_done",
+            processed_to_id: taskId,
+          },
         }),
       ]);
 
@@ -1293,7 +1462,11 @@ export const captureRouter = router({
         entity_type: "Capture",
         entity_id: input.capture_id,
         action: "capture_processed",
-        meta: { disposition: "two_minute_done", task_id: taskId, note: "completed via 2-minute rule" },
+        meta: {
+          disposition: "two_minute_done",
+          task_id: taskId,
+          note: "completed via 2-minute rule",
+        },
       }).catch((err: unknown) => log.warn({ err }, "processToTwoMinuteDone audit log failed"));
 
       return { taskId };
@@ -1307,15 +1480,30 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null, state: { in: ["raw", "proposed"] }, processed_at: null },
+        where: {
+          id: input.capture_id,
+          user_id: ctx.user.id,
+          deleted_at: null,
+          state: { in: ["raw", "proposed"] },
+          processed_at: null,
+        },
         select: { id: true },
       });
-      if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found or already processed" });
+      if (!capture)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Capture not found or already processed",
+        });
 
       const now = new Date();
       await db.capture.update({
         where: { id: input.capture_id },
-        data: { state: "processed", processed_at: now, processed_to_type: "trashed", processed_to_id: null },
+        data: {
+          state: "processed",
+          processed_at: now,
+          processed_to_type: "trashed",
+          processed_to_id: null,
+        },
       });
 
       await logActivity({
@@ -1373,7 +1561,12 @@ export const captureRouter = router({
             }),
             db.capture.update({
               where: { id: capture.id },
-              data: { state: "processed", processed_at: now, processed_to_type: "task", processed_to_id: taskId },
+              data: {
+                state: "processed",
+                processed_at: now,
+                processed_to_type: "task",
+                processed_to_id: taskId,
+              },
             }),
           ]);
           processedToType = "task";
@@ -1389,13 +1582,21 @@ export const captureRouter = router({
                 title: displayTitle,
                 purpose: "note",
                 body_text: bodyText,
-                body_json: JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }] }),
+                body_json: JSON.stringify({
+                  type: "doc",
+                  content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }],
+                }),
                 body_markdown: bodyText,
               },
             }),
             db.capture.update({
               where: { id: capture.id },
-              data: { state: "processed", processed_at: now, processed_to_type: "note", processed_to_id: noteId },
+              data: {
+                state: "processed",
+                processed_at: now,
+                processed_to_type: "note",
+                processed_to_id: noteId,
+              },
             }),
           ]);
           processedToType = "note";
@@ -1414,7 +1615,12 @@ export const captureRouter = router({
             }),
             db.capture.update({
               where: { id: capture.id },
-              data: { state: "processed", processed_at: now, processed_to_type: "someday", processed_to_id: taskId },
+              data: {
+                state: "processed",
+                processed_at: now,
+                processed_to_type: "someday",
+                processed_to_id: taskId,
+              },
             }),
           ]);
           processedToType = "someday";
@@ -1422,7 +1628,12 @@ export const captureRouter = router({
         } else {
           await db.capture.update({
             where: { id: capture.id },
-            data: { state: "processed", processed_at: now, processed_to_type: "trashed", processed_to_id: null },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "trashed",
+              processed_to_id: null,
+            },
           });
           processedToType = "trashed";
         }
@@ -1434,7 +1645,12 @@ export const captureRouter = router({
           entity_type: "Capture",
           entity_id: capture.id,
           action: "capture_bulk_processed",
-          meta: { disposition: input.disposition, processed_to_type: processedToType, processed_to_id: processedToId, bulk: true },
+          meta: {
+            disposition: input.disposition,
+            processed_to_type: processedToType,
+            processed_to_id: processedToId,
+            bulk: true,
+          },
         }).catch((err: unknown) => log.warn({ err }, "bulkProcess audit log failed"));
       }
 
@@ -1450,7 +1666,13 @@ export const captureRouter = router({
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
         where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null },
-        select: { id: true, state: true, processed_at: true, processed_to_type: true, processed_to_id: true },
+        select: {
+          id: true,
+          state: true,
+          processed_at: true,
+          processed_to_type: true,
+          processed_to_id: true,
+        },
       });
       if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found" });
       if (capture.state !== "processed") {
@@ -1458,7 +1680,10 @@ export const captureRouter = router({
       }
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
       if (!capture.processed_at || capture.processed_at < fiveMinutesAgo) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Undo window has expired (5 minutes)" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Undo window has expired (5 minutes)",
+        });
       }
 
       const mostRecentProcessed = await db.capture.findFirst({
@@ -1467,7 +1692,10 @@ export const captureRouter = router({
         select: { id: true },
       });
       if (!mostRecentProcessed || mostRecentProcessed.id !== input.capture_id) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Can only undo the most recently processed capture" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Can only undo the most recently processed capture",
+        });
       }
 
       const ops: Promise<unknown>[] = [];
@@ -1475,7 +1703,14 @@ export const captureRouter = router({
       const entityType = capture.processed_to_type;
       const entityId = capture.processed_to_id;
 
-      if (entityId && (entityType === "task" || entityType === "someday" || entityType === "waiting_for" || entityType === "two_minute_done" || entityType === "project_task")) {
+      if (
+        entityId &&
+        (entityType === "task" ||
+          entityType === "someday" ||
+          entityType === "waiting_for" ||
+          entityType === "two_minute_done" ||
+          entityType === "project_task")
+      ) {
         ops.push(
           db.task.updateMany({
             where: { id: entityId, user_id: ctx.user.id },
@@ -1494,7 +1729,12 @@ export const captureRouter = router({
       ops.push(
         db.capture.update({
           where: { id: input.capture_id },
-          data: { state: "proposed", processed_at: null, processed_to_type: null, processed_to_id: null },
+          data: {
+            state: "proposed",
+            processed_at: null,
+            processed_to_type: null,
+            processed_to_id: null,
+          },
         }),
       );
 

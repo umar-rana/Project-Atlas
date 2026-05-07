@@ -29,17 +29,14 @@ const ABSTRACT_WORDS = new Set([
   "kind of",
 ]);
 
-export function scoreConfidence(
-  raw: string,
-  partial: PartialParse,
-): LocalParseConfidence {
+export function scoreConfidence(raw: string, partial: PartialParse): LocalParseConfidence {
   const signals: ConfidenceSignal[] = [];
   let score = 0;
 
   // Signal 1: Date was found (+0.30)
   if (partial.due_date || partial.defer_date) {
-    signals.push({ name: "date_found", contribution: 0.30 });
-    score += 0.30;
+    signals.push({ name: "date_found", contribution: 0.3 });
+    score += 0.3;
   }
 
   // Signal 2: Clean title quality (+0.25)
@@ -48,15 +45,13 @@ export function scoreConfidence(
     signals.push({ name: "title_quality", contribution: 0.25 });
     score += 0.25;
   } else if (titleWords.length === 1 && (titleWords[0]?.length ?? 0) > 3) {
-    signals.push({ name: "title_quality_weak", contribution: 0.10 });
-    score += 0.10;
+    signals.push({ name: "title_quality_weak", contribution: 0.1 });
+    score += 0.1;
   }
 
   // Signal 3: Reference tokens found (#tag, ~~ctx, >>project) (+0.15)
   const hasReferenceTokens =
-    partial.tags.length > 0 ||
-    partial.contexts.length > 0 ||
-    !!partial.project_hint;
+    partial.tags.length > 0 || partial.contexts.length > 0 || !!partial.project_hint;
   if (hasReferenceTokens) {
     signals.push({ name: "reference_tokens", contribution: 0.15 });
     score += 0.15;
@@ -64,8 +59,8 @@ export function scoreConfidence(
 
   // Signal 4: Entity / verb extraction from compromise (+0.10)
   if (partial.entity_refs.length > 0) {
-    signals.push({ name: "entities_found", contribution: 0.10 });
-    score += 0.10;
+    signals.push({ name: "entities_found", contribution: 0.1 });
+    score += 0.1;
   }
 
   // Signal 5: Vagueness penalty (-0.20 per vague word, max -0.40)
@@ -76,7 +71,7 @@ export function scoreConfidence(
     if (VAGUE_WORDS.has(w)) vagueCount++;
   }
   if (vagueCount > 0) {
-    const penalty = Math.min(vagueCount * 0.20, 0.40);
+    const penalty = Math.min(vagueCount * 0.2, 0.4);
     signals.push({ name: "vague_words", contribution: -penalty });
     score -= penalty;
   }
@@ -87,7 +82,7 @@ export function scoreConfidence(
     if (lowerRaw.includes(phrase)) abstractCount++;
   }
   if (abstractCount > 0) {
-    const penalty = Math.min(abstractCount * 0.15, 0.30);
+    const penalty = Math.min(abstractCount * 0.15, 0.3);
     signals.push({ name: "abstract_language", contribution: -penalty });
     score -= penalty;
   }

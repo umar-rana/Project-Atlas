@@ -23,10 +23,13 @@ export function DispositionWaitingForForm({
 }: DispositionWaitingForFormProps): React.ReactElement {
   const utils = trpc.useUtils();
   const { data: rawUser } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
-  const tasksPrefs = (typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" && (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
-    ? (rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>
-    : {});
-  const waitingForWindow = (tasksPrefs.gtd_waiting_for_default_window as string | undefined) ?? "1w";
+  const tasksPrefs =
+    typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" &&
+    (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
+      ? ((rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>)
+      : {};
+  const waitingForWindow =
+    (tasksPrefs.gtd_waiting_for_default_window as string | undefined) ?? "1w";
   const defaultFollowUpDays = waitingForWindow === "1m" ? 30 : waitingForWindow === "2w" ? 14 : 7;
 
   function defaultFollowUpDateString(): string {
@@ -46,7 +49,7 @@ export function DispositionWaitingForForm({
 
   React.useEffect(() => {
     setFollowUpDate(defaultFollowUpDateString());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultFollowUpDays]);
 
   const mut = trpc.capture.processToWaitingFor.useMutation({
@@ -78,44 +81,93 @@ export function DispositionWaitingForForm({
   }
 
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitDefaults(); }
-    else if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      submitDefaults();
+    } else if (e.key === "Enter" && !e.shiftKey) {
       const target = e.target as HTMLElement;
-      if (target.tagName !== "TEXTAREA") { e.preventDefault(); submit(); }
-    } else if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+      if (target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        submit();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    }
   }
 
-  const inputCls = "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
+  const inputCls =
+    "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
 
   return (
     <div className="flex flex-col gap-3" onKeyDown={handleKey}>
       <div>
         <label className={labelCls}>Title</label>
-        <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} placeholder="Waiting for title…" />
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={inputCls}
+          placeholder="Waiting for title…"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Waiting on (person)</label>
-          <input value={delegatedTo} onChange={(e) => setDelegatedTo(e.target.value)} className={inputCls} placeholder="Name or description…" />
+          <input
+            value={delegatedTo}
+            onChange={(e) => setDelegatedTo(e.target.value)}
+            className={inputCls}
+            placeholder="Name or description…"
+          />
         </div>
         <div>
           <label className={labelCls}>Follow-up date</label>
-          <input type="date" value={followUpDate} onChange={(e) => setFollowUpDate(e.target.value)} className={inputCls} />
+          <input
+            type="date"
+            value={followUpDate}
+            onChange={(e) => setFollowUpDate(e.target.value)}
+            className={inputCls}
+          />
         </div>
       </div>
 
       <div>
         <label className={labelCls}>Notes</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={cn(inputCls, "resize-none")} placeholder="Optional notes…" />
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          className={cn(inputCls, "resize-none")}
+          placeholder="Optional notes…"
+        />
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border-subtle">
-        <button type="button" onClick={onCancel} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover">Cancel</button>
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover"
+        >
+          Cancel
+        </button>
         <div className="flex gap-2">
-          <button type="button" onClick={submitDefaults} disabled={mut.isPending} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50">⌘↵ Defaults</button>
-          <button type="button" onClick={submit} disabled={mut.isPending || !title.trim()} className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50">
+          <button
+            type="button"
+            onClick={submitDefaults}
+            disabled={mut.isPending}
+            className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+          >
+            ⌘↵ Defaults
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={mut.isPending || !title.trim()}
+            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+          >
             {mut.isPending ? "Creating…" : "Add to Waiting For ↵"}
           </button>
         </div>

@@ -55,9 +55,7 @@ export function MediaInbox() {
         return;
       }
     }
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     lastSelectedId.current = id;
   }
 
@@ -77,7 +75,9 @@ export function MediaInbox() {
           <div className="flex items-center justify-between gap-4">
             <h1 className="font-ui text-base font-semibold text-text-primary">Media</h1>
             <div className="flex items-center gap-2">
-              <span className="font-ui text-xs text-text-tertiary">{total} file{total !== 1 ? "s" : ""}</span>
+              <span className="font-ui text-xs text-text-tertiary">
+                {total} file{total !== 1 ? "s" : ""}
+              </span>
               <MediaSort value={sort} onChange={setSort} />
             </div>
           </div>
@@ -90,10 +90,7 @@ export function MediaInbox() {
 
         {selectedIds.length > 0 && (
           <div className="flex justify-center border-b border-border-subtle px-4 py-2">
-            <MediaBulkBar
-              selectedIds={selectedIds}
-              onClear={() => setSelectedIds([])}
-            />
+            <MediaBulkBar selectedIds={selectedIds} onClear={() => setSelectedIds([])} />
           </div>
         )}
 

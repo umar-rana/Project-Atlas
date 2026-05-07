@@ -5,7 +5,11 @@ import { db } from "@/core/db";
 import { withDeleted } from "@/core/db/soft-delete";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
-import { verifyIsOrphan, reattachOrphanData, flagForRecoveryNotification } from "@/core/auth/orphan-recovery";
+import {
+  verifyIsOrphan,
+  reattachOrphanData,
+  flagForRecoveryNotification,
+} from "@/core/auth/orphan-recovery";
 import {
   runInboxMigrationDryRun,
   runInboxMigrationForUser,
@@ -236,8 +240,9 @@ export const adminRouter = router({
               ? withDeleted<Prisma.UserWhereInput>({})
               : {};
 
-        const where: Prisma.UserWhereInput =
-          input.search ? { AND: [filterClause, searchClause] } : filterClause;
+        const where: Prisma.UserWhereInput = input.search
+          ? { AND: [filterClause, searchClause] }
+          : filterClause;
 
         const users = await db.user.findMany({
           where,
@@ -553,66 +558,66 @@ export const adminRouter = router({
         };
       }),
 
-    byId: adminProcedure
-      .input(z.object({ id: z.string().uuid() }))
-      .query(async ({ input }) => {
-        const entry = await db.auditLog.findUnique({
-          where: { id: input.id },
-          select: {
-            id: true,
-            user_id: true,
-            entity_id: true,
-            action: true,
-            meta: true,
-            created_at: true,
-            user: { select: { id: true, email: true, name: true } },
+    byId: adminProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input }) => {
+      const entry = await db.auditLog.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          user_id: true,
+          entity_id: true,
+          action: true,
+          meta: true,
+          created_at: true,
+          user: { select: { id: true, email: true, name: true } },
+        },
+      });
+
+      if (!entry || entry.action !== "auth:resolved_by_orphan_recovery") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Recovery event not found" });
+      }
+
+      const meta = entry.meta as Record<string, unknown> | null;
+      const orphanId = meta?.orphan_id as string | undefined;
+
+      let relatedAuditEntries: Array<{
+        id: string;
+        action: string;
+        created_at: Date;
+        meta: unknown;
+      }> = [];
+      if (orphanId) {
+        relatedAuditEntries = await db.auditLog.findMany({
+          where: {
+            OR: [{ entity_id: orphanId }, { entity_id: entry.entity_id }],
+            id: { not: entry.id },
           },
+          orderBy: { created_at: "desc" },
+          take: 20,
+          select: { id: true, action: true, created_at: true, meta: true },
         });
+      }
 
-        if (!entry || entry.action !== "auth:resolved_by_orphan_recovery") {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Recovery event not found" });
-        }
+      const isFlagged = await db.auditLog.findFirst({
+        where: { action: "admin_flagged_recovery", entity_id: input.id },
+        select: { id: true },
+      });
 
-        const meta = entry.meta as Record<string, unknown> | null;
-        const orphanId = meta?.orphan_id as string | undefined;
-
-        let relatedAuditEntries: Array<{ id: string; action: string; created_at: Date; meta: unknown }> = [];
-        if (orphanId) {
-          relatedAuditEntries = await db.auditLog.findMany({
-            where: {
-              OR: [
-                { entity_id: orphanId },
-                { entity_id: entry.entity_id },
-              ],
-              id: { not: entry.id },
-            },
-            orderBy: { created_at: "desc" },
-            take: 20,
-            select: { id: true, action: true, created_at: true, meta: true },
-          });
-        }
-
-        const isFlagged = await db.auditLog.findFirst({
-          where: { action: "admin_flagged_recovery", entity_id: input.id },
-          select: { id: true },
-        });
-
-        return {
-          id: entry.id,
-          user_id: entry.user_id,
-          entity_id: entry.entity_id,
-          meta,
-          created_at: entry.created_at,
-          user: entry.user,
-          isFlagged: Boolean(isFlagged),
-          relatedAuditEntries: relatedAuditEntries.map((e) => ({
-            id: e.id,
-            action: e.action,
-            created_at: e.created_at,
-            meta: e.meta as Record<string, unknown> | null,
-          })),
-        };
-      }),
+      return {
+        id: entry.id,
+        user_id: entry.user_id,
+        entity_id: entry.entity_id,
+        meta,
+        created_at: entry.created_at,
+        user: entry.user,
+        isFlagged: Boolean(isFlagged),
+        relatedAuditEntries: relatedAuditEntries.map((e) => ({
+          id: e.id,
+          action: e.action,
+          created_at: e.created_at,
+          meta: e.meta as Record<string, unknown> | null,
+        })),
+      };
+    }),
 
     flag: adminProcedure
       .input(z.object({ recovery_id: z.string().uuid(), reason: z.string().optional() }))
@@ -639,7 +644,10 @@ export const adminRouter = router({
           },
         });
 
-        log.warn({ admin_user_id: ctx.user.id, recovery_id: input.recovery_id }, "Admin flagged recovery as wrong");
+        log.warn(
+          { admin_user_id: ctx.user.id, recovery_id: input.recovery_id },
+          "Admin flagged recovery as wrong",
+        );
 
         return { ok: true };
       }),
@@ -771,8 +779,16 @@ export const adminRouter = router({
             notes: orphan._count.notes,
             captures: orphan._count.captures,
           },
-          sampleTasks: sampleTasks.map((t) => ({ id: t.id, title: t.title, created_at: t.created_at })),
-          sampleProjects: sampleProjects.map((p) => ({ id: p.id, title: p.title, created_at: p.created_at })),
+          sampleTasks: sampleTasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            created_at: t.created_at,
+          })),
+          sampleProjects: sampleProjects.map((p) => ({
+            id: p.id,
+            title: p.title,
+            created_at: p.created_at,
+          })),
           recentAuthEvents: recentAuthEvents.map((e) => ({
             id: e.id,
             action: e.action,
@@ -804,14 +820,18 @@ export const adminRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Target user not found" });
         }
         if (orphan.id === targetUser.id) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot reattach a user to themselves" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot reattach a user to themselves",
+          });
         }
 
         const orphanConfirmed = await verifyIsOrphan(orphan);
         if (!orphanConfirmed) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
-            message: "This user does not qualify as an orphan — they have recent auth activity or no recoverable content. Reattachment aborted.",
+            message:
+              "This user does not qualify as an orphan — they have recent auth activity or no recoverable content. Reattachment aborted.",
           });
         }
 
@@ -833,7 +853,11 @@ export const adminRouter = router({
         });
 
         log.warn(
-          { admin_user_id: ctx.user.id, orphan_id: input.orphan_id, target_user_id: input.target_user_id },
+          {
+            admin_user_id: ctx.user.id,
+            orphan_id: input.orphan_id,
+            target_user_id: input.target_user_id,
+          },
           "Admin manually reattached orphan data",
         );
 
@@ -871,7 +895,8 @@ export const adminRouter = router({
         if (!orphanConfirmed) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
-            message: "This user does not qualify as an orphan — they have recent auth activity. Soft-delete aborted to prevent data loss.",
+            message:
+              "This user does not qualify as an orphan — they have recent auth activity. Soft-delete aborted to prevent data loss.",
           });
         }
 

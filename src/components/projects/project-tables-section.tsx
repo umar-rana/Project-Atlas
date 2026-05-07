@@ -66,9 +66,12 @@ export function ProjectTablesSection({ projectId }: { projectId: string }) {
                 "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
               )}
             >
-              <Table2 size={12} className="shrink-0 text-text-disabled group-hover:text-text-tertiary" />
+              <Table2
+                size={12}
+                className="shrink-0 text-text-disabled group-hover:text-text-tertiary"
+              />
               <span className="flex-1 truncate">{table.name}</span>
-              <span className="shrink-0 font-mono text-3xs text-text-disabled tabular-nums">
+              <span className="shrink-0 font-mono text-3xs tabular-nums text-text-disabled">
                 {table.row_count} rows
               </span>
             </Link>

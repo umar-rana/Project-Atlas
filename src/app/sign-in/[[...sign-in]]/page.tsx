@@ -25,7 +25,7 @@ export default function SignInPage() {
   const { resolvedTheme } = useTheme();
 
   return (
-    <div className="font-ui flex min-h-screen items-center justify-center bg-surface-base px-6">
+    <div className="flex min-h-screen items-center justify-center bg-surface-base px-6 font-ui">
       <div className="flex flex-col items-center gap-8">
         <div className="text-center">
           <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-accent-primary shadow-2">
@@ -38,11 +38,7 @@ export default function SignInPage() {
             Your personal productivity command center
           </p>
         </div>
-        <SignIn
-          key={resolvedTheme}
-          appearance={clerkAppearance}
-          fallbackRedirectUrl="/tasks"
-        />
+        <SignIn key={resolvedTheme} appearance={clerkAppearance} fallbackRedirectUrl="/tasks" />
       </div>
     </div>
   );

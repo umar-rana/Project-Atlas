@@ -73,10 +73,7 @@ export function AlertDialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "flex items-center gap-2 border-t border-border-subtle px-4 py-3",
-        className,
-      )}
+      className={cn("flex items-center gap-2 border-t border-border-subtle px-4 py-3", className)}
       {...props}
     >
       {children}
@@ -84,24 +81,22 @@ export function AlertDialogFooter({
   );
 }
 
-export const AlertDialogAction = React.forwardRef<
-  HTMLButtonElement,
-  ButtonProps
->(function AlertDialogAction({ variant = "destructive", ...props }, ref) {
-  return (
-    <AlertDialogPrimitive.Action asChild>
-      <Button ref={ref} variant={variant} {...props} />
-    </AlertDialogPrimitive.Action>
-  );
-});
+export const AlertDialogAction = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  function AlertDialogAction({ variant = "destructive", ...props }, ref) {
+    return (
+      <AlertDialogPrimitive.Action asChild>
+        <Button ref={ref} variant={variant} {...props} />
+      </AlertDialogPrimitive.Action>
+    );
+  },
+);
 
-export const AlertDialogCancel = React.forwardRef<
-  HTMLButtonElement,
-  ButtonProps
->(function AlertDialogCancel({ variant = "secondary", className, ...props }, ref) {
-  return (
-    <AlertDialogPrimitive.Cancel asChild>
-      <Button ref={ref} variant={variant} className={cn("ml-auto", className)} {...props} />
-    </AlertDialogPrimitive.Cancel>
-  );
-});
+export const AlertDialogCancel = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  function AlertDialogCancel({ variant = "secondary", className, ...props }, ref) {
+    return (
+      <AlertDialogPrimitive.Cancel asChild>
+        <Button ref={ref} variant={variant} className={cn("ml-auto", className)} {...props} />
+      </AlertDialogPrimitive.Cancel>
+    );
+  },
+);

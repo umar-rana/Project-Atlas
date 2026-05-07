@@ -45,7 +45,13 @@ function dueLabel(due: Date | null, locale: LocaleSettings): string | null {
   return localeFormatDate(due, locale);
 }
 
-export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalidate }: SubtaskRowProps) {
+export function SubtaskRow({
+  subtask,
+  parentId,
+  parentTitle,
+  inTrash,
+  onInvalidate,
+}: SubtaskRowProps) {
   const locale = useLocale();
   const navigateToSubtask = useTasksStore((s) => s.navigateToSubtask);
   const utils = trpc.useUtils();
@@ -57,10 +63,13 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
     onMutate: async () => {
       await utils.tasks.get.cancel({ id: parentId });
       const prev = utils.tasks.get.getData({ id: parentId });
-      utils.tasks.get.setData({ id: parentId }, (old: TaskDetail | undefined): TaskDetail | undefined => {
-        if (!old) return old;
-        return { ...old, subtasks: old.subtasks.filter((s) => s.id !== subtask.id) };
-      });
+      utils.tasks.get.setData(
+        { id: parentId },
+        (old: TaskDetail | undefined): TaskDetail | undefined => {
+          if (!old) return old;
+          return { ...old, subtasks: old.subtasks.filter((s) => s.id !== subtask.id) };
+        },
+      );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
@@ -105,13 +114,15 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
 
       <button
         type="button"
-        onClick={() => { if (!inTrash) updateMut.mutate({ id: subtask.id, flagged: !subtask.flagged }); }}
+        onClick={() => {
+          if (!inTrash) updateMut.mutate({ id: subtask.id, flagged: !subtask.flagged });
+        }}
         aria-label={subtask.flagged ? "Unflag subtask" : "Flag subtask"}
         className={cn(
           "shrink-0 rounded-sm p-0.5 transition-colors",
           subtask.flagged
             ? "text-accent-warning"
-            : "text-text-tertiary opacity-0 group-hover:opacity-100 hover:text-text-secondary",
+            : "text-text-tertiary opacity-0 hover:text-text-secondary group-hover:opacity-100",
         )}
       >
         <Flag size={11} fill={subtask.flagged ? "currentColor" : "none"} />
@@ -124,15 +135,23 @@ export function SubtaskRow({ subtask, parentId, parentTitle, inTrash, onInvalida
           onChange={(e) => setTitleDraft(e.target.value)}
           onBlur={commitTitle}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); commitTitle(); }
-            if (e.key === "Escape") { setTitleDraft(subtask.title); setEditing(false); }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitTitle();
+            }
+            if (e.key === "Escape") {
+              setTitleDraft(subtask.title);
+              setEditing(false);
+            }
           }}
           className="flex-1 rounded-sm bg-surface-base px-1 py-px font-ui text-xs text-text-primary outline-none ring-1 ring-border-focus"
         />
       ) : (
         <button
           type="button"
-          onDoubleClick={() => { if (!inTrash) setEditing(true); }}
+          onDoubleClick={() => {
+            if (!inTrash) setEditing(true);
+          }}
           className={cn(
             "flex-1 truncate text-left font-ui text-xs",
             isCompleted ? "text-text-tertiary line-through" : "text-text-secondary",

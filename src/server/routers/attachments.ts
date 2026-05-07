@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "@/server/trpc";
-import { db, newId } from "@/core/db";
+import { db } from "@/core/db";
 import { storage, deleteFile } from "@/core/storage";
 import { logActivity } from "@/core/audit";
 import { z } from "zod";
@@ -36,7 +36,15 @@ export const attachmentsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
-        select: { id: true, file_id: true, filename: true, parent_type: true, parent_id: true, task_id: true, thumbnail_path: true },
+        select: {
+          id: true,
+          file_id: true,
+          filename: true,
+          parent_type: true,
+          parent_id: true,
+          task_id: true,
+          thumbnail_path: true,
+        },
       });
       if (!attachment) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Attachment not found" });
@@ -45,7 +53,9 @@ export const attachmentsRouter = router({
       if (attachment.thumbnail_path) {
         try {
           await storage.delete(attachment.thumbnail_path);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       await logActivity({
         user_id: ctx.user.id,
@@ -107,12 +117,14 @@ export const attachmentsRouter = router({
     }),
 
   update: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      description: z.string().nullable().optional(),
-      reviewed: z.boolean().optional(),
-      tag_ids: z.array(z.string().uuid()).optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        description: z.string().nullable().optional(),
+        reviewed: z.boolean().optional(),
+        tag_ids: z.array(z.string().uuid()).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
@@ -127,16 +139,19 @@ export const attachmentsRouter = router({
         data: {
           ...(input.description !== undefined ? { description: input.description } : {}),
           ...(input.reviewed !== undefined ? { reviewed: input.reviewed } : {}),
-          ...(input.tag_ids !== undefined ? {
-            tags: {
-              deleteMany: {},
-              create: input.tag_ids.map((tag_id) => ({ tag_id, created_at: new Date() })),
-            },
-          } : {}),
+          ...(input.tag_ids !== undefined
+            ? {
+                tags: {
+                  deleteMany: {},
+                  create: input.tag_ids.map((tag_id) => ({ tag_id, created_at: new Date() })),
+                },
+              }
+            : {}),
         },
       });
 
-      const action = input.reviewed !== undefined ? "attachment_marked_reviewed" : "attachment_metadata_updated";
+      const action =
+        input.reviewed !== undefined ? "attachment_marked_reviewed" : "attachment_metadata_updated";
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Attachment",
@@ -195,10 +210,12 @@ export const attachmentsRouter = router({
     }),
 
   reattach: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      task_id: z.string().uuid(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        task_id: z.string().uuid(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
@@ -250,9 +267,13 @@ export const attachmentsRouter = router({
         try {
           await deleteFile({ userId: ctx.user.id, fileId: att.file_id });
           if (att.thumbnail_path) {
-            await storage.delete(att.thumbnail_path).catch(() => { /* ignore */ });
+            await storage.delete(att.thumbnail_path).catch(() => {
+              /* ignore */
+            });
           }
-        } catch { /* ignore individual failures */ }
+        } catch {
+          /* ignore individual failures */
+        }
         await logActivity({
           user_id: ctx.user.id,
           entity_type: "Attachment",
@@ -329,15 +350,28 @@ export const attachmentsRouter = router({
     .query(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
         where: { file_id: input.file_id, user_id: ctx.user.id, deleted_at: null },
-        select: { id: true, storage_path: true, thumbnail_path: true, filename: true, content_type: true },
+        select: {
+          id: true,
+          storage_path: true,
+          thumbnail_path: true,
+          filename: true,
+          content_type: true,
+        },
       });
       if (!attachment) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       const url = await storage.getUrl({ path: attachment.storage_path, expiresInSeconds: 3600 });
       const thumbnailUrl = attachment.thumbnail_path
-        ? await storage.getUrl({ path: attachment.thumbnail_path, expiresInSeconds: 3600 }).catch(() => null)
+        ? await storage
+            .getUrl({ path: attachment.thumbnail_path, expiresInSeconds: 3600 })
+            .catch(() => null)
         : null;
-      return { url, thumbnailUrl, filename: attachment.filename, contentType: attachment.content_type };
+      return {
+        url,
+        thumbnailUrl,
+        filename: attachment.filename,
+        contentType: attachment.content_type,
+      };
     }),
 });

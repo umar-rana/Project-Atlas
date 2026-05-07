@@ -76,7 +76,11 @@ export function KeyboardShortcut({
       {segments.length > 0
         ? segments.map((combo, i) => (
             <React.Fragment key={i}>
-              {i > 0 ? <span className="px-0.5 text-text-tertiary" aria-hidden>·</span> : null}
+              {i > 0 ? (
+                <span className="px-0.5 text-text-tertiary" aria-hidden>
+                  ·
+                </span>
+              ) : null}
               {renderCombo(combo)}
             </React.Fragment>
           ))
@@ -97,8 +101,8 @@ function Key({
       className={cn(
         "inline-flex min-w-4 items-center justify-center rounded-2xs px-1 py-px font-mono text-3xs font-medium leading-none",
         variant === "subtle"
-          ? "border border-current/20 bg-current/10 text-current opacity-70"
-          : "border border-border-subtle border-b-2 bg-surface-sunken text-text-secondary",
+          ? "border-current/20 bg-current/10 border text-current opacity-70"
+          : "border border-b-2 border-border-subtle bg-surface-sunken text-text-secondary",
       )}
     >
       {children}

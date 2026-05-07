@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles, Clock, Inbox } from "lucide-react";
+import { Sparkles, Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ParserProposal {
@@ -45,7 +45,11 @@ interface ProcessingModeCardProps {
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   } catch {
     return "";
   }
@@ -76,20 +80,22 @@ export function ProcessingModeCard({
 }: ProcessingModeCardProps): React.ReactElement {
   const proposal = capture.parser_proposal as ParserProposal | null | undefined;
   const hasProposal = !!proposal;
-  const confidencePct = proposal?.local_confidence != null
-    ? (proposal.local_confidence * 100).toFixed(0)
-    : null;
+  const confidencePct =
+    proposal?.local_confidence != null ? (proposal.local_confidence * 100).toFixed(0) : null;
   const isAi = proposal?.parse_tier === "local_plus_ai";
   const suggestedDisposition = proposal ? deriveProposedDisposition(proposal) : null;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-text-tertiary font-ui text-xs">
+        <div className="flex items-center gap-2 font-ui text-xs text-text-tertiary">
           <Inbox size={12} aria-hidden />
-          <span>{capture.migration_source ? "Migrated" : "Captured"} {fmtRelativeTime(capture.created_at)}</span>
+          <span>
+            {capture.migration_source ? "Migrated" : "Captured"}{" "}
+            {fmtRelativeTime(capture.created_at)}
+          </span>
         </div>
-        <span className="font-ui text-xs text-text-tertiary tabular-nums">
+        <span className="font-ui text-xs tabular-nums text-text-tertiary">
           {queuePosition} of {queueTotal}
         </span>
       </div>
@@ -104,8 +110,12 @@ export function ProcessingModeCard({
         <div className="rounded-lg border border-border-subtle bg-surface-raised px-4 py-3">
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
-              <Sparkles size={11} className={cn(isAi ? "text-accent-info" : "text-text-tertiary")} aria-hidden />
-              <span className="font-ui text-2xs font-medium text-text-secondary uppercase tracking-wide">
+              <Sparkles
+                size={11}
+                className={cn(isAi ? "text-accent-info" : "text-text-tertiary")}
+                aria-hidden
+              />
+              <span className="font-ui text-2xs font-medium uppercase tracking-wide text-text-secondary">
                 Parser hint
                 {confidencePct && (
                   <span className="ml-1.5 font-normal normal-case text-text-tertiary">
@@ -115,7 +125,7 @@ export function ProcessingModeCard({
               </span>
             </div>
             {suggestedDisposition && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-accent-primary/30 bg-accent-primary/8 px-2 py-0.5 font-ui text-2xs font-medium text-accent-primary">
+              <span className="border-accent-primary/30 bg-accent-primary/8 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-ui text-2xs font-medium text-accent-primary">
                 Suggested: {suggestedDisposition.label}
               </span>
             )}
@@ -124,7 +134,7 @@ export function ProcessingModeCard({
             {proposal?.title && (
               <>
                 <dt className="text-text-tertiary">Title</dt>
-                <dd className="text-text-primary truncate">{proposal.title}</dd>
+                <dd className="truncate text-text-primary">{proposal.title}</dd>
               </>
             )}
             {proposal?.project_hint && (
@@ -167,7 +177,7 @@ export function ProcessingModeCard({
         </div>
       )}
 
-      <div className="flex items-center gap-1 flex-wrap">
+      <div className="flex flex-wrap items-center gap-1">
         {(
           [
             { key: "T", label: "Task" },
@@ -179,7 +189,10 @@ export function ProcessingModeCard({
             { key: "X", label: "Trash" },
           ] as const
         ).map(({ key, label }) => (
-          <span key={key} className="inline-flex items-center gap-1 rounded border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">
+          <span
+            key={key}
+            className="inline-flex items-center gap-1 rounded border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-tertiary"
+          >
             <kbd className="font-mono font-bold text-text-secondary">{key}</kbd>
             <span>{label}</span>
           </span>

@@ -15,9 +15,7 @@ function resolveDbUrl(): string {
   const raw = process.env.DATABASE_URL_NEON ?? "";
   const url = raw.replace(/^'+|'+$/g, "");
   if (!url) {
-    throw new Error(
-      "DATABASE_URL_NEON is not set — cannot start job runner.",
-    );
+    throw new Error("DATABASE_URL_NEON is not set — cannot start job runner.");
   }
   return url;
 }

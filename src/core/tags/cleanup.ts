@@ -27,9 +27,7 @@ export interface TagCleanupAnalysis {
  * The result is intended to surface candidates in the Tag management UI
  * (Phase 4) so the user can decide what to clean up.
  */
-export async function analyseCleanupCandidates(
-  userId: string,
-): Promise<TagCleanupAnalysis> {
+export async function analyseCleanupCandidates(userId: string): Promise<TagCleanupAnalysis> {
   try {
     const [candidates, total] = await Promise.all([
       db.tag.findMany({
@@ -60,10 +58,7 @@ export async function analyseCleanupCandidates(
       (t) => Math.abs(t.updated_at.getTime() - t.created_at.getTime()) < EDIT_THRESHOLD_MS,
     );
 
-    log.debug(
-      { userId, total, candidateCount: unedited.length },
-      "Tag cleanup analysis complete",
-    );
+    log.debug({ userId, total, candidateCount: unedited.length }, "Tag cleanup analysis complete");
 
     return {
       candidates: unedited.map((t) => ({

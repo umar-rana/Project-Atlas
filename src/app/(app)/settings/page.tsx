@@ -7,9 +7,7 @@ export const metadata: Metadata = {
   title: "Settings — Atlas",
 };
 
-const SettingsClient = dynamic(() =>
-  import("./settings-client").then((m) => m.SettingsClient),
-);
+const SettingsClient = dynamic(() => import("./settings-client").then((m) => m.SettingsClient));
 
 export default async function SettingsPage({
   searchParams,

@@ -19,13 +19,14 @@ function useSyncStatus() {
     retry: false,
   });
 
-  const state: SyncState = isLoading || isFetching
-    ? "syncing"
-    : isError || !data
-    ? "idle"
-    : data.pong
-    ? "synced"
-    : "error";
+  const state: SyncState =
+    isLoading || isFetching
+      ? "syncing"
+      : isError || !data
+        ? "idle"
+        : data.pong
+          ? "synced"
+          : "error";
 
   return { data, state, refetch, isFetching, isError };
 }
@@ -43,7 +44,6 @@ const STATE_LABELS: Record<SyncState, string> = {
   error: "Issues detected",
   idle: "Unknown",
 };
-
 
 export function SyncStatus(): React.ReactElement {
   const locale = useLocale();
@@ -98,8 +98,8 @@ export function SyncStatus(): React.ReactElement {
                 isFetching
                   ? "animate-pulse bg-accent-warning"
                   : isError || !data
-                  ? "bg-text-disabled"
-                  : "bg-accent-success",
+                    ? "bg-text-disabled"
+                    : "bg-accent-success",
               )}
             />
           </div>

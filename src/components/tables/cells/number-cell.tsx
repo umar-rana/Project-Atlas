@@ -13,7 +13,15 @@ interface NumberCellProps {
   onCancel: () => void;
 }
 
-export function NumberCell({ value, decimalPlaces = 2, isSelected, isEditing, onStartEdit, onCommit, onCancel }: NumberCellProps) {
+export function NumberCell({
+  value,
+  decimalPlaces = 2,
+  isSelected,
+  isEditing,
+  onStartEdit,
+  onCommit,
+  onCancel,
+}: NumberCellProps) {
   const [draft, setDraft] = React.useState(value !== null ? String(value) : "");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -38,17 +46,27 @@ export function NumberCell({ value, decimalPlaces = 2, isSelected, isEditing, on
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); commit(); }
-          if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
         }}
-        className="absolute inset-0 w-full bg-surface-base px-2 py-1 font-ui text-sm text-right text-text-primary focus:outline-none ring-2 ring-inset ring-accent-primary"
+        className="absolute inset-0 w-full bg-surface-base px-2 py-1 text-right font-ui text-sm text-text-primary ring-2 ring-inset ring-accent-primary focus:outline-none"
       />
     );
   }
 
-  const formatted = value !== null
-    ? value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimalPlaces })
-    : "";
+  const formatted =
+    value !== null
+      ? value.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: decimalPlaces,
+        })
+      : "";
 
   return (
     <div

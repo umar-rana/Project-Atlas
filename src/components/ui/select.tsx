@@ -39,7 +39,10 @@ export const SelectTrigger = React.forwardRef<
 export const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(function SelectContent({ className, children, position = "popper", sideOffset = 4, ...props }, ref) {
+>(function SelectContent(
+  { className, children, position = "popper", sideOffset = 4, ...props },
+  ref,
+) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -103,5 +106,11 @@ export const SelectSeparator = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
 >(function SelectSeparator({ className, ...props }, ref) {
-  return <SelectPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-border-subtle", className)} {...props} />;
+  return (
+    <SelectPrimitive.Separator
+      ref={ref}
+      className={cn("-mx-1 my-1 h-px bg-border-subtle", className)}
+      {...props}
+    />
+  );
 });

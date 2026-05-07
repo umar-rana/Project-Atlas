@@ -77,10 +77,14 @@ export default function TableFolderPage() {
                   className="flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-hover"
                 >
                   <Table2 size={16} className="shrink-0 text-text-tertiary" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-ui text-sm font-medium text-text-primary truncate">{table.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-ui text-sm font-medium text-text-primary">
+                      {table.name}
+                    </p>
                     {table.project_title && (
-                      <p className="font-ui text-xs text-text-disabled mt-0.5">{table.project_title}</p>
+                      <p className="mt-0.5 font-ui text-xs text-text-disabled">
+                        {table.project_title}
+                      </p>
                     )}
                   </div>
                   <span className="shrink-0 font-mono text-xs tabular-nums text-text-tertiary">

@@ -82,7 +82,7 @@ export function RecoverySummary() {
         <ArrowLeft size={14} /> Back
       </button>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="mb-4 flex items-center gap-2">
         <ShieldCheck size={20} className="text-accent-primary" />
         <h1 className="font-ui text-lg font-semibold text-text-primary">Data Recovery Summary</h1>
       </div>
@@ -103,37 +103,39 @@ export function RecoverySummary() {
           <p className="mb-4 font-ui text-sm text-text-secondary">
             The following data was recovered from a previous session and merged into your account:
           </p>
-          <div className="rounded-md border border-border-subtle overflow-hidden mb-4">
+          <div className="mb-4 overflow-hidden rounded-md border border-border-subtle">
             <table className="w-full font-ui text-sm">
               <thead>
-                <tr className="border-b border-border-subtle bg-surface-elevated">
-                  <th className="px-4 py-2 text-left text-text-secondary font-medium">Type</th>
-                  <th className="px-4 py-2 text-right text-text-secondary font-medium">Recovered</th>
+                <tr className="bg-surface-elevated border-b border-border-subtle">
+                  <th className="px-4 py-2 text-left font-medium text-text-secondary">Type</th>
+                  <th className="px-4 py-2 text-right font-medium text-text-secondary">
+                    Recovered
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(({ label, count }) => (
                   <tr key={label} className="border-b border-border-subtle last:border-0">
                     <td className="px-4 py-2 text-text-primary">{label}</td>
-                    <td className="px-4 py-2 text-right text-text-primary font-medium">{count}</td>
+                    <td className="px-4 py-2 text-right font-medium text-text-primary">{count}</td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-border-subtle bg-surface-elevated">
-                  <td className="px-4 py-2 text-text-secondary font-medium">Total</td>
-                  <td className="px-4 py-2 text-right text-text-primary font-bold">{totalItems}</td>
+                <tr className="bg-surface-elevated border-t-2 border-border-subtle">
+                  <td className="px-4 py-2 font-medium text-text-secondary">Total</td>
+                  <td className="px-4 py-2 text-right font-bold text-text-primary">{totalItems}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           {orphanIds.length > 0 && (
-            <div className="mb-4 rounded-md border border-border-subtle bg-surface-elevated px-4 py-3">
+            <div className="bg-surface-elevated mb-4 rounded-md border border-border-subtle px-4 py-3">
               <p className="mb-2 font-ui text-xs font-medium text-text-secondary">
                 Source account{orphanIds.length === 1 ? "" : "s"} merged ({orphanIds.length}):
               </p>
               <ul className="space-y-1">
                 {orphanIds.map((id) => (
-                  <li key={id} className="font-mono text-xs text-text-tertiary break-all">
+                  <li key={id} className="break-all font-mono text-xs text-text-tertiary">
                     {id}
                   </li>
                 ))}

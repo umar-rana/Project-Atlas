@@ -136,11 +136,9 @@ export const PersonAddressSchema = z
     source: z.string().max(100).optional(),
     source_id: z.string().max(200).optional(),
   })
-  .refine(
-    (d) =>
-      d.street || d.city || d.region || d.postal_code || d.country_code || d.formatted,
-    { message: "At least one address component is required" },
-  );
+  .refine((d) => d.street || d.city || d.region || d.postal_code || d.country_code || d.formatted, {
+    message: "At least one address component is required",
+  });
 
 export const PersonOrganizationSchema = z
   .object({
@@ -192,14 +190,12 @@ export const PersonRelationSchema = z
     source: z.string().max(100).optional(),
     source_id: z.string().max(200).optional(),
   })
-  .refine(
-    (d) => d.related_person_id || d.related_text,
-    { message: "Either related_person_id or related_text is required" },
-  )
-  .refine(
-    (d) => !(d.related_person_id && d.related_text),
-    { message: "Provide only one of related_person_id or related_text, not both" },
-  );
+  .refine((d) => d.related_person_id || d.related_text, {
+    message: "Either related_person_id or related_text is required",
+  })
+  .refine((d) => !(d.related_person_id && d.related_text), {
+    message: "Provide only one of related_person_id or related_text, not both",
+  });
 
 export const PersonSkillSchema = z.object({
   name: z.string().min(1).max(200),

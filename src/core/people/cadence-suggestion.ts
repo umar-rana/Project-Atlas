@@ -10,7 +10,7 @@ function median(sorted: number[]): number | null {
   if (sorted.length === 0) return null;
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 0) {
-    return ((sorted[mid - 1]! + sorted[mid]!) / 2);
+    return (sorted[mid - 1]! + sorted[mid]!) / 2;
   }
   return sorted[mid]!;
 }
@@ -87,8 +87,7 @@ export function shouldShowCadenceSuggestion({
   if (!dismissedAt) return true;
 
   const enoughNewInteractions = interactionCount >= interactionCountAtDismissal + 3;
-  const valueDiffers =
-    dismissedValue === null || Math.abs(suggestedValue - dismissedValue) > 7;
+  const valueDiffers = dismissedValue === null || Math.abs(suggestedValue - dismissedValue) > 7;
 
   return enoughNewInteractions && valueDiffers;
 }

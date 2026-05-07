@@ -24,7 +24,7 @@ function renderContent(content: string): React.ReactNode {
       nodes.push(
         <h3
           key={i}
-          className="mt-6 mb-2 font-ui text-2xs font-semibold uppercase tracking-wider text-text-tertiary first:mt-0"
+          className="mb-2 mt-6 font-ui text-2xs font-semibold uppercase tracking-wider text-text-tertiary first:mt-0"
         >
           {h3Match![1]}
         </h3>,
@@ -55,10 +55,7 @@ function renderContent(content: string): React.ReactNode {
               <thead>
                 <tr className="border-b border-border-subtle">
                   {header!.map((cell, ci) => (
-                    <th
-                      key={ci}
-                      className="py-1.5 pr-4 text-left font-semibold text-text-primary"
-                    >
+                    <th key={ci} className="py-1.5 pr-4 text-left font-semibold text-text-primary">
                       {renderInline(cell)}
                     </th>
                   ))}
@@ -69,7 +66,7 @@ function renderContent(content: string): React.ReactNode {
                   <tr
                     key={ri}
                     className={cn(
-                      "border-b border-border-subtle/50",
+                      "border-border-subtle/50 border-b",
                       ri % 2 === 0 ? "bg-surface-base" : "bg-surface-sunken/30",
                     )}
                   >
@@ -181,8 +178,8 @@ export function HelpArticle({
   if (!article) return null;
 
   const nextArticle = section.articles[articleIndex + 1];
-  let nextSection: typeof HELP_SECTIONS[0] | undefined;
-  let nextSectionFirstArticle: typeof section.articles[0] | undefined;
+  let nextSection: (typeof HELP_SECTIONS)[0] | undefined;
+  let nextSectionFirstArticle: (typeof section.articles)[0] | undefined;
 
   if (!nextArticle) {
     const sectionIndex = HELP_SECTIONS.findIndex((s) => s.id === sectionId);
@@ -192,9 +189,7 @@ export function HelpArticle({
 
   return (
     <article className="mx-auto w-full max-w-[660px] px-8 py-8 font-ui text-sm">
-      <h1 className="mb-6 font-ui text-xl font-semibold text-text-primary">
-        {article.title}
-      </h1>
+      <h1 className="mb-6 font-ui text-xl font-semibold text-text-primary">{article.title}</h1>
       <div className="leading-[1.8]">{renderContent(article.content)}</div>
 
       {(nextArticle ?? nextSectionFirstArticle) && (
@@ -211,9 +206,7 @@ export function HelpArticle({
             className="flex w-full items-center justify-between rounded-lg border border-border-subtle bg-surface-raised p-4 text-left transition-colors hover:bg-surface-hover"
           >
             <div>
-              <p className="text-2xs uppercase tracking-wider text-text-tertiary">
-                Next article
-              </p>
+              <p className="text-2xs uppercase tracking-wider text-text-tertiary">Next article</p>
               <p className="mt-0.5 font-medium text-text-primary">
                 {nextArticle?.title ?? nextSectionFirstArticle?.title}
               </p>

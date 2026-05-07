@@ -23,7 +23,7 @@ export function WorklogEntry({ id, body, durationMinutes, onEdit, onDelete }: Wo
 
   return (
     <div className="group relative flex gap-2">
-      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-text-tertiary">
+      <div className="bg-bg-subtle mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-text-tertiary">
         <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
           <path d="M2 2h12v2H2zM2 6h8v2H2zM2 10h10v2H2z" />
         </svg>
@@ -37,7 +37,7 @@ export function WorklogEntry({ id, body, durationMinutes, onEdit, onDelete }: Wo
           {needsTruncation && (
             <button
               onClick={() => setExpanded((v) => !v)}
-              className="ml-1 text-accent hover:underline"
+              className="text-accent ml-1 hover:underline"
             >
               {expanded ? "Show less" : "Show more"}
             </button>
@@ -51,10 +51,7 @@ export function WorklogEntry({ id, body, durationMinutes, onEdit, onDelete }: Wo
         {confirmDelete && (
           <div className="mt-1 flex items-center gap-2 font-ui text-2xs">
             <span className="text-text-secondary">Delete this entry?</span>
-            <button
-              onClick={() => onDelete(id)}
-              className="text-red-500 hover:underline"
-            >
+            <button onClick={() => onDelete(id)} className="text-red-500 hover:underline">
               Yes, delete
             </button>
             <button
@@ -70,18 +67,32 @@ export function WorklogEntry({ id, body, durationMinutes, onEdit, onDelete }: Wo
         <button
           onClick={() => onEdit(id)}
           title="Edit"
-          className="rounded p-0.5 text-text-tertiary hover:bg-bg-hover hover:text-text-secondary"
+          className="hover:bg-bg-hover rounded p-0.5 text-text-tertiary hover:text-text-secondary"
         >
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
             <path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" />
           </svg>
         </button>
         <button
           onClick={() => setConfirmDelete(true)}
           title="Delete"
-          className="rounded p-0.5 text-text-tertiary hover:bg-bg-hover hover:text-red-400"
+          className="hover:bg-bg-hover rounded p-0.5 text-text-tertiary hover:text-red-400"
         >
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
             <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4H5z" />
           </svg>
         </button>

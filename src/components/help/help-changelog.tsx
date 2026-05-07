@@ -40,10 +40,7 @@ export function HelpChangelog(): React.ReactElement {
             <div className="absolute -left-1.5 mt-1.5 size-3 rounded-full border-2 border-border-subtle bg-surface-base" />
 
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <time
-                dateTime={entry.date}
-                className="font-mono text-xs text-text-tertiary"
-              >
+              <time dateTime={entry.date} className="font-mono text-xs text-text-tertiary">
                 {formatDate(entry.date)}
               </time>
               <span className="font-mono text-2xs text-text-disabled">v{entry.version}</span>

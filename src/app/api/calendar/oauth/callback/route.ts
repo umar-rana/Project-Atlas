@@ -43,7 +43,9 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     log.warn({ userId: user.id, error }, "Calendar OAuth provider error");
-    return NextResponse.redirect(new URL("/settings?cal_error=provider&section=integrations", baseUrl));
+    return NextResponse.redirect(
+      new URL("/settings?cal_error=provider&section=integrations", baseUrl),
+    );
   }
 
   const secret = process.env.SESSION_SECRET;
@@ -51,17 +53,23 @@ export async function GET(req: NextRequest) {
 
   if (!secret || !signedNonce) {
     log.warn({ userId: user.id }, "Calendar OAuth nonce cookie missing");
-    return NextResponse.redirect(new URL("/settings?cal_error=state_missing&section=integrations", baseUrl));
+    return NextResponse.redirect(
+      new URL("/settings?cal_error=state_missing&section=integrations", baseUrl),
+    );
   }
 
   const nonce = verifyNonceCookie(signedNonce, secret);
   if (!nonce || nonce !== state) {
     log.warn({ userId: user.id }, "Calendar OAuth state mismatch — possible CSRF");
-    return NextResponse.redirect(new URL("/settings?cal_error=state_mismatch&section=integrations", baseUrl));
+    return NextResponse.redirect(
+      new URL("/settings?cal_error=state_mismatch&section=integrations", baseUrl),
+    );
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL("/settings?cal_error=no_code&section=integrations", baseUrl));
+    return NextResponse.redirect(
+      new URL("/settings?cal_error=no_code&section=integrations", baseUrl),
+    );
   }
 
   try {
@@ -82,6 +90,8 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (err) {
     log.error({ err, userId: user.id }, "Calendar OAuth callback failed");
-    return NextResponse.redirect(new URL("/settings?cal_error=exchange&section=integrations", baseUrl));
+    return NextResponse.redirect(
+      new URL("/settings?cal_error=exchange&section=integrations", baseUrl),
+    );
   }
 }

@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { storagePath } from "./paths";
@@ -51,8 +51,7 @@ export const storage = {
   upload: (params: { path: string; data: Buffer; contentType: string }) =>
     getProvider().upload(params),
   download: (path: string) => getProvider().download(path),
-  getUrl: (params: { path: string; expiresInSeconds?: number }) =>
-    getProvider().getUrl(params),
+  getUrl: (params: { path: string; expiresInSeconds?: number }) => getProvider().getUrl(params),
   delete: (path: string) => getProvider().delete(path),
   exists: (path: string) => getProvider().exists(path),
   list: (prefix: string) => getProvider().list(prefix),
@@ -190,10 +189,7 @@ export async function getFileUrl(params: {
   return { url, filename: attachment.filename, contentType: attachment.content_type };
 }
 
-export async function deleteFile(params: {
-  userId: string;
-  fileId: string;
-}): Promise<void> {
+export async function deleteFile(params: { userId: string; fileId: string }): Promise<void> {
   const attachment = await db.attachment.findFirst({
     where: {
       file_id: params.fileId,
@@ -223,7 +219,10 @@ export async function deleteFile(params: {
   log.info({ fileId: params.fileId, userId: params.userId }, "Attachment deleted");
 }
 
-export async function checkStorageHealth(): Promise<{ ok: boolean; provider: StorageProviderName }> {
+export async function checkStorageHealth(): Promise<{
+  ok: boolean;
+  provider: StorageProviderName;
+}> {
   const provider = getProvider();
   try {
     const testKey = `_health-check-${Date.now()}`;

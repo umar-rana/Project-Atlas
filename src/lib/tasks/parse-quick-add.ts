@@ -18,15 +18,7 @@ export interface ParsedQuickAdd {
   due_date?: Date;
 }
 
-const WEEKDAYS = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -107,5 +99,11 @@ export function parseQuickAdd(input: string): ParsedQuickAdd {
   }
 
   const title = working.replace(/\s{2,}/g, " ").trim();
-  return { title, tags: Array.from(new Set(tags)), contexts: Array.from(new Set(contexts)), project_title, due_date };
+  return {
+    title,
+    tags: Array.from(new Set(tags)),
+    contexts: Array.from(new Set(contexts)),
+    project_title,
+    due_date,
+  };
 }

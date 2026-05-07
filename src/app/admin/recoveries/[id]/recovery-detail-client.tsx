@@ -20,7 +20,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 py-1.5">
       <dt className="w-36 shrink-0 font-mono text-xs text-white/30">{label}</dt>
-      <dd className="font-mono text-xs text-white break-all">{value ?? "—"}</dd>
+      <dd className="break-all font-mono text-xs text-white">{value ?? "—"}</dd>
     </div>
   );
 }
@@ -56,7 +56,10 @@ export function AdminRecoveryDetailClient({ id }: { id: string }) {
     return (
       <div className="flex flex-col gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-40 animate-pulse rounded-xl border border-white/10 bg-white/5" />
+          <div
+            key={i}
+            className="h-40 animate-pulse rounded-xl border border-white/10 bg-white/5"
+          />
         ))}
       </div>
     );
@@ -81,7 +84,7 @@ export function AdminRecoveryDetailClient({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 font-mono text-sm text-white/40 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 font-mono text-sm text-white/40 transition-colors hover:text-white"
         >
           <ArrowLeft size={14} />
           Back
@@ -100,14 +103,18 @@ export function AdminRecoveryDetailClient({ id }: { id: string }) {
           <Row label="User" value={data.user?.email ?? data.user_id} />
           <Row label="Entity ID" value={<span className="opacity-60">{data.entity_id}</span>} />
           <Row label="Occurred at" value={formatDate(data.created_at)} />
-          {meta && typeof meta.orphan_id === "string" && <Row label="Orphan ID" value={<span className="opacity-60">{meta.orphan_id}</span>} />}
-          {meta && typeof meta.orphan_email === "string" && <Row label="Orphan email" value={meta.orphan_email} />}
+          {meta && typeof meta.orphan_id === "string" && (
+            <Row label="Orphan ID" value={<span className="opacity-60">{meta.orphan_id}</span>} />
+          )}
+          {meta && typeof meta.orphan_email === "string" && (
+            <Row label="Orphan email" value={meta.orphan_email} />
+          )}
         </dl>
       </Section>
 
       {recovered && Object.keys(recovered).length > 0 && (
         <Section title="Recovered Content">
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="sm:grid-cols-6 grid grid-cols-3 gap-2">
             {Object.entries(recovered).map(([k, v]) => (
               <div key={k} className="rounded-lg border border-white/10 bg-white/5 p-2 text-center">
                 <p className="font-mono text-xl font-bold text-white">{v}</p>
@@ -137,7 +144,9 @@ export function AdminRecoveryDetailClient({ id }: { id: string }) {
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-xs text-white">{e.action}</p>
                 </div>
-                <p className="shrink-0 font-mono text-2xs text-white/25">{formatDate(e.created_at)}</p>
+                <p className="shrink-0 font-mono text-2xs text-white/25">
+                  {formatDate(e.created_at)}
+                </p>
               </div>
             ))}
           </div>

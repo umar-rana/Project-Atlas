@@ -8,7 +8,6 @@ import { NotesShell } from "@/components/notes/notes-shell";
 import { NewTableDialog } from "@/components/tables/new-table-dialog";
 import { CsvImportWizard } from "@/components/tables/csv-import-wizard";
 import { Hint } from "@/components/ui/hint";
-import { cn } from "@/lib/utils";
 
 export default function AllTablesPage() {
   const router = useRouter();
@@ -29,10 +28,15 @@ export default function AllTablesPage() {
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-3">
           <Table2 size={16} className="text-text-tertiary" />
           <h1 className="font-ui text-base font-semibold text-text-primary">All tables</h1>
-          <span className="font-ui text-xs text-text-disabled">{tables.length} table{tables.length !== 1 ? "s" : ""}</span>
+          <span className="font-ui text-xs text-text-disabled">
+            {tables.length} table{tables.length !== 1 ? "s" : ""}
+          </span>
           <div className="ml-auto flex items-center gap-2">
             <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-disabled" />
+              <Search
+                size={13}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-disabled"
+              />
               <input
                 type="text"
                 placeholder="Search tables…"
@@ -102,20 +106,24 @@ export default function AllTablesPage() {
                   className="flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-hover"
                 >
                   <Table2 size={16} className="shrink-0 text-text-tertiary" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-ui text-sm font-medium text-text-primary truncate">{table.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-ui text-sm font-medium text-text-primary">
+                      {table.name}
+                    </p>
+                    <div className="mt-0.5 flex items-center gap-2">
                       {table.folder_name && (
                         <span className="flex items-center gap-1 font-ui text-xs text-text-disabled">
                           <Folder size={10} /> {table.folder_name}
                         </span>
                       )}
                       {table.project_title && (
-                        <span className="font-ui text-xs text-text-disabled">{table.project_title}</span>
+                        <span className="font-ui text-xs text-text-disabled">
+                          {table.project_title}
+                        </span>
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-0.5 shrink-0">
+                  <div className="flex shrink-0 flex-col items-end gap-0.5">
                     <span className="font-mono text-xs tabular-nums text-text-tertiary">
                       {table.row_count} row{table.row_count !== 1 ? "s" : ""}
                     </span>
@@ -125,7 +133,7 @@ export default function AllTablesPage() {
                       </span>
                     )}
                     {table.drive_sync_error && (
-                      <span className="font-ui text-2xs text-destructive">Sync error</span>
+                      <span className="text-destructive font-ui text-2xs">Sync error</span>
                     )}
                   </div>
                 </button>

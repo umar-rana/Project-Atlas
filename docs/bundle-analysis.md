@@ -9,12 +9,12 @@
 
 ## Overall Totals (Client Bundle)
 
-| Metric | Size |
-|--------|------|
-| Stat (raw source) | 5,081.6 kB |
+| Metric                | Size           |
+| --------------------- | -------------- |
+| Stat (raw source)     | 5,081.6 kB     |
 | **Parsed (minified)** | **1,693.6 kB** |
-| **Gzip** | **509.3 kB** |
-| Total chunks | 94 |
+| **Gzip**              | **509.3 kB**   |
+| Total chunks          | 94             |
 
 ---
 
@@ -42,9 +42,9 @@ Next.js bootstrap/main chunk. Framework-managed. **No action available.**
 
 Clerk authentication library. This shared async chunk loads on every client navigation. The two largest sub-bundles are the Clerk React UI components and the shared Clerk runtime — neither is needed until the user interacts with auth UI.
 
-| Sub-bundle | Size |
-|------------|------|
-| `@clerk/react/dist` | 65.3 kB |
+| Sub-bundle                   | Size    |
+| ---------------------------- | ------- |
+| `@clerk/react/dist`          | 65.3 kB |
 | `@clerk/shared/dist/runtime` | 52.7 kB |
 
 **Opportunity:** If `<ClerkProvider>` or any Clerk hooks are imported at the root layout, all routes pay the full Clerk cost upfront. Moving auth-gating to server components and lazy-loading Clerk's UI-facing modules could reduce the initial load by ~65 kB.
@@ -55,13 +55,13 @@ Clerk authentication library. This shared async chunk loads on every client navi
 
 These load only when a user visits that specific route.
 
-| Rank | Route | Parsed | Gzip | Primary driver |
-|------|-------|--------|------|----------------|
-| 1 | `settings/page` | 64.2 kB | 13.7 kB | `settings-client.tsx` + 6 concatenated modules (61.2 kB total) |
-| 2 | `(app)/layout` | 42.1 kB | 11.2 kB | `app-shell-provider.tsx` + 15 modules (34.2 kB), sidebar UI (5.5 kB) |
-| 3 | `media/page` | 31.5 kB | 8.7 kB | Media components (20.7 kB) + attachments (4.2 kB) |
-| 4 | `tasks/tags/manage/page` | 24.3 kB | 6.2 kB | `tag-management.tsx` (17.2 kB) + UI primitives (6.2 kB) |
-| 5 | `tasks/contexts/manage/page` | 15.6 kB | 4.5 kB | Context management UI |
+| Rank | Route                        | Parsed  | Gzip    | Primary driver                                                       |
+| ---- | ---------------------------- | ------- | ------- | -------------------------------------------------------------------- |
+| 1    | `settings/page`              | 64.2 kB | 13.7 kB | `settings-client.tsx` + 6 concatenated modules (61.2 kB total)       |
+| 2    | `(app)/layout`               | 42.1 kB | 11.2 kB | `app-shell-provider.tsx` + 15 modules (34.2 kB), sidebar UI (5.5 kB) |
+| 3    | `media/page`                 | 31.5 kB | 8.7 kB  | Media components (20.7 kB) + attachments (4.2 kB)                    |
+| 4    | `tasks/tags/manage/page`     | 24.3 kB | 6.2 kB  | `tag-management.tsx` (17.2 kB) + UI primitives (6.2 kB)              |
+| 5    | `tasks/contexts/manage/page` | 15.6 kB | 4.5 kB  | Context management UI                                                |
 
 ---
 
@@ -73,22 +73,22 @@ The largest chunk made entirely of application source code. It bundles the task 
 
 **Full module breakdown (80 kB concatenation group):**
 
-| Module | Size |
-|--------|------|
-| `task-inspector.tsx` | 18.3 kB |
-| `inbox-processing-suggestions.tsx` | 15.2 kB |
-| `tasks-sidebar.tsx` | 6.3 kB |
-| `recurrence-form.tsx` | 6.3 kB |
-| `hierarchy-audit-banner.tsx` | 6.0 kB |
-| `task-inspector-attachments.tsx` | 5.8 kB |
-| `checklist-section.tsx` | 3.5 kB |
-| `task-inspector-activity-tab.tsx` | 3.3 kB |
-| `worklog-entry.tsx` | 2.2 kB |
-| `subtask-row.tsx` | 2.0 kB |
-| `subtask-section.tsx` | 1.6 kB |
-| `worklog-create-form.tsx` | 1.5 kB |
-| `context-add-form.tsx` | 1.1 kB |
-| sidebar components (`tags-section`, `section-header`, `contexts-section`) | 3.8 kB |
+| Module                                                                    | Size    |
+| ------------------------------------------------------------------------- | ------- |
+| `task-inspector.tsx`                                                      | 18.3 kB |
+| `inbox-processing-suggestions.tsx`                                        | 15.2 kB |
+| `tasks-sidebar.tsx`                                                       | 6.3 kB  |
+| `recurrence-form.tsx`                                                     | 6.3 kB  |
+| `hierarchy-audit-banner.tsx`                                              | 6.0 kB  |
+| `task-inspector-attachments.tsx`                                          | 5.8 kB  |
+| `checklist-section.tsx`                                                   | 3.5 kB  |
+| `task-inspector-activity-tab.tsx`                                         | 3.3 kB  |
+| `worklog-entry.tsx`                                                       | 2.2 kB  |
+| `subtask-row.tsx`                                                         | 2.0 kB  |
+| `subtask-section.tsx`                                                     | 1.6 kB  |
+| `worklog-create-form.tsx`                                                 | 1.5 kB  |
+| `context-add-form.tsx`                                                    | 1.1 kB  |
+| sidebar components (`tags-section`, `section-header`, `contexts-section`) | 3.8 kB  |
 
 **Opportunity:** The task inspector (18.3 kB), inbox suggestions panel (15.2 kB), recurrence form (6.3 kB), and hierarchy audit banner (6.0 kB) are only shown after user interaction. Wrapping them with `next/dynamic` would split ~46 kB out of this shared chunk into smaller on-demand pieces.
 
@@ -96,23 +96,23 @@ The largest chunk made entirely of application source code. It bundles the task 
 
 tRPC + TanStack Query runtime. Core data-fetching infrastructure paid on every route.
 
-| Sub-bundle | Size |
-|------------|------|
-| `@trpc/react-query` | 34.2 kB |
-| `@trpc/client` | 20.7 kB |
-| `@tanstack/query-core` | 18.6 kB |
-| `@trpc/server` (shared types) | 3.8 kB |
+| Sub-bundle                    | Size    |
+| ----------------------------- | ------- |
+| `@trpc/react-query`           | 34.2 kB |
+| `@trpc/client`                | 20.7 kB |
+| `@tanstack/query-core`        | 18.6 kB |
+| `@trpc/server` (shared types) | 3.8 kB  |
 
 **No meaningful action** — these are essential infrastructure libraries. Newer versions of tRPC v11 and TanStack Query v5 are already in use.
 
 ### `5516-51edbaab904fe884.js` — **54.3 kB (16.4 kB gzip)** ⚠️ Quick win
 
-| Package | Size | Notes |
-|---------|------|-------|
-| `rrule` | 43.7 kB | Recurrence rule engine — only needed in the recurrence editor |
-| `lucide-react` icons | 5.9 kB | 25 icons pulled into a shared chunk (see below) |
-| `@radix-ui/react-checkbox` | 3.4 kB | |
-| `date-fns` | 1.1 kB | |
+| Package                    | Size    | Notes                                                         |
+| -------------------------- | ------- | ------------------------------------------------------------- |
+| `rrule`                    | 43.7 kB | Recurrence rule engine — only needed in the recurrence editor |
+| `lucide-react` icons       | 5.9 kB  | 25 icons pulled into a shared chunk (see below)               |
+| `@radix-ui/react-checkbox` | 3.4 kB  |                                                               |
+| `date-fns`                 | 1.1 kB  |                                                               |
 
 **rrule opportunity:** `rrule` (43.7 kB) is needed only when a user opens the recurrence editor. It is currently imported in `recurrence-form.tsx` which is statically bundled. Wrapping `RecurrenceForm` with `next/dynamic` (or dynamically importing `rrule` inside the form) would remove 43.7 kB from every initial load — the single largest quick win in the bundle.
 
@@ -122,11 +122,11 @@ tRPC + TanStack Query runtime. Core data-fetching infrastructure paid on every r
 
 Radix UI dropdown menu + floating UI + scroll lock utilities. These load whenever any dropdown is rendered. Shared across the app — not a splitting candidate.
 
-| Sub-bundle | Size |
-|------------|------|
+| Sub-bundle                                     | Size    |
+| ---------------------------------------------- | ------- |
 | `@radix-ui/react-dropdown-menu` + `react-menu` | 28.9 kB |
-| `react-remove-scroll` + deps | 9.9 kB |
-| `@radix-ui/react-focus-scope` | 3.2 kB |
+| `react-remove-scroll` + deps                   | 9.9 kB  |
+| `@radix-ui/react-focus-scope`                  | 3.2 kB  |
 
 ### `8720-1a27e2f69afa3d88.js` — 32.4 kB (9.0 kB gzip)
 
@@ -152,14 +152,14 @@ Task list item UI — `task-list-item.tsx` (9.5 kB), `task-row-quick-actions.tsx
 
 ## Code-Splitting Opportunities (Prioritized)
 
-| Priority | Opportunity | Target file(s) | Est. saving |
-|----------|-------------|----------------|-------------|
-| **High** | Lazy-load `RecurrenceForm` with `next/dynamic` to move `rrule` (43.7 kB) out of the shared chunk | `src/components/tasks/recurrence-form.tsx`, `src/components/tasks/task-inspector.tsx` | ~44 kB from shared chunk |
-| **High** | Lazy-load `TaskInspector` (18.3 kB) and `InboxProcessingSuggestions` (15.2 kB) — both only shown on interaction | `src/components/tasks/tasks-shell.tsx` | ~33 kB from shared chunk |
-| **High** | Lazy-load `HierarchyAuditBanner` (6.0 kB) and `TaskInspectorAttachments` (5.8 kB) | `src/components/tasks/tasks-shell.tsx` | ~12 kB from shared chunk |
-| **Medium** | Audit Clerk loading — defer `@clerk/react` client bundle until auth UI is needed | Root layout / `ClerkProvider` usage | ~65 kB on initial load |
-| **Medium** | Trace which component co-locates 25 lucide icon imports alongside `rrule-helpers.ts` and fix barrel imports | Likely `src/components/tasks/recurrence-form.tsx` or nearby | ~6 kB misplacement |
-| **Low** | Split `settings-client.tsx` (61.2 kB) by settings section using tabs + `next/dynamic` | `src/app/(app)/settings/settings-client.tsx` | ~30–40 kB on settings entry |
+| Priority   | Opportunity                                                                                                     | Target file(s)                                                                        | Est. saving                 |
+| ---------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------- |
+| **High**   | Lazy-load `RecurrenceForm` with `next/dynamic` to move `rrule` (43.7 kB) out of the shared chunk                | `src/components/tasks/recurrence-form.tsx`, `src/components/tasks/task-inspector.tsx` | ~44 kB from shared chunk    |
+| **High**   | Lazy-load `TaskInspector` (18.3 kB) and `InboxProcessingSuggestions` (15.2 kB) — both only shown on interaction | `src/components/tasks/tasks-shell.tsx`                                                | ~33 kB from shared chunk    |
+| **High**   | Lazy-load `HierarchyAuditBanner` (6.0 kB) and `TaskInspectorAttachments` (5.8 kB)                               | `src/components/tasks/tasks-shell.tsx`                                                | ~12 kB from shared chunk    |
+| **Medium** | Audit Clerk loading — defer `@clerk/react` client bundle until auth UI is needed                                | Root layout / `ClerkProvider` usage                                                   | ~65 kB on initial load      |
+| **Medium** | Trace which component co-locates 25 lucide icon imports alongside `rrule-helpers.ts` and fix barrel imports     | Likely `src/components/tasks/recurrence-form.tsx` or nearby                           | ~6 kB misplacement          |
+| **Low**    | Split `settings-client.tsx` (61.2 kB) by settings section using tabs + `next/dynamic`                           | `src/app/(app)/settings/settings-client.tsx`                                          | ~30–40 kB on settings entry |
 
 ---
 

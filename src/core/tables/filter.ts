@@ -33,9 +33,13 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
         case "not_equals":
           return String(effectiveValue).toLowerCase() !== String(filterValue ?? "").toLowerCase();
         case "contains":
-          return String(effectiveValue).toLowerCase().includes(String(filterValue ?? "").toLowerCase());
+          return String(effectiveValue)
+            .toLowerCase()
+            .includes(String(filterValue ?? "").toLowerCase());
         case "not_contains":
-          return !String(effectiveValue).toLowerCase().includes(String(filterValue ?? "").toLowerCase());
+          return !String(effectiveValue)
+            .toLowerCase()
+            .includes(String(filterValue ?? "").toLowerCase());
         default:
           return true;
       }
@@ -65,13 +69,20 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
       const numVal = Number(effectiveValue);
       const numFilter = Number(filterValue ?? 0);
       switch (operator) {
-        case "equals": return numVal === numFilter;
-        case "not_equals": return numVal !== numFilter;
-        case "greater_than": return numVal > numFilter;
-        case "less_than": return numVal < numFilter;
-        case "greater_than_or_equal": return numVal >= numFilter;
-        case "less_than_or_equal": return numVal <= numFilter;
-        default: return true;
+        case "equals":
+          return numVal === numFilter;
+        case "not_equals":
+          return numVal !== numFilter;
+        case "greater_than":
+          return numVal > numFilter;
+        case "less_than":
+          return numVal < numFilter;
+        case "greater_than_or_equal":
+          return numVal >= numFilter;
+        case "less_than_or_equal":
+          return numVal <= numFilter;
+        default:
+          return true;
       }
     }
 
@@ -80,11 +91,16 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
       const dateFilter = new Date(String(filterValue ?? "")).getTime();
       if (isNaN(dateFilter)) return true;
       switch (operator) {
-        case "equals": return Math.abs(dateVal - dateFilter) < 86400000;
-        case "not_equals": return Math.abs(dateVal - dateFilter) >= 86400000;
-        case "greater_than": return dateVal > dateFilter;
-        case "less_than": return dateVal < dateFilter;
-        default: return true;
+        case "equals":
+          return Math.abs(dateVal - dateFilter) < 86400000;
+        case "not_equals":
+          return Math.abs(dateVal - dateFilter) >= 86400000;
+        case "greater_than":
+          return dateVal > dateFilter;
+        case "less_than":
+          return dateVal < dateFilter;
+        default:
+          return true;
       }
     }
 
@@ -114,7 +130,7 @@ export function filterRows(
   // Formula columns: filter using the declared return_type for correct operator semantics
   const effectiveType: ColumnType =
     col.type === "formula"
-      ? ((col.config as { return_type?: string }).return_type as ColumnType) ?? "text"
+      ? (((col.config as { return_type?: string }).return_type as ColumnType) ?? "text")
       : col.type;
 
   return rows.filter((row) => {

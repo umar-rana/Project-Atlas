@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  Folder,
-  FolderOpen,
-  ChevronRight,
-  ChevronDown,
-} from "lucide-react";
+import { Folder, FolderOpen, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FolderNode = {
@@ -42,7 +37,10 @@ interface FolderTreeNodeProps {
   folder: FolderNode;
   depth: number;
   pathname: string;
-  projectsByFolder: Map<string, { id: string; title: string; color: string | null; task_count: number }[]>;
+  projectsByFolder: Map<
+    string,
+    { id: string; title: string; color: string | null; task_count: number }[]
+  >;
   onToggle: (id: string, collapsed: boolean) => void;
   dragItem: DragItem | null;
   onDragStart: (item: DragItem) => void;
@@ -146,7 +144,9 @@ export function FolderTreeNode({
           )}
           <span className="flex-1 truncate">{folder.name}</span>
           {folder.project_count > 0 && (
-            <span className="font-mono text-2xs text-text-tertiary tabular-nums">{folder.project_count}</span>
+            <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+              {folder.project_count}
+            </span>
           )}
         </Link>
       </div>
@@ -163,7 +163,12 @@ export function FolderTreeNode({
                 draggable
                 onDragStart={(e) => {
                   e.stopPropagation();
-                  onDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: folder.id });
+                  onDragStart({
+                    type: "project",
+                    id: p.id,
+                    title: p.title,
+                    currentFolderId: folder.id,
+                  });
                 }}
                 style={{ paddingLeft: 20 + depth * 12 }}
                 className={cn(
@@ -176,7 +181,9 @@ export function FolderTreeNode({
                 <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(p.color))} />
                 <span className="flex-1 truncate">{p.title}</span>
                 {p.task_count > 0 && (
-                  <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
+                  <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                    {p.task_count}
+                  </span>
                 )}
               </Link>
             );

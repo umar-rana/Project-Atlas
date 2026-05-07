@@ -31,10 +31,7 @@ function buildTree(
     }));
 }
 
-function getDepth(
-  folders: { id: string; parent_id: string | null }[],
-  folderId: string,
-): number {
+function getDepth(folders: { id: string; parent_id: string | null }[], folderId: string): number {
   let depth = 0;
   let current = folderId;
   const parentMap = new Map(folders.map((f) => [f.id, f.parent_id]));
@@ -211,11 +208,17 @@ export const notesFolderRouter = router({
 
       if (input.parent_id) {
         if (input.parent_id === input.id) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot move a folder into itself." });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot move a folder into itself.",
+          });
         }
         const descendants = getDescendantIds(allFolders, input.id);
         if (descendants.includes(input.parent_id)) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot move a folder into one of its descendants." });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot move a folder into one of its descendants.",
+          });
         }
 
         const parentDepth = getDepth(allFolders, input.parent_id);
@@ -316,9 +319,7 @@ export const notesFolderRouter = router({
 
       const siblings = allFolders
         .filter((f) => f.parent_id === input.parent_id && f.id !== input.id)
-        .sort((a, b) =>
-          new Prisma.Decimal(a.position).comparedTo(new Prisma.Decimal(b.position)),
-        );
+        .sort((a, b) => new Prisma.Decimal(a.position).comparedTo(new Prisma.Decimal(b.position)));
 
       let insertIdx: number;
       if (input.insert_after_id === null) {
@@ -329,7 +330,7 @@ export const notesFolderRouter = router({
       }
 
       const ordered = [...siblings];
-      ordered.splice(insertIdx, 0, folder as typeof siblings[0]);
+      ordered.splice(insertIdx, 0, folder as (typeof siblings)[0]);
 
       const STEP = 100;
       const updates = ordered.map((f, i) => ({

@@ -20,7 +20,9 @@ function defaultFrom() {
   return d.toISOString().slice(0, 10);
 }
 
-function AuditRow({ entry }: {
+function AuditRow({
+  entry,
+}: {
   entry: {
     id: string;
     action: string;
@@ -32,14 +34,16 @@ function AuditRow({ entry }: {
     diff: Record<string, unknown> | null;
     created_at: Date | string;
     isWarning: boolean;
-  }
+  };
 }) {
   const [expanded, setExpanded] = React.useState(false);
   const hasMeta = entry.meta && Object.keys(entry.meta).length > 0;
   const hasDiff = entry.diff && Object.keys(entry.diff).length > 0;
 
   return (
-    <div className={`rounded-lg border ${entry.isWarning ? "border-red-800 bg-red-950/30" : "border-white/10 bg-white/5"}`}>
+    <div
+      className={`rounded-lg border ${entry.isWarning ? "border-red-800 bg-red-950/30" : "border-white/10 bg-white/5"}`}
+    >
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
@@ -57,11 +61,15 @@ function AuditRow({ entry }: {
             {entry.user && ` · ${entry.user.email}`}
           </p>
         </div>
-        <p className="mr-2 shrink-0 font-mono text-2xs text-white/25">{formatDate(entry.created_at)}</p>
-        {(hasMeta || hasDiff) ? (
-          expanded
-            ? <ChevronDown size={13} className="text-white/30" />
-            : <ChevronRight size={13} className="text-white/30" />
+        <p className="mr-2 shrink-0 font-mono text-2xs text-white/25">
+          {formatDate(entry.created_at)}
+        </p>
+        {hasMeta || hasDiff ? (
+          expanded ? (
+            <ChevronDown size={13} className="text-white/30" />
+          ) : (
+            <ChevronRight size={13} className="text-white/30" />
+          )
         ) : null}
       </button>
       {expanded && (
@@ -125,7 +133,8 @@ export function AdminAuditClient() {
     <div>
       <h1 className="mb-1 font-mono text-lg font-semibold text-white">Audit Log</h1>
       <p className="mb-5 font-mono text-sm text-white/40">
-        Filterable system activity log — default: past 7 days, admin views hidden. Click rows to expand metadata.
+        Filterable system activity log — default: past 7 days, admin views hidden. Click rows to
+        expand metadata.
       </p>
 
       <div className="mb-4 flex flex-wrap gap-3">
@@ -194,7 +203,10 @@ export function AdminAuditClient() {
       {isLoading && (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-lg border border-white/10 bg-white/5" />
+            <div
+              key={i}
+              className="h-14 animate-pulse rounded-lg border border-white/10 bg-white/5"
+            />
           ))}
         </div>
       )}

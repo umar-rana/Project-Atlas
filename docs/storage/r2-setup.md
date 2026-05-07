@@ -30,20 +30,20 @@ Files are **never proxied** through Next.js — the server generates a signed UR
 
 All storage secrets are stored in Replit Secrets (never in code):
 
-| Variable | Description |
-|---|---|
-| `R2_ACCOUNT_ID` | Cloudflare account ID |
-| `R2_ACCESS_KEY_ID` | R2 API token access key |
-| `R2_SECRET_ACCESS_KEY` | R2 API token secret key |
-| `R2_BUCKET_NAME` | Bucket name (`projectatlas`) |
-| `R2_ENDPOINT` | S3-compatible endpoint (`https://<accountId>.r2.cloudflarestorage.com`) |
-| `R2_PUBLIC_DOMAIN` | Custom domain for signed URLs (`https://atlasstore.insightive.io`) |
+| Variable               | Description                                                             |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `R2_ACCOUNT_ID`        | Cloudflare account ID                                                   |
+| `R2_ACCESS_KEY_ID`     | R2 API token access key                                                 |
+| `R2_SECRET_ACCESS_KEY` | R2 API token secret key                                                 |
+| `R2_BUCKET_NAME`       | Bucket name (`projectatlas`)                                            |
+| `R2_ENDPOINT`          | S3-compatible endpoint (`https://<accountId>.r2.cloudflarestorage.com`) |
+| `R2_PUBLIC_DOMAIN`     | Custom domain for signed URLs (`https://atlasstore.insightive.io`)      |
 
 ### Provider Selection
 
-| Variable | Description | Default |
-|---|---|---|
-| `STORAGE_PROVIDER` | `r2` or `replit` | `r2` |
+| Variable           | Description      | Default |
+| ------------------ | ---------------- | ------- |
+| `STORAGE_PROVIDER` | `r2` or `replit` | `r2`    |
 
 Set via Replit environment variables (shared, so it applies to both dev and prod).
 
@@ -111,6 +111,7 @@ npx tsx scripts/test-r2-setup.ts
 ```
 
 The script runs 7 checks:
+
 1. Upload a test file to R2
 2. Verify the file exists (HeadObject)
 3. Download the file and compare contents
@@ -124,6 +125,7 @@ All 7 must pass for the storage backend to be considered healthy.
 ## Health Check
 
 The `/admin/health` page and `health.full` tRPC endpoint include an `object_storage` check that:
+
 - Uploads a tiny test file
 - Downloads it
 - Deletes it

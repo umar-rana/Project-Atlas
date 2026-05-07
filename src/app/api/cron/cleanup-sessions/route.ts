@@ -4,5 +4,8 @@ import { NextResponse } from "next/server";
 // which manages its own session lifecycle. The route remains to avoid 404s
 // from any scheduled callers until they are updated.
 export async function POST() {
-  return NextResponse.json({ ok: true, message: "Sessions are managed by Clerk; no cleanup needed." });
+  return NextResponse.json({
+    ok: true,
+    message: "Sessions are managed by Clerk; no cleanup needed.",
+  });
 }

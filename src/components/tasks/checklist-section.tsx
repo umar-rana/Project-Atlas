@@ -129,15 +129,22 @@ export function ChecklistSection({ taskId, items, inTrash }: ChecklistSectionPro
                   onChange={(e) => setEditDraft(e.target.value)}
                   onBlur={() => commitEdit(item.id)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); commitEdit(item.id); }
-                    if (e.key === "Escape") { setEditingId(null); }
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      commitEdit(item.id);
+                    }
+                    if (e.key === "Escape") {
+                      setEditingId(null);
+                    }
                   }}
                   className="flex-1 rounded-sm bg-surface-base px-1 py-px font-ui text-xs text-text-primary outline-none ring-1 ring-border-focus"
                 />
               ) : (
                 <button
                   type="button"
-                  onClick={() => { if (!inTrash) startEdit(item); }}
+                  onClick={() => {
+                    if (!inTrash) startEdit(item);
+                  }}
                   className={cn(
                     "flex-1 truncate text-left font-ui text-xs",
                     item.completed_at != null
@@ -163,16 +170,22 @@ export function ChecklistSection({ taskId, items, inTrash }: ChecklistSectionPro
         </ul>
       )}
 
-      {!inTrash && (
-        addingNew ? (
+      {!inTrash &&
+        (addingNew ? (
           <input
             ref={newItemRef}
             value={newItemTitle}
             onChange={(e) => setNewItemTitle(e.target.value)}
             onBlur={commitNew}
             onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); commitNew(); }
-              if (e.key === "Escape") { setAddingNew(false); setNewItemTitle(""); }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitNew();
+              }
+              if (e.key === "Escape") {
+                setAddingNew(false);
+                setNewItemTitle("");
+              }
             }}
             placeholder="New item…"
             className="w-full rounded-sm border border-border-subtle bg-surface-base px-2 py-1 font-ui text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
@@ -186,8 +199,7 @@ export function ChecklistSection({ taskId, items, inTrash }: ChecklistSectionPro
             <Plus size={11} />
             Add item
           </button>
-        )
-      )}
+        ))}
     </section>
   );
 }

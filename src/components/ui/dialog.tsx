@@ -16,8 +16,9 @@ const SIZE: Record<string, string> = {
   xl: "max-w-modal-xl",
 };
 
-export interface DialogContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+export interface DialogContentProps extends React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> {
   size?: keyof typeof SIZE;
   hideClose?: boolean;
 }
@@ -68,7 +69,10 @@ export const DialogTitle = React.forwardRef<
   return (
     <DialogPrimitive.Title
       ref={ref}
-      className={cn("m-0 flex-1 font-ui text-md font-semibold leading-snug text-text-primary", className)}
+      className={cn(
+        "m-0 flex-1 font-ui text-md font-semibold leading-snug text-text-primary",
+        className,
+      )}
       {...props}
     />
   );

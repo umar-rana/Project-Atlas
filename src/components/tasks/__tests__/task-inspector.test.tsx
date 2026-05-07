@@ -122,15 +122,12 @@ vi.mock("@/lib/trpc/client", async () => {
     );
   }
 
-  const trpc = new Proxy(
-    { useUtils: () => utils } as Record<string, unknown>,
-    {
-      get(target, key: string) {
-        if (key === "useUtils") return target.useUtils;
-        return buildRouter(key);
-      },
+  const trpc = new Proxy({ useUtils: () => utils } as Record<string, unknown>, {
+    get(target, key: string) {
+      if (key === "useUtils") return target.useUtils;
+      return buildRouter(key);
     },
-  );
+  });
 
   return { trpc };
 });

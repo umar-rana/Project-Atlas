@@ -82,9 +82,16 @@ export function TaskInspectorActivityTab({ taskId }: TaskInspectorActivityTabPro
               setEditingId(null);
               setShowForm(true);
             }}
-            className="flex items-center gap-1 rounded px-1.5 py-1 font-ui text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary"
+            className="hover:bg-bg-hover flex items-center gap-1 rounded px-1.5 py-1 font-ui text-xs text-text-secondary hover:text-text-primary"
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M8 3v10M3 8h10" strokeLinecap="round" />
             </svg>
             Add update
@@ -136,7 +143,7 @@ export function TaskInspectorActivityTab({ taskId }: TaskInspectorActivityTabPro
 
               return (
                 <li key={item.id} className="flex gap-2">
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-text-tertiary">
+                  <div className="bg-bg-subtle mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-text-tertiary">
                     <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
                       <path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 1.5a4.5 4.5 0 110 9 4.5 4.5 0 010-9zm.5 2h-1v3.25l2.5 1.5.5-.87-2-1.2V5.5z" />
                     </svg>

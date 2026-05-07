@@ -16,7 +16,9 @@ export const Variants: Story = {
       <Button {...args} variant="primary" />
       <Button {...args} variant="secondary" />
       <Button {...args} variant="ghost" />
-      <Button {...args} variant="destructive">Delete</Button>
+      <Button {...args} variant="destructive">
+        Delete
+      </Button>
     </div>
   ),
 };
@@ -45,7 +47,9 @@ export const WithIcons: Story = {
   render: () => (
     <div className="flex items-center gap-2">
       <Button leftIcon={<Plus size={12} />}>New project</Button>
-      <Button variant="secondary" rightIcon={<ArrowRight size={12} />}>Continue</Button>
+      <Button variant="secondary" rightIcon={<ArrowRight size={12} />}>
+        Continue
+      </Button>
     </div>
   ),
 };

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import { Search, ChevronRight, User2, Trash2 } from "lucide-react";
+import { Search, ChevronRight, User2 } from "lucide-react";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = React.useState(value);
@@ -25,7 +25,9 @@ function formatDate(d: Date | string) {
 export function AdminUsersClient() {
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState<"active" | "deleted" | "all">("active");
-  const [sort, setSort] = React.useState<"created_at" | "name" | "email" | "updated_at">("created_at");
+  const [sort, setSort] = React.useState<"created_at" | "name" | "email" | "updated_at">(
+    "created_at",
+  );
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("desc");
   const debouncedSearch = useDebounce(search, 300);
 
@@ -54,7 +56,7 @@ export function AdminUsersClient() {
       </p>
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
+        <div className="relative min-w-48 flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
           <input
             type="search"
@@ -102,7 +104,10 @@ export function AdminUsersClient() {
       {isLoading && (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-xl border border-white/10 bg-white/5" />
+            <div
+              key={i}
+              className="h-20 animate-pulse rounded-xl border border-white/10 bg-white/5"
+            />
           ))}
         </div>
       )}
@@ -123,12 +128,12 @@ export function AdminUsersClient() {
                   {user.name ?? user.email.split("@")[0]}
                 </p>
                 {user.deleted_at && (
-                  <span className="shrink-0 rounded px-1.5 py-0.5 font-mono text-2xs bg-red-950 text-red-400 border border-red-800">
+                  <span className="shrink-0 rounded border border-red-800 bg-red-950 px-1.5 py-0.5 font-mono text-2xs text-red-400">
                     deleted
                   </span>
                 )}
                 {user.recovery_notification_pending && (
-                  <span className="shrink-0 rounded px-1.5 py-0.5 font-mono text-2xs bg-amber-950 text-amber-400 border border-amber-800">
+                  <span className="shrink-0 rounded border border-amber-800 bg-amber-950 px-1.5 py-0.5 font-mono text-2xs text-amber-400">
                     recovered
                   </span>
                 )}
@@ -141,7 +146,10 @@ export function AdminUsersClient() {
               </p>
               <p className="font-mono text-xs text-white/25">{formatDate(user.created_at)}</p>
             </div>
-            <ChevronRight size={16} className="shrink-0 text-white/20 transition-colors group-hover:text-white/50" />
+            <ChevronRight
+              size={16}
+              className="shrink-0 text-white/20 transition-colors group-hover:text-white/50"
+            />
           </Link>
         ))}
       </div>

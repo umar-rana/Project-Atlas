@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
 import {
   PRESET_RULES,
-  PRESET_LABELS,
   ruleToPreset,
   type PresetName,
 } from "@/core/recurrence/preset-rules";
@@ -148,10 +147,7 @@ export function RecurrenceForm({
     }
   }
 
-  const summary =
-    recurrenceRule
-      ? describeRule(recurrenceRule, currentAnchor, locale)
-      : null;
+  const summary = recurrenceRule ? describeRule(recurrenceRule, currentAnchor, locale) : null;
 
   const isPending = setRecurrence.isPending || removeRecurrence.isPending;
 
@@ -162,7 +158,7 @@ export function RecurrenceForm({
       </h3>
 
       {hasSubtasks && (
-        <div className="mb-2 flex items-start gap-1.5 rounded-sm border border-accent-warning/30 bg-accent-warning/5 px-2 py-1.5">
+        <div className="border-accent-warning/30 bg-accent-warning/5 mb-2 flex items-start gap-1.5 rounded-sm border px-2 py-1.5">
           <AlertCircle size={11} className="mt-0.5 shrink-0 text-accent-warning" />
           <p className="font-ui text-2xs text-text-secondary">
             Subtasks don&apos;t yet repeat with recurrence
@@ -313,9 +309,7 @@ export function RecurrenceForm({
             </select>
           </div>
 
-          {summary && (
-            <p className="font-ui text-2xs text-text-tertiary">{summary}</p>
-          )}
+          {summary && <p className="font-ui text-2xs text-text-tertiary">{summary}</p>}
         </div>
       )}
     </section>

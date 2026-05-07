@@ -57,14 +57,14 @@ export function ProjectTargetDatePicker({
           disabled={disabled}
           className={cn(
             "inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs transition-colors",
-            hasValue ? "text-text-secondary hover:bg-surface-hover" : "text-text-disabled hover:bg-surface-hover hover:text-text-tertiary",
+            hasValue
+              ? "text-text-secondary hover:bg-surface-hover"
+              : "text-text-disabled hover:bg-surface-hover hover:text-text-tertiary",
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
           <Calendar size={10} />
-          <span>
-            {hasValue ? `Target: ${formatTargetDate(value)}` : "Set target date"}
-          </span>
+          <span>{hasValue ? `Target: ${formatTargetDate(value)}` : "Set target date"}</span>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-auto p-2">
           <p className="mb-1.5 font-ui text-2xs font-medium text-text-secondary">Target date</p>
@@ -77,7 +77,10 @@ export function ProjectTargetDatePicker({
           {hasValue && (
             <button
               type="button"
-              onClick={() => { onChange(null); setOpen(false); }}
+              onClick={() => {
+                onChange(null);
+                setOpen(false);
+              }}
               className="mt-1.5 block w-full rounded-sm px-2 py-0.5 text-left font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
             >
               Clear date

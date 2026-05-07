@@ -110,18 +110,12 @@ export async function updateNoteFile(
   return res.data.id;
 }
 
-export async function deleteNoteFile(
-  userId: string,
-  fileId: string,
-): Promise<void> {
+export async function deleteNoteFile(userId: string, fileId: string): Promise<void> {
   const driveClient = await getDriveClient(userId);
   await driveClient.files.delete({ fileId, supportsAllDrives: true });
 }
 
-export async function getNoteFileParentId(
-  userId: string,
-  fileId: string,
-): Promise<string | null> {
+export async function getNoteFileParentId(userId: string, fileId: string): Promise<string | null> {
   try {
     const driveClient = await getDriveClient(userId);
     const res = await driveClient.files.get({

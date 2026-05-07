@@ -73,9 +73,7 @@ describe("categorizeInboxTask", () => {
     });
 
     it("classifies task with contexts as B", () => {
-      expect(
-        categorizeInboxTask(makeTask({ contexts: [{ context_id: "ctx-1" }] })),
-      ).toBe("B");
+      expect(categorizeInboxTask(makeTask({ contexts: [{ context_id: "ctx-1" }] }))).toBe("B");
     });
 
     it("classifies task with tags as B", () => {
@@ -83,21 +81,17 @@ describe("categorizeInboxTask", () => {
     });
 
     it("classifies task with checklist items as B", () => {
-      expect(
-        categorizeInboxTask(makeTask({ checklist_items: [{ id: "ci-1" }] })),
-      ).toBe("B");
+      expect(categorizeInboxTask(makeTask({ checklist_items: [{ id: "ci-1" }] }))).toBe("B");
     });
 
     it("classifies task with subtasks as B", () => {
-      expect(
-        categorizeInboxTask(makeTask({ subtasks: [{ id: "sub-1" }] })),
-      ).toBe("B");
+      expect(categorizeInboxTask(makeTask({ subtasks: [{ id: "sub-1" }] }))).toBe("B");
     });
 
     it("classifies task with meaningful notes as B", () => {
-      expect(
-        categorizeInboxTask(makeTask({ notes: "Call the store to check stock first" })),
-      ).toBe("B");
+      expect(categorizeInboxTask(makeTask({ notes: "Call the store to check stock first" }))).toBe(
+        "B",
+      );
     });
 
     it("classifies task with user edit action as B", () => {
@@ -108,9 +102,7 @@ describe("categorizeInboxTask", () => {
 
     it("classifies task with user project assignment as B", () => {
       expect(
-        categorizeInboxTask(
-          makeTask({ auditActions: ["task_created", "task_project_assigned"] }),
-        ),
+        categorizeInboxTask(makeTask({ auditActions: ["task_created", "task_project_assigned"] })),
       ).toBe("B");
     });
 

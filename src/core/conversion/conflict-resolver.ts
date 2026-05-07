@@ -78,7 +78,10 @@ export async function resolveConflict(params: {
     if (updated.count === 0) {
       throw new Error("Conflicting note not found or does not belong to you");
     }
-    log.info({ noteId: params.conflictingNoteId }, "Existing note moved to trash for conflict resolution");
+    log.info(
+      { noteId: params.conflictingNoteId },
+      "Existing note moved to trash for conflict resolution",
+    );
     return { resolvedTitle: params.newTitle };
   }
 

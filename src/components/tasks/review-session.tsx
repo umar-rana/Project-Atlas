@@ -37,11 +37,13 @@ export function ReviewSession(): React.ReactElement {
   // Fetch the queue once — capture a stable snapshot so index-based navigation
   // never skips projects when reviewed items drop out of the live query.
   const queueQuery = trpc.review.queue.useQuery(undefined, {
-    staleTime: Infinity,   // never re-fetch during the session
+    staleTime: Infinity, // never re-fetch during the session
     refetchOnWindowFocus: false,
   });
 
-  const [stableQueue, setStableQueue] = React.useState<NonNullable<typeof queueQuery.data>["projects"] | null>(null);
+  const [stableQueue, setStableQueue] = React.useState<
+    NonNullable<typeof queueQuery.data>["projects"] | null
+  >(null);
   const [currentIdx, setCurrentIdx] = React.useState(0);
   // Track which project IDs the user has acted on this session. Currently used
   // only for analytics-style tracking via the ref; the array is preserved to
@@ -77,11 +79,17 @@ export function ReviewSession(): React.ReactElement {
 
   const pendingActionRef = React.useRef<ReviewAction | null>(null);
   const summaryDataRef = React.useRef<SessionSummary>(summaryData);
-  React.useEffect(() => { summaryDataRef.current = summaryData; }, [summaryData]);
+  React.useEffect(() => {
+    summaryDataRef.current = summaryData;
+  }, [summaryData]);
   const currentIdxRef = React.useRef(currentIdx);
-  React.useEffect(() => { currentIdxRef.current = currentIdx; }, [currentIdx]);
+  React.useEffect(() => {
+    currentIdxRef.current = currentIdx;
+  }, [currentIdx]);
   const projectsLengthRef = React.useRef(projects.length);
-  React.useEffect(() => { projectsLengthRef.current = projects.length; }, [projects.length]);
+  React.useEffect(() => {
+    projectsLengthRef.current = projects.length;
+  }, [projects.length]);
 
   const reviewMutation = trpc.review.reviewProject.useMutation({
     onSuccess: (data) => {
@@ -190,7 +198,9 @@ export function ReviewSession(): React.ReactElement {
         <div className="w-full max-w-md">
           <div className="mb-4 flex items-center gap-2">
             <RefreshCw size={16} className="text-accent-success" />
-            <h1 className="font-display text-xl font-semibold text-text-primary">Review complete</h1>
+            <h1 className="font-display text-xl font-semibold text-text-primary">
+              Review complete
+            </h1>
           </div>
           <p className="mb-6 font-ui text-sm text-text-secondary">
             You reviewed {total} project{total !== 1 ? "s" : ""}. Nice work.
@@ -200,31 +210,41 @@ export function ReviewSession(): React.ReactElement {
             {summaryData.keep_active > 0 && (
               <div className="flex items-center justify-between font-ui text-sm">
                 <span className="text-text-secondary">Kept active</span>
-                <span className="font-semibold text-text-primary tabular-nums">{summaryData.keep_active}</span>
+                <span className="font-semibold tabular-nums text-text-primary">
+                  {summaryData.keep_active}
+                </span>
               </div>
             )}
             {summaryData.on_hold > 0 && (
               <div className="flex items-center justify-between font-ui text-sm">
                 <span className="text-text-secondary">Put on hold</span>
-                <span className="font-semibold text-text-primary tabular-nums">{summaryData.on_hold}</span>
+                <span className="font-semibold tabular-nums text-text-primary">
+                  {summaryData.on_hold}
+                </span>
               </div>
             )}
             {summaryData.completed > 0 && (
               <div className="flex items-center justify-between font-ui text-sm">
                 <span className="text-text-secondary">Completed</span>
-                <span className="font-semibold text-accent-success tabular-nums">{summaryData.completed}</span>
+                <span className="font-semibold tabular-nums text-accent-success">
+                  {summaryData.completed}
+                </span>
               </div>
             )}
             {summaryData.dropped > 0 && (
               <div className="flex items-center justify-between font-ui text-sm">
                 <span className="text-text-secondary">Dropped</span>
-                <span className="font-semibold text-text-tertiary tabular-nums">{summaryData.dropped}</span>
+                <span className="font-semibold tabular-nums text-text-tertiary">
+                  {summaryData.dropped}
+                </span>
               </div>
             )}
             {summaryData.skip > 0 && (
               <div className="flex items-center justify-between font-ui text-sm">
                 <span className="text-text-secondary">Skipped</span>
-                <span className="font-semibold text-text-tertiary tabular-nums">{summaryData.skip}</span>
+                <span className="font-semibold tabular-nums text-text-tertiary">
+                  {summaryData.skip}
+                </span>
               </div>
             )}
           </div>
@@ -247,7 +267,8 @@ export function ReviewSession(): React.ReactElement {
         <RefreshCw size={28} className="text-text-disabled" />
         <h1 className="font-display text-xl font-semibold text-text-primary">Nothing to review</h1>
         <p className="text-center font-ui text-sm text-text-secondary">
-          All your projects are up to date. Set a review interval on a project to schedule its next review.
+          All your projects are up to date. Set a review interval on a project to schedule its next
+          review.
         </p>
         <button
           type="button"
@@ -261,7 +282,7 @@ export function ReviewSession(): React.ReactElement {
   }
 
   const detail = detailQuery.data;
-  const progress = ((currentIdx) / projects.length) * 100;
+  const progress = (currentIdx / projects.length) * 100;
 
   return (
     <div className="flex h-full flex-col bg-surface-base">
@@ -284,7 +305,7 @@ export function ReviewSession(): React.ReactElement {
           </div>
         </div>
 
-        <div className="flex-1 mx-4">
+        <div className="mx-4 flex-1">
           <div className="h-1 overflow-hidden rounded-full bg-surface-raised">
             <div
               className="h-full rounded-full bg-accent-primary transition-[width] duration-300 motion-reduce:transition-none"
@@ -309,7 +330,8 @@ export function ReviewSession(): React.ReactElement {
             <AlertTriangle size={14} className="mt-0.5 shrink-0 text-accent-warning" />
             <div className="flex-1">
               <p className="font-ui text-sm font-medium text-text-primary">
-                This project has {confirmComplete.count} incomplete task{confirmComplete.count !== 1 ? "s" : ""}
+                This project has {confirmComplete.count} incomplete task
+                {confirmComplete.count !== 1 ? "s" : ""}
               </p>
               <p className="font-ui text-xs text-text-secondary">
                 Completing it will also complete all remaining tasks.
@@ -341,31 +363,37 @@ export function ReviewSession(): React.ReactElement {
             <div className="mx-auto max-w-2xl">
               <div className="mb-1 flex items-center gap-2">
                 {currentProject.color && (
-                  <span className={cn("size-3 rounded-full", {
-                    "bg-cal-1-border": currentProject.color === "blue",
-                    "bg-cal-2-border": currentProject.color === "green",
-                    "bg-cal-3-border": currentProject.color === "amber",
-                    "bg-cal-4-border": currentProject.color === "red",
-                    "bg-cal-5-border": currentProject.color === "purple",
-                  })} />
+                  <span
+                    className={cn("size-3 rounded-full", {
+                      "bg-cal-1-border": currentProject.color === "blue",
+                      "bg-cal-2-border": currentProject.color === "green",
+                      "bg-cal-3-border": currentProject.color === "amber",
+                      "bg-cal-4-border": currentProject.color === "red",
+                      "bg-cal-5-border": currentProject.color === "purple",
+                    })}
+                  />
                 )}
-                <span className="font-ui text-xs uppercase tracking-caps text-text-tertiary">Project</span>
+                <span className="font-ui text-xs uppercase tracking-caps text-text-tertiary">
+                  Project
+                </span>
               </div>
 
-              <h1 className="mb-4 font-display text-2xl font-semibold text-text-primary">
+              <h1 className="font-display mb-4 text-2xl font-semibold text-text-primary">
                 {currentProject.title}
               </h1>
 
               <div className="mb-4 flex items-center gap-4 font-ui text-xs text-text-tertiary">
                 {currentProject.last_reviewed_at && (
                   <span>
-                    Last reviewed {formatDistanceToNow(new Date(currentProject.last_reviewed_at))} ago
+                    Last reviewed {formatDistanceToNow(new Date(currentProject.last_reviewed_at))}{" "}
+                    ago
                   </span>
                 )}
-                {!currentProject.last_reviewed_at && (
-                  <span>Never reviewed</span>
-                )}
-                <span>{currentProject.task_count} active task{currentProject.task_count !== 1 ? "s" : ""}</span>
+                {!currentProject.last_reviewed_at && <span>Never reviewed</span>}
+                <span>
+                  {currentProject.task_count} active task
+                  {currentProject.task_count !== 1 ? "s" : ""}
+                </span>
               </div>
 
               <div className="mb-6">
@@ -386,12 +414,18 @@ export function ReviewSession(): React.ReactElement {
                   {detail.stale_tasks.length > 0 && (
                     <div className="mb-4 rounded-md border border-accent-warning bg-accent-warning-muted p-3">
                       <p className="mb-2 font-ui text-xs font-medium text-accent-warning">
-                        {detail.stale_tasks.length} stale task{detail.stale_tasks.length !== 1 ? "s" : ""} (no due date, not updated in 14+ days)
+                        {detail.stale_tasks.length} stale task
+                        {detail.stale_tasks.length !== 1 ? "s" : ""} (no due date, not updated in
+                        14+ days)
                       </p>
                       <ul className="flex flex-col gap-1">
-                        {(detail.stale_tasks as Array<{ id: string; title: string }>).slice(0, 5).map((t) => (
-                          <li key={t.id} className="font-ui text-xs text-text-secondary">• {t.title}</li>
-                        ))}
+                        {(detail.stale_tasks as Array<{ id: string; title: string }>)
+                          .slice(0, 5)
+                          .map((t) => (
+                            <li key={t.id} className="font-ui text-xs text-text-secondary">
+                              • {t.title}
+                            </li>
+                          ))}
                         {detail.stale_tasks.length > 5 && (
                           <li className="font-ui text-xs text-text-tertiary">
                             +{detail.stale_tasks.length - 5} more
@@ -407,23 +441,41 @@ export function ReviewSession(): React.ReactElement {
                         Tasks ({detail.incomplete_count} active)
                       </h3>
                       <ul className="flex flex-col gap-1">
-                        {(detail.tasks as Array<{ id: string; title: string; status: string; due_date: Date | string | null }>).slice(0, 10).map((t) => (
-                          <li
-                            key={t.id}
-                            className={cn(
-                              "flex items-center gap-2 font-ui text-sm",
-                              t.status === "completed" ? "text-text-disabled line-through" : "text-text-secondary",
-                            )}
-                          >
-                            <span className={cn("size-1.5 rounded-full shrink-0", t.status === "completed" ? "bg-text-disabled" : "bg-accent-primary")} />
-                            {t.title}
-                            {t.due_date && (
-                              <span className="ml-auto font-ui text-2xs text-text-tertiary">
-                                {localeFormatDate(t.due_date, locale)}
-                              </span>
-                            )}
-                          </li>
-                        ))}
+                        {(
+                          detail.tasks as Array<{
+                            id: string;
+                            title: string;
+                            status: string;
+                            due_date: Date | string | null;
+                          }>
+                        )
+                          .slice(0, 10)
+                          .map((t) => (
+                            <li
+                              key={t.id}
+                              className={cn(
+                                "flex items-center gap-2 font-ui text-sm",
+                                t.status === "completed"
+                                  ? "text-text-disabled line-through"
+                                  : "text-text-secondary",
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "size-1.5 shrink-0 rounded-full",
+                                  t.status === "completed"
+                                    ? "bg-text-disabled"
+                                    : "bg-accent-primary",
+                                )}
+                              />
+                              {t.title}
+                              {t.due_date && (
+                                <span className="ml-auto font-ui text-2xs text-text-tertiary">
+                                  {localeFormatDate(t.due_date, locale)}
+                                </span>
+                              )}
+                            </li>
+                          ))}
                         {detail.tasks.length > 10 && (
                           <li className="font-ui text-xs text-text-tertiary">
                             +{detail.tasks.length - 10} more tasks

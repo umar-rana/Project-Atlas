@@ -36,7 +36,8 @@ const statusDotVariants = cva(
 );
 
 export interface AvatarProps
-  extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
     VariantProps<typeof avatarVariants> {
   src?: string;
   alt?: string;
@@ -44,20 +45,29 @@ export interface AvatarProps
   status?: "online" | "busy" | "away" | "offline";
 }
 
-export const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  AvatarProps
->(function Avatar({ className, size, src, alt, initials, status, ...props }, ref) {
-  return (
-    <AvatarPrimitive.Root ref={ref} className={cn(avatarVariants({ size }), className)} {...props}>
-      {src ? <AvatarPrimitive.Image src={src} alt={alt ?? initials ?? ""} className="size-full object-cover" /> : null}
-      <AvatarPrimitive.Fallback className="flex size-full items-center justify-center">
-        {initials ?? alt?.slice(0, 2).toUpperCase() ?? "?"}
-      </AvatarPrimitive.Fallback>
-      {status ? <span aria-hidden className={statusDotVariants({ status })} /> : null}
-    </AvatarPrimitive.Root>
-  );
-});
+export const Avatar = React.forwardRef<React.ElementRef<typeof AvatarPrimitive.Root>, AvatarProps>(
+  function Avatar({ className, size, src, alt, initials, status, ...props }, ref) {
+    return (
+      <AvatarPrimitive.Root
+        ref={ref}
+        className={cn(avatarVariants({ size }), className)}
+        {...props}
+      >
+        {src ? (
+          <AvatarPrimitive.Image
+            src={src}
+            alt={alt ?? initials ?? ""}
+            className="size-full object-cover"
+          />
+        ) : null}
+        <AvatarPrimitive.Fallback className="flex size-full items-center justify-center">
+          {initials ?? alt?.slice(0, 2).toUpperCase() ?? "?"}
+        </AvatarPrimitive.Fallback>
+        {status ? <span aria-hidden className={statusDotVariants({ status })} /> : null}
+      </AvatarPrimitive.Root>
+    );
+  },
+);
 
 export interface AvatarStackProps extends React.HTMLAttributes<HTMLDivElement> {
   max?: number;
@@ -78,15 +88,10 @@ export function AvatarStack({
   const visible = list.slice(0, max);
   const overflow = (total ?? list.length) - visible.length;
   return (
-    <div
-      className={cn("inline-flex items-center pl-1.25", className)}
-      {...props}
-    >
+    <div className={cn("inline-flex items-center pl-1.25", className)} {...props}>
       {visible.map((child, i) => (
-        <span key={i} className="-ml-1.25 outline outline-2 outline-surface-base rounded-full">
-          {React.isValidElement<AvatarProps>(child)
-            ? React.cloneElement(child, { size })
-            : child}
+        <span key={i} className="-ml-1.25 rounded-full outline outline-2 outline-surface-base">
+          {React.isValidElement<AvatarProps>(child) ? React.cloneElement(child, { size }) : child}
         </span>
       ))}
       {overflow > 0 ? (

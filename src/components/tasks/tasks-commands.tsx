@@ -167,24 +167,49 @@ export function TasksCommands(): null {
   useRegisterShortcuts(
     React.useMemo<ShortcutItem[]>(
       () => [
-        { id: "t-inbox",     label: "Tasks: Inbox",        group: "Navigation", keys: ["cmd", "1"] },
-        { id: "t-today",     label: "Tasks: Today",        group: "Navigation", keys: ["cmd", "2"] },
-        { id: "t-flagged",   label: "Tasks: Flagged",      group: "Navigation", keys: ["cmd", "3"] },
-        { id: "t-projects",  label: "Tasks: Projects",     group: "Navigation", keys: ["cmd", "4"] },
-        { id: "t-trash",     label: "Tasks: Trash",        group: "Navigation", keys: ["cmd", "7"] },
-        { id: "t-forecast",  label: "Tasks: Forecast",     group: "Navigation", keys: ["cmd", "shift", "F"] },
-        { id: "t-review",    label: "Tasks: Review session", group: "Navigation", keys: ["cmd", "shift", "R"] },
-        { id: "t-capture",   label: "Capture new task",    group: "Global",     keys: ["cmd", "N"] },
-        { id: "t-newproj",   label: "New project",         group: "Global",     keys: ["cmd", "shift", "N"] },
-        { id: "t-down",      label: "Move focus down",                   group: "Task list", keys: ["J"] },
-        { id: "t-up",        label: "Move focus up",                     group: "Task list", keys: ["K"] },
-        { id: "t-complete",  label: "Toggle complete (focused row)",     group: "Task list", keys: ["space"] },
-        { id: "t-completd",  label: "Toggle complete (focused row)",     group: "Task list", keys: ["cmd", "D"] },
-        { id: "t-flag",      label: "Flag/unflag (focused row)",         group: "Task list", keys: ["F"] },
-        { id: "t-quickact",  label: "Quick actions (focused row)",       group: "Task list", keys: ["."] },
-        { id: "t-enter",     label: "Open inspector (focused row)",      group: "Task list", keys: ["↵"] },
-        { id: "t-inspect",   label: "Open inspector (focused row)",      group: "Inspector", keys: ["cmd", "I"] },
-        { id: "t-process",   label: "Process Inbox",                     group: "Global",     keys: ["cmd", "shift", "P"] },
+        { id: "t-inbox", label: "Tasks: Inbox", group: "Navigation", keys: ["cmd", "1"] },
+        { id: "t-today", label: "Tasks: Today", group: "Navigation", keys: ["cmd", "2"] },
+        { id: "t-flagged", label: "Tasks: Flagged", group: "Navigation", keys: ["cmd", "3"] },
+        { id: "t-projects", label: "Tasks: Projects", group: "Navigation", keys: ["cmd", "4"] },
+        { id: "t-trash", label: "Tasks: Trash", group: "Navigation", keys: ["cmd", "7"] },
+        {
+          id: "t-forecast",
+          label: "Tasks: Forecast",
+          group: "Navigation",
+          keys: ["cmd", "shift", "F"],
+        },
+        {
+          id: "t-review",
+          label: "Tasks: Review session",
+          group: "Navigation",
+          keys: ["cmd", "shift", "R"],
+        },
+        { id: "t-capture", label: "Capture new task", group: "Global", keys: ["cmd", "N"] },
+        { id: "t-newproj", label: "New project", group: "Global", keys: ["cmd", "shift", "N"] },
+        { id: "t-down", label: "Move focus down", group: "Task list", keys: ["J"] },
+        { id: "t-up", label: "Move focus up", group: "Task list", keys: ["K"] },
+        {
+          id: "t-complete",
+          label: "Toggle complete (focused row)",
+          group: "Task list",
+          keys: ["space"],
+        },
+        {
+          id: "t-completd",
+          label: "Toggle complete (focused row)",
+          group: "Task list",
+          keys: ["cmd", "D"],
+        },
+        { id: "t-flag", label: "Flag/unflag (focused row)", group: "Task list", keys: ["F"] },
+        { id: "t-quickact", label: "Quick actions (focused row)", group: "Task list", keys: ["."] },
+        { id: "t-enter", label: "Open inspector (focused row)", group: "Task list", keys: ["↵"] },
+        {
+          id: "t-inspect",
+          label: "Open inspector (focused row)",
+          group: "Inspector",
+          keys: ["cmd", "I"],
+        },
+        { id: "t-process", label: "Process Inbox", group: "Global", keys: ["cmd", "shift", "P"] },
       ],
       [],
     ),
@@ -267,7 +292,10 @@ export function TasksCommands(): null {
       if (e.altKey || e.shiftKey) return;
       // Don't hijack typing in form fields.
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
         return;
       }
       const map: Record<string, string> = {
@@ -280,10 +308,10 @@ export function TasksCommands(): null {
       // ⌘⇧F → Forecast, ⌘⇧R → Review
       if (e.shiftKey) {
         const shiftMap: Record<string, string> = {
-          "f": "/tasks/forecast",
-          "F": "/tasks/forecast",
-          "r": "/tasks/review",
-          "R": "/tasks/review",
+          f: "/tasks/forecast",
+          F: "/tasks/forecast",
+          r: "/tasks/review",
+          R: "/tasks/review",
         };
         const shiftDest = shiftMap[e.key];
         if (shiftDest) {

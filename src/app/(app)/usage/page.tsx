@@ -15,7 +15,7 @@ function UsagePageSkeleton() {
 
       <section className="mb-8">
         <Skeleton variant="text" width="4rem" className="mb-3" />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="sm:grid-cols-3 grid grid-cols-1 gap-4">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -39,10 +39,7 @@ function UsagePageSkeleton() {
             <Skeleton variant="text" width="100%" />
           </div>
           {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="border-b border-border-subtle px-4 py-3 last:border-b-0"
-            >
+            <div key={i} className="border-b border-border-subtle px-4 py-3 last:border-b-0">
               <Skeleton variant="line" width="100%" />
             </div>
           ))}
@@ -52,10 +49,9 @@ function UsagePageSkeleton() {
   );
 }
 
-const UsageClient = dynamic(
-  () => import("./usage-client").then((m) => m.UsageClient),
-  { loading: () => <UsagePageSkeleton /> },
-);
+const UsageClient = dynamic(() => import("./usage-client").then((m) => m.UsageClient), {
+  loading: () => <UsagePageSkeleton />,
+});
 
 export default async function UsagePage() {
   return <UsageClient />;

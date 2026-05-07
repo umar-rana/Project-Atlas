@@ -13,8 +13,7 @@ export function detectCheckbox(values: string[]): boolean {
   if (nonEmpty.length === 0) return false;
   return nonEmpty.every(
     (v) =>
-      CHECKBOX_TRUTHY.has(v.toLowerCase().trim()) ||
-      CHECKBOX_FALSY.has(v.toLowerCase().trim()),
+      CHECKBOX_TRUTHY.has(v.toLowerCase().trim()) || CHECKBOX_FALSY.has(v.toLowerCase().trim()),
   );
 }
 
@@ -85,10 +84,7 @@ export function detectColumnType(values: string[]): ColumnType {
   return "text";
 }
 
-export function detectColumns(
-  headers: string[],
-  rows: string[][],
-): DetectedColumn[] {
+export function detectColumns(headers: string[], rows: string[][]): DetectedColumn[] {
   return headers.map((name, colIdx) => {
     const columnValues = rows.map((row) => row[colIdx] ?? "");
     const type = detectColumnType(columnValues);
@@ -113,7 +109,10 @@ export function extractSelectOptions(
     if (!v.trim()) continue;
     const parts =
       separator && v.includes(separator)
-        ? v.split(separator).map((t) => t.trim()).filter(Boolean)
+        ? v
+            .split(separator)
+            .map((t) => t.trim())
+            .filter(Boolean)
         : [v.trim()];
     for (const part of parts) {
       if (!seen.has(part)) {

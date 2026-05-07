@@ -127,7 +127,10 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
     const { state } = editor;
     const { $from } = state.selection;
     const node = $from.node($from.depth);
-    if (!node) { onClose(); return; }
+    if (!node) {
+      onClose();
+      return;
+    }
     const end = $from.end($from.depth);
     editor
       .chain()

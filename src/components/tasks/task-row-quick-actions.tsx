@@ -69,8 +69,9 @@ function optimisticallyUpdateTask(
   patch: Partial<TaskRow>,
 ): Array<[readonly unknown[], unknown]> {
   const prevSnapshots = queryClient.getQueriesData<TaskRow[]>({ queryKey: TASK_LIST_QUERY_KEY });
-  queryClient.setQueriesData<TaskRow[]>({ queryKey: TASK_LIST_QUERY_KEY }, (old) =>
-    old?.map((t) => (t.id === taskId ? { ...t, ...patch } : t)) ?? old,
+  queryClient.setQueriesData<TaskRow[]>(
+    { queryKey: TASK_LIST_QUERY_KEY },
+    (old) => old?.map((t) => (t.id === taskId ? { ...t, ...patch } : t)) ?? old,
   );
   return prevSnapshots as Array<[readonly unknown[], unknown]>;
 }
@@ -91,12 +92,7 @@ interface QuickDatePopoverProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function QuickDatePopover({
-  taskId,
-  field,
-  currentValue,
-  onOpenChange,
-}: QuickDatePopoverProps) {
+function QuickDatePopover({ taskId, field, currentValue, onOpenChange }: QuickDatePopoverProps) {
   const locale = useLocale();
   const [open, setOpen] = React.useState(false);
   const [showCustom, setShowCustom] = React.useState(false);
@@ -163,7 +159,9 @@ function QuickDatePopover({
             className="flex w-full items-center justify-between rounded-sm px-2 py-1 text-left text-sm text-text-primary hover:bg-accent-primary-subtle disabled:opacity-50"
           >
             <span>{opt.label}</span>
-            <span className="text-xs text-text-tertiary">{formatWeekdayAbbrev(opt.date, locale.language)}</span>
+            <span className="text-xs text-text-tertiary">
+              {formatWeekdayAbbrev(opt.date, locale.language)}
+            </span>
           </button>
         ))}
         {showCustom ? (
@@ -288,7 +286,10 @@ function ProjectPickerPopover({
       </PopoverTrigger>
       <PopoverContent align="end" className="w-56 p-1" onClick={(e) => e.stopPropagation()}>
         <div className="relative mb-1">
-          <Search size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary" />
+          <Search
+            size={10}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary"
+          />
           <input
             autoFocus
             placeholder="Search projects…"
@@ -378,8 +379,9 @@ function MoreMenu({ task, onOpenInspector, onOpenChange }: MoreMenuProps) {
       prevSnapshots.current = queryClient.getQueriesData<TaskRow[]>({
         queryKey: TASK_LIST_QUERY_KEY,
       }) as Array<[readonly unknown[], unknown]>;
-      queryClient.setQueriesData<TaskRow[]>({ queryKey: TASK_LIST_QUERY_KEY }, (old) =>
-        old?.filter((t) => t.id !== task.id) ?? old,
+      queryClient.setQueriesData<TaskRow[]>(
+        { queryKey: TASK_LIST_QUERY_KEY },
+        (old) => old?.filter((t) => t.id !== task.id) ?? old,
       );
     },
     onSuccess: () => {
@@ -575,7 +577,10 @@ export function TaskRowQuickActions({
     } else if (e.key === "ArrowLeft") {
       e.preventDefault();
       e.stopPropagation();
-      const prev = idx < 0 ? buttons[buttons.length - 1] : buttons[(idx - 1 + buttons.length) % buttons.length];
+      const prev =
+        idx < 0
+          ? buttons[buttons.length - 1]
+          : buttons[(idx - 1 + buttons.length) % buttons.length];
       prev?.focus();
     } else if (e.key === "Escape") {
       e.preventDefault();

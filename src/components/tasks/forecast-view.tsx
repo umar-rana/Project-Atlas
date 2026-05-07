@@ -9,13 +9,7 @@ import {
   formatDayOfMonth,
   formatMonthAbbrev,
 } from "@/core/locale/formatters";
-import {
-  CalendarDays,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-} from "lucide-react";
+import { CalendarDays, AlertCircle, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -63,9 +57,13 @@ function TaskCard({
   return (
     <div
       draggable={!isPast}
-      onDragStart={isPast ? undefined : (e) => {
-        e.dataTransfer.setData("task-id", task.id);
-      }}
+      onDragStart={
+        isPast
+          ? undefined
+          : (e) => {
+              e.dataTransfer.setData("task-id", task.id);
+            }
+      }
       className={cn(
         "group flex items-start gap-2 rounded-sm border border-border-subtle bg-surface-base p-2 shadow-1 transition-colors hover:border-border-default",
         isCompleted && "opacity-50",
@@ -82,7 +80,7 @@ function TaskCard({
         <p
           className={cn(
             "truncate font-ui text-xs text-text-primary",
-            isCompleted && "line-through text-text-tertiary",
+            isCompleted && "text-text-tertiary line-through",
           )}
         >
           {task.title}
@@ -91,13 +89,15 @@ function TaskCard({
           {task.project && (
             <div className="flex items-center gap-1">
               <span className={cn("size-1.5 rounded-full", colorDotClass(task.project.color))} />
-              <span className="truncate font-ui text-2xs text-text-tertiary">{task.project.title}</span>
+              <span className="truncate font-ui text-2xs text-text-tertiary">
+                {task.project.title}
+              </span>
             </div>
           )}
           {!task.due_date && task.defer_date && (
             <span
               title={`Available from ${localeFormatDate(task.defer_date, locale)}`}
-              className="inline-flex items-center rounded px-1 py-px font-ui text-3xs font-medium text-accent-info bg-accent-info/10 leading-none cursor-default"
+              className="bg-accent-info/10 inline-flex cursor-default items-center rounded px-1 py-px font-ui text-3xs font-medium leading-none text-accent-info"
             >
               Available
             </span>
@@ -153,20 +153,30 @@ function DayColumn({
     <div
       className={cn(
         "flex min-w-0 flex-1 flex-col rounded-md border",
-        today ? "border-accent-primary bg-accent-primary-subtle" : "border-border-subtle bg-surface-base",
+        today
+          ? "border-accent-primary bg-accent-primary-subtle"
+          : "border-border-subtle bg-surface-base",
         isPast && "opacity-80",
       )}
-      onDragOver={isPast ? undefined : (e) => {
-        e.preventDefault();
-        setDragOver(true);
-      }}
+      onDragOver={
+        isPast
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }
+      }
       onDragLeave={isPast ? undefined : () => setDragOver(false)}
-      onDrop={isPast ? undefined : (e) => {
-        e.preventDefault();
-        const taskId = e.dataTransfer.getData("task-id");
-        if (taskId) onDrop(taskId, date);
-        setDragOver(false);
-      }}
+      onDrop={
+        isPast
+          ? undefined
+          : (e) => {
+              e.preventDefault();
+              const taskId = e.dataTransfer.getData("task-id");
+              if (taskId) onDrop(taskId, date);
+              setDragOver(false);
+            }
+      }
     >
       <div
         className={cn(
@@ -175,30 +185,45 @@ function DayColumn({
           dragOver && "bg-accent-primary-muted",
         )}
       >
-        <p className={cn("font-ui text-2xs font-semibold uppercase tracking-caps", today ? "text-accent-primary" : "text-text-tertiary")}>
+        <p
+          className={cn(
+            "font-ui text-2xs font-semibold uppercase tracking-caps",
+            today ? "text-accent-primary" : "text-text-tertiary",
+          )}
+        >
           {formatWeekdayAbbrev(d, locale.language)}
         </p>
-        <p className={cn("font-display text-lg font-bold", today ? "text-accent-primary" : "text-text-primary")}>
+        <p
+          className={cn(
+            "font-display text-lg font-bold",
+            today ? "text-accent-primary" : "text-text-primary",
+          )}
+        >
           {formatDayOfMonth(d)}
         </p>
-        <p className="font-ui text-3xs text-text-tertiary">{formatMonthAbbrev(d, locale.language)}</p>
-        {tasks.length > 0 && (() => {
-          const active = tasks.filter((t) => t.status !== "completed").length;
-          const flagged = tasks.filter((t) => t.flagged).length;
-          const done = tasks.length - active;
-          const tooltipParts = [`${active} active`];
-          if (flagged > 0) tooltipParts.push(`${flagged} flagged`);
-          if (done > 0) tooltipParts.push(`${done} done`);
-          return (
-            <p
-              className="mt-0.5 cursor-default font-mono text-3xs text-text-tertiary tabular-nums"
-              title={tooltipParts.join(" · ")}
-            >
-              {tasks.length} task{tasks.length !== 1 ? "s" : ""}
-              {flagged > 0 && <span className="ml-1 text-accent-warning">({flagged} flagged)</span>}
-            </p>
-          );
-        })()}
+        <p className="font-ui text-3xs text-text-tertiary">
+          {formatMonthAbbrev(d, locale.language)}
+        </p>
+        {tasks.length > 0 &&
+          (() => {
+            const active = tasks.filter((t) => t.status !== "completed").length;
+            const flagged = tasks.filter((t) => t.flagged).length;
+            const done = tasks.length - active;
+            const tooltipParts = [`${active} active`];
+            if (flagged > 0) tooltipParts.push(`${flagged} flagged`);
+            if (done > 0) tooltipParts.push(`${done} done`);
+            return (
+              <p
+                className="mt-0.5 cursor-default font-mono text-3xs tabular-nums text-text-tertiary"
+                title={tooltipParts.join(" · ")}
+              >
+                {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+                {flagged > 0 && (
+                  <span className="ml-1 text-accent-warning">({flagged} flagged)</span>
+                )}
+              </p>
+            );
+          })()}
       </div>
       <div className="flex flex-col gap-1 overflow-y-auto p-1.5">
         {showCalendar && events.length > 0 && (
@@ -211,11 +236,13 @@ function DayColumn({
                   "flex items-center gap-1 rounded px-1.5 py-1 font-ui text-2xs",
                   ev.status === "cancelled"
                     ? "text-text-disabled line-through"
-                    : "bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20",
+                    : "bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary",
                 )}
                 title={ev.title}
               >
-                <span className="flex-shrink-0 font-mono text-3xs tabular-nums">{formatEventTime(ev.start_at)}</span>
+                <span className="flex-shrink-0 font-mono text-3xs tabular-nums">
+                  {formatEventTime(ev.start_at)}
+                </span>
                 <span className="truncate">{ev.title}</span>
               </a>
             ))}
@@ -225,9 +252,7 @@ function DayColumn({
         {tasks.length === 0 ? (
           <p className="py-2 text-center font-ui text-2xs text-text-disabled">—</p>
         ) : (
-          tasks.map((t) => (
-            <TaskCard key={t.id} task={t} onComplete={onComplete} isPast={isPast} />
-          ))
+          tasks.map((t) => <TaskCard key={t.id} task={t} onComplete={onComplete} isPast={isPast} />)
         )}
       </div>
     </div>
@@ -240,12 +265,14 @@ export function ForecastView(): React.ReactElement {
   const { data: meData } = trpc.user.me.useQuery(undefined, { staleTime: 5 * 60_000 });
 
   function extractForecastDays(raw: unknown): 7 | 14 {
-    const prefs = (typeof raw === "object" && raw !== null && "tasks_prefs" in raw)
-      ? (raw as { tasks_prefs: unknown }).tasks_prefs
-      : null;
-    const val = (typeof prefs === "object" && prefs !== null && "default_forecast_days" in prefs)
-      ? (prefs as { default_forecast_days: unknown }).default_forecast_days
-      : undefined;
+    const prefs =
+      typeof raw === "object" && raw !== null && "tasks_prefs" in raw
+        ? (raw as { tasks_prefs: unknown }).tasks_prefs
+        : null;
+    const val =
+      typeof prefs === "object" && prefs !== null && "default_forecast_days" in prefs
+        ? (prefs as { default_forecast_days: unknown }).default_forecast_days
+        : undefined;
     return typeof val === "number" && val === 14 ? 14 : 7;
   }
 
@@ -256,16 +283,14 @@ export function ForecastView(): React.ReactElement {
       const raw = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
       if (raw === "7") return 7;
       if (raw === "14") return 14;
-    } catch {
-    }
+    } catch {}
     return null;
   }
 
   function storeDays(n: 7 | 14) {
     try {
       localStorage.setItem(STORAGE_KEY, String(n));
-    } catch {
-    }
+    } catch {}
   }
 
   const [days, setDays] = React.useState<7 | 14>(() => {
@@ -307,8 +332,7 @@ export function ForecastView(): React.ReactElement {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(CAL_PREF_KEY) : null;
       if (raw === "false") return false;
-    } catch {
-    }
+    } catch {}
     return true;
   }
 
@@ -317,7 +341,9 @@ export function ForecastView(): React.ReactElement {
   function toggleShowCalendar() {
     setShowCalendar((prev) => {
       const next = !prev;
-      try { localStorage.setItem(CAL_PREF_KEY, String(next)); } catch { }
+      try {
+        localStorage.setItem(CAL_PREF_KEY, String(next));
+      } catch {}
       return next;
     });
   }
@@ -375,7 +401,9 @@ export function ForecastView(): React.ReactElement {
   }
 
   type ForecastDay = { date: string; tasks: ForecastTask[] };
-  type ForecastData = { days: ForecastDay[]; overdue: ForecastTask[]; calendar_connected: boolean } | undefined;
+  type ForecastData =
+    | { days: ForecastDay[]; overdue: ForecastTask[]; calendar_connected: boolean }
+    | undefined;
   const data = query.data as ForecastData;
 
   return (
@@ -393,7 +421,7 @@ export function ForecastView(): React.ReactElement {
             className={cn(
               "flex items-center gap-1 rounded-sm border px-2 py-1 font-ui text-2xs transition-colors",
               showCalendar
-                ? "border-accent-primary text-accent-primary bg-accent-primary/10"
+                ? "bg-accent-primary/10 border-accent-primary text-accent-primary"
                 : "border-border-subtle text-text-tertiary hover:bg-surface-hover",
             )}
           >
@@ -406,7 +434,9 @@ export function ForecastView(): React.ReactElement {
               onClick={() => handleSetDays(7)}
               className={cn(
                 "px-2 py-1 font-ui text-2xs",
-                days === 7 ? "bg-accent-primary-muted text-accent-primary" : "text-text-secondary hover:bg-surface-hover",
+                days === 7
+                  ? "bg-accent-primary-muted text-accent-primary"
+                  : "text-text-secondary hover:bg-surface-hover",
               )}
             >
               7 days
@@ -416,7 +446,9 @@ export function ForecastView(): React.ReactElement {
               onClick={() => handleSetDays(14)}
               className={cn(
                 "border-l border-border-subtle px-2 py-1 font-ui text-2xs",
-                days === 14 ? "bg-accent-primary-muted text-accent-primary" : "text-text-secondary hover:bg-surface-hover",
+                days === 14
+                  ? "bg-accent-primary-muted text-accent-primary"
+                  : "text-text-secondary hover:bg-surface-hover",
               )}
             >
               14 days
@@ -505,7 +537,10 @@ export function ForecastView(): React.ReactElement {
               </div>
             )}
 
-            <div data-testid="forecast-day-grid" className="flex flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+            <div
+              data-testid="forecast-day-grid"
+              className="flex flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3"
+            >
               {(data?.days ?? []).map((day) => {
                 const dayEvents = (calEvents as CalEvent[]).filter((ev) => {
                   const evDay = new Date(ev.start_at).toISOString().slice(0, 10);

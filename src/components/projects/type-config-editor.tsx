@@ -6,10 +6,46 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
 const EMOJI_OPTIONS = [
-  "📁", "🎯", "✈️", "📚", "💪", "📖", "💼", "🏠", "💰", "🏃",
-  "🛒", "🍽️", "🎵", "🎨", "✍️", "🔬", "🏡", "👨‍👩‍👧", "🤝", "🎮",
-  "⭐", "🚀", "💡", "🔧", "📊", "🌱", "🏆", "🎓", "❤️", "🌍",
-  "📂", "📝", "📌", "🔖", "🗂️", "📋", "🗓️", "⏰", "🔔", "💬",
+  "📁",
+  "🎯",
+  "✈️",
+  "📚",
+  "💪",
+  "📖",
+  "💼",
+  "🏠",
+  "💰",
+  "🏃",
+  "🛒",
+  "🍽️",
+  "🎵",
+  "🎨",
+  "✍️",
+  "🔬",
+  "🏡",
+  "👨‍👩‍👧",
+  "🤝",
+  "🎮",
+  "⭐",
+  "🚀",
+  "💡",
+  "🔧",
+  "📊",
+  "🌱",
+  "🏆",
+  "🎓",
+  "❤️",
+  "🌍",
+  "📂",
+  "📝",
+  "📌",
+  "🔖",
+  "🗂️",
+  "📋",
+  "🗓️",
+  "⏰",
+  "🔔",
+  "💬",
 ];
 
 const COLOR_OPTIONS = [
@@ -34,7 +70,12 @@ interface TypeConfigEditorProps {
   onClose: () => void;
 }
 
-export function TypeConfigEditor({ type, currentIcon, currentColor, onClose }: TypeConfigEditorProps) {
+export function TypeConfigEditor({
+  type,
+  currentIcon,
+  currentColor,
+  onClose,
+}: TypeConfigEditorProps) {
   const utils = trpc.useUtils();
   const setConfig = trpc.projects.setTypeConfig.useMutation({
     onSuccess: () => {

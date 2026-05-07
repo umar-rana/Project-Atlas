@@ -27,10 +27,7 @@ export async function handleGoogleCalendarSync(): Promise<{
       const result = await syncAllCalendarsForUser(user_id);
       usersProcessed++;
 
-      log.info(
-        { userId: user_id, ...result },
-        "Calendar sync completed for user",
-      );
+      log.info({ userId: user_id, ...result }, "Calendar sync completed for user");
     } catch (err) {
       errors++;
       log.error({ err, userId: user_id }, "Calendar sync failed for user — continuing");

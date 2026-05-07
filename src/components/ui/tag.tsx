@@ -32,8 +32,7 @@ const tagVariants = cva(
 );
 
 export interface TagProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof tagVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof tagVariants> {
   removable?: boolean;
   onRemove?: () => void;
   /** Map onto a calendar palette hue (1-12). */

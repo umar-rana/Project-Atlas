@@ -8,10 +8,7 @@ import { useShellStore } from "@/lib/shell/store";
 export function ProcessInboxButton(): React.ReactElement | null {
   const setProcessingModeOpen = useShellStore((s) => s.setProcessingModeOpen);
 
-  const inboxQuery = trpc.capture.listInbox.useQuery(
-    { limit: 200 },
-    { staleTime: 15_000 },
-  );
+  const inboxQuery = trpc.capture.listInbox.useQuery({ limit: 200 }, { staleTime: 15_000 });
 
   const captureCount = (inboxQuery.data ?? []).length;
 
@@ -21,7 +18,7 @@ export function ProcessInboxButton(): React.ReactElement | null {
     <button
       type="button"
       onClick={() => setProcessingModeOpen(true)}
-      className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent shadow-sm hover:bg-accent-primary-hover transition-colors"
+      className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent shadow-sm transition-colors hover:bg-accent-primary-hover"
     >
       <PlayCircle size={14} aria-hidden />
       Process Inbox

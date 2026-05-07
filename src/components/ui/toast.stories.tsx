@@ -11,8 +11,12 @@ export const Variants: Story = {
     <div className="flex flex-wrap items-center gap-2">
       <Toaster />
       <Button onClick={() => toast.success("Saved drafts.")}>Success</Button>
-      <Button variant="secondary" onClick={() => toast("Reminder set for 3:00 pm.")}>Info</Button>
-      <Button variant="secondary" onClick={() => toast.warning("Network is slow.")}>Warning</Button>
+      <Button variant="secondary" onClick={() => toast("Reminder set for 3:00 pm.")}>
+        Info
+      </Button>
+      <Button variant="secondary" onClick={() => toast.warning("Network is slow.")}>
+        Warning
+      </Button>
       <Button
         variant="destructive"
         onClick={() => toast.error("Couldn't reach calendar.", { duration: Infinity })}

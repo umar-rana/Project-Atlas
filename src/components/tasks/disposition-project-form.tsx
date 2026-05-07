@@ -96,19 +96,20 @@ export function DispositionProjectForm({
     }
   }
 
-  const inputCls = "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
+  const inputCls =
+    "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
-  const chipCls = (active: boolean) => cn(
-    "rounded-full border px-3 py-1 font-ui text-xs transition-colors",
-    active
-      ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
-      : "border-border-default text-text-secondary hover:bg-surface-hover",
-  );
+  const chipCls = (active: boolean) =>
+    cn(
+      "rounded-full border px-3 py-1 font-ui text-xs transition-colors",
+      active
+        ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
+        : "border-border-default text-text-secondary hover:bg-surface-hover",
+    );
 
-  const canSubmit = title.trim() && (
-    (mode === "existing" && !!existingProjectId) ||
-    (mode === "new" && !!newProjectName.trim())
-  );
+  const canSubmit =
+    title.trim() &&
+    ((mode === "existing" && !!existingProjectId) || (mode === "new" && !!newProjectName.trim()));
 
   return (
     <div className="flex flex-col gap-3" onKeyDown={handleKey}>
@@ -125,7 +126,7 @@ export function DispositionProjectForm({
 
       <div>
         <label className={labelCls}>Project</label>
-        <div className="flex gap-2 mb-2">
+        <div className="mb-2 flex gap-2">
           {(["existing", "new"] as ProjectMode[]).map((m) => (
             <button
               key={m}
@@ -145,7 +146,9 @@ export function DispositionProjectForm({
           >
             <option value="">Select a project…</option>
             {(projects.data ?? []).map((p) => (
-              <option key={p.id} value={p.id}>{p.title}</option>
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
             ))}
           </select>
         ) : (
@@ -159,12 +162,10 @@ export function DispositionProjectForm({
             <div>
               <label className={labelCls}>Project type</label>
               <div className="flex gap-2">
-                {(
-                  [
-                    { value: "project" as ProjectType, label: "Project" },
-                    { value: "area" as ProjectType, label: "Area of Responsibility" },
-                  ]
-                ).map((opt) => (
+                {[
+                  { value: "project" as ProjectType, label: "Project" },
+                  { value: "area" as ProjectType, label: "Area of Responsibility" },
+                ].map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -202,11 +203,20 @@ export function DispositionProjectForm({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border-subtle">
-        <button type="button" onClick={onCancel} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover">
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover"
+        >
           Cancel
         </button>
-        <button type="button" onClick={submit} disabled={mut.isPending || !canSubmit} className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50">
+        <button
+          type="button"
+          onClick={submit}
+          disabled={mut.isPending || !canSubmit}
+          className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+        >
           {mut.isPending ? "Creating…" : "Confirm ↵"}
         </button>
       </div>

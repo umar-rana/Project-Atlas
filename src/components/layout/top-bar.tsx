@@ -42,7 +42,7 @@ export function TopBar({
 
       {/* Center: search + capture — absolutely centered so it's always in the middle */}
       <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center">
-        <div className="pointer-events-auto flex w-full max-w-top-bar-search min-w-[340px] items-center gap-2 px-4">
+        <div className="pointer-events-auto flex w-full min-w-[340px] max-w-top-bar-search items-center gap-2 px-4">
           <button
             type="button"
             onClick={onOpenSearch}

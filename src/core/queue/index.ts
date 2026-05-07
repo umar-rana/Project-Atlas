@@ -138,7 +138,10 @@ async function checkAndUpdateRateLimit(
     if (tracker.request_count >= limits.maxRequests) {
       const windowEnd = tracker.window_start.getTime() + limits.windowMs;
       const retryAfterMs = windowEnd - Date.now();
-      log.warn({ provider, userId, requestCount: tracker.request_count, retryAfterMs }, "Rate limit hit");
+      log.warn(
+        { provider, userId, requestCount: tracker.request_count, retryAfterMs },
+        "Rate limit hit",
+      );
       return { allowed: false, retryAfterMs: Math.max(retryAfterMs, 1000) };
     }
 
@@ -176,14 +179,20 @@ async function dispatchProvider(provider: string): Promise<void> {
         const { allowed, retryAfterMs } = await checkAndUpdateRateLimit(provider, userId);
         if (!allowed) {
           const delay = retryAfterMs ?? jitter(5_000);
-          log.warn({ provider, userId, delay, priority: entry.priority }, "Rate limited — waiting in queue");
+          log.warn(
+            { provider, userId, delay, priority: entry.priority },
+            "Rate limited — waiting in queue",
+          );
           await sleep(delay);
           continue;
         }
 
         try {
           const result = await task();
-          log.debug({ provider, userId, priority: entry.priority, attempt }, "Queue task succeeded");
+          log.debug(
+            { provider, userId, priority: entry.priority, attempt },
+            "Queue task succeeded",
+          );
           resolve(result);
           succeeded = true;
           break;
@@ -192,7 +201,14 @@ async function dispatchProvider(provider: string): Promise<void> {
           const isRetryable = status === 429 || (status !== undefined && status >= 500);
           if (!isRetryable || attempt === maxRetries) {
             log.error({ err, provider, userId, attempt }, "Queue task failed — dead-lettered");
-            DEAD_LETTER.push({ id: newId(), priority: entry.priority, provider, userId, execute: task, retries: maxRetries } as QueuedRequest<unknown>);
+            DEAD_LETTER.push({
+              id: newId(),
+              priority: entry.priority,
+              provider,
+              userId,
+              execute: task,
+              retries: maxRetries,
+            } as QueuedRequest<unknown>);
             reject(err);
             succeeded = true;
             break;
@@ -232,7 +248,12 @@ export function enqueue<T>(req: QueuedRequest<T>): Promise<T> {
 
     insertByPriority(queue, entry);
     log.debug(
-      { provider: req.provider, priority: req.priority, userId: req.userId, queueDepth: queue.length },
+      {
+        provider: req.provider,
+        priority: req.priority,
+        userId: req.userId,
+        queueDepth: queue.length,
+      },
       "Task enqueued",
     );
 

@@ -37,7 +37,13 @@ export const worklogsRouter = router({
       z.object({
         task_id: z.string().uuid(),
         body: z.string().min(1).max(10_000),
-        duration_minutes: z.number().int().min(1).max(60 * 24 * 7).nullable().optional(),
+        duration_minutes: z
+          .number()
+          .int()
+          .min(1)
+          .max(60 * 24 * 7)
+          .nullable()
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -64,7 +70,13 @@ export const worklogsRouter = router({
       z.object({
         id: z.string().uuid(),
         body: z.string().min(1).max(10_000).optional(),
-        duration_minutes: z.number().int().min(1).max(60 * 24 * 7).nullable().optional(),
+        duration_minutes: z
+          .number()
+          .int()
+          .min(1)
+          .max(60 * 24 * 7)
+          .nullable()
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

@@ -44,17 +44,16 @@ async function getUserContext(userId: string): Promise<{
         : {}
     ) as Record<string, unknown>;
     const masterEnabled =
-      prefs["ai_capture_enabled"] !== false &&
-      capturePrefs["ai_capture_enabled"] !== false;
+      prefs["ai_capture_enabled"] !== false && capturePrefs["ai_capture_enabled"] !== false;
     const fallbackEnabled = capturePrefs["ai_fallback_enabled"] !== false;
     const aiEnabled = masterEnabled && fallbackEnabled;
     return {
       timezone: user?.timezone ?? "UTC",
-      confidenceThreshold: user?.ai_confidence_threshold ?? 0.70,
+      confidenceThreshold: user?.ai_confidence_threshold ?? 0.7,
       aiEnabled,
     };
   } catch {
-    return { timezone: "UTC", confidenceThreshold: 0.70, aiEnabled: true };
+    return { timezone: "UTC", confidenceThreshold: 0.7, aiEnabled: true };
   }
 }
 
@@ -157,7 +156,10 @@ async function validateOverrideOwnership(
   if (projectIdOverride) {
     checks.push(
       db.project
-        .findFirst({ where: { id: projectIdOverride, user_id: userId, deleted_at: null }, select: { id: true } })
+        .findFirst({
+          where: { id: projectIdOverride, user_id: userId, deleted_at: null },
+          select: { id: true },
+        })
         .then((r) => {
           if (!r) throw new Error(`Project ${projectIdOverride} not found or not owned by user`);
         }),
@@ -167,7 +169,10 @@ async function validateOverrideOwnership(
   if (contextIdOverrides?.length) {
     checks.push(
       db.context
-        .findMany({ where: { id: { in: contextIdOverrides }, user_id: userId, deleted_at: null }, select: { id: true } })
+        .findMany({
+          where: { id: { in: contextIdOverrides }, user_id: userId, deleted_at: null },
+          select: { id: true },
+        })
         .then((rows) => {
           if (rows.length !== contextIdOverrides.length) {
             throw new Error("One or more context IDs not found or not owned by user");
@@ -179,7 +184,10 @@ async function validateOverrideOwnership(
   if (tagIdOverrides?.length) {
     checks.push(
       db.tag
-        .findMany({ where: { id: { in: tagIdOverrides }, user_id: userId, deleted_at: null }, select: { id: true } })
+        .findMany({
+          where: { id: { in: tagIdOverrides }, user_id: userId, deleted_at: null },
+          select: { id: true },
+        })
         .then((rows) => {
           if (rows.length !== tagIdOverrides.length) {
             throw new Error("One or more tag IDs not found or not owned by user");
@@ -197,13 +205,16 @@ async function validateOverrideOwnership(
  * state=proposed. No Task is created automatically — the user processes the
  * Capture in Wave 2 (Processing mode).
  */
-export async function captureAndCreate(
-  input: CaptureCreateInput,
-): Promise<CaptureCreateResult> {
+export async function captureAndCreate(input: CaptureCreateInput): Promise<CaptureCreateResult> {
   const { rawText, userId, source } = input;
   const start = Date.now();
 
-  await validateOverrideOwnership(userId, input.projectIdOverride, input.contextIdOverrides, input.tagIdOverrides);
+  await validateOverrideOwnership(
+    userId,
+    input.projectIdOverride,
+    input.contextIdOverrides,
+    input.tagIdOverrides,
+  );
 
   const [userCtx, projectTitles] = await Promise.all([
     getUserContext(userId),
@@ -325,7 +336,9 @@ export async function captureAndCreate(
 
       const explicitTagNames = new Set(tier1.tags.map((t) => t.toLowerCase()));
       const allParsedTagNames = parsed.tags;
-      const aiOnlyTagNames = allParsedTagNames.filter((t) => !explicitTagNames.has(t.toLowerCase()));
+      const aiOnlyTagNames = allParsedTagNames.filter(
+        (t) => !explicitTagNames.has(t.toLowerCase()),
+      );
       let existingTagNames = new Set<string>();
 
       if (aiOnlyTagNames.length > 0) {
@@ -367,7 +380,12 @@ export async function captureAndCreate(
         entity_type: "Capture",
         entity_id: captureId,
         action: "capture_state_changed",
-        meta: { from: "raw", to: "proposed", parse_tier: parsed.parse_tier, ai_used: tier2Result.parsed !== null },
+        meta: {
+          from: "raw",
+          to: "proposed",
+          parse_tier: parsed.parse_tier,
+          ai_used: tier2Result.parsed !== null,
+        },
       });
 
       await writeParseLog(userId, captureId, parsed, rawText, durationMs, source, {
@@ -380,7 +398,10 @@ export async function captureAndCreate(
         allTags: allTagsForProposal,
       });
     } catch (err) {
-      log.error({ err, captureId, userId }, "AI enrichment job failed — capture retained in raw state");
+      log.error(
+        { err, captureId, userId },
+        "AI enrichment job failed — capture retained in raw state",
+      );
       try {
         const fallbackParsed = runFallback(rawText);
         await db.capture.update({

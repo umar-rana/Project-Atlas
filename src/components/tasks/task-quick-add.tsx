@@ -70,7 +70,9 @@ export function TaskQuickAdd({
         setPendingTemplate(null);
         inputRef.current?.focus();
       } catch (err) {
-        toast.error((err as { message?: string })?.message ?? "Could not create task from template");
+        toast.error(
+          (err as { message?: string })?.message ?? "Could not create task from template",
+        );
       }
       return;
     }
@@ -129,7 +131,11 @@ export function TaskQuickAdd({
           <button
             type="button"
             aria-label="Clear template"
-            onClick={() => { setPendingTemplate(null); setValue(""); inputRef.current?.focus(); }}
+            onClick={() => {
+              setPendingTemplate(null);
+              setValue("");
+              inputRef.current?.focus();
+            }}
             className="ml-auto text-text-disabled hover:text-text-secondary"
           >
             <XIcon size={11} aria-hidden />

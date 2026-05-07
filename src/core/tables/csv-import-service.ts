@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
@@ -107,7 +107,12 @@ export async function runTableImport(input: ImportInput): Promise<ImportResult> 
   });
 
   type RowCreateData = { id: string; table_id: string; position: Prisma.Decimal };
-  type CellCreateData = { id: string; row_id: string; column_id: string; value: Prisma.InputJsonValue };
+  type CellCreateData = {
+    id: string;
+    row_id: string;
+    column_id: string;
+    value: Prisma.InputJsonValue;
+  };
 
   const rowsData: RowCreateData[] = [];
   const cellsData: CellCreateData[] = [];
@@ -164,25 +169,43 @@ export async function runTableImport(input: ImportInput): Promise<ImportResult> 
             break;
           }
           case "single_select": {
-            if (!optMap) { failed = true; break; }
+            if (!optMap) {
+              failed = true;
+              break;
+            }
             const optId = optMap.labelToId.get(rawValue.trim());
             if (!optId) failed = true;
             else cellValue = optId;
             break;
           }
           case "multi_select": {
-            if (!optMap) { failed = true; break; }
-            const parts = rawValue.split(optMap.separator).map((p) => p.trim()).filter(Boolean);
-            if (parts.length === 0) { cellValue = null; break; }
+            if (!optMap) {
+              failed = true;
+              break;
+            }
+            const parts = rawValue
+              .split(optMap.separator)
+              .map((p) => p.trim())
+              .filter(Boolean);
+            if (parts.length === 0) {
+              cellValue = null;
+              break;
+            }
             const ids: string[] = [];
             let anyInvalid = false;
             for (const part of parts) {
               const optId = optMap.labelToId.get(part);
-              if (!optId) { anyInvalid = true; break; }
+              if (!optId) {
+                anyInvalid = true;
+                break;
+              }
               ids.push(optId);
             }
-            if (anyInvalid) { failed = true; }
-            else { cellValue = { option_ids: ids }; }
+            if (anyInvalid) {
+              failed = true;
+            } else {
+              cellValue = { option_ids: ids };
+            }
             break;
           }
           default:
@@ -206,31 +229,40 @@ export async function runTableImport(input: ImportInput): Promise<ImportResult> 
     }
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.table.create({
-      data: {
-        id: tableId,
-        user_id: input.user_id,
-        name: input.table_name,
-        folder_id: input.folder_id ?? null,
-        project_id: input.project_id ?? null,
-      },
-    });
+  await db.$transaction(
+    async (tx) => {
+      await tx.table.create({
+        data: {
+          id: tableId,
+          user_id: input.user_id,
+          name: input.table_name,
+          folder_id: input.folder_id ?? null,
+          project_id: input.project_id ?? null,
+        },
+      });
 
-    if (columnsData.length > 0) {
-      await tx.tableColumn.createMany({ data: columnsData });
-    }
-    if (rowsData.length > 0) {
-      await tx.tableRow.createMany({ data: rowsData });
-    }
+      if (columnsData.length > 0) {
+        await tx.tableColumn.createMany({ data: columnsData });
+      }
+      if (rowsData.length > 0) {
+        await tx.tableRow.createMany({ data: rowsData });
+      }
 
-    for (let i = 0; i < cellsData.length; i += CELL_BATCH_SIZE) {
-      await tx.tableCell.createMany({ data: cellsData.slice(i, i + CELL_BATCH_SIZE) });
-    }
-  }, { timeout: 60_000 });
+      for (let i = 0; i < cellsData.length; i += CELL_BATCH_SIZE) {
+        await tx.tableCell.createMany({ data: cellsData.slice(i, i + CELL_BATCH_SIZE) });
+      }
+    },
+    { timeout: 60_000 },
+  );
 
   log.info(
-    { user_id: input.user_id, table_id: tableId, importedRowCount, failedCellCount, column_count: input.columns.length },
+    {
+      user_id: input.user_id,
+      table_id: tableId,
+      importedRowCount,
+      failedCellCount,
+      column_count: input.columns.length,
+    },
     "CSV import completed",
   );
 

@@ -3,7 +3,11 @@ import { db, newId } from "@/core/db";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logActivity } from "@/core/audit";
-import { calendarEventCreateSchema, calendarEventUpdateSchema, STRATUM_CALENDAR_TOKENS } from "@/core/calendar/validation";
+import {
+  calendarEventCreateSchema,
+  calendarEventUpdateSchema,
+  STRATUM_CALENDAR_TOKENS,
+} from "@/core/calendar/validation";
 import { expandEventsInWindow } from "@/core/calendar/rrule";
 import { hasCalendarToken } from "@/core/calendar/google-client";
 
@@ -23,93 +27,114 @@ async function assertLinkedEntitiesOwnership(
   },
 ) {
   if (input.linked_task_id) {
-    const task = await db.task.findFirst({ where: { id: input.linked_task_id, user_id: userId, deleted_at: null } });
-    if (!task) throw new TRPCError({ code: "FORBIDDEN", message: "Task not found or not owned by user" });
+    const task = await db.task.findFirst({
+      where: { id: input.linked_task_id, user_id: userId, deleted_at: null },
+    });
+    if (!task)
+      throw new TRPCError({ code: "FORBIDDEN", message: "Task not found or not owned by user" });
   }
   if (input.linked_project_id) {
-    const project = await db.project.findFirst({ where: { id: input.linked_project_id, user_id: userId, deleted_at: null } });
-    if (!project) throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
+    const project = await db.project.findFirst({
+      where: { id: input.linked_project_id, user_id: userId, deleted_at: null },
+    });
+    if (!project)
+      throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
   }
   if (input.linked_note_id) {
-    const note = await db.note.findFirst({ where: { id: input.linked_note_id, user_id: userId, deleted_at: null } });
-    if (!note) throw new TRPCError({ code: "FORBIDDEN", message: "Note not found or not owned by user" });
+    const note = await db.note.findFirst({
+      where: { id: input.linked_note_id, user_id: userId, deleted_at: null },
+    });
+    if (!note)
+      throw new TRPCError({ code: "FORBIDDEN", message: "Note not found or not owned by user" });
   }
 }
 
 const EVENT_INCLUDE = {
   calendar: { select: { id: true, name: true, google_color_id: true, color_override: true } },
-  attendees: { include: { person: { select: { id: true, display_name: true, given_name: true, family_name: true } } } },
+  attendees: {
+    include: {
+      person: { select: { id: true, display_name: true, given_name: true, family_name: true } },
+    },
+  },
   linked_task: { select: { id: true, title: true, status: true } },
   linked_project: { select: { id: true, title: true, color: true } },
   linked_note: { select: { id: true, title: true } },
 } as const;
 
 const eventsRouter = router({
-  list: protectedProcedure
-    .input(CALENDAR_WINDOW_SCHEMA)
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
+  list: protectedProcedure.input(CALENDAR_WINDOW_SCHEMA).query(async ({ ctx, input }) => {
+    const userId = ctx.user.id;
 
-      const visibleCalendarIds = input.calendar_ids?.length
-        ? (await db.googleCalendar.findMany({
-            where: { id: { in: input.calendar_ids }, user_id: userId, deleted_at: null, is_visible: true },
+    const visibleCalendarIds = input.calendar_ids?.length
+      ? (
+          await db.googleCalendar.findMany({
+            where: {
+              id: { in: input.calendar_ids },
+              user_id: userId,
+              deleted_at: null,
+              is_visible: true,
+            },
             select: { id: true },
-          })).map((c) => c.id)
-        : (await db.googleCalendar.findMany({
+          })
+        ).map((c) => c.id)
+      : (
+          await db.googleCalendar.findMany({
             where: { user_id: userId, deleted_at: null, is_visible: true },
             select: { id: true },
-          })).map((c) => c.id);
+          })
+        ).map((c) => c.id);
 
-      const statusFilter = input.include_cancelled ? undefined : { not: "cancelled" as const };
+    const statusFilter = input.include_cancelled ? undefined : { not: "cancelled" as const };
 
-      const calendarFilter = visibleCalendarIds.length > 0
+    const calendarFilter =
+      visibleCalendarIds.length > 0
         ? { OR: [{ calendar_id: { in: visibleCalendarIds } }, { calendar_id: null }] }
         : { calendar_id: null };
 
-      const [nonRecurring, recurringMasters, overrideInstances] = await Promise.all([
-        db.calendarEvent.findMany({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            recurrence_rule: null,
-            recurrence_master_id: null,
-            start_at: { lte: input.end },
-            end_at: { gte: input.start },
-            ...(statusFilter && { status: statusFilter }),
-            ...calendarFilter,
-          },
-          include: EVENT_INCLUDE,
-          orderBy: { start_at: "asc" },
-        }),
-        db.calendarEvent.findMany({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            recurrence_rule: { not: null },
-            recurrence_master_id: null,
-            start_at: { lte: input.end },
-            ...(statusFilter && { status: statusFilter }),
-            ...calendarFilter,
-          },
-          include: EVENT_INCLUDE,
-          orderBy: { start_at: "asc" },
-        }),
-        db.calendarEvent.findMany({
-          where: {
-            user_id: userId,
-            deleted_at: null,
-            recurrence_master_id: { not: null },
-            start_at: { lte: input.end },
-            end_at: { gte: input.start },
-          },
-          include: EVENT_INCLUDE,
-          orderBy: { start_at: "asc" },
-        }),
-      ]);
+    const [nonRecurring, recurringMasters, overrideInstances] = await Promise.all([
+      db.calendarEvent.findMany({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          recurrence_rule: null,
+          recurrence_master_id: null,
+          start_at: { lte: input.end },
+          end_at: { gte: input.start },
+          ...(statusFilter && { status: statusFilter }),
+          ...calendarFilter,
+        },
+        include: EVENT_INCLUDE,
+        orderBy: { start_at: "asc" },
+      }),
+      db.calendarEvent.findMany({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          recurrence_rule: { not: null },
+          recurrence_master_id: null,
+          start_at: { lte: input.end },
+          ...(statusFilter && { status: statusFilter }),
+          ...calendarFilter,
+        },
+        include: EVENT_INCLUDE,
+        orderBy: { start_at: "asc" },
+      }),
+      db.calendarEvent.findMany({
+        where: {
+          user_id: userId,
+          deleted_at: null,
+          recurrence_master_id: { not: null },
+          start_at: { lte: input.end },
+          end_at: { gte: input.start },
+        },
+        include: EVENT_INCLUDE,
+        orderBy: { start_at: "asc" },
+      }),
+    ]);
 
-      const allEvents = [...recurringMasters, ...overrideInstances, ...nonRecurring];
-      return expandEventsInWindow(allEvents, input.start, input.end);
-    }),
+    const allEvents = [...recurringMasters, ...overrideInstances, ...nonRecurring];
+    return expandEventsInWindow(allEvents, input.start, input.end);
+  }),
 
   today: protectedProcedure.query(async ({ ctx }) => {
     const today = new Date();
@@ -134,84 +159,80 @@ const eventsRouter = router({
     return events;
   }),
 
-  create: protectedProcedure
-    .input(calendarEventCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      await assertLinkedEntitiesOwnership(ctx.user.id, input);
+  create: protectedProcedure.input(calendarEventCreateSchema).mutation(async ({ ctx, input }) => {
+    await assertLinkedEntitiesOwnership(ctx.user.id, input);
 
-      const id = newId();
-      const now = new Date();
+    const id = newId();
+    const now = new Date();
 
-      const event = await db.calendarEvent.create({
-        data: {
-          id,
-          user_id: ctx.user.id,
-          source: "atlas",
-          title: input.title,
-          description: input.description ?? null,
-          location: null,
-          start_at: input.start_at,
-          end_at: input.end_at,
-          all_day: input.all_day,
-          linked_task_id: input.linked_task_id ?? null,
-          linked_project_id: input.linked_project_id ?? null,
-          linked_note_id: input.linked_note_id ?? null,
-          updated_at: now,
-        },
-      });
-
-      await logActivity({
+    const event = await db.calendarEvent.create({
+      data: {
+        id,
         user_id: ctx.user.id,
-        entity_type: "CalendarEvent",
-        entity_id: id,
-        action: "create",
-        after: { title: input.title, source: "atlas" },
-      });
+        source: "atlas",
+        title: input.title,
+        description: input.description ?? null,
+        location: null,
+        start_at: input.start_at,
+        end_at: input.end_at,
+        all_day: input.all_day,
+        linked_task_id: input.linked_task_id ?? null,
+        linked_project_id: input.linked_project_id ?? null,
+        linked_note_id: input.linked_note_id ?? null,
+        updated_at: now,
+      },
+    });
 
-      return event;
-    }),
+    await logActivity({
+      user_id: ctx.user.id,
+      entity_type: "CalendarEvent",
+      entity_id: id,
+      action: "create",
+      after: { title: input.title, source: "atlas" },
+    });
 
-  update: protectedProcedure
-    .input(calendarEventUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const existing = await db.calendarEvent.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
-      });
+    return event;
+  }),
 
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-      if (existing.source !== "atlas") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Cannot edit Google-sourced events" });
-      }
+  update: protectedProcedure.input(calendarEventUpdateSchema).mutation(async ({ ctx, input }) => {
+    const existing = await db.calendarEvent.findFirst({
+      where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+    });
 
-      await assertLinkedEntitiesOwnership(ctx.user.id, input);
+    if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+    if (existing.source !== "atlas") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Cannot edit Google-sourced events" });
+    }
 
-      const updated = await db.calendarEvent.update({
-        where: { id: input.id },
-        data: {
-          ...(input.title !== undefined && { title: input.title }),
-          ...(input.start_at !== undefined && { start_at: input.start_at }),
-          ...(input.end_at !== undefined && { end_at: input.end_at }),
-          ...(input.all_day !== undefined && { all_day: input.all_day }),
-          ...("description" in input && { description: input.description }),
-          ...("location" in input && { location: input.location }),
-          ...("linked_task_id" in input && { linked_task_id: input.linked_task_id }),
-          ...("linked_project_id" in input && { linked_project_id: input.linked_project_id }),
-          ...("linked_note_id" in input && { linked_note_id: input.linked_note_id }),
-          updated_at: new Date(),
-        },
-      });
+    await assertLinkedEntitiesOwnership(ctx.user.id, input);
 
-      await logActivity({
-        user_id: ctx.user.id,
-        entity_type: "CalendarEvent",
-        entity_id: input.id,
-        action: "update",
-        before: existing as Record<string, unknown>,
-        after: updated as Record<string, unknown>,
-      });
+    const updated = await db.calendarEvent.update({
+      where: { id: input.id },
+      data: {
+        ...(input.title !== undefined && { title: input.title }),
+        ...(input.start_at !== undefined && { start_at: input.start_at }),
+        ...(input.end_at !== undefined && { end_at: input.end_at }),
+        ...(input.all_day !== undefined && { all_day: input.all_day }),
+        ...("description" in input && { description: input.description }),
+        ...("location" in input && { location: input.location }),
+        ...("linked_task_id" in input && { linked_task_id: input.linked_task_id }),
+        ...("linked_project_id" in input && { linked_project_id: input.linked_project_id }),
+        ...("linked_note_id" in input && { linked_note_id: input.linked_note_id }),
+        updated_at: new Date(),
+      },
+    });
 
-      return updated;
-    }),
+    await logActivity({
+      user_id: ctx.user.id,
+      entity_type: "CalendarEvent",
+      entity_id: input.id,
+      action: "update",
+      before: existing as Record<string, unknown>,
+      after: updated as Record<string, unknown>,
+    });
+
+    return updated;
+  }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
@@ -241,12 +262,14 @@ const eventsRouter = router({
     }),
 
   link: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      linked_task_id: z.string().uuid().optional().nullable(),
-      linked_project_id: z.string().uuid().optional().nullable(),
-      linked_note_id: z.string().uuid().optional().nullable(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        linked_task_id: z.string().uuid().optional().nullable(),
+        linked_project_id: z.string().uuid().optional().nullable(),
+        linked_note_id: z.string().uuid().optional().nullable(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.calendarEvent.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
@@ -305,12 +328,14 @@ const calendarsRouter = router({
   }),
 
   update: protectedProcedure
-    .input(z.object({
-      id: z.string().uuid(),
-      is_visible: z.boolean().optional(),
-      is_synced: z.boolean().optional(),
-      color_override: z.enum(STRATUM_CALENDAR_TOKENS).optional().nullable(),
-    }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        is_visible: z.boolean().optional(),
+        is_synced: z.boolean().optional(),
+        color_override: z.enum(STRATUM_CALENDAR_TOKENS).optional().nullable(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.googleCalendar.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
@@ -332,8 +357,16 @@ const calendarsRouter = router({
         entity_type: "GoogleCalendar",
         entity_id: input.id,
         action: "calendar:settings_updated",
-        before: { is_visible: existing.is_visible, is_synced: existing.is_synced, color_override: existing.color_override },
-        after: { is_visible: updated.is_visible, is_synced: updated.is_synced, color_override: updated.color_override },
+        before: {
+          is_visible: existing.is_visible,
+          is_synced: existing.is_synced,
+          color_override: existing.color_override,
+        },
+        after: {
+          is_visible: updated.is_visible,
+          is_synced: updated.is_synced,
+          color_override: updated.color_override,
+        },
       });
 
       return updated;
@@ -382,7 +415,9 @@ const calendarTasksRouter = router({
           status: { not: "cancelled" },
         },
         include: {
-          calendar: { select: { id: true, name: true, color_override: true, google_color_id: true } },
+          calendar: {
+            select: { id: true, name: true, color_override: true, google_color_id: true },
+          },
         },
         orderBy: { start_at: "asc" },
       });
@@ -392,11 +427,14 @@ const calendarTasksRouter = router({
 export const calendarRouter = router({
   connected: protectedProcedure.query(async ({ ctx }) => {
     const hasToken = await hasCalendarToken(ctx.user.id);
-    if (!hasToken) return { connected: false, email: null, calendarCount: 0, eventCount: 0, lastSynced: null };
+    if (!hasToken)
+      return { connected: false, email: null, calendarCount: 0, eventCount: 0, lastSynced: null };
 
     const [calCount, evtCount, token] = await Promise.all([
       db.googleCalendar.count({ where: { user_id: ctx.user.id, deleted_at: null } }),
-      db.calendarEvent.count({ where: { user_id: ctx.user.id, source: "google", deleted_at: null } }),
+      db.calendarEvent.count({
+        where: { user_id: ctx.user.id, source: "google", deleted_at: null },
+      }),
       db.googleCalendarOAuthToken.findUnique({
         where: { user_id: ctx.user.id },
         select: { email: true, updated_at: true },

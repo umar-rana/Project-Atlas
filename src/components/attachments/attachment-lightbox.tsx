@@ -56,10 +56,12 @@ export function AttachmentLightbox({ items, initialIndex = 0, onClose }: Attachm
         className="flex items-center justify-between border-b border-white/10 px-4 py-2"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="font-ui text-sm text-white/80 truncate max-w-md">
+        <span className="max-w-md truncate font-ui text-sm text-white/80">
           {item.filename}
           {items.length > 1 && (
-            <span className="ml-2 text-white/40 text-xs">{index + 1} / {items.length}</span>
+            <span className="ml-2 text-xs text-white/40">
+              {index + 1} / {items.length}
+            </span>
           )}
         </span>
         <div className="flex items-center gap-2">
@@ -67,7 +69,10 @@ export function AttachmentLightbox({ items, initialIndex = 0, onClose }: Attachm
             <>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.max(0.25, z - 0.25)); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoom((z) => Math.max(0.25, z - 0.25));
+                }}
                 className="rounded-sm p-1 text-white/60 hover:bg-white/10 hover:text-white"
                 aria-label="Zoom out"
               >
@@ -76,7 +81,10 @@ export function AttachmentLightbox({ items, initialIndex = 0, onClose }: Attachm
               <span className="font-ui text-xs text-white/60">{Math.round(zoom * 100)}%</span>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setZoom((z) => Math.min(4, z + 0.25)); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoom((z) => Math.min(4, z + 0.25));
+                }}
                 className="rounded-sm p-1 text-white/60 hover:bg-white/10 hover:text-white"
                 aria-label="Zoom in"
               >
@@ -95,7 +103,10 @@ export function AttachmentLightbox({ items, initialIndex = 0, onClose }: Attachm
           </a>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="rounded-sm p-1 text-white/60 hover:bg-white/10 hover:text-white"
             aria-label="Close"
           >
@@ -125,7 +136,12 @@ export function AttachmentLightbox({ items, initialIndex = 0, onClose }: Attachm
             <img
               src={src}
               alt={item.filename}
-              style={{ transform: `scale(${zoom})`, transformOrigin: "center", maxHeight: "calc(100vh - 120px)", maxWidth: "100%" }}
+              style={{
+                transform: `scale(${zoom})`,
+                transformOrigin: "center",
+                maxHeight: "calc(100vh - 120px)",
+                maxWidth: "100%",
+              }}
               className="transition-transform"
             />
           )}
@@ -137,11 +153,7 @@ export function AttachmentLightbox({ items, initialIndex = 0, onClose }: Attachm
             />
           )}
           {isVideo && (
-            <video
-              src={src}
-              controls
-              className="max-h-[calc(100vh-120px)] max-w-full rounded-sm"
-            >
+            <video src={src} controls className="max-h-[calc(100vh-120px)] max-w-full rounded-sm">
               Your browser does not support video playback.
             </video>
           )}

@@ -41,26 +41,28 @@ export function exportTableCsv(table: ExportTable): string {
   const header = cols.map((c) => csvEscape(c.name)).join(",");
 
   const dataRows = table.rows.map((row) => {
-    return cols.map((col) => {
-      const cell = row.cells.find((c) => c.column_id === col.id);
-      const rawVal = cell?.value ?? null;
+    return cols
+      .map((col) => {
+        const cell = row.cells.find((c) => c.column_id === col.id);
+        const rawVal = cell?.value ?? null;
 
-      // Formula columns: the cell already carries the computed value (injected by the server)
-      if (col.type === "formula") {
-        if (isFormulaError(rawVal)) return csvEscape("#ERROR");
-        if (rawVal === null || rawVal === undefined) return "";
-        return csvEscape(String(rawVal));
-      }
+        // Formula columns: the cell already carries the computed value (injected by the server)
+        if (col.type === "formula") {
+          if (isFormulaError(rawVal)) return csvEscape("#ERROR");
+          if (rawVal === null || rawVal === undefined) return "";
+          return csvEscape(String(rawVal));
+        }
 
-      if (col.type === "multi_select") {
+        if (col.type === "multi_select") {
+          const deserialized = deserializeCellValue(col.type, rawVal);
+          const options = (col.config.options ?? []) as SingleSelectOption[];
+          return csvEscape(formatCellValueForCsv(col.type, deserialized, options));
+        }
+
         const deserialized = deserializeCellValue(col.type, rawVal);
-        const options = (col.config.options ?? []) as SingleSelectOption[];
-        return csvEscape(formatCellValueForCsv(col.type, deserialized, options));
-      }
-
-      const deserialized = deserializeCellValue(col.type, rawVal);
-      return csvEscape(formatCellValueForCsv(col.type, deserialized));
-    }).join(",");
+        return csvEscape(formatCellValueForCsv(col.type, deserialized));
+      })
+      .join(",");
   });
 
   return [header, ...dataRows].join("\n");
@@ -113,7 +115,12 @@ export function exportTableJson(table: ExportTable): string {
         const rawVal = cell?.value ?? null;
         // Formula cells: store computed value (errors as null)
         if (col.type === "formula") {
-          if (isFormulaError(rawVal)) return { column_id: col.id, value: null, [FORMULA_ERROR_KEY]: (rawVal as unknown as Record<string, string>)[FORMULA_ERROR_KEY] };
+          if (isFormulaError(rawVal))
+            return {
+              column_id: col.id,
+              value: null,
+              [FORMULA_ERROR_KEY]: (rawVal as unknown as Record<string, string>)[FORMULA_ERROR_KEY],
+            };
           return { column_id: col.id, value: rawVal };
         }
         if (col.type === "multi_select") {

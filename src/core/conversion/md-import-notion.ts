@@ -27,10 +27,7 @@ export function processNotionMarkdown(content: string): NotionImportResult {
   processed = processed.replace(/^\s*# .+\n*/, "");
 
   // Convert internal Notion links to plain text: [title](https://notion.so/...)
-  processed = processed.replace(
-    /\[([^\]]+)\]\(https?:\/\/(?:www\.)?notion\.so\/[^\)]+\)/g,
-    "$1",
-  );
+  processed = processed.replace(/\[([^\]]+)\]\(https?:\/\/(?:www\.)?notion\.so\/[^\)]+\)/g, "$1");
 
   // Convert Notion-style property lines near the top (e.g., "Status: In Progress") to blockquote
   // These usually appear before the first paragraph

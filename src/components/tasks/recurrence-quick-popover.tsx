@@ -125,17 +125,13 @@ export function RecurrenceQuickPopover({
               ? "text-accent-info"
               : showAlways
                 ? "text-text-tertiary hover:text-text-secondary"
-                : "text-text-tertiary opacity-0 group-hover:opacity-100 hover:text-text-secondary",
+                : "text-text-tertiary opacity-0 hover:text-text-secondary group-hover:opacity-100",
           )}
         >
           <RefreshCw size={12} />
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="w-36 p-1"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <PopoverContent align="end" className="w-36 p-1" onClick={(e) => e.stopPropagation()}>
         {QUICK_PRESETS.map((opt) => (
           <button
             key={opt.value}

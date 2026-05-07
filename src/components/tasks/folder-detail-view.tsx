@@ -3,7 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Folder, FolderOpen, Plus, Pencil, Trash2, Check, X, StickyNote, FolderInput, ClipboardList } from "lucide-react";
+import {
+  Folder,
+  FolderOpen,
+  Plus,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  StickyNote,
+  FolderInput,
+  ClipboardList,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
@@ -169,9 +180,7 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
       folder.children?.length
         ? `${folder.children.length} sub-folder(s) will be moved to root.`
         : "",
-      folder.projects?.length
-        ? `${folder.projects.length} project(s) will be moved to root.`
-        : "",
+      folder.projects?.length ? `${folder.projects.length} project(s) will be moved to root.` : "",
       "This cannot be undone.",
     ]
       .filter(Boolean)
@@ -235,13 +244,18 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
   const folder = query.data;
 
   const subfolderForm = (
-    <form onSubmit={handleSubmitSubfolder} className="flex items-center gap-1.5 rounded-sm border border-border-focus px-3 py-1.5">
+    <form
+      onSubmit={handleSubmitSubfolder}
+      className="flex items-center gap-1.5 rounded-sm border border-border-focus px-3 py-1.5"
+    >
       <Folder size={12} className="shrink-0 text-text-tertiary" />
       <input
         autoFocus
         value={subfolderNameDraft}
         onChange={(e) => setSubfolderNameDraft(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Escape") handleCancelSubfolder(); }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") handleCancelSubfolder();
+        }}
         placeholder="Subfolder name"
         className="min-w-0 flex-1 bg-transparent font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
       />
@@ -282,13 +296,17 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
               <button type="button" onClick={handleSaveName} className="p-0.5 text-accent-success">
                 <Check size={14} />
               </button>
-              <button type="button" onClick={() => setEditingName(false)} className="p-0.5 text-text-tertiary">
+              <button
+                type="button"
+                onClick={() => setEditingName(false)}
+                className="p-0.5 text-text-tertiary"
+              >
                 <X size={14} />
               </button>
             </div>
           ) : (
             <h1
-              className="flex-1 truncate cursor-pointer font-ui text-base font-semibold text-text-primary hover:text-accent-primary"
+              className="flex-1 cursor-pointer truncate font-ui text-base font-semibold text-text-primary hover:text-accent-primary"
               onDoubleClick={() => setEditingName(true)}
               title="Double-click to rename"
             >
@@ -355,7 +373,10 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setEditingNotes(false); setNotesDraft(folder.notes ?? ""); }}
+                  onClick={() => {
+                    setEditingNotes(false);
+                    setNotesDraft(folder.notes ?? "");
+                  }}
                   className="rounded-sm border border-border-default px-2.5 py-1 font-ui text-xs font-medium text-text-secondary hover:bg-surface-hover"
                 >
                   Cancel
@@ -396,7 +417,8 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
             </div>
             <div className="flex flex-col gap-1">
               {folder.children.map((child) => {
-                const childTaskCount = (child as typeof child & { task_count?: number }).task_count ?? 0;
+                const childTaskCount =
+                  (child as typeof child & { task_count?: number }).task_count ?? 0;
                 return (
                   <Link
                     key={child.id}
@@ -404,9 +426,13 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                     className="flex items-center gap-2 rounded-sm border border-border-subtle px-3 py-2 hover:bg-surface-hover"
                   >
                     <Folder size={12} className="shrink-0 text-text-tertiary" />
-                    <span className="flex-1 truncate font-ui text-sm text-text-primary">{child.name}</span>
+                    <span className="flex-1 truncate font-ui text-sm text-text-primary">
+                      {child.name}
+                    </span>
                     {childTaskCount > 0 && (
-                      <span className="font-mono text-2xs text-text-tertiary tabular-nums">{childTaskCount} tasks</span>
+                      <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                        {childTaskCount} tasks
+                      </span>
                     )}
                   </Link>
                 );
@@ -418,7 +444,9 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
 
         {folder.children && folder.children.length === 0 && (
           <div className="mb-4">
-            {addingSubfolder ? subfolderForm : (
+            {addingSubfolder ? (
+              subfolderForm
+            ) : (
               <button
                 type="button"
                 onClick={handleAddSubfolder}
@@ -448,13 +476,18 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
             )}
           </div>
           {addingProject && (
-            <form onSubmit={handleSubmitProject} className="mb-2 flex items-center gap-1.5 rounded-sm border border-border-focus px-3 py-1.5">
+            <form
+              onSubmit={handleSubmitProject}
+              className="mb-2 flex items-center gap-1.5 rounded-sm border border-border-focus px-3 py-1.5"
+            >
               <ClipboardList size={12} className="shrink-0 text-text-tertiary" />
               <input
                 ref={newProjectInputRef}
                 value={projectNameDraft}
                 onChange={(e) => setProjectNameDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Escape") handleCancelProject(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") handleCancelProject();
+                }}
                 placeholder="Project name"
                 className="min-w-0 flex-1 bg-transparent font-ui text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
               />
@@ -480,29 +513,40 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                 const isMoving = movingProjectId === project.id;
                 return (
                   <div key={project.id} className="relative">
-                    <div className="flex items-center gap-2 rounded-sm border border-border-subtle px-3 py-2 hover:bg-surface-hover group">
+                    <div className="group flex items-center gap-2 rounded-sm border border-border-subtle px-3 py-2 hover:bg-surface-hover">
                       <Link
                         href={`/tasks/projects/${project.id}`}
-                        className="flex flex-1 min-w-0 items-center gap-2"
+                        className="flex min-w-0 flex-1 items-center gap-2"
                       >
-                        <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(project.color))} />
-                        <span className="flex-1 truncate font-ui text-sm text-text-primary">{project.title}</span>
+                        <span
+                          className={cn(
+                            "size-2 shrink-0 rounded-full",
+                            colorDotClass(project.color),
+                          )}
+                        />
+                        <span className="flex-1 truncate font-ui text-sm text-text-primary">
+                          {project.title}
+                        </span>
                         <span
                           className={cn(
                             "shrink-0 rounded-full px-1.5 py-0.5 font-ui text-2xs capitalize",
-                            project.status === "active" && "bg-accent-success-muted text-accent-success",
-                            project.status === "on_hold" && "bg-accent-warning-muted text-accent-warning",
-                            project.status === "completed" && "bg-surface-raised text-text-tertiary",
+                            project.status === "active" &&
+                              "bg-accent-success-muted text-accent-success",
+                            project.status === "on_hold" &&
+                              "bg-accent-warning-muted text-accent-warning",
+                            project.status === "completed" &&
+                              "bg-surface-raised text-text-tertiary",
                             project.status === "dropped" && "bg-surface-raised text-text-disabled",
                           )}
                         >
                           {project.status.replace("_", " ")}
                         </span>
-                        {"task_count" in project && (project as { task_count: number }).task_count > 0 && (
-                          <span className="font-mono text-2xs text-text-tertiary tabular-nums">
-                            {(project as { task_count: number }).task_count}
-                          </span>
-                        )}
+                        {"task_count" in project &&
+                          (project as { task_count: number }).task_count > 0 && (
+                            <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                              {(project as { task_count: number }).task_count}
+                            </span>
+                          )}
                       </Link>
                       <button
                         type="button"
@@ -516,7 +560,7 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                           "shrink-0 rounded-sm p-1 transition-colors",
                           isMoving
                             ? "text-accent-primary"
-                            : "text-text-disabled opacity-0 group-hover:opacity-100 hover:text-text-tertiary hover:bg-surface-hover",
+                            : "text-text-disabled opacity-0 hover:bg-surface-hover hover:text-text-tertiary group-hover:opacity-100",
                         )}
                       >
                         <FolderInput size={13} />
@@ -537,7 +581,7 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                             onClick={() =>
                               moveProject.mutate({ project_id: project.id, folder_id: null })
                             }
-                            className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Folder size={12} className="shrink-0 text-text-disabled" />
                             <span className="truncate italic">No folder (root)</span>
@@ -550,7 +594,7 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                               onClick={() =>
                                 moveProject.mutate({ project_id: project.id, folder_id: f.id })
                               }
-                              className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
                               style={{ paddingLeft: `${12 + f.depth * 12}px` }}
                             >
                               <Folder size={12} className="shrink-0 text-text-tertiary" />

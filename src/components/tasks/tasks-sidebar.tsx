@@ -70,33 +70,39 @@ function ProjectSubGroup({
         <span>{displayType(groupType)}</span>
         <span className="ml-0.5 font-mono text-3xs tabular-nums">({projects.length})</span>
       </button>
-      {open && projects.map((p) => {
-        const href = `/tasks/projects/${p.id}`;
-        const active = pathname === href;
-        return (
-          <Link
-            key={p.id}
-            href={href}
-            draggable
-            onDragStart={(e) => {
-              e.stopPropagation();
-              onDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: null });
-            }}
-            className={cn(
-              "flex cursor-grab items-center gap-2 rounded-sm px-2 py-1 pl-6 font-ui text-sm active:cursor-grabbing",
-              active
-                ? "bg-accent-primary-subtle text-text-primary"
-                : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
-            )}
-          >
-            <span className={cn("size-2 shrink-0 rounded-full", colorDotClass(p.color))} aria-hidden />
-            <span className="flex-1 truncate">{p.title}</span>
-            {p.task_count > 0 ? (
-              <span className="font-mono text-2xs text-text-tertiary tabular-nums">{p.task_count}</span>
-            ) : null}
-          </Link>
-        );
-      })}
+      {open &&
+        projects.map((p) => {
+          const href = `/tasks/projects/${p.id}`;
+          const active = pathname === href;
+          return (
+            <Link
+              key={p.id}
+              href={href}
+              draggable
+              onDragStart={(e) => {
+                e.stopPropagation();
+                onDragStart({ type: "project", id: p.id, title: p.title, currentFolderId: null });
+              }}
+              className={cn(
+                "flex cursor-grab items-center gap-2 rounded-sm px-2 py-1 pl-6 font-ui text-sm active:cursor-grabbing",
+                active
+                  ? "bg-accent-primary-subtle text-text-primary"
+                  : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
+              )}
+            >
+              <span
+                className={cn("size-2 shrink-0 rounded-full", colorDotClass(p.color))}
+                aria-hidden
+              />
+              <span className="flex-1 truncate">{p.title}</span>
+              {p.task_count > 0 ? (
+                <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                  {p.task_count}
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
     </div>
   );
 }
@@ -107,13 +113,12 @@ export function TasksSidebar(): React.ReactElement {
   const { getIcon, getColor } = useTypeConfig();
 
   const timezoneOffset = React.useMemo(() => new Date().getTimezoneOffset(), []);
-  const counts = trpc.tasks.counts.useQuery(
-    { timezoneOffset },
-    { refetchOnWindowFocus: false },
-  );
+  const counts = trpc.tasks.counts.useQuery({ timezoneOffset }, { refetchOnWindowFocus: false });
   const reviewCount = trpc.review.overdueCount.useQuery(undefined, { refetchOnWindowFocus: false });
   const projects = trpc.projects.list.useQuery({ status: "active" });
-  const distinctTypes = trpc.projects.distinctTypes.useQuery(undefined, { refetchOnWindowFocus: false });
+  const distinctTypes = trpc.projects.distinctTypes.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
   const foldersQuery = trpc.folders.list.useQuery(undefined, { refetchOnWindowFocus: false });
 
   const utils = trpc.useUtils();
@@ -203,7 +208,10 @@ export function TasksSidebar(): React.ReactElement {
   const existingTypes = (distinctTypes.data ?? []).map((t) => t.type);
 
   const projectsByFolder = React.useMemo(() => {
-    const map = new Map<string, { id: string; title: string; color: string | null; task_count: number }[]>();
+    const map = new Map<
+      string,
+      { id: string; title: string; color: string | null; task_count: number }[]
+    >();
     const allProjects = projects.data ?? [];
     for (const p of allProjects) {
       if (p.folder_id) {
@@ -218,17 +226,23 @@ export function TasksSidebar(): React.ReactElement {
   // Group root projects by type dynamically; order groups most-used first then alpha.
   // Within each group, projects are sorted alphabetically by title.
   const rootProjectsByType = React.useMemo(() => {
-    const map = new Map<string, { id: string; title: string; color: string | null; task_count: number }[]>();
-    for (const p of (projects.data ?? [])) {
+    const map = new Map<
+      string,
+      { id: string; title: string; color: string | null; task_count: number }[]
+    >();
+    for (const p of projects.data ?? []) {
       if (!p.folder_id) {
-        const t = ((p as typeof p & { type?: string }).type ?? "project");
+        const t = (p as typeof p & { type?: string }).type ?? "project";
         const existing = map.get(t) ?? [];
         existing.push({ id: p.id, title: p.title, color: p.color, task_count: p.task_count });
         map.set(t, existing);
       }
     }
     for (const [t, list] of map) {
-      map.set(t, list.slice().sort((a, b) => a.title.localeCompare(b.title)));
+      map.set(
+        t,
+        list.slice().sort((a, b) => a.title.localeCompare(b.title)),
+      );
     }
     return map;
   }, [projects.data]);
@@ -287,22 +301,30 @@ export function TasksSidebar(): React.ReactElement {
     <div className="relative">
       <button
         type="button"
-        onClick={() => { setShowAddMenu((v) => !v); setShowCustomTypeInput(false); }}
+        onClick={() => {
+          setShowAddMenu((v) => !v);
+          setShowCustomTypeInput(false);
+        }}
         className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
         aria-label="Add project"
       >
         <Plus size={11} />
       </button>
       {showAddMenu && !showCustomTypeInput && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border-default bg-surface-overlay shadow-lg py-1">
+        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border-default bg-surface-overlay py-1 shadow-lg">
           <div className="px-2 pb-1 pt-0.5">
-            <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">Core</p>
+            <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">
+              Core
+            </p>
           </div>
           {["project", "goal"].map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
+              onClick={() => {
+                setShowAddMenu(false);
+                handleOpenAddProject(t);
+              }}
               className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
             >
               <span
@@ -315,13 +337,18 @@ export function TasksSidebar(): React.ReactElement {
           ))}
           <div className="mx-2 my-1 border-t border-border-subtle" />
           <div className="px-2 pb-1 pt-0.5">
-            <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">Suggested</p>
+            <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">
+              Suggested
+            </p>
           </div>
           {adaptiveSuggested.map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
+              onClick={() => {
+                setShowAddMenu(false);
+                handleOpenAddProject(t);
+              }}
               className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
             >
               <span
@@ -336,13 +363,18 @@ export function TasksSidebar(): React.ReactElement {
             <>
               <div className="mx-2 my-1 border-t border-border-subtle" />
               <div className="px-2 pb-1 pt-0.5">
-                <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">Your types</p>
+                <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">
+                  Your types
+                </p>
               </div>
               {userOnlyTypes.map((t) => (
                 <button
                   key={t}
                   type="button"
-                  onClick={() => { setShowAddMenu(false); handleOpenAddProject(t); }}
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    handleOpenAddProject(t);
+                  }}
                   className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                 >
                   <span
@@ -358,7 +390,9 @@ export function TasksSidebar(): React.ReactElement {
           <div className="mx-2 my-1 border-t border-border-subtle" />
           <button
             type="button"
-            onClick={() => { setShowCustomTypeInput(true); }}
+            onClick={() => {
+              setShowCustomTypeInput(true);
+            }}
             className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
           >
             ✏️ Custom type…
@@ -373,16 +407,32 @@ export function TasksSidebar(): React.ReactElement {
             setShowAddMenu(false);
             handleOpenAddProject(type);
           }}
-          onCancel={() => { setShowCustomTypeInput(false); setShowAddMenu(false); }}
+          onCancel={() => {
+            setShowCustomTypeInput(false);
+            setShowAddMenu(false);
+          }}
         />
       )}
     </div>
   );
 
   return (
-    <nav aria-label="Task perspectives" className="flex h-full flex-col gap-px overflow-y-auto p-2" onDragEnd={() => { setDragItem(null); setIsRootDragOver(false); }}>
+    <nav
+      aria-label="Task perspectives"
+      className="flex h-full flex-col gap-px overflow-y-auto p-2"
+      onDragEnd={() => {
+        setDragItem(null);
+        setIsRootDragOver(false);
+      }}
+    >
       {(showAddMenu || showCustomTypeInput) && (
-        <div className="fixed inset-0 z-40" onClick={() => { setShowAddMenu(false); setShowCustomTypeInput(false); }} />
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => {
+            setShowAddMenu(false);
+            setShowCustomTypeInput(false);
+          }}
+        />
       )}
       <NavRow
         href="/tasks/inbox"
@@ -463,7 +513,9 @@ export function TasksSidebar(): React.ReactElement {
                 autoFocus
                 value={folderNameDraft}
                 onChange={(e) => setFolderNameDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Escape") handleCancelFolder(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") handleCancelFolder();
+                }}
                 placeholder="Folder name"
                 className="min-w-0 flex-1 rounded-sm border border-border-focus bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-primary placeholder:text-text-tertiary focus:outline-none"
               />
@@ -494,7 +546,10 @@ export function TasksSidebar(): React.ReactElement {
           )}
           {addingProject ? (
             <div className="px-2 py-1">
-              <ProjectAddForm defaultType={addingProjectType} onDone={() => setAddingProject(false)} />
+              <ProjectAddForm
+                defaultType={addingProjectType}
+                onDone={() => setAddingProject(false)}
+              />
             </div>
           ) : null}
 
@@ -515,7 +570,10 @@ export function TasksSidebar(): React.ReactElement {
           {/* Root drop zone: appears when dragging items from a folder */}
           {dragItem !== null && (
             <div
-              onDragOver={(e) => { e.preventDefault(); setIsRootDragOver(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsRootDragOver(true);
+              }}
               onDragLeave={() => setIsRootDragOver(false)}
               onDrop={handleDropOnRoot}
               className={cn(

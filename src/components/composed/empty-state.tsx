@@ -26,7 +26,10 @@ export function EmptyState({
   const renderedIcon = React.isValidElement(icon)
     ? icon
     : icon
-      ? React.createElement(icon as LucideIcon, { size: size === "sm" ? 22 : 28, "aria-hidden": true })
+      ? React.createElement(icon as LucideIcon, {
+          size: size === "sm" ? 22 : 28,
+          "aria-hidden": true,
+        })
       : null;
   return (
     <div

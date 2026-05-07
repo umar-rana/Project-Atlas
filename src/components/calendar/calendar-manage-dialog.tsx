@@ -9,9 +9,18 @@ import { cn } from "@/lib/utils";
 import { STRATUM_CALENDAR_TOKENS } from "@/core/calendar/validation";
 
 const COLOR_LABELS: Record<string, string> = {
-  "cal-1": "Blue", "cal-2": "Green", "cal-3": "Amber", "cal-4": "Red",
-  "cal-5": "Purple", "cal-6": "Teal", "cal-7": "Pink", "cal-8": "Orange",
-  "cal-9": "Cyan", "cal-10": "Violet", "cal-11": "Yellow", "cal-12": "Gray",
+  "cal-1": "Blue",
+  "cal-2": "Green",
+  "cal-3": "Amber",
+  "cal-4": "Red",
+  "cal-5": "Purple",
+  "cal-6": "Teal",
+  "cal-7": "Pink",
+  "cal-8": "Orange",
+  "cal-9": "Cyan",
+  "cal-10": "Violet",
+  "cal-11": "Yellow",
+  "cal-12": "Gray",
 };
 
 interface CalendarManageDialogProps {
@@ -42,11 +51,16 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
   const [colorPicker, setColorPicker] = React.useState<string | null>(null);
 
   return (
-    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-default bg-surface-raised p-5 shadow-4 focus:outline-none">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <Dialog.Title className="font-ui text-base font-semibold text-text-primary">
               Manage calendars
             </Dialog.Title>
@@ -60,15 +74,20 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
               <span className="font-ui text-sm text-text-tertiary">Loading…</span>
             </div>
           ) : calendars.length === 0 ? (
-            <p className="py-8 text-center font-ui text-sm text-text-tertiary">No calendars synced yet.</p>
+            <p className="py-8 text-center font-ui text-sm text-text-tertiary">
+              No calendars synced yet.
+            </p>
           ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {calendars.map((cal: typeof calendars[0]) => {
+            <div className="max-h-96 space-y-2 overflow-y-auto">
+              {calendars.map((cal: (typeof calendars)[0]) => {
                 const effectiveColor = cal.color_override ?? `cal-${cal.google_color_id ?? "1"}`;
                 return (
-                  <div key={cal.id} className="rounded-lg border border-border-default bg-surface-base p-3">
+                  <div
+                    key={cal.id}
+                    className="rounded-lg border border-border-default bg-surface-base p-3"
+                  >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex min-w-0 items-center gap-2.5">
                         <button
                           onClick={() => setColorPicker(colorPicker === cal.id ? null : cal.id)}
                           className="flex-shrink-0"
@@ -80,17 +99,23 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                           />
                         </button>
                         <div className="min-w-0">
-                          <p className="truncate font-ui text-sm font-medium text-text-primary">{cal.name}</p>
-                          <p className="font-ui text-2xs text-text-tertiary">{cal.event_count} events</p>
+                          <p className="truncate font-ui text-sm font-medium text-text-primary">
+                            {cal.name}
+                          </p>
+                          <p className="font-ui text-2xs text-text-tertiary">
+                            {cal.event_count} events
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-shrink-0 items-center gap-3">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                        <label className="flex cursor-pointer items-center gap-1.5">
                           <span className="font-ui text-2xs text-text-tertiary">Visible</span>
                           <button
                             role="switch"
                             aria-checked={cal.is_visible}
-                            onClick={() => updateMutation.mutate({ id: cal.id, is_visible: !cal.is_visible })}
+                            onClick={() =>
+                              updateMutation.mutate({ id: cal.id, is_visible: !cal.is_visible })
+                            }
                             className={cn(
                               "relative inline-flex h-4 w-7 flex-shrink-0 rounded-full border-2 border-transparent transition-colors",
                               cal.is_visible ? "bg-accent-primary" : "bg-border-subtle",
@@ -98,18 +123,20 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                           >
                             <span
                               className={cn(
-                                "pointer-events-none inline-block size-3 rounded-full bg-white shadow-sm transform transition-transform",
+                                "pointer-events-none inline-block size-3 transform rounded-full bg-white shadow-sm transition-transform",
                                 cal.is_visible ? "translate-x-3" : "translate-x-0",
                               )}
                             />
                           </button>
                         </label>
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                        <label className="flex cursor-pointer items-center gap-1.5">
                           <span className="font-ui text-2xs text-text-tertiary">Sync</span>
                           <button
                             role="switch"
                             aria-checked={cal.is_synced}
-                            onClick={() => updateMutation.mutate({ id: cal.id, is_synced: !cal.is_synced })}
+                            onClick={() =>
+                              updateMutation.mutate({ id: cal.id, is_synced: !cal.is_synced })
+                            }
                             className={cn(
                               "relative inline-flex h-4 w-7 flex-shrink-0 rounded-full border-2 border-transparent transition-colors",
                               cal.is_synced ? "bg-accent-primary" : "bg-border-subtle",
@@ -117,7 +144,7 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                           >
                             <span
                               className={cn(
-                                "pointer-events-none inline-block size-3 rounded-full bg-white shadow-sm transform transition-transform",
+                                "pointer-events-none inline-block size-3 transform rounded-full bg-white shadow-sm transition-transform",
                                 cal.is_synced ? "translate-x-3" : "translate-x-0",
                               )}
                             />
@@ -134,13 +161,13 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                     </div>
 
                     {colorPicker === cal.id && (
-                      <div className="mt-2 flex flex-wrap gap-1.5 pt-2 border-t border-border-subtle">
+                      <div className="mt-2 flex flex-wrap gap-1.5 border-t border-border-subtle pt-2">
                         <button
                           onClick={() => {
                             updateMutation.mutate({ id: cal.id, color_override: null });
                             setColorPicker(null);
                           }}
-                          className="rounded px-2 py-0.5 font-ui text-2xs text-text-secondary border border-border-default hover:bg-surface-hover"
+                          className="rounded border border-border-default px-2 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
                         >
                           Default
                         </button>
@@ -154,7 +181,9 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                             title={COLOR_LABELS[token] ?? token}
                             className={cn(
                               "size-5 rounded-full border-2 transition-transform hover:scale-110",
-                              cal.color_override === token ? "border-border-focus" : "border-transparent",
+                              cal.color_override === token
+                                ? "border-border-focus"
+                                : "border-transparent",
                             )}
                             style={{ background: `var(--${token}-fill)` }}
                           />
@@ -164,8 +193,9 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
 
                     {purgeConfirm === cal.id && (
                       <div className="mt-2 rounded-lg border border-accent-danger bg-accent-danger-muted p-2.5">
-                        <p className="font-ui text-xs text-accent-danger mb-2">
-                          This will soft-delete all {cal.event_count} Google events from this calendar. They will return on next sync unless you disable sync.
+                        <p className="mb-2 font-ui text-xs text-accent-danger">
+                          This will soft-delete all {cal.event_count} Google events from this
+                          calendar. They will return on next sync unless you disable sync.
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -173,7 +203,7 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                               purgeMutation.mutate({ id: cal.id });
                               setPurgeConfirm(null);
                             }}
-                            className="rounded px-3 py-1 font-ui text-xs font-medium text-white bg-accent-danger hover:opacity-90"
+                            className="rounded bg-accent-danger px-3 py-1 font-ui text-xs font-medium text-white hover:opacity-90"
                           >
                             Purge events
                           </button>

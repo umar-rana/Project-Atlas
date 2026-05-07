@@ -18,12 +18,14 @@ export function TagPill({ tag, className, ...props }: TagPillProps): React.React
   return (
     <span
       className={cn(
-        "inline-flex h-control-pill items-center rounded-xs border border-border-subtle bg-surface-raised px-1 align-middle font-ui text-2xs font-medium leading-none text-text-secondary whitespace-nowrap",
+        "inline-flex h-control-pill items-center whitespace-nowrap rounded-xs border border-border-subtle bg-surface-raised px-1 align-middle font-ui text-2xs font-medium leading-none text-text-secondary",
         className,
       )}
       {...props}
     >
-      <span aria-hidden className="mr-px text-text-tertiary">#</span>
+      <span aria-hidden className="mr-px text-text-tertiary">
+        #
+      </span>
       {tag}
     </span>
   );

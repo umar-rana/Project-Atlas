@@ -103,14 +103,20 @@ export async function handleDriveSyncAttachments(): Promise<DriveSyncAttachments
     });
 
     if (!hasToken) {
-      log.warn({ userId }, "drive-sync-attachments: user has DriveConfig but no Drive token — skipping");
+      log.warn(
+        { userId },
+        "drive-sync-attachments: user has DriveConfig but no Drive token — skipping",
+      );
       continue;
     }
 
     try {
       await refreshDriveTokenIfNeeded(userId);
     } catch (refreshErr) {
-      log.error({ userId, err: refreshErr }, "drive-sync-attachments: token refresh failed — skipping user");
+      log.error(
+        { userId, err: refreshErr },
+        "drive-sync-attachments: token refresh failed — skipping user",
+      );
       totalErrors++;
       continue;
     }
@@ -179,7 +185,10 @@ export async function handleDriveSyncAttachments(): Promise<DriveSyncAttachments
       continue;
     }
 
-    log.info({ userId, count: attachments.length }, "drive-sync-attachments: pushing attachments to Drive");
+    log.info(
+      { userId, count: attachments.length },
+      "drive-sync-attachments: pushing attachments to Drive",
+    );
 
     let userSynced = 0;
     let userErrors = 0;

@@ -121,15 +121,12 @@ vi.mock("@/lib/trpc/client", async () => {
     );
   }
 
-  const trpc = new Proxy(
-    { useUtils: () => utils } as Record<string, unknown>,
-    {
-      get(target, key: string) {
-        if (key === "useUtils") return target.useUtils;
-        return buildRouter(key);
-      },
+  const trpc = new Proxy({ useUtils: () => utils } as Record<string, unknown>, {
+    get(target, key: string) {
+      if (key === "useUtils") return target.useUtils;
+      return buildRouter(key);
     },
-  );
+  });
 
   return { trpc };
 });
@@ -227,13 +224,7 @@ describe("TaskList — bulk-action selection model", () => {
   });
 
   function renderList() {
-    return render(
-      <TaskList
-        perspective="inbox"
-        title="Inbox"
-        enableQuickAdd={false}
-      />,
-    );
+    return render(<TaskList perspective="inbox" title="Inbox" enableQuickAdd={false} />);
   }
 
   function row(container: HTMLElement, id: string) {
@@ -275,11 +266,7 @@ describe("TaskList — bulk-action selection model", () => {
       fireEvent.click(row(container, "t3"), { metaKey: true });
       fireEvent.click(row(container, "t5"), { metaKey: true });
     });
-    expect(Array.from(useTasksStore.getState().selectedTaskIds).sort()).toEqual([
-      "t1",
-      "t3",
-      "t5",
-    ]);
+    expect(Array.from(useTasksStore.getState().selectedTaskIds).sort()).toEqual(["t1", "t3", "t5"]);
     expect(useTasksStore.getState().lastClickedId).toBe("t5");
   });
 
@@ -297,11 +284,7 @@ describe("TaskList — bulk-action selection model", () => {
     act(() => {
       fireEvent.click(row(container, "t4"), { shiftKey: true });
     });
-    expect(Array.from(useTasksStore.getState().selectedTaskIds).sort()).toEqual([
-      "t2",
-      "t3",
-      "t4",
-    ]);
+    expect(Array.from(useTasksStore.getState().selectedTaskIds).sort()).toEqual(["t2", "t3", "t4"]);
   });
 
   it("Shift-click works the same way when the anchor is below the target (reverse range)", () => {
@@ -312,11 +295,7 @@ describe("TaskList — bulk-action selection model", () => {
     act(() => {
       fireEvent.click(row(container, "t2"), { shiftKey: true });
     });
-    expect(Array.from(useTasksStore.getState().selectedTaskIds).sort()).toEqual([
-      "t2",
-      "t3",
-      "t4",
-    ]);
+    expect(Array.from(useTasksStore.getState().selectedTaskIds).sort()).toEqual(["t2", "t3", "t4"]);
   });
 
   it("Plain click on another row clears the multi-selection (back to single-select)", () => {
@@ -383,22 +362,12 @@ describe("TaskList — keyboard shortcuts", () => {
     mockState.clientMutates.uncomplete?.mockClear();
     mockState.clientMutates.update?.mockClear();
     for (const fn of mockState.mutates.values()) fn.mockClear();
-    mockState.queries.tasksList = [
-      makeRow("a1"),
-      makeRow("a2"),
-      makeRow("a3"),
-    ];
+    mockState.queries.tasksList = [makeRow("a1"), makeRow("a2"), makeRow("a3")];
     resetStore();
   });
 
   function renderList() {
-    return render(
-      <TaskList
-        perspective="inbox"
-        title="Inbox"
-        enableQuickAdd={false}
-      />,
-    );
+    return render(<TaskList perspective="inbox" title="Inbox" enableQuickAdd={false} />);
   }
 
   // 'j' / 'k' focus movement is verified by pressing the navigation key then
@@ -513,11 +482,7 @@ describe("TaskList — keyboard shortcuts", () => {
   });
 
   it("'f' fires tasks.update.mutate to unflag the focused (already-flagged) task", () => {
-    mockState.queries.tasksList = [
-      makeRow("a1", { flagged: true }),
-      makeRow("a2"),
-      makeRow("a3"),
-    ];
+    mockState.queries.tasksList = [makeRow("a1", { flagged: true }), makeRow("a2"), makeRow("a3")];
     renderList();
 
     pressKey("f");
@@ -610,22 +575,12 @@ describe("TaskList — quick-actions shortcut (.)", () => {
     mockState.clientMutates.complete?.mockClear();
     mockState.clientMutates.update?.mockClear();
     for (const fn of mockState.mutates.values()) fn.mockClear();
-    mockState.queries.tasksList = [
-      makeRow("q1"),
-      makeRow("q2"),
-      makeRow("q3"),
-    ];
+    mockState.queries.tasksList = [makeRow("q1"), makeRow("q2"), makeRow("q3")];
     resetStore();
   });
 
   function renderList() {
-    return render(
-      <TaskList
-        perspective="inbox"
-        title="Inbox"
-        enableQuickAdd={false}
-      />,
-    );
+    return render(<TaskList perspective="inbox" title="Inbox" enableQuickAdd={false} />);
   }
 
   it("pressing '.' shows the quick-action toolbar for the focused task row", () => {
@@ -738,13 +693,7 @@ describe("TaskList — drag-and-drop reordering", () => {
   });
 
   function renderList() {
-    return render(
-      <TaskList
-        perspective="inbox"
-        title="Inbox"
-        enableQuickAdd={false}
-      />,
-    );
+    return render(<TaskList perspective="inbox" title="Inbox" enableQuickAdd={false} />);
   }
 
   function getRow(container: HTMLElement, id: string): HTMLElement {
@@ -753,11 +702,7 @@ describe("TaskList — drag-and-drop reordering", () => {
     return el as HTMLElement;
   }
 
-  function dragRowOntoRow(
-    container: HTMLElement,
-    sourceId: string,
-    targetId: string,
-  ) {
+  function dragRowOntoRow(container: HTMLElement, sourceId: string, targetId: string) {
     const source = getRow(container, sourceId);
     const target = getRow(container, targetId);
     act(() => {

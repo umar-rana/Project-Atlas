@@ -23,10 +23,7 @@ export function EmbedDialog({ editor, from, queryLength, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const resolveEmbed = trpc.notes.resolveEmbed.useQuery(
-    { url: url.trim() },
-    { enabled: false },
-  );
+  const resolveEmbed = trpc.notes.resolveEmbed.useQuery({ url: url.trim() }, { enabled: false });
 
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent) => {
@@ -44,8 +41,7 @@ export function EmbedDialog({ editor, from, queryLength, onClose }: Props) {
       const detected = detectEmbedProvider(trimmed);
       if (!detected) {
         setError(
-          "URL not supported. Try pasting it as a link instead. Supported: " +
-            SUPPORTED_PROVIDERS,
+          "URL not supported. Try pasting it as a link instead. Supported: " + SUPPORTED_PROVIDERS,
         );
         return;
       }
@@ -102,25 +98,21 @@ export function EmbedDialog({ editor, from, queryLength, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-modal-backdrop flex items-start justify-center pt-[14vh] bg-scrim-modal"
+      className="bg-scrim-modal fixed inset-0 z-modal-backdrop flex items-start justify-center pt-[14vh]"
       onClick={handleOverlayClick}
       onKeyDown={handleKeyDown}
     >
       <div
-        className="w-full max-w-md rounded-xl border border-border-default bg-surface-raised shadow-4 mx-4"
+        className="mx-4 w-full max-w-md rounded-xl border border-border-default bg-surface-raised shadow-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-border-subtle px-4 py-3">
           <h2 className="text-sm font-semibold text-text-primary">Insert embed</h2>
-          <p className="mt-0.5 text-xs text-text-tertiary">
-            Supported: {SUPPORTED_PROVIDERS}
-          </p>
+          <p className="mt-0.5 text-xs text-text-tertiary">Supported: {SUPPORTED_PROVIDERS}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4">
-          <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-            URL
-          </label>
+          <label className="mb-1.5 block text-xs font-medium text-text-secondary">URL</label>
           <input
             ref={inputRef}
             autoFocus
@@ -132,21 +124,19 @@ export function EmbedDialog({ editor, from, queryLength, onClose }: Props) {
             }}
             placeholder="https://www.youtube.com/watch?v=…"
             className={cn(
-              "w-full rounded-md border bg-surface-base px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled outline-none transition-shadow",
+              "w-full rounded-md border bg-surface-base px-3 py-2 text-sm text-text-primary outline-none transition-shadow placeholder:text-text-disabled",
               "focus:shadow-ring-focus border-border-default focus:border-border-focus",
               error && "border-border-error focus:border-border-error",
             )}
           />
 
-          {error && (
-            <p className="mt-2 text-xs text-accent-danger">{error}</p>
-          )}
+          {error && <p className="mt-2 text-xs text-accent-danger">{error}</p>}
 
           <div className="mt-4 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-border-default bg-transparent px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover transition-colors"
+              className="rounded-md border border-border-default bg-transparent px-3 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-hover"
             >
               Cancel
             </button>
@@ -154,8 +144,8 @@ export function EmbedDialog({ editor, from, queryLength, onClose }: Props) {
               type="submit"
               disabled={loading || !url.trim()}
               className={cn(
-                "rounded-md bg-accent-primary px-3 py-1.5 text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover transition-colors",
-                (loading || !url.trim()) && "opacity-50 cursor-not-allowed",
+                "rounded-md bg-accent-primary px-3 py-1.5 text-sm font-medium text-text-on-accent transition-colors hover:bg-accent-primary-hover",
+                (loading || !url.trim()) && "cursor-not-allowed opacity-50",
               )}
             >
               {loading ? "Loading…" : "Embed"}

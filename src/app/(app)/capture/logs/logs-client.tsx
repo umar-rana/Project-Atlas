@@ -18,10 +18,7 @@ export function CaptureLogsClient(): React.ReactElement {
     { limit: 50, overrides_only: overridesOnly || undefined },
     { staleTime: 30_000 },
   );
-  const overrideStats = trpc.capture.overrideStats.useQuery(
-    { days: 0 },
-    { staleTime: 60_000 },
-  );
+  const overrideStats = trpc.capture.overrideStats.useQuery({ days: 0 }, { staleTime: 60_000 });
 
   const ov = overrideStats.data;
 
@@ -56,10 +53,12 @@ export function CaptureLogsClient(): React.ReactElement {
           </div>
           <div className="rounded-xl border border-border-default bg-surface-raised p-4">
             <p className="font-ui text-2xs text-text-tertiary">Override rate</p>
-            <p className={cn(
-              "font-ui text-xl font-semibold",
-              ov.overrideRate > 0.3 ? "text-accent-warning" : "text-accent-success",
-            )}>
+            <p
+              className={cn(
+                "font-ui text-xl font-semibold",
+                ov.overrideRate > 0.3 ? "text-accent-warning" : "text-accent-success",
+              )}
+            >
               {(ov.overrideRate * 100).toFixed(1)}%
             </p>
           </div>
@@ -74,7 +73,9 @@ export function CaptureLogsClient(): React.ReactElement {
 
       {ov && Object.keys(ov.fieldCounts).length > 0 && (
         <div className="mb-6 rounded-xl border border-border-default bg-surface-raised p-5">
-          <h2 className="mb-3 font-ui text-sm font-semibold text-text-primary">Override breakdown by field</h2>
+          <h2 className="mb-3 font-ui text-sm font-semibold text-text-primary">
+            Override breakdown by field
+          </h2>
           <div className="flex flex-col gap-2">
             {(() => {
               const totalFieldEvents = Object.values(ov.fieldCounts).reduce((s, c) => s + c, 0);
@@ -82,14 +83,20 @@ export function CaptureLogsClient(): React.ReactElement {
                 .sort((a, b) => b[1] - a[1])
                 .map(([field, count]) => (
                   <div key={field} className="flex items-center gap-3">
-                    <span className="w-24 font-ui text-xs font-medium capitalize text-text-primary">{field}</span>
+                    <span className="w-24 font-ui text-xs font-medium capitalize text-text-primary">
+                      {field}
+                    </span>
                     <div className="flex-1 overflow-hidden rounded-full bg-surface-sunken">
                       <div
-                        style={{ width: `${totalFieldEvents > 0 ? (count / totalFieldEvents) * 100 : 0}%` }}
+                        style={{
+                          width: `${totalFieldEvents > 0 ? (count / totalFieldEvents) * 100 : 0}%`,
+                        }}
                         className="h-2 rounded-full bg-accent-primary"
                       />
                     </div>
-                    <span className="w-8 text-right font-ui text-xs text-text-tertiary">{count}</span>
+                    <span className="w-8 text-right font-ui text-xs text-text-tertiary">
+                      {count}
+                    </span>
                   </div>
                 ));
             })()}
@@ -155,20 +162,29 @@ export function CaptureLogsClient(): React.ReactElement {
             </thead>
             <tbody>
               {logs.data.map((entry) => (
-                <tr key={entry.id} className="border-b border-border-subtle last:border-0 hover:bg-surface-hover">
+                <tr
+                  key={entry.id}
+                  className="border-b border-border-subtle last:border-0 hover:bg-surface-hover"
+                >
                   <td className="max-w-xs truncate px-4 py-2 text-text-primary">
                     {entry.title ?? entry.raw_text?.slice(0, 60) ?? "—"}
                   </td>
                   <td className="px-4 py-2">
-                    <span className={cn(
-                      "rounded-full px-1.5 py-0.5 font-medium",
-                      entry.parse_tier === "local_only"
-                        ? "bg-accent-success/10 text-accent-success"
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 font-medium",
+                        entry.parse_tier === "local_only"
+                          ? "bg-accent-success/10 text-accent-success"
+                          : entry.parse_tier === "local_plus_ai"
+                            ? "bg-accent-info/10 text-accent-info"
+                            : "bg-accent-warning/10 text-accent-warning",
+                      )}
+                    >
+                      {entry.parse_tier === "local_only"
+                        ? "Local"
                         : entry.parse_tier === "local_plus_ai"
-                        ? "bg-accent-info/10 text-accent-info"
-                        : "bg-accent-warning/10 text-accent-warning",
-                    )}>
-                      {entry.parse_tier === "local_only" ? "Local" : entry.parse_tier === "local_plus_ai" ? "Local+AI" : "AI"}
+                          ? "Local+AI"
+                          : "AI"}
                     </span>
                   </td>
                   <td className="px-4 py-2 text-text-secondary">

@@ -13,10 +13,20 @@ export const Horizontal: Story = {
   ),
 };
 
-export const Strong: Story = { render: () => <div className="w-72"><Separator strong /></div> };
+export const Strong: Story = {
+  render: () => (
+    <div className="w-72">
+      <Separator strong />
+    </div>
+  ),
+};
 
 export const Labeled: Story = {
-  render: () => <div className="w-72"><Separator label="Section" /></div>,
+  render: () => (
+    <div className="w-72">
+      <Separator label="Section" />
+    </div>
+  ),
 };
 
 export const Vertical: Story = {

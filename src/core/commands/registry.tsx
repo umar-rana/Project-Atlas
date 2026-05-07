@@ -59,7 +59,11 @@ interface CommandRegistryContext {
 
 export const CommandRegistryContext = React.createContext<CommandRegistryContext | null>(null);
 
-export function CommandRegistryProvider({ children }: { children: React.ReactNode }): React.ReactElement {
+export function CommandRegistryProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement {
   const [state, dispatch] = React.useReducer(reducer, { commands: [], searchProviders: [] });
 
   const registerCommands = React.useCallback((commands: CommandItem[]) => {
@@ -80,7 +84,14 @@ export function CommandRegistryProvider({ children }: { children: React.ReactNod
 
   return (
     <CommandRegistryContext.Provider
-      value={{ commands: state.commands, searchProviders: state.searchProviders, registerCommands, unregisterCommands, registerSearchProvider, unregisterSearchProvider }}
+      value={{
+        commands: state.commands,
+        searchProviders: state.searchProviders,
+        registerCommands,
+        unregisterCommands,
+        registerSearchProvider,
+        unregisterSearchProvider,
+      }}
     >
       {children}
     </CommandRegistryContext.Provider>
@@ -101,7 +112,7 @@ export function useRegisterCommands(commands: CommandItem[]): void {
     registerCommands(commandsRef.current);
     const ids = idsRef.current;
     return () => unregisterCommands(ids);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerCommands, unregisterCommands]);
 }
 
@@ -113,6 +124,6 @@ export function useRegisterSearchProvider(provider: SearchProvider): void {
     registerSearchProvider(providerRef.current);
     const id = idRef.current;
     return () => unregisterSearchProvider(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerSearchProvider, unregisterSearchProvider]);
 }

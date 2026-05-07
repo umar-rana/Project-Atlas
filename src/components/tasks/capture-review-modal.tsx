@@ -96,8 +96,14 @@ export function CaptureReviewModal({
       due_date: dueDate ? new Date(dueDate).toISOString() : null,
       defer_date: deferDate ? new Date(deferDate).toISOString() : null,
       project_hint: projectHint.trim() || null,
-      tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
-      contexts: contextsInput.split(",").map((c) => c.trim()).filter(Boolean),
+      tags: tagsInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      contexts: contextsInput
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean),
       flagged,
     };
     const overridden_fields = detectOverrides(parsed, edited);
@@ -113,14 +119,19 @@ export function CaptureReviewModal({
     parsed.parse_tier === "local_only"
       ? "Local"
       : parsed.parse_tier === "local_plus_ai"
-      ? "Local + AI"
-      : "AI";
+        ? "Local + AI"
+        : "AI";
 
   const confidencePct = (parsed.local_confidence * 100).toFixed(1);
   const isUncertain = parsed.local_confidence < confidenceThreshold;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onCancel();
+      }}
+    >
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -130,12 +141,14 @@ export function CaptureReviewModal({
         </DialogHeader>
 
         <div className="flex items-center gap-2 px-4 py-1.5">
-          <span className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-2xs font-medium",
-            isUncertain
-              ? "bg-accent-warning/15 text-accent-warning"
-              : "bg-accent-success/15 text-accent-success",
-          )}>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-2xs font-medium",
+              isUncertain
+                ? "bg-accent-warning/15 text-accent-warning"
+                : "bg-accent-success/15 text-accent-success",
+            )}
+          >
             <Sparkles size={9} />
             Parsed via: {tierLabel} (confidence: {confidencePct}%)
           </span>
@@ -143,7 +156,9 @@ export function CaptureReviewModal({
 
         <div className="flex flex-col gap-3 px-4 pb-2">
           <div>
-            <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Title</label>
+            <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+              Title
+            </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -153,7 +168,9 @@ export function CaptureReviewModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Due date</label>
+              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+                Due date
+              </label>
               <input
                 type="date"
                 value={dueDate}
@@ -162,7 +179,9 @@ export function CaptureReviewModal({
               />
             </div>
             <div>
-              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Defer date</label>
+              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+                Defer date
+              </label>
               <input
                 type="date"
                 value={deferDate}
@@ -173,7 +192,9 @@ export function CaptureReviewModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Project (hint)</label>
+            <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+              Project (hint)
+            </label>
             <input
               value={projectHint}
               onChange={(e) => setProjectHint(e.target.value)}
@@ -184,7 +205,9 @@ export function CaptureReviewModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Tags</label>
+              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+                Tags
+              </label>
               <input
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
@@ -193,7 +216,9 @@ export function CaptureReviewModal({
               />
             </div>
             <div>
-              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Contexts</label>
+              <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+                Contexts
+              </label>
               <input
                 value={contextsInput}
                 onChange={(e) => setContextsInput(e.target.value)}
@@ -204,7 +229,9 @@ export function CaptureReviewModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">Notes</label>
+            <label className="mb-1 block font-ui text-2xs font-medium text-text-secondary">
+              Notes
+            </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

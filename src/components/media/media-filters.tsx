@@ -31,12 +31,18 @@ const FILE_TYPES: { value: FileType; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-const SELECT_CLASS = "rounded-sm border border-border-default bg-surface-base px-2 py-1 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus";
+const SELECT_CLASS =
+  "rounded-sm border border-border-default bg-surface-base px-2 py-1 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus";
 
 export function MediaFilters({ filters, onChange, tags }: MediaFiltersProps) {
   const hasActiveFilters =
-    filters.file_type || filters.source || filters.reviewed !== undefined ||
-    filters.tag_id || filters.search || filters.date_from || filters.date_to;
+    filters.file_type ||
+    filters.source ||
+    filters.reviewed !== undefined ||
+    filters.tag_id ||
+    filters.search ||
+    filters.date_from ||
+    filters.date_to;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -50,18 +56,24 @@ export function MediaFilters({ filters, onChange, tags }: MediaFiltersProps) {
 
       <select
         value={filters.file_type ?? ""}
-        onChange={(e) => onChange({ ...filters, file_type: (e.target.value as FileType) || undefined })}
+        onChange={(e) =>
+          onChange({ ...filters, file_type: (e.target.value as FileType) || undefined })
+        }
         className={SELECT_CLASS}
       >
         <option value="">All types</option>
         {FILE_TYPES.map((ft) => (
-          <option key={ft.value} value={ft.value}>{ft.label}</option>
+          <option key={ft.value} value={ft.value}>
+            {ft.label}
+          </option>
         ))}
       </select>
 
       <select
         value={filters.source ?? ""}
-        onChange={(e) => onChange({ ...filters, source: (e.target.value as SourceFilter) || undefined })}
+        onChange={(e) =>
+          onChange({ ...filters, source: (e.target.value as SourceFilter) || undefined })
+        }
         className={SELECT_CLASS}
       >
         <option value="">All sources</option>
@@ -90,7 +102,9 @@ export function MediaFilters({ filters, onChange, tags }: MediaFiltersProps) {
         >
           <option value="">All tags</option>
           {tags.map((t) => (
-            <option key={t.id} value={t.id}>#{t.name}</option>
+            <option key={t.id} value={t.id}>
+              #{t.name}
+            </option>
           ))}
         </select>
       )}

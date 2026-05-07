@@ -2,15 +2,7 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  FileText,
-  Users,
-  BookOpen,
-  Glasses,
-  Plus,
-  Table2,
-  Clock,
-} from "lucide-react";
+import { FileText, Users, BookOpen, Glasses, Plus, Table2, Clock } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { NavRow } from "@/components/sidebar/nav-row";
@@ -22,10 +14,10 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const PURPOSE_ITEMS = [
-  { id: "note",          label: "Notes",          icon: <FileText size={14} /> },
-  { id: "meeting_note",  label: "Meeting Notes",  icon: <Users size={14} /> },
+  { id: "note", label: "Notes", icon: <FileText size={14} /> },
+  { id: "meeting_note", label: "Meeting Notes", icon: <Users size={14} /> },
   { id: "project_brief", label: "Project Briefs", icon: <BookOpen size={14} /> },
-  { id: "reading_note",  label: "Reading Notes",  icon: <Glasses size={14} /> },
+  { id: "reading_note", label: "Reading Notes", icon: <Glasses size={14} /> },
 ];
 
 function findNode(nodes: NotesFolderNode[], id: string): NotesFolderNode | undefined {
@@ -56,10 +48,7 @@ export function NotesSidebar(): React.ReactElement {
 
   const foldersQuery = trpc.notesFolder.list.useQuery(undefined, { refetchOnWindowFocus: false });
   const countsQuery = trpc.notes.counts.useQuery(undefined, { refetchOnWindowFocus: false });
-  const recentQuery = trpc.notes.list.useQuery(
-    { limit: 5 },
-    { refetchOnWindowFocus: false },
-  );
+  const recentQuery = trpc.notes.list.useQuery({ limit: 5 }, { refetchOnWindowFocus: false });
 
   const recentNotes = recentQuery.data?.notes ?? [];
   const allNotesCount = countsQuery.data?.total ?? 0;
@@ -186,7 +175,9 @@ export function NotesSidebar(): React.ReactElement {
                 autoFocus
                 value={folderNameDraft}
                 onChange={(e) => setFolderNameDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Escape") handleCancelFolder(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") handleCancelFolder();
+                }}
                 placeholder="Folder name"
                 className="min-w-0 flex-1 rounded-sm border border-border-focus bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-primary placeholder:text-text-tertiary focus:outline-none"
               />
@@ -296,7 +287,10 @@ function TablesSection({ pathname }: { pathname: string }) {
         addElement={
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setShowNewDialog(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowNewDialog(true);
+            }}
             title="New table"
             className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
           >
@@ -342,10 +336,7 @@ function TablesSection({ pathname }: { pathname: string }) {
       )}
 
       {showNewDialog && (
-        <NewTableDialog
-          onClose={() => setShowNewDialog(false)}
-          onCreated={handleCreated}
-        />
+        <NewTableDialog onClose={() => setShowNewDialog(false)} onCreated={handleCreated} />
       )}
     </>
   );

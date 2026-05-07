@@ -46,11 +46,12 @@ async function backfillTaskLinks(): Promise<void> {
     if (tasks.length === 0) break;
 
     for (const task of tasks) {
-      const entity_refs = (task.referenced_entity_refs as Array<{
-        kind: string;
-        id: string;
-        label: string;
-      }> | null) ?? [];
+      const entity_refs =
+        (task.referenced_entity_refs as Array<{
+          kind: string;
+          id: string;
+          label: string;
+        }> | null) ?? [];
 
       const resolvedLinks: ResolvedLink[] = [
         ...entity_refs.map((e) => ({

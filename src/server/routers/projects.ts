@@ -6,7 +6,12 @@ import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { normalizeProjectType, validateProjectType } from "@/core/projects/type-validation";
 import { injectFormulaVirtualCells } from "@/core/tables/formula";
-import type { TableColumnData, TableCellData, AggregationType, ColumnType } from "@/core/tables/types";
+import type {
+  TableColumnData,
+  TableCellData,
+  AggregationType,
+  ColumnType,
+} from "@/core/tables/types";
 import { isFormulaError } from "@/core/tables/formula-shared";
 
 const PROJECT_STATUS = z.enum(["active", "on_hold", "completed", "dropped"]);
@@ -35,9 +40,7 @@ function getCompatibleAggregations(
       return ["count", "checked_ratio"];
     case "formula": {
       const returnType = (columnConfig as { return_type?: string } | undefined)?.return_type;
-      return returnType === "number"
-        ? ["sum", "average", "count", "min", "max"]
-        : ["count"];
+      return returnType === "number" ? ["sum", "average", "count", "min", "max"] : ["count"];
     }
     default:
       return ["count"];
@@ -57,7 +60,9 @@ function computeTrackerValue(
   aggregation: string,
   values: unknown[],
 ): number | null {
-  const nonNull = values.filter((v) => v !== null && v !== undefined && v !== "" && !isFormulaError(v));
+  const nonNull = values.filter(
+    (v) => v !== null && v !== undefined && v !== "" && !isFormulaError(v),
+  );
 
   if (nonNull.length === 0 && aggregation !== "count") return null;
 
@@ -66,12 +71,14 @@ function computeTrackerValue(
       return nonNull.length;
 
     case "sum": {
-      if (columnType !== "number" && columnType !== "currency" && columnType !== "formula") return null;
+      if (columnType !== "number" && columnType !== "currency" && columnType !== "formula")
+        return null;
       return nonNull.reduce<number>((acc, v) => acc + (Number(v) || 0), 0);
     }
 
     case "average": {
-      if (columnType !== "number" && columnType !== "currency" && columnType !== "formula") return null;
+      if (columnType !== "number" && columnType !== "currency" && columnType !== "formula")
+        return null;
       if (nonNull.length === 0) return null;
       const total = nonNull.reduce<number>((acc, v) => acc + (Number(v) || 0), 0);
       return total / nonNull.length;
@@ -207,10 +214,18 @@ async function computeProjectTracker(project: {
     });
   }
 
-  const currentValue = computeTrackerValue(column.type as ColumnType, project.tracker_aggregation, values);
+  const currentValue = computeTrackerValue(
+    column.type as ColumnType,
+    project.tracker_aggregation,
+    values,
+  );
 
   let percentage: number | null = null;
-  if (currentValue !== null && project.tracker_target_value != null && project.tracker_target_value !== 0) {
+  if (
+    currentValue !== null &&
+    project.tracker_target_value != null &&
+    project.tracker_target_value !== 0
+  ) {
     percentage = (currentValue / project.tracker_target_value) * 100;
   }
 
@@ -323,7 +338,9 @@ export const projectsRouter = router({
         select: { tasks_prefs: true },
       });
       const prefs = (user?.tasks_prefs ?? {}) as Record<string, unknown>;
-      const configs = { ...((prefs.type_configs ?? {}) as Record<string, { icon?: string; color?: string }>) };
+      const configs = {
+        ...((prefs.type_configs ?? {}) as Record<string, { icon?: string; color?: string }>),
+      };
 
       const entry: { icon?: string; color?: string } = configs[input.type] ?? {};
       if (input.icon !== undefined) {
@@ -376,10 +393,21 @@ export const projectsRouter = router({
           },
         }),
         db.task.count({
-          where: { project_id: project.id, user_id: ctx.user.id, deleted_at: null, parent_id: null },
+          where: {
+            project_id: project.id,
+            user_id: ctx.user.id,
+            deleted_at: null,
+            parent_id: null,
+          },
         }),
         db.task.count({
-          where: { project_id: project.id, user_id: ctx.user.id, status: "completed", deleted_at: null, parent_id: null },
+          where: {
+            project_id: project.id,
+            user_id: ctx.user.id,
+            status: "completed",
+            deleted_at: null,
+            parent_id: null,
+          },
         }),
         db.task.findFirst({
           where: { project_id: project.id, user_id: ctx.user.id, deleted_at: null },
@@ -439,7 +467,13 @@ export const projectsRouter = router({
       });
       if (!column) throw new TRPCError({ code: "NOT_FOUND", message: "Column not found" });
 
-      if (!isAggregationCompatible(column.type as ColumnType, input.aggregation, column.config as Record<string, unknown>)) {
+      if (
+        !isAggregationCompatible(
+          column.type as ColumnType,
+          input.aggregation,
+          column.config as Record<string, unknown>,
+        )
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: `Aggregation "${input.aggregation}" is not compatible with column type "${column.type}"`,
@@ -519,9 +553,14 @@ export const projectsRouter = router({
         target_date: z.string().datetime({ offset: true }).nullable().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
-        parent_project_id: z.undefined({
-          errorMap: () => ({ message: "Projects cannot be nested inside other projects. Use folders to organise projects." }),
-        }).optional(),
+        parent_project_id: z
+          .undefined({
+            errorMap: () => ({
+              message:
+                "Projects cannot be nested inside other projects. Use folders to organise projects.",
+            }),
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -544,14 +583,17 @@ export const projectsRouter = router({
       ]);
 
       const prefs = (userRow?.tasks_prefs ?? {}) as Record<string, unknown>;
-      const defaultSequential = typeof prefs.default_sequential === "boolean" ? prefs.default_sequential : false;
-      const defaultReviewInterval = typeof prefs.default_review_interval_days === "number"
-        ? prefs.default_review_interval_days
-        : null;
+      const defaultSequential =
+        typeof prefs.default_sequential === "boolean" ? prefs.default_sequential : false;
+      const defaultReviewInterval =
+        typeof prefs.default_review_interval_days === "number"
+          ? prefs.default_review_interval_days
+          : null;
 
-      const position = (maxAgg._max.position
-        ? new Prisma.Decimal(maxAgg._max.position).plus(1024)
-        : new Prisma.Decimal(1024)
+      const position = (
+        maxAgg._max.position
+          ? new Prisma.Decimal(maxAgg._max.position).plus(1024)
+          : new Prisma.Decimal(1024)
       ).toString();
 
       const typeValue = input.type ?? "project";
@@ -596,9 +638,14 @@ export const projectsRouter = router({
         target_date: z.string().datetime({ offset: true }).nullable().optional(),
         folder_id: z.string().uuid().nullable().optional(),
         review_interval_days: z.number().int().nullable().optional(),
-        parent_project_id: z.undefined({
-          errorMap: () => ({ message: "Projects cannot be nested inside other projects. Use folders to organise projects." }),
-        }).optional(),
+        parent_project_id: z
+          .undefined({
+            errorMap: () => ({
+              message:
+                "Projects cannot be nested inside other projects. Use folders to organise projects.",
+            }),
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -626,8 +673,7 @@ export const projectsRouter = router({
       }
       if (input.status !== undefined) {
         data.status = input.status;
-        data.completed_at =
-          input.status === "completed" ? new Date() : null;
+        data.completed_at = input.status === "completed" ? new Date() : null;
       }
       if (input.type !== undefined) {
         data.type = input.type;

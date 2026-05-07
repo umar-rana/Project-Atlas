@@ -5,10 +5,7 @@ import type { User } from "@prisma/client";
 import { captureRouter } from "@/server/routers/capture";
 
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });
@@ -158,7 +155,9 @@ describe("capture.listInbox", () => {
     });
 
     const result = await makeCaller().listInbox({ limit: 200 });
-    const found = result.find((c: { raw_text: string }) => c.raw_text === "Already processed capture");
+    const found = result.find(
+      (c: { raw_text: string }) => c.raw_text === "Already processed capture",
+    );
     expect(found).toBeUndefined();
   });
 });
@@ -379,8 +378,6 @@ describe("disposition idempotency guard", () => {
 
     await makeCaller().processToTrash({ capture_id: captureId });
 
-    await expect(
-      makeCaller().processToTrash({ capture_id: captureId }),
-    ).rejects.toThrow();
+    await expect(makeCaller().processToTrash({ capture_id: captureId })).rejects.toThrow();
   });
 });

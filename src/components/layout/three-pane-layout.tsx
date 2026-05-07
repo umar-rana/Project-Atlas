@@ -44,7 +44,9 @@ export function ThreePaneLayout({
       >
         {nav}
       </aside>
-      <div className="min-h-0 overflow-y-auto border-r border-border-subtle bg-surface-base">{list}</div>
+      <div className="min-h-0 overflow-y-auto border-r border-border-subtle bg-surface-base">
+        {list}
+      </div>
       <div className="min-h-0 overflow-y-auto bg-surface-base">{detail}</div>
       {inspector ? (
         <aside

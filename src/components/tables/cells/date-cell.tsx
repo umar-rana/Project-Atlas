@@ -12,7 +12,14 @@ interface DateCellProps {
   onCancel: () => void;
 }
 
-export function DateCell({ value, isSelected, isEditing, onStartEdit, onCommit, onCancel }: DateCellProps) {
+export function DateCell({
+  value,
+  isSelected,
+  isEditing,
+  onStartEdit,
+  onCommit,
+  onCancel,
+}: DateCellProps) {
   const [draft, setDraft] = React.useState(value ? value.slice(0, 10) : "");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -32,16 +39,26 @@ export function DateCell({ value, isSelected, isEditing, onStartEdit, onCommit, 
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => onCommit(draft || null)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); onCommit(draft || null); }
-          if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onCommit(draft || null);
+          }
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          }
         }}
-        className="absolute inset-0 w-full bg-surface-base px-2 py-1 font-ui text-sm text-text-primary focus:outline-none ring-2 ring-inset ring-accent-primary"
+        className="absolute inset-0 w-full bg-surface-base px-2 py-1 font-ui text-sm text-text-primary ring-2 ring-inset ring-accent-primary focus:outline-none"
       />
     );
   }
 
   const display = value
-    ? new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+    ? new Date(value).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
     : "";
 
   return (

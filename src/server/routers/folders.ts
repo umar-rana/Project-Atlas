@@ -39,10 +39,7 @@ function buildTree(
     }));
 }
 
-function getDepth(
-  folders: { id: string; parent_id: string | null }[],
-  folderId: string,
-): number {
+function getDepth(folders: { id: string; parent_id: string | null }[], folderId: string): number {
   let depth = 0;
   let current = folderId;
   const parentMap = new Map(folders.map((f) => [f.id, f.parent_id]));
@@ -379,7 +376,10 @@ export const foldersRouter = router({
         // After move: moved folder at parentDepth+1, its deepest child at parentDepth+1+subtreeHeight
         // Max allowed depth is 4 (5 levels: 0-4)
         if (parentDepth + 1 + subtreeHeight > 4) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum folder depth of 5 levels reached" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Maximum folder depth of 5 levels reached",
+          });
         }
       }
 

@@ -74,10 +74,7 @@ export const tagsRouter = router({
           },
         });
       } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
           const existing = await db.tag.findFirst({
             where: { user_id: ctx.user.id, name: lower },
           });

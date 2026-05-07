@@ -19,7 +19,8 @@ const OPTIONS: {
   {
     mode: "single",
     label: "Full conversation",
-    description: "Import the entire conversation with both your messages and Claude's responses, separated by dividers.",
+    description:
+      "Import the entire conversation with both your messages and Claude's responses, separated by dividers.",
   },
   {
     mode: "assistant_only",
@@ -45,7 +46,7 @@ export function ClaudeConversationDialog({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border-default bg-surface-base p-6 shadow-xl focus:outline-none">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MessageSquare size={16} className="text-accent-primary" />
               <Dialog.Title className="font-ui text-sm font-semibold text-text-primary">
@@ -67,7 +68,7 @@ export function ClaudeConversationDialog({
             This file looks like a Claude conversation export. How would you like to import it?
           </p>
 
-          <div className="flex flex-col gap-2 mb-6">
+          <div className="mb-6 flex flex-col gap-2">
             {OPTIONS.map((opt) => (
               <button
                 key={opt.mode}
@@ -76,7 +77,7 @@ export function ClaudeConversationDialog({
                 className={cn(
                   "flex flex-col gap-0.5 rounded-md border p-3 text-left transition-colors",
                   selected === opt.mode
-                    ? "border-accent-primary bg-accent-primary-subtle/20"
+                    ? "bg-accent-primary-subtle/20 border-accent-primary"
                     : "border-border-default hover:border-border-focus",
                 )}
               >

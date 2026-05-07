@@ -89,7 +89,11 @@ const FREQ_LABEL: Record<number, string> = {
  *   "Daily · From completion date · No end"
  *   "Weekly on Mon, Wed, Fri · From due date · Ends Jan 1, 2026"
  */
-export function describeRule(rule: string, anchor: RecurrenceAnchor, locale?: LocaleSettings): string {
+export function describeRule(
+  rule: string,
+  anchor: RecurrenceAnchor,
+  locale?: LocaleSettings,
+): string {
   try {
     const rruleStr = rule.startsWith("RRULE:") ? rule : `RRULE:${rule}`;
     const rrule = RRule.fromString(rruleStr);
@@ -119,8 +123,7 @@ export function describeRule(rule: string, anchor: RecurrenceAnchor, locale?: Lo
       freqDesc += ` on ${dayNames.join(", ")}`;
     }
 
-    const anchorDesc =
-      anchor === "completion_date" ? "From completion date" : "From due date";
+    const anchorDesc = anchor === "completion_date" ? "From completion date" : "From due date";
 
     let endDesc = "No end";
     if (opts.count != null) {

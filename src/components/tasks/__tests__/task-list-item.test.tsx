@@ -297,7 +297,9 @@ describe("TaskListItem", () => {
 
       expect(queryByRole("button", { name: "Set due date" })).toBeNull();
 
-      act(() => { fireEvent.mouseEnter(row); });
+      act(() => {
+        fireEvent.mouseEnter(row);
+      });
 
       expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
     });
@@ -306,10 +308,14 @@ describe("TaskListItem", () => {
       const { container, queryByRole } = renderItem();
       const row = container.querySelector('[role="row"]') as HTMLElement;
 
-      act(() => { fireEvent.mouseEnter(row); });
+      act(() => {
+        fireEvent.mouseEnter(row);
+      });
       expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
 
-      act(() => { fireEvent.mouseLeave(row); });
+      act(() => {
+        fireEvent.mouseLeave(row);
+      });
       expect(queryByRole("button", { name: "Set due date" })).toBeNull();
     });
 
@@ -317,14 +323,20 @@ describe("TaskListItem", () => {
       const { container, queryByRole } = renderItem();
       const row = container.querySelector('[role="row"]') as HTMLElement;
 
-      act(() => { fireEvent.mouseEnter(row); });
+      act(() => {
+        fireEvent.mouseEnter(row);
+      });
 
       const dueDateBtn = queryByRole("button", { name: "Set due date" }) as HTMLElement;
       expect(dueDateBtn).toBeInTheDocument();
 
-      act(() => { fireEvent.click(dueDateBtn); });
+      act(() => {
+        fireEvent.click(dueDateBtn);
+      });
 
-      act(() => { fireEvent.mouseLeave(row); });
+      act(() => {
+        fireEvent.mouseLeave(row);
+      });
 
       expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
     });
@@ -333,16 +345,24 @@ describe("TaskListItem", () => {
       const { container, queryByRole } = renderItem();
       const row = container.querySelector('[role="row"]') as HTMLElement;
 
-      act(() => { fireEvent.mouseEnter(row); });
+      act(() => {
+        fireEvent.mouseEnter(row);
+      });
 
       const dueDateBtn = queryByRole("button", { name: "Set due date" }) as HTMLElement;
-      act(() => { fireEvent.click(dueDateBtn); });
-      act(() => { fireEvent.mouseLeave(row); });
+      act(() => {
+        fireEvent.click(dueDateBtn);
+      });
+      act(() => {
+        fireEvent.mouseLeave(row);
+      });
 
       expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
 
       const dueDateBtnAgain = queryByRole("button", { name: "Set due date" }) as HTMLElement;
-      act(() => { fireEvent.click(dueDateBtnAgain); });
+      act(() => {
+        fireEvent.click(dueDateBtnAgain);
+      });
 
       expect(queryByRole("button", { name: "Set due date" })).toBeNull();
     });
@@ -351,15 +371,25 @@ describe("TaskListItem", () => {
       const { container, queryByRole } = renderItem();
       const row = container.querySelector('[role="row"]') as HTMLElement;
 
-      act(() => { fireEvent.mouseEnter(row); });
+      act(() => {
+        fireEvent.mouseEnter(row);
+      });
       const dueDateBtn = queryByRole("button", { name: "Set due date" }) as HTMLElement;
-      act(() => { fireEvent.click(dueDateBtn); });
-      act(() => { fireEvent.mouseLeave(row); });
+      act(() => {
+        fireEvent.click(dueDateBtn);
+      });
+      act(() => {
+        fireEvent.mouseLeave(row);
+      });
 
       const dueDateBtnAgain = queryByRole("button", { name: "Set due date" }) as HTMLElement;
-      act(() => { fireEvent.click(dueDateBtnAgain); });
+      act(() => {
+        fireEvent.click(dueDateBtnAgain);
+      });
 
-      act(() => { fireEvent.mouseEnter(row); });
+      act(() => {
+        fireEvent.mouseEnter(row);
+      });
       expect(queryByRole("button", { name: "Set due date" })).toBeInTheDocument();
     });
   });
@@ -378,7 +408,9 @@ describe("TaskListItem", () => {
       );
       const titleBtn = utils.getByText("Buy milk");
       fireEvent.doubleClick(titleBtn);
-      const input = utils.container.querySelector("input[type='text'], input:not([type])") as HTMLInputElement;
+      const input = utils.container.querySelector(
+        "input[type='text'], input:not([type])",
+      ) as HTMLInputElement;
       return { ...utils, input };
     }
 

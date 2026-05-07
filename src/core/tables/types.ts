@@ -1,6 +1,21 @@
-export type ColumnType = "text" | "number" | "date" | "checkbox" | "single_select" | "currency" | "multi_select" | "formula";
+export type ColumnType =
+  | "text"
+  | "number"
+  | "date"
+  | "checkbox"
+  | "single_select"
+  | "currency"
+  | "multi_select"
+  | "formula";
 
-export type AggregationType = "sum" | "average" | "count" | "min" | "max" | "checked_ratio" | "none";
+export type AggregationType =
+  | "sum"
+  | "average"
+  | "count"
+  | "min"
+  | "max"
+  | "checked_ratio"
+  | "none";
 
 export interface SingleSelectOption {
   id: string;
@@ -20,13 +35,7 @@ export interface ColumnConfig {
   decimals?: number;
 }
 
-export type CellValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | MultiSelectValue;
+export type CellValue = string | number | boolean | null | undefined | MultiSelectValue;
 
 export const COLUMN_TYPES: { value: ColumnType; label: string }[] = [
   { value: "text", label: "Text" },
@@ -103,7 +112,16 @@ export function getOperatorsForType(type: ColumnType): FilterOperator[] {
       return ["equals", "not_equals", "contains", "not_contains", "is_empty", "is_not_empty"];
     case "number":
     case "currency":
-      return ["equals", "not_equals", "greater_than", "less_than", "greater_than_or_equal", "less_than_or_equal", "is_empty", "is_not_empty"];
+      return [
+        "equals",
+        "not_equals",
+        "greater_than",
+        "less_than",
+        "greater_than_or_equal",
+        "less_than_or_equal",
+        "is_empty",
+        "is_not_empty",
+      ];
     case "date":
       return ["equals", "not_equals", "greater_than", "less_than", "is_empty", "is_not_empty"];
     case "checkbox":

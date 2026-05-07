@@ -19,7 +19,7 @@ export default async function RootPage() {
   if (userId) redirect("/tasks");
 
   return (
-    <div className="min-h-screen bg-surface-base text-text-primary font-ui">
+    <div className="min-h-screen bg-surface-base font-ui text-text-primary">
       <Header />
       <main id="main-content">
         <Hero />
@@ -35,17 +35,11 @@ export default async function RootPage() {
 
 function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border-subtle bg-surface-base/90 backdrop-blur-sm">
+    <header className="bg-surface-base/90 sticky top-0 z-50 border-b border-border-subtle backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/icon.svg"
-            alt="Atlas"
-            width={32}
-            height={32}
-            className="rounded-lg"
-          />
+          <img src="/icon.svg" alt="Atlas" width={32} height={32} className="rounded-lg" />
           <span className="text-lg font-semibold text-text-primary">Atlas</span>
         </Link>
         <nav className="flex items-center gap-3">
@@ -79,9 +73,8 @@ function Hero() {
           A personal command center for the way you actually work
         </h1>
         <p className="mt-6 text-lg leading-relaxed text-text-secondary">
-          Your tasks, your calendar, the people you&apos;re in touch with, your
-          notes, your journal, your vault — in one place, with the connections
-          between them intact.
+          Your tasks, your calendar, the people you&apos;re in touch with, your notes, your journal,
+          your vault — in one place, with the connections between them intact.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4 tablet:flex-row tablet:justify-center">
           <Link
@@ -101,7 +94,7 @@ function Hero() {
           Currently in private use among family and friends. By invitation only.{" "}
           <Link
             href="/welcome"
-            className="underline underline-offset-2 hover:text-text-secondary transition-colors"
+            className="underline underline-offset-2 transition-colors hover:text-text-secondary"
           >
             Just been invited? See how to get started →
           </Link>
@@ -137,18 +130,15 @@ const gettingStartedSteps = [
 
 function GettingStarted() {
   return (
-    <section
-      id="getting-started"
-      className="border-t border-border-subtle bg-surface-base"
-    >
+    <section id="getting-started" className="border-t border-border-subtle bg-surface-base">
       <div className="mx-auto max-w-6xl px-6 py-20">
         <div className="mb-12 max-w-2xl">
           <h2 className="text-2xl font-semibold text-text-primary tablet:text-3xl">
             How to get started
           </h2>
           <p className="mt-3 text-base leading-relaxed text-text-secondary">
-            New to Atlas? Here&apos;s how to go from invitation to your first
-            captured task in under two minutes.
+            New to Atlas? Here&apos;s how to go from invitation to your first captured task in under
+            two minutes.
           </p>
         </div>
 
@@ -162,18 +152,13 @@ function GettingStarted() {
               >
                 <div className="mb-5 flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-primary-subtle">
-                    <Icon
-                      className="h-4 w-4 text-accent-primary"
-                      strokeWidth={1.75}
-                    />
+                    <Icon className="h-4 w-4 text-accent-primary" strokeWidth={1.75} />
                   </div>
                   <span className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
                     Step {item.step}
                   </span>
                 </div>
-                <h3 className="text-base font-semibold text-text-primary">
-                  {item.title}
-                </h3>
+                <h3 className="text-base font-semibold text-text-primary">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-text-secondary">
                   {item.description}
                 </p>
@@ -204,27 +189,23 @@ function WhatAtlasIs() {
         </h2>
         <div className="mt-6 max-w-3xl space-y-4 text-base leading-relaxed text-text-secondary">
           <p>
-            Atlas is opinionated — deliberately so. It wasn&apos;t designed by
-            committee or shaped by customer surveys. It was built from one
-            person&apos;s conviction about how work should be organised: that
-            your tasks, calendar, relationships, notes, journal, and most
-            important records shouldn&apos;t live in separate tools with no
-            awareness of each other.
+            Atlas is opinionated — deliberately so. It wasn&apos;t designed by committee or shaped
+            by customer surveys. It was built from one person&apos;s conviction about how work
+            should be organised: that your tasks, calendar, relationships, notes, journal, and most
+            important records shouldn&apos;t live in separate tools with no awareness of each other.
           </p>
           <p>
-            The meeting you have tomorrow, the person you&apos;re meeting, the
-            project you&apos;ll discuss, the notes you took last week — instead
-            of living in separate apps, they live together. When you reference a
-            person, project, idea, or earlier thought, Atlas recognises it and
-            creates the connection. You don&apos;t have to think about organising
+            The meeting you have tomorrow, the person you&apos;re meeting, the project you&apos;ll
+            discuss, the notes you took last week — instead of living in separate apps, they live
+            together. When you reference a person, project, idea, or earlier thought, Atlas
+            recognises it and creates the connection. You don&apos;t have to think about organising
             — the structure builds itself from how you actually work.
           </p>
           <p>
-            That opinionated foundation is both its limitation and its strength.
-            No customer feedback was collected, no user research was run. It was
-            built for a specific way of working — and if that way resonates with
-            you, it fits like something purpose-built. If you&apos;ve tried
-            OmniFocus and Notion and Things and a calendar app and a journaling
+            That opinionated foundation is both its limitation and its strength. No customer
+            feedback was collected, no user research was run. It was built for a specific way of
+            working — and if that way resonates with you, it fits like something purpose-built. If
+            you&apos;ve tried OmniFocus and Notion and Things and a calendar app and a journaling
             app and felt the friction of moving between them, Atlas is for you.
           </p>
         </div>
@@ -292,12 +273,8 @@ function Modules() {
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-primary-subtle">
                 <Icon className="h-5 w-5 text-accent-primary" strokeWidth={1.75} />
               </div>
-              <h3 className="text-base font-semibold text-text-primary">
-                {mod.name}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-                {mod.description}
-              </p>
+              <h3 className="text-base font-semibold text-text-primary">{mod.name}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-text-secondary">{mod.description}</p>
             </div>
           );
         })}
@@ -315,9 +292,8 @@ function RequestAccess() {
             Request access
           </h2>
           <p className="mt-3 text-base leading-relaxed text-text-secondary">
-            Atlas is currently invite-only, shared among a small circle of family
-            and friends. If you&apos;re interested in trying it when more spots
-            open up, leave your details below.
+            Atlas is currently invite-only, shared among a small circle of family and friends. If
+            you&apos;re interested in trying it when more spots open up, leave your details below.
           </p>
           <div className="mt-8">
             <RequestAccessForm />
@@ -334,16 +310,8 @@ function Footer() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 tablet:flex-row">
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/icon.svg"
-            alt="Atlas"
-            width={24}
-            height={24}
-            className="rounded-md"
-          />
-          <span className="text-sm text-text-tertiary">
-            Atlas — a personal command center
-          </span>
+          <img src="/icon.svg" alt="Atlas" width={24} height={24} className="rounded-md" />
+          <span className="text-sm text-text-tertiary">Atlas — a personal command center</span>
         </div>
         <nav className="flex items-center gap-6">
           <Link

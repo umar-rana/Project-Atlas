@@ -14,7 +14,10 @@ interface RecipientResult {
   strategy: "addressed" | "sender_lookup" | "unrouted";
 }
 
-function extractUserIdFromAddress(toAddresses: string[]): { userId: string | null; isPlainInbox: boolean } {
+function extractUserIdFromAddress(toAddresses: string[]): {
+  userId: string | null;
+  isPlainInbox: boolean;
+} {
   for (const addr of toAddresses) {
     const localPart = addr.split("@")[0]?.toLowerCase().trim();
     if (!localPart) continue;
@@ -29,7 +32,10 @@ function extractUserIdFromAddress(toAddresses: string[]): { userId: string | nul
   return { userId: null, isPlainInbox: false };
 }
 
-async function resolveRecipient(toAddresses: string[], fromAddress: string): Promise<RecipientResult> {
+async function resolveRecipient(
+  toAddresses: string[],
+  fromAddress: string,
+): Promise<RecipientResult> {
   const { userId, isPlainInbox } = extractUserIdFromAddress(toAddresses);
 
   if (userId) {
@@ -37,7 +43,10 @@ async function resolveRecipient(toAddresses: string[], fromAddress: string): Pro
   }
 
   if (isPlainInbox && fromAddress) {
-    const senderEmail = fromAddress.replace(/^[^<]*<([^>]+)>.*$/, "$1").trim().toLowerCase();
+    const senderEmail = fromAddress
+      .replace(/^[^<]*<([^>]+)>.*$/, "$1")
+      .trim()
+      .toLowerCase();
     if (senderEmail && senderEmail.includes("@")) {
       const user = await db.user.findFirst({
         where: { email: senderEmail, deleted_at: null },
@@ -154,8 +163,12 @@ export async function POST(req: NextRequest) {
   const subject = typeof data.subject === "string" ? data.subject : null;
   const bodyText = typeof data.text === "string" ? data.text : null;
   const bodyHtml = typeof data.html === "string" ? data.html : null;
-  const messageId = typeof data.messageId === "string" ? data.messageId :
-    typeof data.message_id === "string" ? data.message_id : null;
+  const messageId =
+    typeof data.messageId === "string"
+      ? data.messageId
+      : typeof data.message_id === "string"
+        ? data.message_id
+        : null;
   const headers = (data.headers ?? {}) as Record<string, string>;
 
   const rawEmail = typeof data.raw === "string" ? data.raw : null;
@@ -178,9 +191,9 @@ export async function POST(req: NextRequest) {
   const finalBodyHtml = parsed?.bodyHtml ?? bodyHtml;
   const finalMessageId = parsed?.messageId ?? messageId;
   const finalReceivedAt = parsed?.receivedAt ?? new Date();
-  const isAutoReply = parsed?.isAutoReply ?? (
-    headers["auto-submitted"] != null && headers["auto-submitted"] !== "no"
-  );
+  const isAutoReply =
+    parsed?.isAutoReply ??
+    (headers["auto-submitted"] != null && headers["auto-submitted"] !== "no");
   const isCalendar = parsed?.isCalendarInvite ?? false;
   const isForwarded = parsed?.isForwarded ?? (finalSubject != null && /^fwd?:/i.test(finalSubject));
 
@@ -230,9 +243,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, status: "no_user" });
   }
 
-  const tasksPrefs = (typeof user.tasks_prefs === "object" && user.tasks_prefs !== null
-    ? user.tasks_prefs
-    : {}) as Record<string, unknown>;
+  const tasksPrefs = (
+    typeof user.tasks_prefs === "object" && user.tasks_prefs !== null ? user.tasks_prefs : {}
+  ) as Record<string, unknown>;
 
   const { filterAutoReplies, filterCalendar, blocklist } = getEmailFilterSettings(tasksPrefs);
 
@@ -251,13 +264,13 @@ export async function POST(req: NextRequest) {
       // Domain match: "example.com" blocks "user@example.com"
       if (sender.endsWith(`@${blocked}`)) return true;
       // Wildcard subdomain: "*.example.com" blocks "user@sub.example.com"
-      if (blocked.startsWith('*.')) {
+      if (blocked.startsWith("*.")) {
         const domainSuffix = blocked.slice(1); // e.g. ".example.com"
-        const senderDomain = sender.includes('@') ? (sender.split('@')[1] ?? '') : '';
+        const senderDomain = sender.includes("@") ? (sender.split("@")[1] ?? "") : "";
         if (senderDomain.endsWith(domainSuffix)) return true;
       }
       // Wildcard local-part: "*@newsletters.example.com" blocks any email @newsletters.example.com
-      if (blocked.startsWith('*@')) {
+      if (blocked.startsWith("*@")) {
         const atDomain = blocked.slice(1); // e.g. "@newsletters.example.com"
         if (sender.endsWith(atDomain)) return true;
       }
@@ -391,6 +404,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  log.info({ captureId, inboxCaptureId, userId: user.id, attachments: uploadedCount }, "Email capture processed into Capture");
+  log.info(
+    { captureId, inboxCaptureId, userId: user.id, attachments: uploadedCount },
+    "Email capture processed into Capture",
+  );
   return NextResponse.json({ ok: true, status: "processed", captureId: inboxCaptureId });
 }

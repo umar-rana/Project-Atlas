@@ -14,8 +14,20 @@ const TAGS: ReferenceItem[] = [
   { id: "t-q4-launch", label: "q4-launch", group: "Tags", icon: <Hash size={11} /> },
 ];
 const ENTITIES: ReferenceItem[] = [
-  { id: "e-q4", label: "Q4 Launch", group: "Entities", icon: <Folder size={11} />, hint: "Project" },
-  { id: "e-spec", label: "Launch Spec", group: "Entities", icon: <Folder size={11} />, hint: "Doc" },
+  {
+    id: "e-q4",
+    label: "Q4 Launch",
+    group: "Entities",
+    icon: <Folder size={11} />,
+    hint: "Project",
+  },
+  {
+    id: "e-spec",
+    label: "Launch Spec",
+    group: "Entities",
+    icon: <Folder size={11} />,
+    hint: "Doc",
+  },
 ];
 
 const ALL = [...PEOPLE, ...TAGS, ...ENTITIES];
@@ -29,8 +41,7 @@ export const Default: Story = {
     const [open, setOpen] = React.useState(true);
     const [query, setQuery] = React.useState("");
     const searchFn = React.useCallback(
-      (q: string) =>
-        ALL.filter((item) => item.label.toLowerCase().includes(q.toLowerCase())),
+      (q: string) => ALL.filter((item) => item.label.toLowerCase().includes(q.toLowerCase())),
       [],
     );
     return (

@@ -68,11 +68,13 @@ export function HealthClient({ userId: _userId }: { userId: string }) {
   const allOk = data?.ok ?? false;
 
   return (
-    <div className="overflow-y-auto h-full">
+    <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-2xl px-6 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">System Health</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+              System Health
+            </h1>
             {data?.checkedAt && (
               <p className="mt-1 text-xs text-text-tertiary">
                 Last checked: {formatTime(new Date(data.checkedAt as string), locale)}
@@ -98,13 +100,19 @@ export function HealthClient({ userId: _userId }: { userId: string }) {
           }`}
         >
           <p className="text-sm font-semibold text-text-primary">
-            {isRunning ? "Running checks…" : allOk ? "All systems operational" : "One or more checks failed"}
+            {isRunning
+              ? "Running checks…"
+              : allOk
+                ? "All systems operational"
+                : "One or more checks failed"}
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
           {CHECK_ORDER.map((checkKey) => {
-            const check = (data?.checks as Record<string, { ok: boolean; message?: string; latencyMs?: number }>)?.[checkKey];
+            const check = (
+              data?.checks as Record<string, { ok: boolean; message?: string; latencyMs?: number }>
+            )?.[checkKey];
             return (
               <div
                 key={checkKey}
@@ -120,7 +128,9 @@ export function HealthClient({ userId: _userId }: { userId: string }) {
                     <p className="text-sm font-medium text-text-primary">
                       {CHECK_LABELS[checkKey] ?? checkKey}
                     </p>
-                    {check?.message && <p className="text-xs text-text-tertiary">{check.message}</p>}
+                    {check?.message && (
+                      <p className="text-xs text-text-tertiary">{check.message}</p>
+                    )}
                     {check?.latencyMs !== undefined && (
                       <p className="text-xs text-text-tertiary">{check.latencyMs}ms</p>
                     )}

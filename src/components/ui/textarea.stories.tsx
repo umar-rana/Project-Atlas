@@ -14,7 +14,9 @@ export const Default: Story = {};
 
 export const AutoGrow: Story = {
   render: () => {
-    const [v, setV] = React.useState("Type to expand…\nAdd more lines and watch the height follow.");
+    const [v, setV] = React.useState(
+      "Type to expand…\nAdd more lines and watch the height follow.",
+    );
     return <Textarea autoGrow value={v} onChange={(e) => setV(e.target.value)} />;
   },
 };

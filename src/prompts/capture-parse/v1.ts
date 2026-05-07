@@ -31,9 +31,10 @@ export function buildCaptureParseUserMessage(
     person_refs?: string[];
   },
 ): string {
-  const hintsSection = Object.keys(hints).length > 0
-    ? `\nLocal hints already extracted:\n${JSON.stringify(hints, null, 2)}\n`
-    : "";
+  const hintsSection =
+    Object.keys(hints).length > 0
+      ? `\nLocal hints already extracted:\n${JSON.stringify(hints, null, 2)}\n`
+      : "";
 
   return `Raw capture text:
 ${rawText}

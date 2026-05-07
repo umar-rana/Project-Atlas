@@ -6,9 +6,7 @@ import { createLogger } from "@/core/logging";
 
 const log = createLogger({ module: "calendar/client" });
 
-export const CALENDAR_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.readonly",
-];
+export const CALENDAR_SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 
 function getOAuthClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -196,16 +194,16 @@ export async function revokeCalendarToken(userId: string): Promise<void> {
 }
 
 export const GOOGLE_COLOR_TO_STRATUM: Record<string, string> = {
-  "1":  "cal-1",  // Tomato → cal-4 (red) — mapped to blue for index consistency
-  "2":  "cal-4",  // Flamingo → cal-4 (red-ish)
-  "3":  "cal-3",  // Tangerine → cal-3 (amber)
-  "4":  "cal-11", // Banana → cal-11 (yellow)
-  "5":  "cal-2",  // Sage → cal-2 (green)
-  "6":  "cal-9",  // Basil → cal-9 (teal)
-  "7":  "cal-1",  // Peacock → cal-1 (blue)
-  "8":  "cal-6",  // Blueberry → cal-6 (indigo)
-  "9":  "cal-5",  // Lavender → cal-5 (purple)
-  "10": "cal-7",  // Grape → cal-7 (pink)
+  "1": "cal-1", // Tomato → cal-4 (red) — mapped to blue for index consistency
+  "2": "cal-4", // Flamingo → cal-4 (red-ish)
+  "3": "cal-3", // Tangerine → cal-3 (amber)
+  "4": "cal-11", // Banana → cal-11 (yellow)
+  "5": "cal-2", // Sage → cal-2 (green)
+  "6": "cal-9", // Basil → cal-9 (teal)
+  "7": "cal-1", // Peacock → cal-1 (blue)
+  "8": "cal-6", // Blueberry → cal-6 (indigo)
+  "9": "cal-5", // Lavender → cal-5 (purple)
+  "10": "cal-7", // Grape → cal-7 (pink)
   "11": "cal-12", // Graphite → cal-12 (neutral)
 };
 

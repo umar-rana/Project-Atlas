@@ -3,7 +3,14 @@ import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { exportTableJson, exportTableCsv } from "@/core/tables/export";
 import { injectFormulaVirtualCells } from "@/core/tables/formula";
-import type { TableColumnData, TableCellData, ColumnType, ColumnConfig, CellValue, AggregationType } from "@/core/tables/types";
+import type {
+  TableColumnData,
+  TableCellData,
+  ColumnType,
+  ColumnConfig,
+  CellValue,
+  AggregationType,
+} from "@/core/tables/types";
 import { pushBufferToDrive } from "@/core/drive/sync";
 import { updateFile } from "@/core/drive/primitives";
 import { refreshDriveTokenIfNeeded } from "@/core/drive/client";
@@ -52,7 +59,10 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
     try {
       await refreshDriveTokenIfNeeded(userId);
     } catch (refreshErr) {
-      log.error({ userId, err: refreshErr }, "drive-sync-tables: token refresh failed — skipping user");
+      log.error(
+        { userId, err: refreshErr },
+        "drive-sync-tables: token refresh failed — skipping user",
+      );
       totalErrors++;
       continue;
     }
@@ -128,9 +138,18 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
         let csvFileId: string;
 
         if (table.drive_json_file_id) {
-          const updated = await updateFile(userId, table.drive_json_file_id, jsonFilename, jsonBuffer, "application/json");
+          const updated = await updateFile(
+            userId,
+            table.drive_json_file_id,
+            jsonFilename,
+            jsonBuffer,
+            "application/json",
+          );
           jsonFileId = updated.id ?? table.drive_json_file_id;
-          log.debug({ userId, tableId: table.id, jsonFilename }, "drive-sync-tables: updated JSON file in Drive");
+          log.debug(
+            { userId, tableId: table.id, jsonFilename },
+            "drive-sync-tables: updated JSON file in Drive",
+          );
         } else {
           const result = await pushBufferToDrive({
             userId,
@@ -140,13 +159,25 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
             data: jsonBuffer,
           });
           jsonFileId = result.driveFileId;
-          log.debug({ userId, tableId: table.id, jsonFilename }, "drive-sync-tables: created JSON file in Drive");
+          log.debug(
+            { userId, tableId: table.id, jsonFilename },
+            "drive-sync-tables: created JSON file in Drive",
+          );
         }
 
         if (table.drive_csv_file_id) {
-          const updated = await updateFile(userId, table.drive_csv_file_id, csvFilename, csvBuffer, "text/csv");
+          const updated = await updateFile(
+            userId,
+            table.drive_csv_file_id,
+            csvFilename,
+            csvBuffer,
+            "text/csv",
+          );
           csvFileId = updated.id ?? table.drive_csv_file_id;
-          log.debug({ userId, tableId: table.id, csvFilename }, "drive-sync-tables: updated CSV file in Drive");
+          log.debug(
+            { userId, tableId: table.id, csvFilename },
+            "drive-sync-tables: updated CSV file in Drive",
+          );
         } else {
           const result = await pushBufferToDrive({
             userId,
@@ -156,7 +187,10 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
             data: csvBuffer,
           });
           csvFileId = result.driveFileId;
-          log.debug({ userId, tableId: table.id, csvFilename }, "drive-sync-tables: created CSV file in Drive");
+          log.debug(
+            { userId, tableId: table.id, csvFilename },
+            "drive-sync-tables: created CSV file in Drive",
+          );
         }
 
         await db.table.update({
@@ -184,7 +218,13 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
 
     if (userSynced > 0 || userErrors === 0) {
       await db.syncState.upsert({
-        where: { user_id_provider_resource_type: { user_id: userId, provider: "google_drive", resource_type: "tables" } },
+        where: {
+          user_id_provider_resource_type: {
+            user_id: userId,
+            provider: "google_drive",
+            resource_type: "tables",
+          },
+        },
         create: {
           id: newId(),
           user_id: userId,
@@ -199,7 +239,10 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
     totalSynced += userSynced;
     totalErrors += userErrors;
 
-    log.info({ userId, synced: userSynced, errors: userErrors }, "drive-sync-tables: finished user");
+    log.info(
+      { userId, synced: userSynced, errors: userErrors },
+      "drive-sync-tables: finished user",
+    );
   }
 
   log.info({ totalSynced, totalErrors }, "drive-sync-tables: complete");

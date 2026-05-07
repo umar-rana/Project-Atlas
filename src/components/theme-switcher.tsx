@@ -5,7 +5,11 @@ import { useTheme } from "next-themes";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const OPTIONS: Array<{ value: "light" | "dark" | "system"; label: string; Icon: React.ElementType }> = [
+const OPTIONS: Array<{
+  value: "light" | "dark" | "system";
+  label: string;
+  Icon: React.ElementType;
+}> = [
   { value: "light", label: "Light", Icon: Sun },
   { value: "dark", label: "Dark", Icon: Moon },
   { value: "system", label: "System", Icon: Monitor },

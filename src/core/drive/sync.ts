@@ -40,7 +40,12 @@ export async function pushStorageFileToDrive(params: {
   mimeType: string;
 }): Promise<{ driveFileId: string }> {
   log.info(
-    { userId: params.userId, storagePath: params.storagePath, driveParentId: params.driveParentId, provider: storage.providerName },
+    {
+      userId: params.userId,
+      storagePath: params.storagePath,
+      driveParentId: params.driveParentId,
+      provider: storage.providerName,
+    },
     "Fetching file from object storage for Drive push",
   );
 
@@ -101,10 +106,7 @@ export async function pushBufferToDrive(params: {
     throw new Error("Drive upload succeeded but returned no file ID");
   }
 
-  log.info(
-    { userId: params.userId, driveFileId: driveFile.id },
-    "Buffer pushed to Google Drive",
-  );
+  log.info({ userId: params.userId, driveFileId: driveFile.id }, "Buffer pushed to Google Drive");
 
   return { driveFileId: driveFile.id };
 }

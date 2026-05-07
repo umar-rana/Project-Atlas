@@ -5,10 +5,7 @@ import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { withDeleted } from "@/core/db/soft-delete";
 import { logActivity, diffObjects } from "@/core/audit";
-import {
-  resolveAndApplyReferences,
-  releaseTagReferences,
-} from "@/core/references/resolver";
+import { resolveAndApplyReferences, releaseTagReferences } from "@/core/references/resolver";
 import { syncLinksForSource } from "@/core/links/service";
 import type { ResolvedLink } from "@/core/links/resolver";
 import { createLogger } from "@/core/logging";
@@ -48,7 +45,13 @@ const TaskCreateInput = z.object({
   flagged: z.boolean().optional(),
   defer_date: z.coerce.date().nullable().optional(),
   due_date: z.coerce.date().nullable().optional(),
-  estimated_minutes: z.number().int().min(0).max(60 * 24 * 30).nullable().optional(),
+  estimated_minutes: z
+    .number()
+    .int()
+    .min(0)
+    .max(60 * 24 * 30)
+    .nullable()
+    .optional(),
   context_ids: z.array(z.string().uuid()).optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
   position: z.string().optional(),
@@ -200,8 +203,9 @@ export const tasksRouter = router({
         where.status = "active";
       }
 
-      const { nowUtc, todayStart, tomorrowStart, dayAfterTomorrowStart } =
-        getLocalDayBoundaries(input.timezoneOffset);
+      const { nowUtc, tomorrowStart, dayAfterTomorrowStart } = getLocalDayBoundaries(
+        input.timezoneOffset,
+      );
       const notDeferred: Prisma.TaskWhereInput = {
         OR: [{ defer_date: null }, { defer_date: { lte: nowUtc } }],
       };
@@ -282,9 +286,7 @@ export const tasksRouter = router({
         return items;
       }
 
-      const projectIds = [
-        ...new Set(items.map((t) => t.project_id).filter(Boolean) as string[]),
-      ];
+      const projectIds = [...new Set(items.map((t) => t.project_id).filter(Boolean) as string[])];
 
       if (projectIds.length > 0) {
         const sequentialProjects = await db.project.findMany({
@@ -354,79 +356,88 @@ export const tasksRouter = router({
         OR: [{ defer_date: null }, { defer_date: { lte: nowUtc } }],
       };
 
-      const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor] = await Promise.all([
-        db.task.count({
-          where: {
-            user_id: ctx.user.id,
-            status: "active",
-            project_id: null,
-            parent_id: null,
-            is_someday: false,
-            delegated_to_text: null,
-          },
-        }),
-        db.capture.count({
-          where: {
-            user_id: ctx.user.id,
-            state: { in: ["raw", "proposed"] },
-            processed_at: null,
-            deleted_at: null,
-          },
-        }),
-        db.task.count({
-          where: {
-            user_id: ctx.user.id,
-            status: "active",
-            AND: [
-              notDeferred,
-              {
-                OR: [
-                  { due_date: { lt: tomorrowStart } },
-                  { defer_date: { lte: nowUtc, not: null } },
-                  { flagged: true },
-                ],
-              },
-            ],
-          },
-        }),
-        db.task.count({
-          where: {
-            user_id: ctx.user.id,
-            status: "active",
-            OR: [
-              { due_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
-              { defer_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
-            ],
-          },
-        }),
-        db.task.count({
-          where: { user_id: ctx.user.id, status: "active", flagged: true },
-        }),
-        db.task.count({
-          where: withDeleted<Prisma.TaskWhereInput>({
-            user_id: ctx.user.id,
-            NOT: { deleted_at: null },
+      const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor] =
+        await Promise.all([
+          db.task.count({
+            where: {
+              user_id: ctx.user.id,
+              status: "active",
+              project_id: null,
+              parent_id: null,
+              is_someday: false,
+              delegated_to_text: null,
+            },
           }),
-        }),
-        db.task.count({
-          where: {
-            user_id: ctx.user.id,
-            is_someday: true,
-            status: "active",
-            deleted_at: null,
-          },
-        }),
-        db.task.count({
-          where: {
-            user_id: ctx.user.id,
-            delegated_to_text: { not: null },
-            status: "active",
-            deleted_at: null,
-          },
-        }),
-      ]);
+          db.capture.count({
+            where: {
+              user_id: ctx.user.id,
+              state: { in: ["raw", "proposed"] },
+              processed_at: null,
+              deleted_at: null,
+            },
+          }),
+          db.task.count({
+            where: {
+              user_id: ctx.user.id,
+              status: "active",
+              AND: [
+                notDeferred,
+                {
+                  OR: [
+                    { due_date: { lt: tomorrowStart } },
+                    { defer_date: { lte: nowUtc, not: null } },
+                    { flagged: true },
+                  ],
+                },
+              ],
+            },
+          }),
+          db.task.count({
+            where: {
+              user_id: ctx.user.id,
+              status: "active",
+              OR: [
+                { due_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
+                { defer_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
+              ],
+            },
+          }),
+          db.task.count({
+            where: { user_id: ctx.user.id, status: "active", flagged: true },
+          }),
+          db.task.count({
+            where: withDeleted<Prisma.TaskWhereInput>({
+              user_id: ctx.user.id,
+              NOT: { deleted_at: null },
+            }),
+          }),
+          db.task.count({
+            where: {
+              user_id: ctx.user.id,
+              is_someday: true,
+              status: "active",
+              deleted_at: null,
+            },
+          }),
+          db.task.count({
+            where: {
+              user_id: ctx.user.id,
+              delegated_to_text: { not: null },
+              status: "active",
+              deleted_at: null,
+            },
+          }),
+        ]);
 
-      return { inbox: inboxTasks + inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor };
+      return {
+        inbox: inboxTasks + inboxCaptures,
+        today,
+        tomorrow,
+        flagged,
+        trash,
+        someday,
+        waitingFor,
+      };
     }),
 
   countDeferred: protectedProcedure
@@ -462,384 +473,380 @@ export const tasksRouter = router({
     }),
 
   // ── Create ────────────────────────────────────────────────────────────
-  create: protectedProcedure
-    .input(TaskCreateInput)
-    .mutation(async ({ ctx, input }) => {
-      const id = newId();
-      const userId = ctx.user.id;
+  create: protectedProcedure.input(TaskCreateInput).mutation(async ({ ctx, input }) => {
+    const id = newId();
+    const userId = ctx.user.id;
 
-      // Validate every foreign ID belongs to this user before any writes.
-      let resolvedProjectId: string | null = input.project_id ?? null;
-      if (resolvedProjectId) {
-        const owns = await db.project.findFirst({
+    // Validate every foreign ID belongs to this user before any writes.
+    let resolvedProjectId: string | null = input.project_id ?? null;
+    if (resolvedProjectId) {
+      const owns = await db.project.findFirst({
+        where: { id: resolvedProjectId, user_id: userId },
+        select: { id: true },
+      });
+      if (!owns) {
+        // Guard: check if the caller accidentally passed a folder ID instead of a project ID.
+        const isFolder = await db.projectFolder.findFirst({
           where: { id: resolvedProjectId, user_id: userId },
           select: { id: true },
         });
-        if (!owns) {
-          // Guard: check if the caller accidentally passed a folder ID instead of a project ID.
-          const isFolder = await db.projectFolder.findFirst({
-            where: { id: resolvedProjectId, user_id: userId },
-            select: { id: true },
-          });
-          if (isFolder) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "Tasks cannot be added directly to a folder. Add the task to a project within the folder instead.",
-            });
-          }
-          throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
-        }
-      } else if (input.project_title) {
-        // Resolve `>>project` from quick-add: find by title, else create.
-        const title = input.project_title.trim();
-        const existing = await db.project.findFirst({
-          where: { user_id: userId, title },
-          select: { id: true },
-        });
-        if (existing) {
-          resolvedProjectId = existing.id;
-        } else {
-          const newProject = await db.project.create({
-            data: { id: newId(), user_id: userId, title },
-          });
-          resolvedProjectId = newProject.id;
-        }
-      }
-
-      if (input.parent_id) {
-        const parent = await db.task.findFirst({
-          where: { id: input.parent_id, user_id: userId },
-          select: { id: true, parent_id: true },
-        });
-        if (!parent) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
-        if (parent.parent_id) {
+        if (isFolder) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Subtasks cannot be nested: maximum depth is one level.",
+            message:
+              "Tasks cannot be added directly to a folder. Add the task to a project within the folder instead.",
           });
         }
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
-
-      if (input.context_ids?.length) {
-        const owned = await db.context.findMany({
-          where: { id: { in: input.context_ids }, user_id: userId },
-          select: { id: true },
+    } else if (input.project_title) {
+      // Resolve `>>project` from quick-add: find by title, else create.
+      const title = input.project_title.trim();
+      const existing = await db.project.findFirst({
+        where: { user_id: userId, title },
+        select: { id: true },
+      });
+      if (existing) {
+        resolvedProjectId = existing.id;
+      } else {
+        const newProject = await db.project.create({
+          data: { id: newId(), user_id: userId, title },
         });
-        if (owned.length !== input.context_ids.length) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Unknown context id" });
-        }
+        resolvedProjectId = newProject.id;
       }
-      if (input.tag_ids?.length) {
-        const owned = await db.tag.findMany({
-          where: { id: { in: input.tag_ids }, user_id: userId },
-          select: { id: true },
-        });
-        if (owned.length !== input.tag_ids.length) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Unknown tag id" });
-        }
-      }
+    }
 
-      // Determine position: max within scope + 1024.
-      const maxAgg = await db.task.aggregate({
-        _max: { position: true },
-        where: {
+    if (input.parent_id) {
+      const parent = await db.task.findFirst({
+        where: { id: input.parent_id, user_id: userId },
+        select: { id: true, parent_id: true },
+      });
+      if (!parent) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
+      if (parent.parent_id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Subtasks cannot be nested: maximum depth is one level.",
+        });
+      }
+    }
+
+    if (input.context_ids?.length) {
+      const owned = await db.context.findMany({
+        where: { id: { in: input.context_ids }, user_id: userId },
+        select: { id: true },
+      });
+      if (owned.length !== input.context_ids.length) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Unknown context id" });
+      }
+    }
+    if (input.tag_ids?.length) {
+      const owned = await db.tag.findMany({
+        where: { id: { in: input.tag_ids }, user_id: userId },
+        select: { id: true },
+      });
+      if (owned.length !== input.tag_ids.length) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Unknown tag id" });
+      }
+    }
+
+    // Determine position: max within scope + 1024.
+    const maxAgg = await db.task.aggregate({
+      _max: { position: true },
+      where: {
+        user_id: userId,
+        project_id: resolvedProjectId,
+        parent_id: input.parent_id ?? null,
+      },
+    });
+    const position = input.position ?? nextPosition(maxAgg._max.position);
+
+    const task = await db.$transaction(async (tx) => {
+      const created = await tx.task.create({
+        data: {
+          id,
           user_id: userId,
+          title: input.title,
+          notes: input.notes ?? null,
           project_id: resolvedProjectId,
           parent_id: input.parent_id ?? null,
+          flagged: input.flagged ?? false,
+          defer_date: input.defer_date ?? null,
+          due_date: input.due_date ?? null,
+          estimated_minutes: input.estimated_minutes ?? null,
+          position: new Prisma.Decimal(position),
         },
       });
-      const position = input.position ?? nextPosition(maxAgg._max.position);
 
-      const task = await db.$transaction(async (tx) => {
-        const created = await tx.task.create({
+      if (input.context_ids?.length) {
+        await tx.contextOnTask.createMany({
+          data: input.context_ids.map((context_id) => ({
+            task_id: created.id,
+            context_id,
+          })),
+          skipDuplicates: true,
+        });
+      }
+      if (input.tag_ids?.length) {
+        await tx.tagOnTask.createMany({
+          data: input.tag_ids.map((tag_id) => ({
+            task_id: created.id,
+            tag_id,
+          })),
+          skipDuplicates: true,
+        });
+        await tx.tag.updateMany({
+          where: { id: { in: input.tag_ids } },
+          data: { usage_count: { increment: 1 } },
+        });
+      }
+
+      // Resolve refs from notes
+      if (input.notes) {
+        const refs = await resolveAndApplyReferences({
+          userId,
+          notes: input.notes,
+          previousTagIds: [],
+          tx,
+        });
+        await tx.task.update({
+          where: { id: created.id },
           data: {
-            id,
-            user_id: userId,
-            title: input.title,
-            notes: input.notes ?? null,
-            project_id: resolvedProjectId,
-            parent_id: input.parent_id ?? null,
-            flagged: input.flagged ?? false,
-            defer_date: input.defer_date ?? null,
-            due_date: input.due_date ?? null,
-            estimated_minutes: input.estimated_minutes ?? null,
-            position: new Prisma.Decimal(position),
+            referenced_person_ids: refs.person_ids,
+            referenced_tag_ids: refs.tag_ids,
+            referenced_entity_refs: refs.entity_refs satisfies Prisma.InputJsonValue,
           },
         });
 
-        if (input.context_ids?.length) {
+        const resolvedLinks: ResolvedLink[] = [
+          ...refs.entity_refs.map((e) => ({
+            target_type: e.kind === "project" ? "Project" : "Task",
+            target_id: e.id,
+          })),
+          ...refs.tag_ids.map((id) => ({ target_type: "Tag", target_id: id })),
+        ];
+        await syncLinksForSource({
+          userId,
+          source_type: "Task",
+          source_id: created.id,
+          resolved: resolvedLinks,
+          tx,
+        });
+      }
+
+      return tx.task.findUniqueOrThrow({
+        where: { id: created.id },
+        include: TASK_INCLUDE,
+      });
+    });
+
+    await logActivity({
+      user_id: ctx.user.id,
+      entity_type: "Task",
+      entity_id: task.id,
+      action: "create",
+      meta: { title: task.title },
+    });
+
+    return task;
+  }),
+
+  // ── Update ────────────────────────────────────────────────────────────
+  update: protectedProcedure.input(TaskUpdateInput).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user.id;
+    const before = await db.task.findFirst({
+      where: { id: input.id, user_id: userId },
+    });
+    if (!before) throw new TRPCError({ code: "NOT_FOUND" });
+
+    // Validate any new foreign IDs are owned by this user.
+    if (input.project_id) {
+      const owns = await db.project.findFirst({
+        where: { id: input.project_id, user_id: userId },
+        select: { id: true },
+      });
+      if (!owns) {
+        // Guard: check if the caller accidentally passed a folder ID instead of a project ID.
+        const isFolder = await db.projectFolder.findFirst({
+          where: { id: input.project_id, user_id: userId },
+          select: { id: true },
+        });
+        if (isFolder) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Tasks cannot be assigned directly to a folder. Assign the task to a project within the folder instead.",
+          });
+        }
+        throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+    }
+    if (input.parent_id) {
+      const parent = await db.task.findFirst({
+        where: { id: input.parent_id, user_id: userId },
+        select: { id: true, parent_id: true },
+      });
+      if (!parent) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
+      if (parent.parent_id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Subtasks cannot be nested: maximum depth is one level.",
+        });
+      }
+    }
+    if (input.context_ids?.length) {
+      const owned = await db.context.findMany({
+        where: { id: { in: input.context_ids }, user_id: userId },
+        select: { id: true },
+      });
+      if (owned.length !== input.context_ids.length) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Unknown context id" });
+      }
+    }
+    if (input.tag_ids?.length) {
+      const owned = await db.tag.findMany({
+        where: { id: { in: input.tag_ids }, user_id: userId },
+        select: { id: true },
+      });
+      if (owned.length !== input.tag_ids.length) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Unknown tag id" });
+      }
+    }
+
+    const data: Prisma.TaskUpdateInput = {};
+    if (input.title !== undefined) data.title = input.title;
+    if (input.notes !== undefined) data.notes = input.notes;
+    if (input.project_id !== undefined) {
+      data.project = input.project_id
+        ? { connect: { id: input.project_id } }
+        : { disconnect: true };
+    }
+    if (input.parent_id !== undefined) {
+      data.parent = input.parent_id ? { connect: { id: input.parent_id } } : { disconnect: true };
+    }
+    if (input.flagged !== undefined) data.flagged = input.flagged;
+    if (input.defer_date !== undefined) data.defer_date = input.defer_date;
+    if (input.due_date !== undefined) data.due_date = input.due_date;
+    if (input.estimated_minutes !== undefined) data.estimated_minutes = input.estimated_minutes;
+
+    const updated = await db.$transaction(async (tx) => {
+      await tx.task.update({
+        where: { id: input.id },
+        data,
+      });
+
+      // If project_id changed, move all child subtasks to the new project.
+      if (input.project_id !== undefined && input.project_id !== before.project_id) {
+        await tx.task.updateMany({
+          where: { parent_id: input.id, user_id: userId },
+          data: { project_id: input.project_id ?? null },
+        });
+      }
+
+      if (input.context_ids !== undefined) {
+        await tx.contextOnTask.deleteMany({ where: { task_id: input.id } });
+        if (input.context_ids.length > 0) {
           await tx.contextOnTask.createMany({
             data: input.context_ids.map((context_id) => ({
-              task_id: created.id,
+              task_id: input.id,
               context_id,
             })),
             skipDuplicates: true,
           });
         }
-        if (input.tag_ids?.length) {
+      }
+      if (input.tag_ids !== undefined) {
+        const existing = await tx.tagOnTask.findMany({
+          where: { task_id: input.id },
+          select: { tag_id: true },
+        });
+        const previousTagIds = existing.map((t) => t.tag_id);
+        await tx.tagOnTask.deleteMany({ where: { task_id: input.id } });
+        if (input.tag_ids.length > 0) {
           await tx.tagOnTask.createMany({
             data: input.tag_ids.map((tag_id) => ({
-              task_id: created.id,
+              task_id: input.id,
               tag_id,
             })),
             skipDuplicates: true,
           });
+        }
+        // Adjust usage_count.
+        const prev = new Set(previousTagIds);
+        const next = new Set(input.tag_ids);
+        const inc = input.tag_ids.filter((id) => !prev.has(id));
+        const dec = previousTagIds.filter((id) => !next.has(id));
+        if (inc.length) {
           await tx.tag.updateMany({
-            where: { id: { in: input.tag_ids } },
+            where: { id: { in: inc } },
             data: { usage_count: { increment: 1 } },
           });
         }
-
-        // Resolve refs from notes
-        if (input.notes) {
-          const refs = await resolveAndApplyReferences({
-            userId,
-            notes: input.notes,
-            previousTagIds: [],
-            tx,
-          });
-          await tx.task.update({
-            where: { id: created.id },
-            data: {
-              referenced_person_ids: refs.person_ids,
-              referenced_tag_ids: refs.tag_ids,
-              referenced_entity_refs: refs.entity_refs satisfies Prisma.InputJsonValue,
-            },
-          });
-
-          const resolvedLinks: ResolvedLink[] = [
-            ...refs.entity_refs.map((e) => ({
-              target_type: e.kind === "project" ? "Project" : "Task",
-              target_id: e.id,
-            })),
-            ...refs.tag_ids.map((id) => ({ target_type: "Tag", target_id: id })),
-          ];
-          await syncLinksForSource({
-            userId,
-            source_type: "Task",
-            source_id: created.id,
-            resolved: resolvedLinks,
-            tx,
+        if (dec.length) {
+          await tx.tag.updateMany({
+            where: { id: { in: dec } },
+            data: { usage_count: { decrement: 1 } },
           });
         }
+      }
 
-        return tx.task.findUniqueOrThrow({
-          where: { id: created.id },
-          include: TASK_INCLUDE,
+      // Re-parse references if notes changed.
+      if (input.notes !== undefined && input.notes !== before.notes) {
+        const refs = await resolveAndApplyReferences({
+          userId: ctx.user.id,
+          notes: input.notes,
+          previousTagIds: before.referenced_tag_ids,
+          tx,
         });
-      });
+        await tx.task.update({
+          where: { id: input.id },
+          data: {
+            referenced_person_ids: refs.person_ids,
+            referenced_tag_ids: refs.tag_ids,
+            referenced_entity_refs: refs.entity_refs satisfies Prisma.InputJsonValue,
+          },
+        });
 
+        const resolvedLinks: ResolvedLink[] = [
+          ...refs.entity_refs.map((e) => ({
+            target_type: e.kind === "project" ? "Project" : "Task",
+            target_id: e.id,
+          })),
+          ...refs.tag_ids.map((id) => ({ target_type: "Tag", target_id: id })),
+        ];
+        await syncLinksForSource({
+          userId: ctx.user.id,
+          source_type: "Task",
+          source_id: input.id,
+          resolved: resolvedLinks,
+          tx,
+        });
+      }
+
+      return tx.task.findUniqueOrThrow({
+        where: { id: input.id },
+        include: TASK_INCLUDE,
+      });
+    });
+
+    // Cast Prisma's typed rows to a generic record for the structural
+    // diff helper. The diff helper only reads enumerable string keys, so
+    // a one-step assertion is safe and avoids an unknown-bridge.
+    const beforeRec = before as Record<string, unknown>;
+    const updatedRec = updated as Record<string, unknown>;
+    const diff = diffObjects(beforeRec, updatedRec);
+    if (Object.keys(diff).length > 0) {
       await logActivity({
         user_id: ctx.user.id,
         entity_type: "Task",
-        entity_id: task.id,
-        action: "create",
-        meta: { title: task.title },
+        entity_id: updated.id,
+        action: "update",
+        before: beforeRec,
+        after: updatedRec,
       });
+    }
 
-      return task;
-    }),
-
-  // ── Update ────────────────────────────────────────────────────────────
-  update: protectedProcedure
-    .input(TaskUpdateInput)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
-      const before = await db.task.findFirst({
-        where: { id: input.id, user_id: userId },
-      });
-      if (!before) throw new TRPCError({ code: "NOT_FOUND" });
-
-      // Validate any new foreign IDs are owned by this user.
-      if (input.project_id) {
-        const owns = await db.project.findFirst({
-          where: { id: input.project_id, user_id: userId },
-          select: { id: true },
-        });
-        if (!owns) {
-          // Guard: check if the caller accidentally passed a folder ID instead of a project ID.
-          const isFolder = await db.projectFolder.findFirst({
-            where: { id: input.project_id, user_id: userId },
-            select: { id: true },
-          });
-          if (isFolder) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "Tasks cannot be assigned directly to a folder. Assign the task to a project within the folder instead.",
-            });
-          }
-          throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
-        }
-      }
-      if (input.parent_id) {
-        const parent = await db.task.findFirst({
-          where: { id: input.parent_id, user_id: userId },
-          select: { id: true, parent_id: true },
-        });
-        if (!parent) throw new TRPCError({ code: "NOT_FOUND", message: "Parent task not found" });
-        if (parent.parent_id) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Subtasks cannot be nested: maximum depth is one level.",
-          });
-        }
-      }
-      if (input.context_ids?.length) {
-        const owned = await db.context.findMany({
-          where: { id: { in: input.context_ids }, user_id: userId },
-          select: { id: true },
-        });
-        if (owned.length !== input.context_ids.length) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Unknown context id" });
-        }
-      }
-      if (input.tag_ids?.length) {
-        const owned = await db.tag.findMany({
-          where: { id: { in: input.tag_ids }, user_id: userId },
-          select: { id: true },
-        });
-        if (owned.length !== input.tag_ids.length) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Unknown tag id" });
-        }
-      }
-
-      const data: Prisma.TaskUpdateInput = {};
-      if (input.title !== undefined) data.title = input.title;
-      if (input.notes !== undefined) data.notes = input.notes;
-      if (input.project_id !== undefined) {
-        data.project = input.project_id
-          ? { connect: { id: input.project_id } }
-          : { disconnect: true };
-      }
-      if (input.parent_id !== undefined) {
-        data.parent = input.parent_id
-          ? { connect: { id: input.parent_id } }
-          : { disconnect: true };
-      }
-      if (input.flagged !== undefined) data.flagged = input.flagged;
-      if (input.defer_date !== undefined) data.defer_date = input.defer_date;
-      if (input.due_date !== undefined) data.due_date = input.due_date;
-      if (input.estimated_minutes !== undefined) data.estimated_minutes = input.estimated_minutes;
-
-      const updated = await db.$transaction(async (tx) => {
-        await tx.task.update({
-          where: { id: input.id },
-          data,
-        });
-
-        // If project_id changed, move all child subtasks to the new project.
-        if (input.project_id !== undefined && input.project_id !== before.project_id) {
-          await tx.task.updateMany({
-            where: { parent_id: input.id, user_id: userId },
-            data: { project_id: input.project_id ?? null },
-          });
-        }
-
-        if (input.context_ids !== undefined) {
-          await tx.contextOnTask.deleteMany({ where: { task_id: input.id } });
-          if (input.context_ids.length > 0) {
-            await tx.contextOnTask.createMany({
-              data: input.context_ids.map((context_id) => ({
-                task_id: input.id,
-                context_id,
-              })),
-              skipDuplicates: true,
-            });
-          }
-        }
-        if (input.tag_ids !== undefined) {
-          const existing = await tx.tagOnTask.findMany({
-            where: { task_id: input.id },
-            select: { tag_id: true },
-          });
-          const previousTagIds = existing.map((t) => t.tag_id);
-          await tx.tagOnTask.deleteMany({ where: { task_id: input.id } });
-          if (input.tag_ids.length > 0) {
-            await tx.tagOnTask.createMany({
-              data: input.tag_ids.map((tag_id) => ({
-                task_id: input.id,
-                tag_id,
-              })),
-              skipDuplicates: true,
-            });
-          }
-          // Adjust usage_count.
-          const prev = new Set(previousTagIds);
-          const next = new Set(input.tag_ids);
-          const inc = input.tag_ids.filter((id) => !prev.has(id));
-          const dec = previousTagIds.filter((id) => !next.has(id));
-          if (inc.length) {
-            await tx.tag.updateMany({
-              where: { id: { in: inc } },
-              data: { usage_count: { increment: 1 } },
-            });
-          }
-          if (dec.length) {
-            await tx.tag.updateMany({
-              where: { id: { in: dec } },
-              data: { usage_count: { decrement: 1 } },
-            });
-          }
-        }
-
-        // Re-parse references if notes changed.
-        if (input.notes !== undefined && input.notes !== before.notes) {
-          const refs = await resolveAndApplyReferences({
-            userId: ctx.user.id,
-            notes: input.notes,
-            previousTagIds: before.referenced_tag_ids,
-            tx,
-          });
-          await tx.task.update({
-            where: { id: input.id },
-            data: {
-              referenced_person_ids: refs.person_ids,
-              referenced_tag_ids: refs.tag_ids,
-              referenced_entity_refs: refs.entity_refs satisfies Prisma.InputJsonValue,
-            },
-          });
-
-          const resolvedLinks: ResolvedLink[] = [
-            ...refs.entity_refs.map((e) => ({
-              target_type: e.kind === "project" ? "Project" : "Task",
-              target_id: e.id,
-            })),
-            ...refs.tag_ids.map((id) => ({ target_type: "Tag", target_id: id })),
-          ];
-          await syncLinksForSource({
-            userId: ctx.user.id,
-            source_type: "Task",
-            source_id: input.id,
-            resolved: resolvedLinks,
-            tx,
-          });
-        }
-
-        return tx.task.findUniqueOrThrow({
-          where: { id: input.id },
-          include: TASK_INCLUDE,
-        });
-      });
-
-      // Cast Prisma's typed rows to a generic record for the structural
-      // diff helper. The diff helper only reads enumerable string keys, so
-      // a one-step assertion is safe and avoids an unknown-bridge.
-      const beforeRec = before as Record<string, unknown>;
-      const updatedRec = updated as Record<string, unknown>;
-      const diff = diffObjects(beforeRec, updatedRec);
-      if (Object.keys(diff).length > 0) {
-        await logActivity({
-          user_id: ctx.user.id,
-          entity_type: "Task",
-          entity_id: updated.id,
-          action: "update",
-          before: beforeRec,
-          after: updatedRec,
-        });
-      }
-
-      return updated;
-    }),
+    return updated;
+  }),
 
   complete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
@@ -1064,10 +1071,7 @@ export const tasksRouter = router({
       const instances = await db.task.findMany({
         where: {
           user_id: ctx.user.id,
-          OR: [
-            { id: chainAnchorId },
-            { recurrence_parent_id: chainAnchorId },
-          ],
+          OR: [{ id: chainAnchorId }, { recurrence_parent_id: chainAnchorId }],
         },
         orderBy: { due_date: "asc" },
         take: input.limit,
@@ -1215,10 +1219,30 @@ export const tasksRouter = router({
   // that have not yet been migrated to the canonical trash.* procedures.
   trashPreview: protectedProcedure.query(async ({ ctx }) => {
     const [tasks, notes, projects, attachments] = await Promise.all([
-      db.task.count({ where: withDeleted<Prisma.TaskWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
-      db.note.count({ where: withDeleted<Prisma.NoteWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
-      db.project.count({ where: withDeleted<Prisma.ProjectWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
-      db.attachment.count({ where: withDeleted<Prisma.AttachmentWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+      db.task.count({
+        where: withDeleted<Prisma.TaskWhereInput>({
+          user_id: ctx.user.id,
+          NOT: { deleted_at: null },
+        }),
+      }),
+      db.note.count({
+        where: withDeleted<Prisma.NoteWhereInput>({
+          user_id: ctx.user.id,
+          NOT: { deleted_at: null },
+        }),
+      }),
+      db.project.count({
+        where: withDeleted<Prisma.ProjectWhereInput>({
+          user_id: ctx.user.id,
+          NOT: { deleted_at: null },
+        }),
+      }),
+      db.attachment.count({
+        where: withDeleted<Prisma.AttachmentWhereInput>({
+          user_id: ctx.user.id,
+          NOT: { deleted_at: null },
+        }),
+      }),
     ]);
     return { tasks, notes, projects, attachments };
   }),
@@ -1235,25 +1259,49 @@ export const tasksRouter = router({
         });
       }
       const tasks = await db.task.findMany({
-        where: withDeleted<Prisma.TaskWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }),
+        where: withDeleted<Prisma.TaskWhereInput>({
+          user_id: ctx.user.id,
+          NOT: { deleted_at: null },
+        }),
         select: { id: true, referenced_tag_ids: true },
       });
       const ids = tasks.map((t) => t.id);
       const [noteCount, projectCount, attachmentCount] = await Promise.all([
-        db.note.count({ where: withDeleted<Prisma.NoteWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
-        db.project.count({ where: withDeleted<Prisma.ProjectWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
-        db.attachment.count({ where: withDeleted<Prisma.AttachmentWhereInput>({ user_id: ctx.user.id, NOT: { deleted_at: null } }) }),
+        db.note.count({
+          where: withDeleted<Prisma.NoteWhereInput>({
+            user_id: ctx.user.id,
+            NOT: { deleted_at: null },
+          }),
+        }),
+        db.project.count({
+          where: withDeleted<Prisma.ProjectWhereInput>({
+            user_id: ctx.user.id,
+            NOT: { deleted_at: null },
+          }),
+        }),
+        db.attachment.count({
+          where: withDeleted<Prisma.AttachmentWhereInput>({
+            user_id: ctx.user.id,
+            NOT: { deleted_at: null },
+          }),
+        }),
       ]);
       await db.$transaction(async (tx) => {
         if (ids.length > 0) {
-          const tagJoins = await tx.tagOnTask.findMany({ where: { task_id: { in: ids } }, select: { tag_id: true } });
+          const tagJoins = await tx.tagOnTask.findMany({
+            where: { task_id: { in: ids } },
+            select: { tag_id: true },
+          });
           const allRefTags = tasks.flatMap((t) => t.referenced_tag_ids);
           const tagDecrements = [...tagJoins.map((t) => t.tag_id), ...allRefTags];
           if (tagDecrements.length) {
             const counts = new Map<string, number>();
             for (const id of tagDecrements) counts.set(id, (counts.get(id) ?? 0) + 1);
             for (const [tagId, n] of counts) {
-              await tx.tag.update({ where: { id: tagId }, data: { usage_count: { decrement: n } } });
+              await tx.tag.update({
+                where: { id: tagId },
+                data: { usage_count: { decrement: n } },
+              });
             }
           }
           await tx.$executeRaw`DELETE FROM "Task" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
@@ -1262,7 +1310,15 @@ export const tasksRouter = router({
         await tx.$executeRaw`DELETE FROM "Project" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
         await tx.$executeRaw`DELETE FROM "Attachment" WHERE user_id = ${ctx.user.id} AND deleted_at IS NOT NULL`;
       });
-      return { ok: true, deleted: { tasks: ids.length, notes: noteCount, projects: projectCount, attachments: attachmentCount } };
+      return {
+        ok: true,
+        deleted: {
+          tasks: ids.length,
+          notes: noteCount,
+          projects: projectCount,
+          attachments: attachmentCount,
+        },
+      };
     }),
 
   // ── Move (fractional indexing) ─────────────────────────────────────────
@@ -1776,10 +1832,7 @@ export const tasksRouter = router({
         status: "active",
         deleted_at: null,
       },
-      orderBy: [
-        { someday_review_date: { sort: "asc", nulls: "last" } },
-        { created_at: "asc" },
-      ],
+      orderBy: [{ someday_review_date: { sort: "asc", nulls: "last" } }, { created_at: "asc" }],
       select: {
         id: true,
         title: true,
@@ -1803,10 +1856,7 @@ export const tasksRouter = router({
         status: "active",
         deleted_at: null,
       },
-      orderBy: [
-        { delegated_to_text: "asc" },
-        { follow_up_date: { sort: "asc", nulls: "last" } },
-      ],
+      orderBy: [{ delegated_to_text: "asc" }, { follow_up_date: { sort: "asc", nulls: "last" } }],
       select: {
         id: true,
         title: true,
@@ -1979,7 +2029,10 @@ export const tasksRouter = router({
         });
 
         // Group by folder.
-        const byFolder = new Map<string | null, { folderId: string | null; folderName: string | null; taskIds: string[] }>();
+        const byFolder = new Map<
+          string | null,
+          { folderId: string | null; folderName: string | null; taskIds: string[] }
+        >();
         for (const t of orphaned) {
           const key = t.project?.folder_id ?? null;
           if (!byFolder.has(key)) {

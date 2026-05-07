@@ -96,7 +96,10 @@ export function TemplateForm({
   }
 
   function removeChecklistItem(idx: number) {
-    set("checklist_items", form.checklist_items.filter((_, i) => i !== idx));
+    set(
+      "checklist_items",
+      form.checklist_items.filter((_, i) => i !== idx),
+    );
   }
 
   function moveChecklistItem(idx: number, direction: "up" | "down") {
@@ -153,9 +156,7 @@ export function TemplateForm({
   function toggleTag(id: string) {
     set(
       "tag_ids",
-      form.tag_ids.includes(id)
-        ? form.tag_ids.filter((t) => t !== id)
-        : [...form.tag_ids, id],
+      form.tag_ids.includes(id) ? form.tag_ids.filter((t) => t !== id) : [...form.tag_ids, id],
     );
   }
 
@@ -177,10 +178,7 @@ export function TemplateForm({
 
       <div className="flex flex-col gap-1.5">
         <label className="font-ui text-xs font-medium text-text-secondary">Notes</label>
-        <TemplateNotesEditor
-          value={form.notes}
-          onChange={(v) => set("notes", v)}
-        />
+        <TemplateNotesEditor value={form.notes} onChange={(v) => set("notes", v)} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -201,7 +199,9 @@ export function TemplateForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="font-ui text-xs font-medium text-text-secondary">Estimated time (min)</label>
+          <label className="font-ui text-xs font-medium text-text-secondary">
+            Estimated time (min)
+          </label>
           <input
             type="number"
             min="0"
@@ -226,8 +226,8 @@ export function TemplateForm({
           />
         </div>
 
-        <div className="flex flex-col gap-1.5 justify-end pb-1">
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex flex-col justify-end gap-1.5 pb-1">
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={form.flagged}
@@ -251,7 +251,7 @@ export function TemplateForm({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-ui text-xs transition-colors",
                   form.context_ids.includes(ctx.id)
-                    ? "bg-accent-primary-muted text-accent-primary font-medium"
+                    ? "bg-accent-primary-muted font-medium text-accent-primary"
                     : "border border-border-default text-text-secondary hover:bg-surface-hover",
                 )}
               >
@@ -275,7 +275,7 @@ export function TemplateForm({
                 className={cn(
                   "inline-flex items-center rounded-full px-2.5 py-1 font-ui text-xs transition-colors",
                   form.tag_ids.includes(tag.id)
-                    ? "bg-accent-primary-muted text-accent-primary font-medium"
+                    ? "bg-accent-primary-muted font-medium text-accent-primary"
                     : "border border-border-default text-text-secondary hover:bg-surface-hover",
                 )}
               >
@@ -290,14 +290,17 @@ export function TemplateForm({
         <label className="font-ui text-xs font-medium text-text-secondary">Checklist items</label>
         <div className="flex flex-col gap-1">
           {form.checklist_items.map((item, idx) => (
-            <div key={idx} className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-raised px-2 py-1.5">
+            <div
+              key={idx}
+              className="flex items-center gap-1.5 rounded-md border border-border-subtle bg-surface-raised px-2 py-1.5"
+            >
               <div className="flex flex-col gap-0.5">
                 <button
                   type="button"
                   onClick={() => moveChecklistItem(idx, "up")}
                   disabled={idx === 0}
                   aria-label="Move up"
-                  className="h-3 text-text-disabled hover:text-text-secondary disabled:opacity-30 transition-colors"
+                  className="h-3 text-text-disabled transition-colors hover:text-text-secondary disabled:opacity-30"
                 >
                   <ChevronUp size={11} aria-hidden />
                 </button>
@@ -306,7 +309,7 @@ export function TemplateForm({
                   onClick={() => moveChecklistItem(idx, "down")}
                   disabled={idx === form.checklist_items.length - 1}
                   aria-label="Move down"
-                  className="h-3 text-text-disabled hover:text-text-secondary disabled:opacity-30 transition-colors"
+                  className="h-3 text-text-disabled transition-colors hover:text-text-secondary disabled:opacity-30"
                 >
                   <ChevronDown size={11} aria-hidden />
                 </button>
@@ -316,7 +319,7 @@ export function TemplateForm({
                 type="button"
                 onClick={() => removeChecklistItem(idx)}
                 aria-label={`Remove "${item.title}"`}
-                className="text-text-disabled hover:text-accent-danger transition-colors"
+                className="text-text-disabled transition-colors hover:text-accent-danger"
               >
                 <X size={12} />
               </button>
@@ -340,7 +343,7 @@ export function TemplateForm({
               type="button"
               onClick={addChecklistItem}
               disabled={!newChecklistTitle.trim()}
-              className="inline-flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1.5 font-ui text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md border border-border-default px-2.5 py-1.5 font-ui text-xs text-text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
             >
               <Plus size={12} />
               Add
@@ -353,14 +356,14 @@ export function TemplateForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-border-default px-4 py-2 font-ui text-sm text-text-secondary hover:bg-surface-hover transition-colors"
+          className="rounded-md border border-border-default px-4 py-2 font-ui text-sm text-text-secondary transition-colors hover:bg-surface-hover"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isPending || !form.name.trim()}
-          className="rounded-md bg-accent-primary px-4 py-2 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50 transition-colors"
+          className="rounded-md bg-accent-primary px-4 py-2 font-ui text-sm font-medium text-text-on-accent transition-colors hover:bg-accent-primary-hover disabled:opacity-50"
         >
           {isPending ? "Saving…" : editId ? "Update template" : "Create template"}
         </button>

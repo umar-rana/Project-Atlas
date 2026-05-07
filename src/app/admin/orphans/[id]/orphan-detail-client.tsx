@@ -97,7 +97,7 @@ function UserPickerDialog({
             className="w-full rounded-md border border-white/10 bg-white/5 py-2 pl-9 pr-3 font-mono text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/20"
           />
         </div>
-        <div className="max-h-64 overflow-auto flex flex-col gap-1 mb-4">
+        <div className="mb-4 flex max-h-64 flex-col gap-1 overflow-auto">
           {users.map((u) => (
             <button
               key={u.id}
@@ -133,7 +133,9 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const [showUserPicker, setShowUserPicker] = React.useState(false);
-  const [selectedUser, setSelectedUser] = React.useState<{ id: string; email: string } | null>(null);
+  const [selectedUser, setSelectedUser] = React.useState<{ id: string; email: string } | null>(
+    null,
+  );
   const [showReattachConfirm, setShowReattachConfirm] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [actionResult, setActionResult] = React.useState<string | null>(null);
@@ -175,7 +177,10 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
     return (
       <div className="flex flex-col gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-40 animate-pulse rounded-xl border border-white/10 bg-white/5" />
+          <div
+            key={i}
+            className="h-40 animate-pulse rounded-xl border border-white/10 bg-white/5"
+          />
         ))}
       </div>
     );
@@ -211,7 +216,10 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
           confirmLabel={reattach.isPending ? "Reattaching…" : "Reattach"}
           confirmClass="bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
           onConfirm={() => reattach.mutate({ orphan_id: id, target_user_id: selectedUser.id })}
-          onCancel={() => { setShowReattachConfirm(false); setSelectedUser(null); }}
+          onCancel={() => {
+            setShowReattachConfirm(false);
+            setSelectedUser(null);
+          }}
         />
       )}
 
@@ -230,7 +238,7 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 font-mono text-sm text-white/40 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 font-mono text-sm text-white/40 transition-colors hover:text-white"
         >
           <ArrowLeft size={14} />
           Back
@@ -256,7 +264,7 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
         <dl>
           <div className="flex gap-3 py-1.5">
             <dt className="w-28 font-mono text-xs text-white/30">ID</dt>
-            <dd className="font-mono text-xs text-white/60 break-all">{data.id}</dd>
+            <dd className="break-all font-mono text-xs text-white/60">{data.id}</dd>
           </div>
           <div className="flex gap-3 py-1.5">
             <dt className="w-28 font-mono text-xs text-white/30">Email</dt>
@@ -268,7 +276,7 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
           </div>
           <div className="flex gap-3 py-1.5">
             <dt className="w-28 font-mono text-xs text-white/30">Clerk ID</dt>
-            <dd className="font-mono text-xs text-white/50 break-all">{data.clerk_id}</dd>
+            <dd className="break-all font-mono text-xs text-white/50">{data.clerk_id}</dd>
           </div>
           <div className="flex gap-3 py-1.5">
             <dt className="w-28 font-mono text-xs text-white/30">Created</dt>
@@ -296,12 +304,21 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
 
         {data.sampleTasks.length > 0 && (
           <div className="mt-4">
-            <p className="mb-2 font-mono text-2xs text-white/30 uppercase tracking-wider">Sample tasks</p>
+            <p className="mb-2 font-mono text-2xs uppercase tracking-wider text-white/30">
+              Sample tasks
+            </p>
             <div className="flex flex-col gap-1">
               {data.sampleTasks.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 rounded border border-white/5 bg-white/5 px-3 py-2">
-                  <p className="min-w-0 flex-1 truncate font-mono text-xs text-white/70">{t.title}</p>
-                  <p className="shrink-0 font-mono text-2xs text-white/25">{new Date(t.created_at).toLocaleDateString()}</p>
+                <div
+                  key={t.id}
+                  className="flex items-center gap-3 rounded border border-white/5 bg-white/5 px-3 py-2"
+                >
+                  <p className="min-w-0 flex-1 truncate font-mono text-xs text-white/70">
+                    {t.title}
+                  </p>
+                  <p className="shrink-0 font-mono text-2xs text-white/25">
+                    {new Date(t.created_at).toLocaleDateString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -310,12 +327,21 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
 
         {data.sampleProjects.length > 0 && (
           <div className="mt-3">
-            <p className="mb-2 font-mono text-2xs text-white/30 uppercase tracking-wider">Sample projects</p>
+            <p className="mb-2 font-mono text-2xs uppercase tracking-wider text-white/30">
+              Sample projects
+            </p>
             <div className="flex flex-col gap-1">
               {data.sampleProjects.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 rounded border border-white/5 bg-white/5 px-3 py-2">
-                  <p className="min-w-0 flex-1 truncate font-mono text-xs text-white/70">{p.title}</p>
-                  <p className="shrink-0 font-mono text-2xs text-white/25">{new Date(p.created_at).toLocaleDateString()}</p>
+                <div
+                  key={p.id}
+                  className="flex items-center gap-3 rounded border border-white/5 bg-white/5 px-3 py-2"
+                >
+                  <p className="min-w-0 flex-1 truncate font-mono text-xs text-white/70">
+                    {p.title}
+                  </p>
+                  <p className="shrink-0 font-mono text-2xs text-white/25">
+                    {new Date(p.created_at).toLocaleDateString()}
+                  </p>
                 </div>
               ))}
             </div>
@@ -330,9 +356,14 @@ export function AdminOrphanDetailClient({ id }: { id: string }) {
           </h2>
           <div className="flex flex-col gap-1.5">
             {data.recentAuthEvents.map((e) => (
-              <div key={e.id} className="flex items-center gap-3 rounded border border-white/10 bg-white/5 px-3 py-2">
+              <div
+                key={e.id}
+                className="flex items-center gap-3 rounded border border-white/10 bg-white/5 px-3 py-2"
+              >
                 <p className="min-w-0 flex-1 font-mono text-xs text-white/60">{e.action}</p>
-                <p className="shrink-0 font-mono text-2xs text-white/25">{formatDate(e.created_at)}</p>
+                <p className="shrink-0 font-mono text-2xs text-white/25">
+                  {formatDate(e.created_at)}
+                </p>
               </div>
             ))}
           </div>

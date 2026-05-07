@@ -21,25 +21,25 @@ import { useShellStore } from "@/lib/shell/store";
 import { getUnreadCount, CHANGELOG_LS_KEY } from "@/lib/help/changelog";
 
 const MODULES = [
-  { id: "tasks",     label: "Tasks",     icon: CheckSquare,   href: "/tasks",     shortcut: ["⌘", "1"] },
-  { id: "calendar",  label: "Calendar",  icon: Calendar,      href: "/calendar",  shortcut: ["⌘", "2"] },
-  { id: "people",    label: "People",    icon: Users,         href: "/people",    shortcut: ["⌘", "3"] },
-  { id: "notes",     label: "Notes",     icon: FileText,      href: "/notes",     shortcut: ["⌘", "4"] },
-  { id: "journals",  label: "Journals",  icon: BookOpen,      href: "/journals",  shortcut: ["⌘", "5"] },
-  { id: "vault",     label: "Vault",     icon: Vault,         href: "/vault",     shortcut: ["⌘", "6"] },
+  { id: "tasks", label: "Tasks", icon: CheckSquare, href: "/tasks", shortcut: ["⌘", "1"] },
+  { id: "calendar", label: "Calendar", icon: Calendar, href: "/calendar", shortcut: ["⌘", "2"] },
+  { id: "people", label: "People", icon: Users, href: "/people", shortcut: ["⌘", "3"] },
+  { id: "notes", label: "Notes", icon: FileText, href: "/notes", shortcut: ["⌘", "4"] },
+  { id: "journals", label: "Journals", icon: BookOpen, href: "/journals", shortcut: ["⌘", "5"] },
+  { id: "vault", label: "Vault", icon: Vault, href: "/vault", shortcut: ["⌘", "6"] },
 ];
 
 function getModuleId(pathname: string): string {
-  if (pathname.startsWith("/tasks"))     return "tasks";
-  if (pathname.startsWith("/calendar"))  return "calendar";
-  if (pathname.startsWith("/people"))    return "people";
-  if (pathname.startsWith("/notes"))     return "notes";
-  if (pathname.startsWith("/journals"))  return "journals";
-  if (pathname.startsWith("/vault"))     return "vault";
-  if (pathname.startsWith("/media"))     return "media";
-  if (pathname.startsWith("/settings"))  return "settings";
-  if (pathname.startsWith("/admin"))     return "health";
-  if (pathname.startsWith("/usage"))     return "health";
+  if (pathname.startsWith("/tasks")) return "tasks";
+  if (pathname.startsWith("/calendar")) return "calendar";
+  if (pathname.startsWith("/people")) return "people";
+  if (pathname.startsWith("/notes")) return "notes";
+  if (pathname.startsWith("/journals")) return "journals";
+  if (pathname.startsWith("/vault")) return "vault";
+  if (pathname.startsWith("/media")) return "media";
+  if (pathname.startsWith("/settings")) return "settings";
+  if (pathname.startsWith("/admin")) return "health";
+  if (pathname.startsWith("/usage")) return "health";
   return "tasks";
 }
 

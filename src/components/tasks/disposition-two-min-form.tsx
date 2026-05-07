@@ -41,13 +41,18 @@ export function DispositionTwoMinForm({
   }
 
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter") { e.preventDefault(); submit(); }
-    else if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    }
   }
 
   return (
     <div className="flex flex-col gap-4" onKeyDown={handleKey}>
-      <div className="flex items-start gap-3 rounded-lg border border-accent-success/30 bg-accent-success/8 px-4 py-3">
+      <div className="border-accent-success/30 bg-accent-success/8 flex items-start gap-3 rounded-lg border px-4 py-3">
         <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-accent-success" aria-hidden />
         <div>
           <p className="font-ui text-sm font-medium text-text-primary">Mark as done immediately</p>
@@ -58,15 +63,24 @@ export function DispositionTwoMinForm({
       </div>
 
       <div className="rounded-md border border-border-subtle bg-surface-base px-4 py-3">
-        <p className="font-ui text-2xs text-text-tertiary mb-1">Task to complete</p>
+        <p className="mb-1 font-ui text-2xs text-text-tertiary">Task to complete</p>
         <p className="font-ui text-sm text-text-primary">{title}</p>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border-subtle">
-        <button type="button" onClick={onCancel} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover">
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover"
+        >
           Cancel
         </button>
-        <button type="button" onClick={submit} disabled={mut.isPending} className="rounded-md bg-accent-success px-3 py-1.5 font-ui text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
+        <button
+          type="button"
+          onClick={submit}
+          disabled={mut.isPending}
+          className="rounded-md bg-accent-success px-3 py-1.5 font-ui text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
           {mut.isPending ? "Completing…" : "Mark Complete ↵"}
         </button>
       </div>

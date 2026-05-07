@@ -16,7 +16,7 @@ export default function ProjectDetailPage() {
     <TasksShell>
       <div className="flex h-full flex-col">
         <ProjectDetailHeader projectId={projectId} />
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <div className="px-4 pt-3">
             <ProjectBriefDisplay projectId={projectId} />
           </div>

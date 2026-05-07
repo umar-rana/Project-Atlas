@@ -22,7 +22,7 @@ export function MentionPill({
     <span
       data-handle={handle}
       className={cn(
-        "inline-flex h-control-pill items-center gap-0.5 rounded-sm px-1.25 align-middle font-ui text-2xs font-medium leading-none whitespace-nowrap",
+        "inline-flex h-control-pill items-center gap-0.5 whitespace-nowrap rounded-sm px-1.25 align-middle font-ui text-2xs font-medium leading-none",
         isSelf
           ? "bg-accent-success-muted text-accent-success"
           : "bg-accent-primary-subtle text-accent-primary",

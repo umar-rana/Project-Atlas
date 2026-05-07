@@ -97,10 +97,7 @@ export const jobsRouter = router({
         if (lastRun) {
           if (lastRun.state === "failed") {
             const output = lastRun.output as Record<string, unknown> | null;
-            lastResult =
-              (output?.message as string) ||
-              (output?.error as string) ||
-              "Job failed";
+            lastResult = (output?.message as string) || (output?.error as string) || "Job failed";
           } else if (lastRun.state === "completed") {
             const output = lastRun.output as Record<string, unknown> | null;
             if (output && typeof output === "object") {
@@ -148,14 +145,21 @@ export const jobsRouter = router({
                 if (Object.keys(breakdown).length > 0) {
                   lastBreakdown = breakdown;
                 }
-              // attachment-cleanup: attachments + orphans cleaned
-              } else if (typeof output.attachments === "number" && typeof output.orphans === "number") {
+                // attachment-cleanup: attachments + orphans cleaned
+              } else if (
+                typeof output.attachments === "number" &&
+                typeof output.orphans === "number"
+              ) {
                 const parts: string[] = [];
                 if (output.attachments > 0) {
-                  parts.push(`${output.attachments} attachment${(output.attachments as number) !== 1 ? "s" : ""} cleaned`);
+                  parts.push(
+                    `${output.attachments} attachment${(output.attachments as number) !== 1 ? "s" : ""} cleaned`,
+                  );
                 }
                 if ((output.orphans as number) > 0) {
-                  parts.push(`${output.orphans} orphan${(output.orphans as number) !== 1 ? "s" : ""} removed`);
+                  parts.push(
+                    `${output.orphans} orphan${(output.orphans as number) !== 1 ? "s" : ""} removed`,
+                  );
                 }
                 if (typeof output.errors === "number" && (output.errors as number) > 0) {
                   parts.push(`${output.errors} error${(output.errors as number) !== 1 ? "s" : ""}`);
@@ -174,15 +178,15 @@ export const jobsRouter = router({
                 if (Object.keys(breakdown).length > 0) {
                   lastBreakdown = breakdown;
                 }
-              // processed-captures-cleanup: captures deleted
+                // processed-captures-cleanup: captures deleted
               } else if (typeof output.captures === "number") {
                 const n = output.captures as number;
                 lastResult = `${n} capture${n !== 1 ? "s" : ""} deleted`;
-              // job-records-cleanup: audit entries pruned
+                // job-records-cleanup: audit entries pruned
               } else if (typeof output.deleted === "number" && Object.keys(output).length === 1) {
                 const n = output.deleted as number;
                 lastResult = `${n} audit entr${n !== 1 ? "ies" : "y"} pruned`;
-              // drive sync jobs and import-cleanup
+                // drive sync jobs and import-cleanup
               } else {
                 const synced = output.synced ?? output.files_synced ?? output.count;
                 if (typeof synced === "number") {
@@ -227,19 +231,17 @@ export const jobsRouter = router({
     return results;
   }),
 
-  runNow: adminProcedure
-    .input(z.object({ job_name: z.string() }))
-    .mutation(async ({ input }) => {
-      const job = JOB_REGISTRY.find((j) => j.name === input.job_name);
-      if (!job) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Unknown job" });
-      }
+  runNow: adminProcedure.input(z.object({ job_name: z.string() })).mutation(async ({ input }) => {
+    const job = JOB_REGISTRY.find((j) => j.name === input.job_name);
+    if (!job) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Unknown job" });
+    }
 
-      await runJobNow(input.job_name);
-      log.info({ job: input.job_name }, "Job enqueued via UI");
+    await runJobNow(input.job_name);
+    log.info({ job: input.job_name }, "Job enqueued via UI");
 
-      return { queued: true };
-    }),
+    return { queued: true };
+  }),
 
   pause: adminProcedure
     .input(z.object({ job_name: z.string() }))

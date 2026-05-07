@@ -43,13 +43,15 @@ export const JOB_REGISTRY: JobDefinition[] = [
   {
     name: "trash-retention",
     cron: "0 4 * * *",
-    description: "Nightly hard-delete of soft-deleted records past the 30-day retention window at 04:00 UTC",
+    description:
+      "Nightly hard-delete of soft-deleted records past the 30-day retention window at 04:00 UTC",
     handler: handleTrashRetention,
   },
   {
     name: "attachment-cleanup",
     cron: "0 5 * * *",
-    description: "Nightly cleanup of storage objects for deleted attachments and untracked orphan files at 05:00 UTC",
+    description:
+      "Nightly cleanup of storage objects for deleted attachments and untracked orphan files at 05:00 UTC",
     handler: handleAttachmentCleanup,
   },
   {
@@ -61,7 +63,8 @@ export const JOB_REGISTRY: JobDefinition[] = [
   {
     name: "job-records-cleanup",
     cron: "0 4 * * 0",
-    description: "Weekly pruning of job audit log entries, keeping the 100 most recent per job (Sunday 04:00 UTC)",
+    description:
+      "Weekly pruning of job audit log entries, keeping the 100 most recent per job (Sunday 04:00 UTC)",
     handler: handleJobRecordsCleanup,
   },
   {

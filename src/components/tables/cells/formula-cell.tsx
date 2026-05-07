@@ -16,7 +16,13 @@ interface FormulaCellProps {
   isSelected: boolean;
 }
 
-export function FormulaCell({ value, returnType, decimals = 2, currencySymbol = "$", isSelected }: FormulaCellProps) {
+export function FormulaCell({
+  value,
+  returnType,
+  decimals = 2,
+  currencySymbol = "$",
+  isSelected,
+}: FormulaCellProps) {
   // Formula cells are read-only — no editing
   if (isFormulaError(value)) {
     const errorMsg = (value as { __formula_error: string }).__formula_error;
@@ -28,7 +34,7 @@ export function FormulaCell({ value, returnType, decimals = 2, currencySymbol = 
             isSelected ? "bg-accent-primary-subtle ring-1 ring-inset ring-accent-primary" : "",
           )}
         >
-          <span className="text-accent-danger font-medium">#ERROR</span>
+          <span className="font-medium text-accent-danger">#ERROR</span>
         </div>
       </Hint>
     );
@@ -50,7 +56,10 @@ export function FormulaCell({ value, returnType, decimals = 2, currencySymbol = 
       const n = typeof value === "number" ? value : Number(value);
       const formatted = isNaN(n)
         ? ""
-        : n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: decimals });
+        : n.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: decimals,
+          });
       return (
         <div
           className={cn(
@@ -68,7 +77,11 @@ export function FormulaCell({ value, returnType, decimals = 2, currencySymbol = 
       if (typeof value === "string" || typeof value === "number") {
         const d = new Date(value);
         if (!isNaN(d.getTime())) {
-          display = d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+          display = d.toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
         }
       }
       return (

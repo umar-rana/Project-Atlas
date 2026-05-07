@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import {
   S3Client,
   PutObjectCommand,
@@ -33,9 +33,7 @@ export class R2Provider implements StorageProvider {
     this.bucket = getRequiredEnv("R2_BUCKET_NAME");
     this.publicDomain = getRequiredEnv("R2_PUBLIC_DOMAIN").replace(/\/$/, "");
 
-    const endpoint =
-      process.env["R2_ENDPOINT"] ??
-      `https://${accountId}.r2.cloudflarestorage.com`;
+    const endpoint = process.env["R2_ENDPOINT"] ?? `https://${accountId}.r2.cloudflarestorage.com`;
 
     this.client = new S3Client({
       region: "auto",
@@ -46,11 +44,7 @@ export class R2Provider implements StorageProvider {
     log.info({ bucket: this.bucket, domain: this.publicDomain }, "R2 provider initialised");
   }
 
-  async upload(params: {
-    path: string;
-    data: Buffer;
-    contentType: string;
-  }): Promise<void> {
+  async upload(params: { path: string; data: Buffer; contentType: string }): Promise<void> {
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -72,10 +66,7 @@ export class R2Provider implements StorageProvider {
     return Buffer.from(bytes);
   }
 
-  async getUrl(params: {
-    path: string;
-    expiresInSeconds?: number;
-  }): Promise<string> {
+  async getUrl(params: { path: string; expiresInSeconds?: number }): Promise<string> {
     const expiresIn = params.expiresInSeconds ?? 3600;
 
     const command = new GetObjectCommand({
@@ -100,16 +91,12 @@ export class R2Provider implements StorageProvider {
   }
 
   async delete(path: string): Promise<void> {
-    await this.client.send(
-      new DeleteObjectCommand({ Bucket: this.bucket, Key: path }),
-    );
+    await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: path }));
   }
 
   async exists(path: string): Promise<boolean> {
     try {
-      await this.client.send(
-        new HeadObjectCommand({ Bucket: this.bucket, Key: path }),
-      );
+      await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: path }));
       return true;
     } catch (err: unknown) {
       const code = (err as { name?: string })?.name;

@@ -21,7 +21,9 @@ const STATUS_STYLES: Record<WaitlistStatus, string> = {
 function StatusBadge({ status }: { status: string }) {
   const s = (status as WaitlistStatus) in STATUS_LABELS ? (status as WaitlistStatus) : "pending";
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-3xs font-medium uppercase tracking-caps ${STATUS_STYLES[s]}`}>
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-3xs font-medium uppercase tracking-caps ${STATUS_STYLES[s]}`}
+    >
       {STATUS_LABELS[s]}
     </span>
   );
@@ -29,7 +31,11 @@ function StatusBadge({ status }: { status: string }) {
 
 export function WaitlistClient() {
   const locale = useLocale();
-  const { data: entries, isLoading, refetch } = trpc.waitlist.adminList.useQuery(undefined, {
+  const {
+    data: entries,
+    isLoading,
+    refetch,
+  } = trpc.waitlist.adminList.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
 
@@ -47,7 +53,7 @@ export function WaitlistClient() {
   };
 
   return (
-    <div className="overflow-y-auto h-full">
+    <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-4xl px-6 py-8">
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -69,7 +75,10 @@ export function WaitlistClient() {
         {isLoading ? (
           <div className="flex flex-col gap-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-20 animate-pulse rounded-xl border border-border-default bg-surface-raised" />
+              <div
+                key={i}
+                className="h-20 animate-pulse rounded-xl border border-border-default bg-surface-raised"
+              />
             ))}
           </div>
         ) : !entries || entries.length === 0 ? (
@@ -85,13 +94,15 @@ export function WaitlistClient() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-medium text-text-primary">{entry.name}</p>
                       <StatusBadge status={entry.status} />
                     </div>
                     <p className="mt-0.5 text-sm text-text-secondary">{entry.email}</p>
                     {entry.message && (
-                      <p className="mt-2 text-sm text-text-tertiary line-clamp-2">{entry.message}</p>
+                      <p className="mt-2 line-clamp-2 text-sm text-text-tertiary">
+                        {entry.message}
+                      </p>
                     )}
                     <p className="mt-2 text-xs text-text-tertiary">
                       {formatDateTime(new Date(entry.created_at), locale)}

@@ -11,12 +11,18 @@ type Story = StoryObj<typeof TopBar>;
 export const Default: Story = {
   render: () => (
     <TopBar
-      leading={<span className="font-ui text-sm font-semibold text-text-primary">Atlas / Today</span>}
+      leading={
+        <span className="font-ui text-sm font-semibold text-text-primary">Atlas / Today</span>
+      }
       onOpenSearch={() => {}}
       trailing={
         <>
-          <IconButton aria-label="Notifications"><Bell size={14} /></IconButton>
-          <IconButton aria-label="Settings"><Settings size={14} /></IconButton>
+          <IconButton aria-label="Notifications">
+            <Bell size={14} />
+          </IconButton>
+          <IconButton aria-label="Settings">
+            <Settings size={14} />
+          </IconButton>
           <Avatar size="sm" initials="AT" />
         </>
       }

@@ -25,7 +25,10 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
   const locale = useLocale();
   const [step, setStep] = useState<Step>("loading");
   const [driveType, setDriveType] = useState<"personal" | "shared">("personal");
-  const [selectedSharedDrive, setSelectedSharedDrive] = useState<{ id: string; name: string } | null>(null);
+  const [selectedSharedDrive, setSelectedSharedDrive] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
@@ -51,8 +54,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
     enabled: step === "shared-drive",
   });
 
-  const folderId =
-    driveType === "personal" ? "root" : (selectedSharedDrive?.id ?? "root");
+  const folderId = driveType === "personal" ? "root" : (selectedSharedDrive?.id ?? "root");
 
   const { data: folderContents } = trpc.drive.browseFolder.useQuery(
     { folderId, driveId: selectedSharedDrive?.id },
@@ -113,9 +115,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
   const rootOption = {
     id: driveType === "personal" ? "root" : (selectedSharedDrive?.id ?? "root"),
     name:
-      driveType === "personal"
-        ? "My Drive (root)"
-        : (selectedSharedDrive?.name ?? "Drive root"),
+      driveType === "personal" ? "My Drive (root)" : (selectedSharedDrive?.name ?? "Drive root"),
   };
 
   return (
@@ -123,17 +123,16 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
       {/* Currently linked banner */}
       {isAlreadyLinked && step !== "loading" && step !== "success" && step !== "linking" && (
         <div className="mb-5 rounded-lg border border-border-default bg-surface-base px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">Currently connected</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-text-tertiary">
+            Currently connected
+          </p>
           <p className="mt-1 text-sm font-medium text-text-primary">
             {linkStatus?.config?.root_folder_name ?? "Drive folder"}
           </p>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-text-tertiary">
             <span className="capitalize">{linkStatus?.config?.drive_type ?? "personal"} drive</span>
             {linkStatus?.config?.verified_at ? (
-              <span>
-                Last verified{" "}
-                {localeFormatDate(linkStatus.config.verified_at, locale)}
-              </span>
+              <span>Last verified {localeFormatDate(linkStatus.config.verified_at, locale)}</span>
             ) : linkStatus?.config?.verified ? (
               <span className="text-accent-success">Verified</span>
             ) : (
@@ -154,12 +153,11 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
       {/* Step 0: Authorize */}
       {step === "authorize" && (
         <div className="flex flex-col gap-4">
-          <h3 className="text-base font-semibold text-text-primary">
-            Connect Google Drive
-          </h3>
+          <h3 className="text-base font-semibold text-text-primary">Connect Google Drive</h3>
           <p className="text-sm text-text-secondary">
             Atlas needs permission to access your Google Drive to store and organize files.
-            You&apos;ll be redirected to Google to authorize access, then return here to choose a folder.
+            You&apos;ll be redirected to Google to authorize access, then return here to choose a
+            folder.
           </p>
           <div className="rounded-lg border border-border-default bg-surface-base p-4">
             <ul className="space-y-1.5 text-xs text-text-secondary">
@@ -245,9 +243,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
       {/* Step 2: Shared drive */}
       {step === "shared-drive" && (
         <div className="flex flex-col gap-4">
-          <h3 className="text-base font-semibold text-text-primary">
-            Select a shared drive
-          </h3>
+          <h3 className="text-base font-semibold text-text-primary">Select a shared drive</h3>
           {!sharedDrives ? (
             <div className="flex items-center gap-2 py-4 text-sm text-text-secondary">
               <div className="h-4 w-4 animate-atlas-spin rounded-full border-2 border-accent-primary border-t-transparent" />
@@ -295,13 +291,11 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
       {/* Step 3: Browse folder */}
       {step === "browse-folder" && (
         <div className="flex flex-col gap-4">
-          <h3 className="text-base font-semibold text-text-primary">
-            Choose a parent folder
-          </h3>
+          <h3 className="text-base font-semibold text-text-primary">Choose a parent folder</h3>
           <p className="text-xs text-text-tertiary">
-            Atlas will create an <strong>Atlas</strong> folder here containing:
-            database-backups, notes, project-briefs, meeting-notes, research,
-            strategy-docs, general, journal, attachments.
+            Atlas will create an <strong>Atlas</strong> folder here containing: database-backups,
+            notes, project-briefs, meeting-notes, research, strategy-docs, general, journal,
+            attachments.
           </p>
 
           {!folderContents ? (
@@ -344,7 +338,9 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
               placeholder="New folder name…"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleCreateFolder(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateFolder();
+              }}
               className="min-w-0 flex-1 rounded-md border border-border-default bg-surface-base px-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus"
             />
             <button
@@ -358,9 +354,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
 
           <div className="flex justify-between">
             <button
-              onClick={() =>
-                setStep(driveType === "shared" ? "shared-drive" : "choose-type")
-              }
+              onClick={() => setStep(driveType === "shared" ? "shared-drive" : "choose-type")}
               className="rounded-md border border-border-default px-4 py-2 text-sm text-text-secondary hover:bg-surface-hover"
             >
               Back
@@ -379,9 +373,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
       {/* Step 4: Confirm */}
       {step === "confirm" && (
         <div className="flex flex-col gap-4">
-          <h3 className="text-base font-semibold text-text-primary">
-            Confirm Drive link
-          </h3>
+          <h3 className="text-base font-semibold text-text-primary">Confirm Drive link</h3>
           <div className="rounded-lg border border-border-default bg-surface-base p-4">
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between">
@@ -426,9 +418,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
       {step === "linking" && (
         <div className="flex flex-col items-center gap-4 py-8">
           <div className="h-10 w-10 animate-atlas-spin rounded-full border-4 border-accent-primary border-t-transparent" />
-          <p className="text-sm text-text-secondary">
-            Creating Atlas folder structure in Drive…
-          </p>
+          <p className="text-sm text-text-secondary">Creating Atlas folder structure in Drive…</p>
         </div>
       )}
 
@@ -448,9 +438,7 @@ export function DriveWizard({ onClose }: { onClose: () => void }) {
             </svg>
           </div>
           <div className="text-center">
-            <p className="text-base font-semibold text-text-primary">
-              Drive linked successfully
-            </p>
+            <p className="text-base font-semibold text-text-primary">Drive linked successfully</p>
             <p className="mt-1 text-sm text-text-secondary">
               Atlas folder structure created in {selectedFolder?.name}.
             </p>

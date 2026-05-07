@@ -108,7 +108,10 @@ export async function resolveOrphanedClerkIds(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       report.errors.push(`user ${row.id} (${row.email}): ${msg}`);
-      log.error({ err, user_id: row.id, email: row.email }, "resolveOrphanedClerkIds: error processing row");
+      log.error(
+        { err, user_id: row.id, email: row.email },
+        "resolveOrphanedClerkIds: error processing row",
+      );
     }
   }
 
@@ -168,7 +171,7 @@ export async function runBackfillOrphanRecovery(): Promise<void> {
   if (!migrationReady) {
     log.warn(
       "Backfill skipped — auth-hardening migration has not been applied yet. " +
-      "Run: npx prisma migrate deploy  then restart the application.",
+        "Run: npx prisma migrate deploy  then restart the application.",
     );
     return;
   }
@@ -315,7 +318,7 @@ export async function runBackfillOrphanRecovery(): Promise<void> {
     log.error(
       report,
       `Backfill orphan recovery completed with ${report.errors.length} error(s) — ` +
-      "completion marker NOT written; backfill will retry on next startup.",
+        "completion marker NOT written; backfill will retry on next startup.",
     );
   }
 }

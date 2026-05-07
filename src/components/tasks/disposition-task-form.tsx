@@ -24,7 +24,11 @@ interface DispositionTaskFormProps {
 
 function fmtDateInput(iso: string | null | undefined): string {
   if (!iso) return "";
-  try { return iso.split("T")[0] ?? ""; } catch { return ""; }
+  try {
+    return iso.split("T")[0] ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function toIso(dateStr: string): string | undefined {
@@ -157,7 +161,8 @@ export function DispositionTaskForm({
     }
   }
 
-  const inputCls = "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
+  const inputCls =
+    "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
 
   return (
@@ -183,7 +188,9 @@ export function DispositionTaskForm({
           >
             <option value="">Inbox (no project)</option>
             {(projects.data ?? []).map((p) => (
-              <option key={p.id} value={p.id}>{p.title}</option>
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
             ))}
           </select>
         </div>
@@ -231,7 +238,9 @@ export function DispositionTaskForm({
             className={cn(inputCls, "h-20")}
           >
             {(contexts.data ?? []).map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
@@ -244,7 +253,9 @@ export function DispositionTaskForm({
             className={cn(inputCls, "h-20")}
           >
             {(tags.data ?? []).map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
             ))}
           </select>
         </div>
@@ -283,7 +294,7 @@ export function DispositionTaskForm({
         <span className="font-ui text-xs text-text-secondary">Flagged</span>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border-subtle">
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-1">
         <button
           type="button"
           onClick={onCancel}

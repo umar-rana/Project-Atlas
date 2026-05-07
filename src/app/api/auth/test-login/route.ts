@@ -30,10 +30,7 @@ function getConfiguredSecret(): string | null {
   const secret = process.env.E2E_AUTH_SECRET;
   if (!secret || secret.length < 32) return null;
 
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.E2E_ALLOW_IN_PRODUCTION !== "1"
-  ) {
+  if (process.env.NODE_ENV === "production" && process.env.E2E_ALLOW_IN_PRODUCTION !== "1") {
     return null;
   }
 

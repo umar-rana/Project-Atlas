@@ -69,9 +69,9 @@ export function ContextDetailHeader({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-border-focus rounded-sm"
+        className="font-display min-w-0 flex-1 rounded-sm border-0 bg-transparent p-0 text-base font-semibold text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-border-focus"
       />
-      <span className="font-mono text-2xs text-text-tertiary tabular-nums">
+      <span className="font-mono text-2xs tabular-nums text-text-tertiary">
         {ctx.task_count} {ctx.task_count === 1 ? "task" : "tasks"}
       </span>
       <DropdownMenu>

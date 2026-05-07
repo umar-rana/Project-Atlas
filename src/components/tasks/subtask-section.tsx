@@ -48,10 +48,7 @@ export function SubtaskSection({
     }
   }, [addingNew]);
 
-  const totalEstimate = subtasks.reduce(
-    (acc, st) => acc + (st.estimated_minutes ?? 0),
-    0,
-  );
+  const totalEstimate = subtasks.reduce((acc, st) => acc + (st.estimated_minutes ?? 0), 0);
 
   function commitNew() {
     const title = newTitle.trim();
@@ -71,9 +68,7 @@ export function SubtaskSection({
       <h3 className="mb-1 flex items-center gap-2 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
         <span>Subtasks</span>
         {totalEstimate > 0 && (
-          <span className="font-mono text-3xs tabular-nums">
-            {totalEstimate} min est.
-          </span>
+          <span className="font-mono text-3xs tabular-nums">{totalEstimate} min est.</span>
         )}
       </h3>
 
@@ -92,16 +87,22 @@ export function SubtaskSection({
         </ul>
       )}
 
-      {!inTrash && (
-        addingNew ? (
+      {!inTrash &&
+        (addingNew ? (
           <input
             ref={inputRef}
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onBlur={commitNew}
             onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); commitNew(); }
-              if (e.key === "Escape") { setAddingNew(false); setNewTitle(""); }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitNew();
+              }
+              if (e.key === "Escape") {
+                setAddingNew(false);
+                setNewTitle("");
+              }
             }}
             placeholder="New subtask…"
             className="w-full rounded-sm border border-border-subtle bg-surface-base px-2 py-1 font-ui text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
@@ -115,8 +116,7 @@ export function SubtaskSection({
             <Plus size={11} />
             Add subtask
           </button>
-        )
-      )}
+        ))}
     </section>
   );
 }

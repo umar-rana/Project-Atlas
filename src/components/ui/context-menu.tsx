@@ -32,8 +32,9 @@ export const ContextMenuContent = React.forwardRef<
   );
 });
 
-export interface ContextMenuItemProps
-  extends React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> {
+export interface ContextMenuItemProps extends React.ComponentPropsWithoutRef<
+  typeof ContextMenuPrimitive.Item
+> {
   destructive?: boolean;
   shortcut?: React.ReactNode;
 }
@@ -63,7 +64,11 @@ export const ContextMenuCheckboxItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.CheckboxItem>
 >(function ContextMenuCheckboxItem({ className, children, ...props }, ref) {
   return (
-    <ContextMenuPrimitive.CheckboxItem ref={ref} className={cn(itemClass, "pl-7", className)} {...props}>
+    <ContextMenuPrimitive.CheckboxItem
+      ref={ref}
+      className={cn(itemClass, "pl-7", className)}
+      {...props}
+    >
       <span className="absolute left-2 inline-flex">
         <ContextMenuPrimitive.ItemIndicator>
           <Check size={12} />
@@ -79,7 +84,11 @@ export const ContextMenuRadioItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.RadioItem>
 >(function ContextMenuRadioItem({ className, children, ...props }, ref) {
   return (
-    <ContextMenuPrimitive.RadioItem ref={ref} className={cn(itemClass, "pl-7", className)} {...props}>
+    <ContextMenuPrimitive.RadioItem
+      ref={ref}
+      className={cn(itemClass, "pl-7", className)}
+      {...props}
+    >
       <span className="absolute left-2 inline-flex">
         <ContextMenuPrimitive.ItemIndicator>
           <Circle size={6} className="fill-current" />
@@ -97,7 +106,10 @@ export const ContextMenuLabel = React.forwardRef<
   return (
     <ContextMenuPrimitive.Label
       ref={ref}
-      className={cn("px-2 py-1.5 text-3xs font-medium uppercase tracking-caps text-text-tertiary", className)}
+      className={cn(
+        "px-2 py-1.5 text-3xs font-medium uppercase tracking-caps text-text-tertiary",
+        className,
+      )}
       {...props}
     />
   );
@@ -107,7 +119,13 @@ export const ContextMenuSeparator = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Separator>
 >(function ContextMenuSeparator({ className, ...props }, ref) {
-  return <ContextMenuPrimitive.Separator ref={ref} className={cn("-mx-1 my-1 h-px bg-border-subtle", className)} {...props} />;
+  return (
+    <ContextMenuPrimitive.Separator
+      ref={ref}
+      className={cn("-mx-1 my-1 h-px bg-border-subtle", className)}
+      {...props}
+    />
+  );
 });
 
 export const ContextMenuSubTrigger = React.forwardRef<
@@ -128,7 +146,11 @@ export const ContextMenuSubContent = React.forwardRef<
 >(function ContextMenuSubContent({ className, ...props }, ref) {
   return (
     <ContextMenuPrimitive.Portal>
-      <ContextMenuPrimitive.SubContent ref={ref} className={cn(contentClass, className)} {...props} />
+      <ContextMenuPrimitive.SubContent
+        ref={ref}
+        className={cn(contentClass, className)}
+        {...props}
+      />
     </ContextMenuPrimitive.Portal>
   );
 });

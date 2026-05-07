@@ -77,27 +77,36 @@ export function PeopleClient() {
   const activeTagNames = allTags.filter((t) => tagFilters.includes(t.id)).map((t) => t.name);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle shrink-0">
-        <h1 className="font-semibold text-text-primary text-md flex-1">People</h1>
+      <div className="flex shrink-0 items-center gap-3 border-b border-border-subtle px-4 py-3">
+        <h1 className="flex-1 text-md font-semibold text-text-primary">People</h1>
         <Hint label="Follow-up queue">
-          <Link href="/people/follow-up" className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-primary transition-colors">
+          <Link
+            href="/people/follow-up"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          >
             <Bell size={16} />
           </Link>
         </Hint>
         <Hint label="Add person">
-          <Link href="/people/new" className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-primary transition-colors">
+          <Link
+            href="/people/new"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          >
             <Plus size={16} />
           </Link>
         </Hint>
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border-subtle shrink-0">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border-subtle px-4 py-2">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+        <div className="relative min-w-[200px] flex-1">
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
+          />
           <input
             type="text"
             value={searchRaw}
@@ -106,7 +115,7 @@ export function PeopleClient() {
               updateUrl({ q: e.target.value || undefined });
             }}
             placeholder="Search people…"
-            className="w-full rounded-md border border-border-default bg-surface-sunken pl-8 pr-3 py-1.5 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus"
+            className="w-full rounded-md border border-border-default bg-surface-sunken py-1.5 pl-8 pr-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-border-focus"
           />
         </div>
 
@@ -116,9 +125,9 @@ export function PeopleClient() {
             type="button"
             onClick={() => setTagPickerOpen((o) => !o)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs transition-colors",
+              "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors",
               tagFilters.length > 0
-                ? "border-accent-primary text-accent-primary bg-accent-primary-subtle"
+                ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
                 : "border-border-default text-text-secondary hover:border-border-strong",
             )}
           >
@@ -127,18 +136,21 @@ export function PeopleClient() {
           </button>
 
           {tagPickerOpen && allTags.length > 0 && (
-            <div className="absolute top-full left-0 mt-1 z-dropdown w-48 rounded-lg border border-border-default bg-surface-raised shadow-2 py-1 max-h-52 overflow-y-auto">
+            <div className="z-dropdown absolute left-0 top-full mt-1 max-h-52 w-48 overflow-y-auto rounded-lg border border-border-default bg-surface-raised py-1 shadow-2">
               {allTags.map((tag) => (
                 <button
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTagFilter(tag.id)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors hover:bg-surface-hover",
+                    "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface-hover",
                     tagFilters.includes(tag.id) && "text-accent-primary",
                   )}
                 >
-                  <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: tag.color ?? "currentColor" }} />
+                  <span
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: tag.color ?? "currentColor" }}
+                  />
                   #{tag.name}
                   {tagFilters.includes(tag.id) && <span className="ml-auto">✓</span>}
                 </button>
@@ -149,9 +161,16 @@ export function PeopleClient() {
 
         {/* Active tag filter chips */}
         {activeTagNames.map((name, i) => (
-          <span key={i} className="inline-flex items-center gap-1 text-xs border border-accent-primary rounded-full px-2 py-0.5 text-accent-primary bg-accent-primary-subtle">
+          <span
+            key={i}
+            className="inline-flex items-center gap-1 rounded-full border border-accent-primary bg-accent-primary-subtle px-2 py-0.5 text-xs text-accent-primary"
+          >
             #{name}
-            <button type="button" onClick={() => toggleTagFilter(tagFilters[i]!)} className="text-accent-primary hover:text-accent-danger">
+            <button
+              type="button"
+              onClick={() => toggleTagFilter(tagFilters[i]!)}
+              className="text-accent-primary hover:text-accent-danger"
+            >
               <X size={10} />
             </button>
           </span>
@@ -159,11 +178,14 @@ export function PeopleClient() {
 
         {/* Relationship type chips */}
         {types.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex flex-wrap gap-1.5">
             <button
-              onClick={() => { setRelationshipType(""); updateUrl({ type: undefined }); }}
+              onClick={() => {
+                setRelationshipType("");
+                updateUrl({ type: undefined });
+              }}
               className={cn(
-                "text-xs px-2.5 py-1 rounded-full border transition-colors",
+                "rounded-full border px-2.5 py-1 text-xs transition-colors",
                 !relationshipType
                   ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
                   : "border-border-default text-text-secondary hover:border-border-strong",
@@ -174,9 +196,13 @@ export function PeopleClient() {
             {types.map((t) => (
               <button
                 key={t}
-                onClick={() => { const next = t === relationshipType ? "" : (t ?? ""); setRelationshipType(next); updateUrl({ type: next || undefined }); }}
+                onClick={() => {
+                  const next = t === relationshipType ? "" : (t ?? "");
+                  setRelationshipType(next);
+                  updateUrl({ type: next || undefined });
+                }}
                 className={cn(
-                  "text-xs px-2.5 py-1 rounded-full border capitalize transition-colors",
+                  "rounded-full border px-2.5 py-1 text-xs capitalize transition-colors",
                   relationshipType === t
                     ? "border-accent-primary bg-accent-primary-subtle text-accent-primary"
                     : "border-border-default text-text-secondary hover:border-border-strong",
@@ -188,12 +214,15 @@ export function PeopleClient() {
           </div>
         )}
 
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="ml-auto flex items-center gap-1">
           {/* Sort */}
           <select
             value={sort}
-            onChange={(e) => { setSort(e.target.value as SortMode); updateUrl({ sort: e.target.value }); }}
-            className="text-sm border border-border-default rounded-md bg-surface-raised px-2 py-1.5 text-text-secondary focus:outline-none focus:ring-2 focus:ring-border-focus"
+            onChange={(e) => {
+              setSort(e.target.value as SortMode);
+              updateUrl({ sort: e.target.value });
+            }}
+            className="rounded-md border border-border-default bg-surface-raised px-2 py-1.5 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-border-focus"
           >
             <option value="name">Name</option>
             <option value="created_at">Recently added</option>
@@ -202,14 +231,19 @@ export function PeopleClient() {
           </select>
 
           {/* View toggle */}
-          <div className="flex border border-border-default rounded-md overflow-hidden ml-1">
+          <div className="ml-1 flex overflow-hidden rounded-md border border-border-default">
             <Hint label="Card view">
               <button
                 type="button"
-                onClick={() => { setView("card"); updateUrl({ view: "card" }); }}
+                onClick={() => {
+                  setView("card");
+                  updateUrl({ view: "card" });
+                }}
                 className={cn(
                   "p-1.5 transition-colors",
-                  view === "card" ? "bg-surface-selected text-accent-primary" : "text-text-tertiary hover:bg-surface-hover",
+                  view === "card"
+                    ? "bg-surface-selected text-accent-primary"
+                    : "text-text-tertiary hover:bg-surface-hover",
                 )}
               >
                 <LayoutGrid size={14} />
@@ -218,10 +252,15 @@ export function PeopleClient() {
             <Hint label="List view">
               <button
                 type="button"
-                onClick={() => { setView("list"); updateUrl({ view: "list" }); }}
+                onClick={() => {
+                  setView("list");
+                  updateUrl({ view: "list" });
+                }}
                 className={cn(
                   "p-1.5 transition-colors",
-                  view === "list" ? "bg-surface-selected text-accent-primary" : "text-text-tertiary hover:bg-surface-hover",
+                  view === "list"
+                    ? "bg-surface-selected text-accent-primary"
+                    : "text-text-tertiary hover:bg-surface-hover",
                 )}
               >
                 <List size={14} />
@@ -234,9 +273,11 @@ export function PeopleClient() {
       {/* Body */}
       <div className="flex-1 overflow-y-auto" onClick={() => setTagPickerOpen(false)}>
         {isLoading ? (
-          <div className="flex items-center justify-center h-40 text-text-tertiary text-sm">Loading…</div>
+          <div className="flex h-40 items-center justify-center text-sm text-text-tertiary">
+            Loading…
+          </div>
         ) : people.length === 0 ? (
-          <div className="flex items-center justify-center h-full py-12">
+          <div className="flex h-full items-center justify-center py-12">
             {hasFilters ? (
               <EmptyState
                 icon={<Users size={28} />}
@@ -249,7 +290,10 @@ export function PeopleClient() {
                 title="No people yet"
                 body="Add your first contact to start building your relationship graph."
                 action={
-                  <Link href="/people/new" className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-2 text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover transition-colors">
+                  <Link
+                    href="/people/new"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-2 text-sm font-medium text-text-on-accent transition-colors hover:bg-accent-primary-hover"
+                  >
                     <Plus size={14} /> Add person
                   </Link>
                 }
@@ -257,7 +301,7 @@ export function PeopleClient() {
             )}
           </div>
         ) : view === "card" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4">
+          <div className="sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 grid grid-cols-1 gap-3 p-4">
             {people.map((p) => (
               <PersonCard key={p.id} person={p} view="card" />
             ))}

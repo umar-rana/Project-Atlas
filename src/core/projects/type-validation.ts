@@ -21,7 +21,8 @@ export function capitalizeProjectType(type: string): string {
 export function validateProjectType(raw: string): { valid: boolean; error?: string } {
   const s = raw.trim();
   if (s.length === 0) return { valid: false, error: "Type cannot be empty" };
-  if (s.length > MAX_LEN) return { valid: false, error: `Type must be ${MAX_LEN} characters or fewer` };
+  if (s.length > MAX_LEN)
+    return { valid: false, error: `Type must be ${MAX_LEN} characters or fewer` };
   if (!/^[a-zA-Z0-9 -]+$/.test(s)) {
     return { valid: false, error: "Only letters, numbers, spaces, and hyphens are allowed" };
   }

@@ -33,8 +33,7 @@ const pillVariants = cva(
 );
 
 export interface StatusPillProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof pillVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof pillVariants> {
   status: NonNullable<VariantProps<typeof pillVariants>["status"]>;
   label?: string;
 }

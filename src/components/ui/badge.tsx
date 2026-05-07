@@ -26,8 +26,7 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {
   count?: number;
   max?: number;
 }
@@ -42,7 +41,8 @@ export function Badge({
   children,
   ...props
 }: BadgeProps): React.ReactElement {
-  const content = shape === "dot" ? null : count !== undefined ? (count > max ? `${max}+` : count) : children;
+  const content =
+    shape === "dot" ? null : count !== undefined ? (count > max ? `${max}+` : count) : children;
   return (
     <span
       role={shape === "dot" ? "status" : undefined}

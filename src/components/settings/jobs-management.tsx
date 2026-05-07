@@ -6,11 +6,13 @@ import { JobCard } from "./job-card";
 import { RefreshCw } from "lucide-react";
 
 export function JobsManagement() {
-  const { data, isLoading, isError, error, refetch, isFetching } =
-    trpc.jobs.list.useQuery(undefined, {
+  const { data, isLoading, isError, error, refetch, isFetching } = trpc.jobs.list.useQuery(
+    undefined,
+    {
       refetchOnWindowFocus: false,
       refetchInterval: 30_000,
-    });
+    },
+  );
 
   const handleMutated = useCallback(() => {
     setTimeout(() => refetch(), 1000);
@@ -31,7 +33,7 @@ export function JobsManagement() {
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-accent-danger/30 bg-accent-danger-muted px-5 py-4">
+      <div className="border-accent-danger/30 rounded-xl border bg-accent-danger-muted px-5 py-4">
         <p className="font-ui text-sm text-accent-danger">
           {error?.message ?? "Failed to load jobs"}
         </p>

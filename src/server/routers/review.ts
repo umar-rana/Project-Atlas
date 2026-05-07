@@ -88,9 +88,7 @@ export const reviewRouter = router({
 
       const activeTasks = tasks.filter((t) => t.status === "active");
       const staleThreshold = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-      const staleTasks = activeTasks.filter(
-        (t) => !t.due_date && t.updated_at < staleThreshold,
-      );
+      const staleTasks = activeTasks.filter((t) => !t.due_date && t.updated_at < staleThreshold);
 
       const incomplete_count = activeTasks.length;
 

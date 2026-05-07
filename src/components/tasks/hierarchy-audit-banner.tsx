@@ -17,9 +17,7 @@ export function HierarchyAuditBanner(): React.ReactElement | null {
 
   const fixMutation = trpc.tasks.fixHierarchyIssues.useMutation({
     onSuccess: (result) => {
-      toast.success(
-        `Fixed ${result.fixed} task${result.fixed === 1 ? "" : "s"} successfully.`,
-      );
+      toast.success(`Fixed ${result.fixed} task${result.fixed === 1 ? "" : "s"} successfully.`);
       utils.tasks.auditHierarchy.invalidate();
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
@@ -42,8 +40,7 @@ export function HierarchyAuditBanner(): React.ReactElement | null {
     setDismissed(true);
     try {
       localStorage.setItem(DISMISSED_KEY, "true");
-    } catch {
-    }
+    } catch {}
   }
 
   function handleCreateDefaultProjects() {
@@ -69,7 +66,7 @@ export function HierarchyAuditBanner(): React.ReactElement | null {
   const folderCount = orphanedByFolder.length;
 
   return (
-    <div className="mx-2 my-1 rounded-md border border-accent-warning/40 bg-accent-warning-muted">
+    <div className="border-accent-warning/40 mx-2 my-1 rounded-md border bg-accent-warning-muted">
       <div className="flex items-start gap-2 px-3 py-2">
         <AlertTriangle size={13} className="mt-0.5 shrink-0 text-accent-warning" />
         <div className="min-w-0 flex-1">
@@ -107,7 +104,7 @@ export function HierarchyAuditBanner(): React.ReactElement | null {
       </div>
 
       {expanded && (
-        <div className="border-t border-accent-warning/20 px-3 pb-3 pt-2">
+        <div className="border-accent-warning/20 border-t px-3 pb-3 pt-2">
           {hasOrphans && (
             <div className="mb-2">
               <p className="mb-1 font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
@@ -163,8 +160,7 @@ export function HierarchyAuditBanner(): React.ReactElement | null {
           )}
 
           <p className="mb-2 font-ui text-2xs text-text-secondary">
-            How would you like to fix{" "}
-            {totalIssues === 1 ? "this" : "these"}{" "}
+            How would you like to fix {totalIssues === 1 ? "this" : "these"}{" "}
             {totalIssues === 1 ? "task" : "tasks"}?
           </p>
           <div className="flex flex-col gap-1.5">
@@ -174,14 +170,15 @@ export function HierarchyAuditBanner(): React.ReactElement | null {
                 onClick={handleCreateDefaultProjects}
                 disabled={fixMutation.isPending}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-sm border border-accent-warning/40 bg-surface-base px-2.5 py-1.5 text-left font-ui text-2xs text-text-primary hover:bg-surface-hover disabled:opacity-50",
+                  "border-accent-warning/40 flex items-center gap-1.5 rounded-sm border bg-surface-base px-2.5 py-1.5 text-left font-ui text-2xs text-text-primary hover:bg-surface-hover disabled:opacity-50",
                 )}
               >
                 <FolderOpen size={11} className="shrink-0 text-accent-warning" />
                 <span>
                   <strong>Create default project per folder</strong>
                   <span className="ml-1 text-text-tertiary">
-                    ({folderCount === 1 ? "1 recovery project" : `${folderCount} recovery projects`})
+                    ({folderCount === 1 ? "1 recovery project" : `${folderCount} recovery projects`}
+                    )
                   </span>
                 </span>
               </button>

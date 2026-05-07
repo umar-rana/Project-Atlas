@@ -27,11 +27,16 @@ function TypeIcon({ contentType }: { contentType: string }) {
   const type = classifyContentType(contentType);
   const cls = "size-8 text-text-disabled";
   switch (type) {
-    case "pdf": return <FileText className={cls} />;
-    case "video": return <Film className={cls} />;
-    case "audio": return <Music className={cls} />;
-    case "doc": return <FileText className={cls} />;
-    default: return <File className={cls} />;
+    case "pdf":
+      return <FileText className={cls} />;
+    case "video":
+      return <Film className={cls} />;
+    case "audio":
+      return <Music className={cls} />;
+    case "doc":
+      return <FileText className={cls} />;
+    default:
+      return <File className={cls} />;
   }
 }
 
@@ -81,7 +86,9 @@ export function AttachmentTile({
           onClick(id);
         }
       }}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(id); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick(id);
+      }}
       className={cn(
         "group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border transition-colors",
         selected
@@ -97,22 +104,23 @@ export function AttachmentTile({
           <TypeIcon contentType={content_type} />
         )}
         {reviewed && (
-          <span className="absolute right-1 top-1 rounded-full bg-accent-success/90 px-1.5 py-0.5 font-ui text-2xs font-medium text-white">
+          <span className="bg-accent-success/90 absolute right-1 top-1 rounded-full px-1.5 py-0.5 font-ui text-2xs font-medium text-white">
             ✓
           </span>
         )}
-        {selected && (
-          <div className="absolute inset-0 bg-accent-primary/20" />
-        )}
+        {selected && <div className="bg-accent-primary/20 absolute inset-0" />}
         <div
           className="absolute left-1 top-1"
-          onClick={(e) => { e.stopPropagation(); onSelect(id, e); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(id, e);
+          }}
         >
           <input
             type="checkbox"
             checked={selected}
             readOnly
-            className="h-3.5 w-3.5 cursor-pointer rounded border-border-default opacity-0 transition-opacity group-hover:opacity-100 checked:opacity-100"
+            className="h-3.5 w-3.5 cursor-pointer rounded border-border-default opacity-0 transition-opacity checked:opacity-100 group-hover:opacity-100"
           />
         </div>
       </div>
@@ -125,7 +133,9 @@ export function AttachmentTile({
         </p>
         <div className="mt-1 flex items-center justify-between">
           <span className="font-ui text-2xs text-text-disabled">{formatBytes(size_bytes)}</span>
-          <span className="font-ui text-2xs text-text-disabled">{localeFormatDate(date, locale)}</span>
+          <span className="font-ui text-2xs text-text-disabled">
+            {localeFormatDate(date, locale)}
+          </span>
         </div>
       </div>
     </div>

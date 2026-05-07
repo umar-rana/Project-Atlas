@@ -32,7 +32,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 py-1.5">
       <dt className="w-36 shrink-0 font-mono text-xs text-white/30">{label}</dt>
-      <dd className="font-mono text-xs text-white break-all">{value ?? "—"}</dd>
+      <dd className="break-all font-mono text-xs text-white">{value ?? "—"}</dd>
     </div>
   );
 }
@@ -48,7 +48,10 @@ export function AdminUserDetailClient({ id }: { id: string }) {
     return (
       <div className="flex flex-col gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-40 animate-pulse rounded-xl border border-white/10 bg-white/5" />
+          <div
+            key={i}
+            className="h-40 animate-pulse rounded-xl border border-white/10 bg-white/5"
+          />
         ))}
       </div>
     );
@@ -76,7 +79,7 @@ export function AdminUserDetailClient({ id }: { id: string }) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 font-mono text-sm text-white/40 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 font-mono text-sm text-white/40 transition-colors hover:text-white"
         >
           <ArrowLeft size={14} />
           Back
@@ -107,7 +110,7 @@ export function AdminUserDetailClient({ id }: { id: string }) {
       </Section>
 
       <Section title="Content Summary">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="sm:grid-cols-3 lg:grid-cols-5 grid grid-cols-2 gap-3">
           {Object.entries(data.counts).map(([key, count]) => (
             <div key={key} className="rounded-lg border border-white/10 bg-white/5 p-3 text-center">
               <p className="font-mono text-xl font-bold text-white">{count}</p>
@@ -126,9 +129,7 @@ export function AdminUserDetailClient({ id }: { id: string }) {
               <div
                 key={ev.id}
                 className={`flex items-start gap-3 rounded-lg border p-3 ${
-                  ev.isWarning
-                    ? "border-red-800 bg-red-950/40"
-                    : "border-white/10 bg-white/5"
+                  ev.isWarning ? "border-red-800 bg-red-950/40" : "border-white/10 bg-white/5"
                 }`}
               >
                 {ev.isWarning ? (
@@ -144,7 +145,9 @@ export function AdminUserDetailClient({ id }: { id: string }) {
                     </p>
                   )}
                 </div>
-                <p className="shrink-0 font-mono text-2xs text-white/25">{formatDate(ev.created_at)}</p>
+                <p className="shrink-0 font-mono text-2xs text-white/25">
+                  {formatDate(ev.created_at)}
+                </p>
               </div>
             ))}
           </div>
@@ -163,9 +166,12 @@ export function AdminUserDetailClient({ id }: { id: string }) {
               </span>
             </div>
             {recovery.counts && (
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              <div className="sm:grid-cols-6 grid grid-cols-3 gap-2">
                 {Object.entries(recovery.counts).map(([k, v]) => (
-                  <div key={k} className="rounded-lg border border-white/10 bg-white/5 p-2 text-center">
+                  <div
+                    key={k}
+                    className="rounded-lg border border-white/10 bg-white/5 p-2 text-center"
+                  >
                     <p className="font-mono text-lg font-bold text-white">{v}</p>
                     <p className="font-mono text-2xs capitalize text-white/30">{k}</p>
                   </div>
@@ -174,7 +180,7 @@ export function AdminUserDetailClient({ id }: { id: string }) {
             )}
             {recovery.orphanIds && recovery.orphanIds.length > 0 && (
               <div className="mt-3">
-                <p className="font-mono text-2xs text-white/30 mb-1">Source orphan IDs:</p>
+                <p className="mb-1 font-mono text-2xs text-white/30">Source orphan IDs:</p>
                 {recovery.orphanIds.map((oid) => (
                   <Link
                     key={oid}

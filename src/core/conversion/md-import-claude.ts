@@ -15,9 +15,7 @@ export function parseClaudeConversation(content: string): ClaudeSegment[] {
 
   // Try to detect format: "Human:" / "Assistant:" on their own lines
   // or **Human**: / **Assistant**: inline
-  const blockSplit = content.split(/^(?:Human|User|Assistant|Claude):\s*$/m);
   const headerPattern = /^(Human|User|Assistant|Claude):\s*$/m;
-  const inlinePattern = /\*\*(Human|User|Assistant|Claude)\*\*:\s*/g;
 
   // Check for block format
   const hasBlockFormat = headerPattern.test(content);

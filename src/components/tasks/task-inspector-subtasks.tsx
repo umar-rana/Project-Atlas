@@ -58,7 +58,12 @@ export function TaskInspectorSubtasks({
   return (
     <section className="mt-4">
       <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
-        Subtasks{showTimeTotal && <span className="ml-1 normal-case font-normal">· ~{formatEstimatedTime(totalEstMins)} total</span>}
+        Subtasks
+        {showTimeTotal && (
+          <span className="ml-1 font-normal normal-case">
+            · ~{formatEstimatedTime(totalEstMins)} total
+          </span>
+        )}
       </h3>
       {subtasks.length > 0 ? (
         <ul className="mb-1 flex flex-col gap-1">

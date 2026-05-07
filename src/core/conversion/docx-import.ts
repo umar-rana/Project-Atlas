@@ -1,7 +1,6 @@
 import "server-only";
 import mammoth from "mammoth";
 import { markdownToTiptap, tiptapToPlainText } from "./tiptap-converter";
-import { tiptapToMarkdown } from "@/core/editor/markdown-export";
 import { uploadFile } from "@/core/storage";
 import { newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
@@ -98,7 +97,11 @@ export async function importDocx(params: {
   const markdownResult = await htmlToMarkdown(html);
 
   // Resolve title from filename
-  const title = params.filename.replace(/\.docx$/i, "").replace(/[-_]+/g, " ").trim() || "Untitled";
+  const title =
+    params.filename
+      .replace(/\.docx$/i, "")
+      .replace(/[-_]+/g, " ")
+      .trim() || "Untitled";
 
   const doc = markdownToTiptap(markdownResult);
   const body_json = JSON.stringify(doc);
@@ -135,9 +138,18 @@ async function htmlToMarkdown(html: string): Promise<string> {
   md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, (_m, content: string) => `# ${stripTags(content)}\n`);
   md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, (_m, content: string) => `## ${stripTags(content)}\n`);
   md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, (_m, content: string) => `### ${stripTags(content)}\n`);
-  md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, (_m, content: string) => `#### ${stripTags(content)}\n`);
-  md = md.replace(/<h5[^>]*>(.*?)<\/h5>/gi, (_m, content: string) => `##### ${stripTags(content)}\n`);
-  md = md.replace(/<h6[^>]*>(.*?)<\/h6>/gi, (_m, content: string) => `###### ${stripTags(content)}\n`);
+  md = md.replace(
+    /<h4[^>]*>(.*?)<\/h4>/gi,
+    (_m, content: string) => `#### ${stripTags(content)}\n`,
+  );
+  md = md.replace(
+    /<h5[^>]*>(.*?)<\/h5>/gi,
+    (_m, content: string) => `##### ${stripTags(content)}\n`,
+  );
+  md = md.replace(
+    /<h6[^>]*>(.*?)<\/h6>/gi,
+    (_m, content: string) => `###### ${stripTags(content)}\n`,
+  );
 
   // Bold and italic
   md = md.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**");
@@ -151,7 +163,10 @@ async function htmlToMarkdown(html: string): Promise<string> {
 
   // Code
   md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
-  md = md.replace(/<pre[^>]*>(.*?)<\/pre>/gis, (_m, content: string) => `\`\`\`\n${stripTags(content)}\n\`\`\`\n`);
+  md = md.replace(
+    /<pre[^>]*>(.*?)<\/pre>/gis,
+    (_m, content: string) => `\`\`\`\n${stripTags(content)}\n\`\`\`\n`,
+  );
 
   // Links
   md = md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "[$2]($1)");
@@ -162,11 +177,17 @@ async function htmlToMarkdown(html: string): Promise<string> {
 
   // Lists
   md = md.replace(/<ul[^>]*>(.*?)<\/ul>/gis, (_match: string, content: string) => {
-    return content.replace(/<li[^>]*>(.*?)<\/li>/gis, (_m: string, item: string) => `- ${stripTags(item).trim()}\n`);
+    return content.replace(
+      /<li[^>]*>(.*?)<\/li>/gis,
+      (_m: string, item: string) => `- ${stripTags(item).trim()}\n`,
+    );
   });
   md = md.replace(/<ol[^>]*>(.*?)<\/ol>/gis, (_match: string, content: string) => {
     let i = 1;
-    return content.replace(/<li[^>]*>(.*?)<\/li>/gis, (_m: string, item: string) => `${i++}. ${stripTags(item).trim()}\n`);
+    return content.replace(
+      /<li[^>]*>(.*?)<\/li>/gis,
+      (_m: string, item: string) => `${i++}. ${stripTags(item).trim()}\n`,
+    );
   });
 
   // Tables

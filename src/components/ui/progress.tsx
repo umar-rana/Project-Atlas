@@ -4,8 +4,9 @@ import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "@/lib/utils";
 
-export interface ProgressProps
-  extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
+export interface ProgressProps extends React.ComponentPropsWithoutRef<
+  typeof ProgressPrimitive.Root
+> {
   value?: number | null;
   size?: "sm" | "md";
   variant?: "primary" | "success" | "danger";
@@ -41,7 +42,11 @@ export function Progress({
           VARIANT[variant],
           indeterminate && "absolute inset-y-0 left-0 w-progress-indet animate-atlas-indet",
         )}
-        style={indeterminate ? undefined : { transform: `translateX(-${100 - (value ?? 0)}%)`, width: "100%" }}
+        style={
+          indeterminate
+            ? undefined
+            : { transform: `translateX(-${100 - (value ?? 0)}%)`, width: "100%" }
+        }
       />
     </ProgressPrimitive.Root>
   );

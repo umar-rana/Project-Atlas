@@ -120,20 +120,26 @@ export function CompletedView(): React.ReactElement {
 
   function handleBulkDelete() {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Move ${selectedIds.size} task${selectedIds.size !== 1 ? "s" : ""} to trash?`)) return;
+    if (!confirm(`Move ${selectedIds.size} task${selectedIds.size !== 1 ? "s" : ""} to trash?`))
+      return;
     bulkDelete.mutate({ ids: Array.from(selectedIds) });
   }
 
   function handleBulkPermanentDelete() {
     if (selectedIds.size === 0) return;
-    if (!confirm(`Permanently delete ${selectedIds.size} task${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Permanently delete ${selectedIds.size} task${selectedIds.size !== 1 ? "s" : ""}? This cannot be undone.`,
+      )
+    )
+      return;
     bulkPermanentDelete.mutate({ ids: Array.from(selectedIds) });
   }
 
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b border-border-subtle px-3 py-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <CheckCircle2 size={14} className="shrink-0 text-text-tertiary" />
           <h1 className="truncate font-ui text-base font-semibold text-text-primary">Completed</h1>
         </div>
@@ -145,7 +151,9 @@ export function CompletedView(): React.ReactElement {
             className="rounded-sm border border-border-subtle bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-secondary focus:outline-none focus:ring-1 focus:ring-border-focus"
           >
             {(Object.entries(DATE_RANGE_LABELS) as [DateRange, string][]).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
+              <option key={k} value={k}>
+                {v}
+              </option>
             ))}
           </select>
           {dateRange === "custom" && (
@@ -175,7 +183,9 @@ export function CompletedView(): React.ReactElement {
           >
             <option value="">All projects</option>
             {(projects.data ?? []).map((p) => (
-              <option key={p.id} value={p.id}>{p.title}</option>
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
             ))}
           </select>
 
@@ -189,7 +199,7 @@ export function CompletedView(): React.ReactElement {
             <option value="due_date">Due date</option>
           </select>
 
-          <span className="font-mono text-2xs text-text-tertiary tabular-nums">
+          <span className="font-mono text-2xs tabular-nums text-text-tertiary">
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
         </div>
@@ -197,9 +207,7 @@ export function CompletedView(): React.ReactElement {
 
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-2 border-b border-border-subtle bg-surface-sunken px-3 py-1.5">
-          <span className="font-ui text-2xs text-text-secondary">
-            {selectedIds.size} selected
-          </span>
+          <span className="font-ui text-2xs text-text-secondary">{selectedIds.size} selected</span>
           <button
             type="button"
             onClick={handleBulkUncomplete}
@@ -222,7 +230,7 @@ export function CompletedView(): React.ReactElement {
             type="button"
             onClick={handleBulkPermanentDelete}
             disabled={bulkPermanentDelete.isPending}
-            className="inline-flex items-center gap-1 rounded-sm border border-accent-danger bg-accent-danger-muted px-2 py-0.5 font-ui text-2xs text-accent-danger hover:bg-accent-danger/20 disabled:opacity-50"
+            className="hover:bg-accent-danger/20 inline-flex items-center gap-1 rounded-sm border border-accent-danger bg-accent-danger-muted px-2 py-0.5 font-ui text-2xs text-accent-danger disabled:opacity-50"
           >
             <Flame size={10} />
             Delete forever
@@ -245,7 +253,9 @@ export function CompletedView(): React.ReactElement {
         <div className="flex flex-1 flex-col items-center justify-center gap-2">
           <CheckCircle2 size={28} className="text-text-disabled" />
           <p className="font-ui text-sm text-text-tertiary">No completed tasks yet</p>
-          <p className="font-ui text-2xs text-text-disabled">Complete some tasks to see them here.</p>
+          <p className="font-ui text-2xs text-text-disabled">
+            Complete some tasks to see them here.
+          </p>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
@@ -293,7 +303,7 @@ export function CompletedView(): React.ReactElement {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {completedAt && (
-                    <span className="font-ui text-2xs text-text-disabled tabular-nums">
+                    <span className="font-ui text-2xs tabular-nums text-text-disabled">
                       {localeFormatDateTime(completedAt, locale)}
                     </span>
                   )}
@@ -304,7 +314,7 @@ export function CompletedView(): React.ReactElement {
                       uncomplete.mutate({ id: task.id });
                     }}
                     aria-label="Reopen task"
-                    className="rounded-sm p-0.5 text-text-disabled opacity-0 transition-opacity group-hover:opacity-100 hover:text-text-secondary"
+                    className="rounded-sm p-0.5 text-text-disabled opacity-0 transition-opacity hover:text-text-secondary group-hover:opacity-100"
                   >
                     <RotateCcw size={12} />
                   </button>

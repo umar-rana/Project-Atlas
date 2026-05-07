@@ -36,7 +36,12 @@ function overdueLabel(nextFollowUpAt: Date | string | null): string {
 
 function cadenceLabel(days: number | null): string {
   if (!days) return "";
-  const map: Record<number, string> = { 7: "weekly", 30: "monthly", 90: "quarterly", 365: "yearly" };
+  const map: Record<number, string> = {
+    7: "weekly",
+    30: "monthly",
+    90: "quarterly",
+    365: "yearly",
+  };
   return map[days] ?? `every ${days}d`;
 }
 
@@ -103,7 +108,7 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
   return (
     <>
       <div
-        className="rounded-lg border border-border-subtle bg-surface-raised hover:border-border-default transition-colors group cursor-pointer"
+        className="group cursor-pointer rounded-lg border border-border-subtle bg-surface-raised transition-colors hover:border-border-default"
         onClick={(e) => {
           const target = e.target as HTMLElement;
           if (target.closest("button") || target.closest("a") || target.closest("input")) return;
@@ -117,18 +122,16 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
             </Link>
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <span className="text-sm font-medium text-text-primary">
-                  {displayName}
-                </span>
+                <span className="text-sm font-medium text-text-primary">{displayName}</span>
                 {row.relationship_type && (
-                  <span className="ml-2 text-2xs capitalize text-text-disabled border border-border-subtle rounded px-1 py-px">
+                  <span className="ml-2 rounded border border-border-subtle px-1 py-px text-2xs capitalize text-text-disabled">
                     {row.relationship_type.replace(/-/g, " ")}
                   </span>
                 )}
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <div className="mt-0.5 flex flex-wrap items-center gap-2">
                   {row.next_follow_up_at && (
                     <span className="text-xs text-text-secondary">
                       {overdueLabel(row.next_follow_up_at)}
@@ -140,13 +143,18 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
                     </span>
                   )}
                   {row.cadence_days && (
-                    <span className="text-xs text-text-disabled capitalize">{cadenceLabel(row.cadence_days)}</span>
+                    <span className="text-xs capitalize text-text-disabled">
+                      {cadenceLabel(row.cadence_days)}
+                    </span>
                   )}
                 </div>
                 {row.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className="mt-1 flex flex-wrap gap-1">
                     {row.tags.slice(0, 4).map(({ tag }) => (
-                      <span key={tag.id} className="text-2xs text-text-disabled border border-border-subtle rounded px-1">
+                      <span
+                        key={tag.id}
+                        className="rounded border border-border-subtle px-1 text-2xs text-text-disabled"
+                      >
                         #{tag.name}
                       </span>
                     ))}
@@ -155,11 +163,14 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex shrink-0 items-center gap-1">
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setLogOpen(true); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-hover transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLogOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md border border-border-default px-2 py-1 text-xs text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
                 >
                   <Activity size={11} />
                   Log interaction
@@ -168,13 +179,13 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
                   <button
                     type="button"
                     onClick={() => setSnoozeOpen((v) => !v)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-border-default text-text-tertiary hover:text-text-primary hover:bg-surface-hover transition-colors"
+                    className="inline-flex items-center gap-1 rounded-md border border-border-default px-2 py-1 text-xs text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
                   >
                     <BellOff size={11} />
                     Snooze ▾
                   </button>
                   {snoozeOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-dropdown w-44 rounded-lg border border-border-default bg-surface-raised shadow-2 overflow-hidden">
+                    <div className="z-dropdown absolute right-0 top-full mt-1 w-44 overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2">
                       {!showCustomInput ? (
                         SNOOZE_OPTIONS.map((opt) => (
                           <button
@@ -182,34 +193,36 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
                             type="button"
                             disabled={snoozeMutation.isPending}
                             onClick={() => handleSnooze(opt.days)}
-                            className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50"
+                            className="w-full px-3 py-2 text-left text-xs text-text-primary transition-colors hover:bg-surface-hover disabled:opacity-50"
                           >
                             {opt.label}
                           </button>
                         ))
                       ) : (
-                        <div className="p-2 space-y-1.5">
-                          <p className="text-2xs text-text-disabled font-medium px-1">Snooze until</p>
+                        <div className="space-y-1.5 p-2">
+                          <p className="px-1 text-2xs font-medium text-text-disabled">
+                            Snooze until
+                          </p>
                           <input
                             type="date"
                             value={customDate}
                             onChange={(e) => setCustomDate(e.target.value)}
                             min={new Date().toISOString().slice(0, 10)}
-                            className="w-full text-xs border border-border-default rounded px-2 py-1 bg-surface-base text-text-primary outline-none"
+                            className="w-full rounded border border-border-default bg-surface-base px-2 py-1 text-xs text-text-primary outline-none"
                           />
                           <div className="flex gap-1">
                             <button
                               type="button"
                               disabled={!customDate || snoozeMutation.isPending}
                               onClick={handleCustomDateSnooze}
-                              className="flex-1 text-xs px-2 py-1 rounded bg-accent-primary text-white disabled:opacity-50"
+                              className="flex-1 rounded bg-accent-primary px-2 py-1 text-xs text-white disabled:opacity-50"
                             >
                               Snooze
                             </button>
                             <button
                               type="button"
                               onClick={() => setShowCustomInput(false)}
-                              className="text-xs px-2 py-1 rounded border border-border-default text-text-secondary hover:bg-surface-hover"
+                              className="rounded border border-border-default px-2 py-1 text-xs text-text-secondary hover:bg-surface-hover"
                             >
                               Back
                             </button>
@@ -222,7 +235,7 @@ function PersonCard({ row, onSnooze }: { row: PersonRow; onSnooze: (id: string) 
                 <Link
                   href={`/people/${row.id}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-disabled hover:text-text-primary hover:bg-surface-hover transition-colors"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-disabled transition-colors hover:bg-surface-hover hover:text-text-primary"
                 >
                   <ChevronRight size={13} />
                 </Link>
@@ -257,36 +270,51 @@ function FollowUpPageInner() {
 
   const [snoozedIds, setSnoozedIds] = useState<Set<string>>(new Set());
 
-  const setSort = useCallback((v: "most_overdue" | "alphabetical") => {
-    const p = new URLSearchParams(searchParams.toString());
-    p.set("sort", v);
-    router.replace(`/people/follow-up?${p.toString()}`);
-  }, [router, searchParams]);
+  const setSort = useCallback(
+    (v: "most_overdue" | "alphabetical") => {
+      const p = new URLSearchParams(searchParams.toString());
+      p.set("sort", v);
+      router.replace(`/people/follow-up?${p.toString()}`);
+    },
+    [router, searchParams],
+  );
 
-  const setRelationshipType = useCallback((v: string | undefined) => {
-    const p = new URLSearchParams(searchParams.toString());
-    if (v) p.set("rel", v); else p.delete("rel");
-    router.replace(`/people/follow-up?${p.toString()}`);
-  }, [router, searchParams]);
+  const setRelationshipType = useCallback(
+    (v: string | undefined) => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (v) p.set("rel", v);
+      else p.delete("rel");
+      router.replace(`/people/follow-up?${p.toString()}`);
+    },
+    [router, searchParams],
+  );
 
-  const toggleTag = useCallback((tagId: string) => {
-    const p = new URLSearchParams(searchParams.toString());
-    const existing = p.getAll("tag");
-    if (existing.includes(tagId)) {
-      p.delete("tag");
-      existing.filter((t) => t !== tagId).forEach((t) => p.append("tag", t));
-    } else {
-      p.append("tag", tagId);
-    }
-    router.replace(`/people/follow-up?${p.toString()}`);
-  }, [router, searchParams]);
+  const toggleTag = useCallback(
+    (tagId: string) => {
+      const p = new URLSearchParams(searchParams.toString());
+      const existing = p.getAll("tag");
+      if (existing.includes(tagId)) {
+        p.delete("tag");
+        existing.filter((t) => t !== tagId).forEach((t) => p.append("tag", t));
+      } else {
+        p.append("tag", tagId);
+      }
+      router.replace(`/people/follow-up?${p.toString()}`);
+    },
+    [router, searchParams],
+  );
 
   const handleSnooze = useCallback((id: string) => {
     setSnoozedIds((prev) => new Set([...prev, id]));
   }, []);
 
   const { data, fetchNextPage, hasNextPage, isLoading } = trpc.people.followUpList.useInfiniteQuery(
-    { sort, relationship_type: relationshipType, tag_ids: tagIds.length > 0 ? tagIds : undefined, limit: 50 },
+    {
+      sort,
+      relationship_type: relationshipType,
+      tag_ids: tagIds.length > 0 ? tagIds : undefined,
+      limit: 50,
+    },
     { getNextPageParam: (page) => page.nextCursor },
   );
 
@@ -295,22 +323,22 @@ function FollowUpPageInner() {
   const total = data?.pages[0]?.total ?? 0;
 
   const uniqueTags = Array.from(
-    new Map(
-      allRows.flatMap((r) => r.tags.map(({ tag }) => [tag.id, tag])),
-    ).values(),
+    new Map(allRows.flatMap((r) => r.tags.map(({ tag }) => [tag.id, tag]))).values(),
   );
 
-  const uniqueRelTypes = Array.from(new Set(allRows.map((r) => r.relationship_type).filter(Boolean)));
+  const uniqueRelTypes = Array.from(
+    new Set(allRows.map((r) => r.relationship_type).filter(Boolean)),
+  );
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle bg-surface-base shrink-0">
+      <div className="flex shrink-0 items-center justify-between border-b border-border-subtle bg-surface-base px-5 py-3">
         <div className="flex items-center gap-2">
           <Bell size={16} className="text-text-tertiary" />
           <h1 className="text-base font-semibold text-text-primary">Follow-up</h1>
           {total > 0 && (
-            <span className="ml-1 text-xs text-text-disabled border border-border-subtle rounded-full px-2">
+            <span className="ml-1 rounded-full border border-border-subtle px-2 text-xs text-text-disabled">
               {total}
             </span>
           )}
@@ -321,7 +349,7 @@ function FollowUpPageInner() {
           <div className="relative flex items-center gap-1">
             <SortAsc size={12} className="text-text-disabled" />
             <select
-              className="text-xs text-text-secondary bg-transparent border-none outline-none cursor-pointer"
+              className="cursor-pointer border-none bg-transparent text-xs text-text-secondary outline-none"
               value={sort}
               onChange={(e) => setSort(e.target.value as typeof sort)}
             >
@@ -333,29 +361,33 @@ function FollowUpPageInner() {
       </div>
 
       {/* Filter chips */}
-      {(uniqueRelTypes.length > 0 || uniqueTags.length > 0 || relationshipType || tagIds.length > 0) && (
-        <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-border-subtle bg-surface-base shrink-0">
+      {(uniqueRelTypes.length > 0 ||
+        uniqueTags.length > 0 ||
+        relationshipType ||
+        tagIds.length > 0) && (
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border-subtle bg-surface-base px-4 py-2">
           {/* Relationship filter chips */}
           {relationshipType && (
             <button
               type="button"
               onClick={() => setRelationshipType(undefined)}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs bg-accent-primary-subtle text-accent-primary border border-accent-primary/30"
+              className="border-accent-primary/30 inline-flex items-center gap-1 rounded-full border bg-accent-primary-subtle px-2 py-0.5 text-2xs text-accent-primary"
             >
               {relationshipType.replace(/-/g, " ")}
               <X size={10} />
             </button>
           )}
-          {!relationshipType && uniqueRelTypes.map((rt) => (
-            <button
-              key={rt}
-              type="button"
-              onClick={() => setRelationshipType(rt ?? undefined)}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs capitalize text-text-secondary border border-border-default hover:bg-surface-hover transition-colors"
-            >
-              {(rt ?? "").replace(/-/g, " ")}
-            </button>
-          ))}
+          {!relationshipType &&
+            uniqueRelTypes.map((rt) => (
+              <button
+                key={rt}
+                type="button"
+                onClick={() => setRelationshipType(rt ?? undefined)}
+                className="inline-flex items-center gap-1 rounded-full border border-border-default px-2 py-0.5 text-2xs capitalize text-text-secondary transition-colors hover:bg-surface-hover"
+              >
+                {(rt ?? "").replace(/-/g, " ")}
+              </button>
+            ))}
 
           {/* Tag filter chips */}
           {uniqueTags.map((tag) => {
@@ -365,10 +397,10 @@ function FollowUpPageInner() {
                 key={tag.id}
                 type="button"
                 onClick={() => toggleTag(tag.id)}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs border transition-colors ${
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs transition-colors ${
                   active
-                    ? "bg-accent-primary-subtle text-accent-primary border-accent-primary/30"
-                    : "text-text-secondary border-border-default hover:bg-surface-hover"
+                    ? "border-accent-primary/30 bg-accent-primary-subtle text-accent-primary"
+                    : "border-border-default text-text-secondary hover:bg-surface-hover"
                 }`}
               >
                 #{tag.name}
@@ -386,7 +418,7 @@ function FollowUpPageInner() {
                 p.delete("tag");
                 router.replace(`/people/follow-up?${p.toString()}`);
               }}
-              className="text-2xs text-text-disabled hover:text-text-tertiary ml-1"
+              className="ml-1 text-2xs text-text-disabled hover:text-text-tertiary"
             >
               Clear all
             </button>
@@ -397,9 +429,11 @@ function FollowUpPageInner() {
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-32 text-sm text-text-tertiary">Loading…</div>
+          <div className="flex h-32 items-center justify-center text-sm text-text-tertiary">
+            Loading…
+          </div>
         ) : visible.length === 0 ? (
-          <div className="flex items-center justify-center h-48">
+          <div className="flex h-48 items-center justify-center">
             <p className="text-sm text-text-secondary">No follow-ups due.</p>
           </div>
         ) : (
@@ -411,7 +445,7 @@ function FollowUpPageInner() {
               <button
                 type="button"
                 onClick={() => void fetchNextPage()}
-                className="w-full py-2 text-xs text-text-tertiary border border-dashed border-border-subtle rounded-lg hover:text-text-primary transition-colors"
+                className="w-full rounded-lg border border-dashed border-border-subtle py-2 text-xs text-text-tertiary transition-colors hover:text-text-primary"
               >
                 Load more
               </button>
@@ -425,7 +459,13 @@ function FollowUpPageInner() {
 
 export default function FollowUpPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-full text-sm text-text-tertiary">Loading…</div>}>
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center text-sm text-text-tertiary">
+          Loading…
+        </div>
+      }
+    >
       <FollowUpPageInner />
     </Suspense>
   );

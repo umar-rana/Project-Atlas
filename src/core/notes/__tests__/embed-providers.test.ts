@@ -59,7 +59,9 @@ describe("detectEmbedProvider", () => {
     });
 
     it("detects playlist URL", () => {
-      const result = detectEmbedProvider("https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M");
+      const result = detectEmbedProvider(
+        "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
+      );
       expect(result!.embed_url).toContain("embed/playlist/");
     });
   });
@@ -70,7 +72,9 @@ describe("detectEmbedProvider", () => {
       expect(result).not.toBeNull();
       expect(result!.provider).toBe("soundcloud");
       expect(result!.embed_url).toContain("w.soundcloud.com/player/");
-      expect(result!.embed_url).toContain(encodeURIComponent("https://soundcloud.com/artist/track-name"));
+      expect(result!.embed_url).toContain(
+        encodeURIComponent("https://soundcloud.com/artist/track-name"),
+      );
       expect(result!.embed_url).not.toContain("%23");
     });
   });
@@ -187,7 +191,16 @@ describe("getOembedEndpoint", () => {
 
 describe("PROVIDER_LABELS", () => {
   it("has a label for all 8 providers", () => {
-    const providers = ["youtube", "vimeo", "spotify", "soundcloud", "twitter", "github_gist", "codesandbox", "loom"] as const;
+    const providers = [
+      "youtube",
+      "vimeo",
+      "spotify",
+      "soundcloud",
+      "twitter",
+      "github_gist",
+      "codesandbox",
+      "loom",
+    ] as const;
     for (const p of providers) {
       expect(PROVIDER_LABELS[p]).toBeTruthy();
     }

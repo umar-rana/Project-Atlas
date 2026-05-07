@@ -85,9 +85,7 @@ function nodeToMarkdown(node: TiptapNode, listDepth = 0, ordered = false, index 
     }
 
     case "bulletList": {
-      return (node.content ?? [])
-        .map((n) => nodeToMarkdown(n, listDepth, false))
-        .join("\n");
+      return (node.content ?? []).map((n) => nodeToMarkdown(n, listDepth, false)).join("\n");
     }
 
     case "orderedList": {
@@ -111,9 +109,7 @@ function nodeToMarkdown(node: TiptapNode, listDepth = 0, ordered = false, index 
     }
 
     case "taskList": {
-      return (node.content ?? [])
-        .map((n) => nodeToMarkdown(n, listDepth))
-        .join("\n");
+      return (node.content ?? []).map((n) => nodeToMarkdown(n, listDepth)).join("\n");
     }
 
     case "taskItem": {

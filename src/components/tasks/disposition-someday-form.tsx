@@ -39,9 +39,11 @@ export function DispositionSomedayForm({
   const utils = trpc.useUtils();
   const tags = trpc.tags.list.useQuery({ limit: 200 }, { staleTime: 60_000 });
   const { data: rawUser } = trpc.user.me.useQuery(undefined, { staleTime: 60_000 });
-  const tasksPrefs = (typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" && (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
-    ? (rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>
-    : {});
+  const tasksPrefs =
+    typeof (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs === "object" &&
+    (rawUser as { tasks_prefs?: unknown } | undefined)?.tasks_prefs !== null
+      ? ((rawUser as { tasks_prefs?: unknown } | undefined)!.tasks_prefs as Record<string, unknown>)
+      : {};
   const somedayCadence = (tasksPrefs.gtd_someday_review_cadence as string | undefined) ?? "weekly";
   const nextCycleDays = somedayCadence === "monthly" ? 30 : somedayCadence === "biweekly" ? 14 : 7;
 
@@ -102,18 +104,30 @@ export function DispositionSomedayForm({
   }
 
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitDefaults(); }
-    else if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      submitDefaults();
+    } else if (e.key === "Enter" && !e.shiftKey) {
       const target = e.target as HTMLElement;
-      if (target.tagName !== "TEXTAREA" && target.tagName !== "SELECT") { e.preventDefault(); submit(); }
-    } else if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+      if (target.tagName !== "TEXTAREA" && target.tagName !== "SELECT") {
+        e.preventDefault();
+        submit();
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    }
   }
 
-  const inputCls = "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
+  const inputCls =
+    "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
 
   const REVIEW_OPTIONS: { value: ReviewOption; label: string }[] = [
-    { value: "next_cycle", label: `Next review cycle (~${nextCycleDays === 30 ? "1 month" : nextCycleDays === 14 ? "2 weeks" : "1 week"})` },
+    {
+      value: "next_cycle",
+      label: `Next review cycle (~${nextCycleDays === 30 ? "1 month" : nextCycleDays === 14 ? "2 weeks" : "1 week"})`,
+    },
     { value: "one_month", label: "In a month" },
     { value: "three_months", label: "In three months" },
     { value: "specific", label: "Specific date" },
@@ -124,14 +138,20 @@ export function DispositionSomedayForm({
     <div className="flex flex-col gap-3" onKeyDown={handleKey}>
       <div>
         <label className={labelCls}>Title</label>
-        <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} placeholder="Someday task title…" />
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={inputCls}
+          placeholder="Someday task title…"
+        />
       </div>
 
       <div>
         <label className={labelCls}>Review date</label>
         <div className="flex flex-col gap-1.5">
           {REVIEW_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+            <label key={opt.value} className="flex cursor-pointer items-center gap-2">
               <input
                 type="radio"
                 name="review_option"
@@ -163,21 +183,48 @@ export function DispositionSomedayForm({
           className={cn(inputCls, "h-20")}
         >
           {(tags.data ?? []).map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
           ))}
         </select>
       </div>
 
       <div>
         <label className={labelCls}>Notes</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={cn(inputCls, "resize-none")} placeholder="Optional notes…" />
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={2}
+          className={cn(inputCls, "resize-none")}
+          placeholder="Optional notes…"
+        />
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border-subtle">
-        <button type="button" onClick={onCancel} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover">Cancel</button>
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover"
+        >
+          Cancel
+        </button>
         <div className="flex gap-2">
-          <button type="button" onClick={submitDefaults} disabled={mut.isPending} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50" title="⌘↵ Accept defaults">⌘↵ Defaults</button>
-          <button type="button" onClick={submit} disabled={mut.isPending || !title.trim()} className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50">
+          <button
+            type="button"
+            onClick={submitDefaults}
+            disabled={mut.isPending}
+            className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+            title="⌘↵ Accept defaults"
+          >
+            ⌘↵ Defaults
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={mut.isPending || !title.trim()}
+            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+          >
             {mut.isPending ? "Creating…" : "Add to Someday ↵"}
           </button>
         </div>

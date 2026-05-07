@@ -16,7 +16,11 @@ interface AttachmentDetailPanelProps {
   onDeleted?: () => void;
 }
 
-export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: AttachmentDetailPanelProps) {
+export function AttachmentDetailPanel({
+  attachmentId,
+  onClose,
+  onDeleted,
+}: AttachmentDetailPanelProps) {
   const locale = useLocale();
   const utils = trpc.useUtils();
   const { data: att, isLoading } = trpc.attachments.byId.useQuery(
@@ -59,7 +63,11 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
       <aside className="flex h-full w-80 flex-col border-l border-border-subtle bg-surface-overlay">
         <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
           <span className="font-ui text-sm font-semibold text-text-primary">Attachment</span>
-          <button type="button" onClick={onClose} className="text-text-tertiary hover:text-text-primary">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-text-tertiary hover:text-text-primary"
+          >
             <X size={14} />
           </button>
         </div>
@@ -82,8 +90,14 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
   return (
     <aside className="flex h-full w-80 flex-col border-l border-border-subtle bg-surface-overlay">
       <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
-        <span className="font-ui text-sm font-semibold text-text-primary truncate mr-2">{att.filename}</span>
-        <button type="button" onClick={onClose} className="shrink-0 text-text-tertiary hover:text-text-primary">
+        <span className="mr-2 truncate font-ui text-sm font-semibold text-text-primary">
+          {att.filename}
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 text-text-tertiary hover:text-text-primary"
+        >
           <X size={14} />
         </button>
       </div>
@@ -110,30 +124,28 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
               <span className="font-ui text-xs">Open PDF</span>
             </button>
           )}
-          {isVideo && (
-            <video src={src} controls className="max-h-full max-w-full" />
-          )}
-          {isAudio && (
-            <audio src={src} controls className="w-full px-4" />
-          )}
+          {isVideo && <video src={src} controls className="max-h-full max-w-full" />}
+          {isAudio && <audio src={src} controls className="w-full px-4" />}
           {!isImage && !isPdf && !isVideo && !isAudio && (
             <div className="flex flex-col items-center gap-2 text-text-tertiary">
-              <span className="rounded-sm bg-surface-overlay px-2 py-1 font-ui text-sm font-semibold uppercase">{fileType}</span>
+              <span className="rounded-sm bg-surface-overlay px-2 py-1 font-ui text-sm font-semibold uppercase">
+                {fileType}
+              </span>
               <span className="font-ui text-xs">No preview available</span>
             </div>
           )}
         </div>
 
-        <div className="p-3 space-y-3">
+        <div className="space-y-3 p-3">
           <div>
-            <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
+            <label className="mb-1 block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
               Type
             </label>
             <p className="font-ui text-xs text-text-secondary">{att.content_type}</p>
           </div>
 
           <div>
-            <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
+            <label className="mb-1 block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
               Size
             </label>
             <p className="font-ui text-xs text-text-secondary">{formatBytes(att.size_bytes)}</p>
@@ -141,26 +153,30 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
 
           {att.image_width && att.image_height && (
             <div>
-              <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
+              <label className="mb-1 block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
                 Dimensions
               </label>
-              <p className="font-ui text-xs text-text-secondary">{att.image_width} × {att.image_height}px</p>
+              <p className="font-ui text-xs text-text-secondary">
+                {att.image_width} × {att.image_height}px
+              </p>
             </div>
           )}
 
           <div>
-            <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
+            <label className="mb-1 block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
               Added
             </label>
-            <p className="font-ui text-xs text-text-secondary">{localeFormatDateTime(date, locale)}</p>
+            <p className="font-ui text-xs text-text-secondary">
+              {localeFormatDateTime(date, locale)}
+            </p>
           </div>
 
           <div>
-            <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
+            <label className="mb-1 block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
               Source
             </label>
             {isOrphan ? (
-              <p className="font-ui text-xs text-text-tertiary italic">
+              <p className="font-ui text-xs italic text-text-tertiary">
                 {att.task_id ? "Previously attached to a deleted task" : "Orphaned"}
               </p>
             ) : att.task_id ? (
@@ -172,12 +188,12 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
                 View task
               </a>
             ) : (
-              <p className="font-ui text-xs text-text-secondary capitalize">{att.parent_type}</p>
+              <p className="font-ui text-xs capitalize text-text-secondary">{att.parent_type}</p>
             )}
           </div>
 
           <div>
-            <label className="block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary mb-1">
+            <label className="mb-1 block font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
               Description
             </label>
             <textarea
@@ -202,7 +218,7 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
               className={cn(
                 "flex items-center gap-1.5 rounded-sm border px-2.5 py-1.5 font-ui text-xs transition-colors",
                 att.reviewed
-                  ? "border-accent-success/40 bg-accent-success/10 text-accent-success hover:bg-accent-success/20"
+                  ? "border-accent-success/40 bg-accent-success/10 hover:bg-accent-success/20 text-accent-success"
                   : "border-border-default text-text-secondary hover:bg-surface-hover",
               )}
             >
@@ -221,7 +237,7 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
         </div>
       </div>
 
-      <div className="border-t border-border-subtle p-3 flex items-center gap-2">
+      <div className="flex items-center gap-2 border-t border-border-subtle p-3">
         <a
           href={src}
           download={att.filename}
@@ -252,7 +268,7 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
               deleteAtt.mutate({ id: att.id });
             }
           }}
-          className="ml-auto flex items-center gap-1.5 rounded-sm border border-accent-danger/30 px-2.5 py-1.5 font-ui text-xs text-accent-danger hover:bg-accent-danger/10 disabled:opacity-50"
+          className="border-accent-danger/30 hover:bg-accent-danger/10 ml-auto flex items-center gap-1.5 rounded-sm border px-2.5 py-1.5 font-ui text-xs text-accent-danger disabled:opacity-50"
         >
           <Trash2 size={12} />
           Delete
@@ -261,7 +277,14 @@ export function AttachmentDetailPanel({ attachmentId, onClose, onDeleted }: Atta
 
       {lightboxOpen && isImage && (
         <AttachmentLightbox
-          items={[{ id: att.id, filename: att.filename, content_type: att.content_type, file_id: att.file_id }]}
+          items={[
+            {
+              id: att.id,
+              filename: att.filename,
+              content_type: att.content_type,
+              file_id: att.file_id,
+            },
+          ]}
           onClose={() => setLightboxOpen(false)}
         />
       )}

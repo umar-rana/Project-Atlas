@@ -77,16 +77,14 @@ export function ProjectHeaderMetrics({
       : last_activity_at
     : null;
 
-  const lastActivityLabel = lastActivityDate
-    ? timeDistancePast(lastActivityDate, now)
-    : null;
+  const lastActivityLabel = lastActivityDate ? timeDistancePast(lastActivityDate, now) : null;
 
   return (
-    <div className="flex flex-col gap-0.5 pl-5 pb-0.5">
+    <div className="flex flex-col gap-0.5 pb-0.5 pl-5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
         <span className="font-ui text-2xs text-text-secondary">
           {task_counts.total === 0 ? (
-            <span className="text-text-tertiary italic">No tasks yet</span>
+            <span className="italic text-text-tertiary">No tasks yet</span>
           ) : (
             <>
               <span className="font-medium">{formatInt(task_counts.total, locale)}</span>
@@ -123,13 +121,15 @@ export function ProjectHeaderMetrics({
         <div className="font-ui text-2xs text-text-secondary">
           {tracker.status === "unavailable" ? (
             <span>
-              <span className="text-text-tertiary">Tracker unavailable — source has been removed</span>
+              <span className="text-text-tertiary">
+                Tracker unavailable — source has been removed
+              </span>
               {onReconfigure && (
                 <>
                   {" "}
                   <button
                     onClick={onReconfigure}
-                    className="text-text-link hover:text-text-link-hover underline focus:outline-none"
+                    className="text-text-link underline hover:text-text-link-hover focus:outline-none"
                   >
                     Reconfigure
                   </button>
@@ -142,23 +142,36 @@ export function ProjectHeaderMetrics({
                 <span className="text-text-tertiary">{tracker.column_name}: </span>
               )}
               <span className="font-medium">
-                {formatTrackerValue(tracker.current_value, tracker.aggregation, tracker.column_type, locale)}
+                {formatTrackerValue(
+                  tracker.current_value,
+                  tracker.aggregation,
+                  tracker.column_type,
+                  locale,
+                )}
                 {tracker.target_label && tracker.aggregation !== "checked_ratio" && (
-                  <span className="text-text-tertiary font-normal ml-0.5">{tracker.target_label}</span>
+                  <span className="ml-0.5 font-normal text-text-tertiary">
+                    {tracker.target_label}
+                  </span>
                 )}
               </span>
               {tracker.target_value != null && (
                 <>
                   <span className="text-text-disabled"> / </span>
                   <span className="text-text-tertiary">
-                    {formatTrackerValue(tracker.target_value, tracker.aggregation, tracker.column_type, locale)}
+                    {formatTrackerValue(
+                      tracker.target_value,
+                      tracker.aggregation,
+                      tracker.column_type,
+                      locale,
+                    )}
                     {tracker.target_label && tracker.aggregation !== "checked_ratio" && (
                       <span className="ml-0.5">{tracker.target_label}</span>
                     )}
                   </span>
                   {tracker.percentage != null && (
                     <span className="text-text-disabled">
-                      {" "}({formatInt(Math.round(tracker.percentage), locale)}%)
+                      {" "}
+                      ({formatInt(Math.round(tracker.percentage), locale)}%)
                     </span>
                   )}
                 </>

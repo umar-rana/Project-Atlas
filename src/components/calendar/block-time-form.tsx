@@ -83,7 +83,7 @@ export function BlockTimeForm({
       setEndVal(toDateTimeLocal(e));
       setAllDay(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -102,11 +102,16 @@ export function BlockTimeForm({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border-default bg-surface-raised p-5 shadow-4 focus:outline-none">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <Dialog.Title className="font-ui text-base font-semibold text-text-primary">
               Block time
             </Dialog.Title>
@@ -138,7 +143,10 @@ export function BlockTimeForm({
                 onChange={(e) => setAllDay(e.target.checked)}
                 className="rounded border-border-default"
               />
-              <label htmlFor="all-day" className="font-ui text-sm text-text-secondary cursor-pointer">
+              <label
+                htmlFor="all-day"
+                className="cursor-pointer font-ui text-sm text-text-secondary"
+              >
                 All day
               </label>
             </div>
@@ -146,7 +154,9 @@ export function BlockTimeForm({
             {!allDay && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Start</label>
+                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                    Start
+                  </label>
                   <input
                     type="datetime-local"
                     value={startVal}
@@ -155,7 +165,9 @@ export function BlockTimeForm({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">End</label>
+                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                    End
+                  </label>
                   <input
                     type="datetime-local"
                     value={endVal}
@@ -169,7 +181,9 @@ export function BlockTimeForm({
             {allDay && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Start date</label>
+                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                    Start date
+                  </label>
                   <input
                     type="date"
                     value={startVal.slice(0, 10)}
@@ -178,7 +192,9 @@ export function BlockTimeForm({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">End date</label>
+                  <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                    End date
+                  </label>
                   <input
                     type="date"
                     value={endVal.slice(0, 10)}

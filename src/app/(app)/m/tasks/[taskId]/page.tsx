@@ -112,7 +112,7 @@ export default function MobileTaskDetailPage() {
             "mt-4 flex min-h-[44px] w-full items-center justify-center rounded-xl border font-ui text-sm font-medium transition-colors",
             isCompleted
               ? "border-border-default bg-surface-raised text-text-secondary hover:bg-surface-hover"
-              : "border-accent-success bg-accent-success/10 text-accent-success hover:bg-accent-success/20",
+              : "bg-accent-success/10 hover:bg-accent-success/20 border-accent-success text-accent-success",
           )}
         >
           {isCompleted ? "Reopen task" : "Mark complete"}
@@ -164,7 +164,7 @@ export default function MobileTaskDetailPage() {
                 <span className="font-ui text-sm font-medium text-text-primary">
                   {task.estimated_minutes < 60
                     ? `${task.estimated_minutes} min`
-                    : `${Math.round(task.estimated_minutes / 60 * 10) / 10} hr`}
+                    : `${Math.round((task.estimated_minutes / 60) * 10) / 10} hr`}
                 </span>
               </div>
             ) : null}

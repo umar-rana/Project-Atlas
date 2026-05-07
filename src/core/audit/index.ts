@@ -4,7 +4,34 @@ import type { Prisma } from "@prisma/client";
 
 const log = createLogger({ module: "audit" });
 
-const AUDITED_ENTITIES = new Set(["AuthEvent", "User", "Task", "Project", "ProjectFolder", "Capture", "EmailCapture", "Attachment", "Note", "NotesFolder", "Table", "TablesFolder", "TaskTemplate", "Person", "PersonEmail", "PersonPhone", "PersonAddress", "PersonOrganization", "PersonUrl", "PersonEvent", "PersonRelation", "PersonSkill", "PersonInterest", "PersonInteraction", "CalendarEvent", "GoogleCalendar"]);
+const AUDITED_ENTITIES = new Set([
+  "AuthEvent",
+  "User",
+  "Task",
+  "Project",
+  "ProjectFolder",
+  "Capture",
+  "EmailCapture",
+  "Attachment",
+  "Note",
+  "NotesFolder",
+  "Table",
+  "TablesFolder",
+  "TaskTemplate",
+  "Person",
+  "PersonEmail",
+  "PersonPhone",
+  "PersonAddress",
+  "PersonOrganization",
+  "PersonUrl",
+  "PersonEvent",
+  "PersonRelation",
+  "PersonSkill",
+  "PersonInterest",
+  "PersonInteraction",
+  "CalendarEvent",
+  "GoogleCalendar",
+]);
 
 export interface ActivityEvent {
   user_id?: string;
@@ -39,10 +66,7 @@ export function diffObjects(
 export async function logActivity(event: ActivityEvent): Promise<void> {
   if (!AUDITED_ENTITIES.has(event.entity_type)) return;
 
-  const diff =
-    event.before && event.after
-      ? diffObjects(event.before, event.after)
-      : undefined;
+  const diff = event.before && event.after ? diffObjects(event.before, event.after) : undefined;
 
   try {
     await db.auditLog.create({

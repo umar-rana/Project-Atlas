@@ -28,7 +28,8 @@ const inputWrapVariants = cva(
 );
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "prefix">,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, "size" | "prefix">,
     VariantProps<typeof inputWrapVariants> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -59,8 +60,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
       data-disabled={disabled || undefined}
       data-error={error || undefined}
     >
-      {leftIcon ? <span aria-hidden className="text-text-tertiary inline-flex shrink-0">{leftIcon}</span> : null}
-      {prefix ? <span className="font-mono text-xs font-medium text-text-tertiary shrink-0">{prefix}</span> : null}
+      {leftIcon ? (
+        <span aria-hidden className="inline-flex shrink-0 text-text-tertiary">
+          {leftIcon}
+        </span>
+      ) : null}
+      {prefix ? (
+        <span className="shrink-0 font-mono text-xs font-medium text-text-tertiary">{prefix}</span>
+      ) : null}
       <input
         ref={ref}
         disabled={disabled}
@@ -72,8 +79,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
         )}
         {...props}
       />
-      {suffix ? <span className="font-mono text-xs font-medium text-text-tertiary shrink-0">{suffix}</span> : null}
-      {rightIcon ? <span aria-hidden className="text-text-tertiary inline-flex shrink-0">{rightIcon}</span> : null}
+      {suffix ? (
+        <span className="shrink-0 font-mono text-xs font-medium text-text-tertiary">{suffix}</span>
+      ) : null}
+      {rightIcon ? (
+        <span aria-hidden className="inline-flex shrink-0 text-text-tertiary">
+          {rightIcon}
+        </span>
+      ) : null}
     </div>
   );
 });

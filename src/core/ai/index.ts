@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
@@ -28,7 +28,8 @@ const OUTPUT_COST_PER_TOKEN: Record<ModelId, number> = {
 
 function getClient(): Anthropic {
   return new Anthropic({
-    baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ?? process.env.ANTHROPIC_BASE_URL ?? undefined,
+    baseURL:
+      process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ?? process.env.ANTHROPIC_BASE_URL ?? undefined,
     apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY ?? process.env.ANTHROPIC_API_KEY,
   });
 }
@@ -55,16 +56,15 @@ export interface CompleteResult {
 }
 
 export async function complete(opts: CompleteOptions): Promise<CompleteResult> {
-  const model: ModelId = opts.options?.model ?? (TASK_MODEL_MAP[opts.task] ?? TASK_MODEL_MAP["default"]) as ModelId;
+  const model: ModelId =
+    opts.options?.model ?? ((TASK_MODEL_MAP[opts.task] ?? TASK_MODEL_MAP["default"]) as ModelId);
   const maxTokens = opts.options?.maxTokens ?? 1024;
   const start = Date.now();
 
   const messages: Anthropic.MessageParam[] = [
     {
       role: "user",
-      content: opts.context
-        ? `Context:\n${opts.context}\n\n${opts.prompt}`
-        : opts.prompt,
+      content: opts.context ? `Context:\n${opts.context}\n\n${opts.prompt}` : opts.prompt,
     },
   ];
 
@@ -80,9 +80,7 @@ export async function complete(opts: CompleteOptions): Promise<CompleteResult> {
         const response = await client.messages.create({
           model,
           max_tokens: maxTokens,
-          system:
-            opts.options?.systemPrompt ??
-            "You are Atlas, a helpful productivity assistant.",
+          system: opts.options?.systemPrompt ?? "You are Atlas, a helpful productivity assistant.",
           messages,
         });
 
@@ -90,10 +88,8 @@ export async function complete(opts: CompleteOptions): Promise<CompleteResult> {
         const inputTokens = response.usage.input_tokens;
         const outputTokens = response.usage.output_tokens;
         const costUsd =
-          inputTokens * INPUT_COST_PER_TOKEN[model] +
-          outputTokens * OUTPUT_COST_PER_TOKEN[model];
-        const content =
-          response.content[0]?.type === "text" ? response.content[0].text : "";
+          inputTokens * INPUT_COST_PER_TOKEN[model] + outputTokens * OUTPUT_COST_PER_TOKEN[model];
+        const content = response.content[0]?.type === "text" ? response.content[0].text : "";
 
         await db.aICallLog.create({
           data: {

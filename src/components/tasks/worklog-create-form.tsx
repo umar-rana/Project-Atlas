@@ -44,7 +44,7 @@ export function WorklogCreateForm({
         onChange={(e) => setBody(e.target.value)}
         placeholder="Add a progress note…"
         rows={3}
-        className="w-full resize-none rounded border border-border-subtle bg-bg-input px-2 py-1.5 font-ui text-xs text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus"
+        className="bg-bg-input w-full resize-none rounded border border-border-subtle px-2 py-1.5 font-ui text-xs text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus"
         disabled={saving}
       />
       <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export function WorklogCreateForm({
             value={durationRaw}
             onChange={(e) => setDurationRaw(e.target.value)}
             placeholder="0"
-            className="w-16 rounded border border-border-subtle bg-bg-input px-2 py-1 font-ui text-xs text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus"
+            className="bg-bg-input w-16 rounded border border-border-subtle px-2 py-1 font-ui text-xs text-text-primary outline-none placeholder:text-text-tertiary focus:border-border-focus"
             disabled={saving}
           />
           <span className="shrink-0 text-text-tertiary">minutes</span>
@@ -67,14 +67,14 @@ export function WorklogCreateForm({
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="rounded px-2 py-1 font-ui text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-50"
+            className="hover:bg-bg-hover rounded px-2 py-1 font-ui text-xs text-text-secondary disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !body.trim()}
-            className="rounded bg-accent px-2 py-1 font-ui text-xs text-white disabled:opacity-50"
+            className="bg-accent rounded px-2 py-1 font-ui text-xs text-white disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save"}
           </button>

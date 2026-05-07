@@ -4,7 +4,12 @@ import React, { useCallback, useRef, useState } from "react";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
-import { PROVIDER_ASPECT, PROVIDER_LABELS, type EmbedProvider, type AspectRatioClass } from "@/core/notes/embed-providers";
+import {
+  PROVIDER_ASPECT,
+  PROVIDER_LABELS,
+  type EmbedProvider,
+  type AspectRatioClass,
+} from "@/core/notes/embed-providers";
 import { cn } from "@/lib/utils";
 
 export type EmbedAttrs = {
@@ -60,7 +65,7 @@ function EmbedNodeView({ node, selected }: NodeViewProps) {
       )}
 
       {isTweet ? (
-        <div className="relative w-full min-h-[200px] bg-surface-sunken">
+        <div className="relative min-h-[200px] w-full bg-surface-sunken">
           {!loaded && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
               <div className="h-2 w-32 animate-pulse rounded bg-surface-hover" />
@@ -68,13 +73,13 @@ function EmbedNodeView({ node, selected }: NodeViewProps) {
             </div>
           )}
           {errored ? (
-            <div className="flex flex-col items-center justify-center gap-2 p-4 text-center min-h-[200px]">
+            <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 p-4 text-center">
               <span className="text-sm font-medium text-text-secondary">Embed unavailable</span>
               <a
                 href={attrs.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-text-link hover:text-text-link-hover underline"
+                className="text-xs text-text-link underline hover:text-text-link-hover"
               >
                 {attrs.url}
               </a>
@@ -117,7 +122,7 @@ function EmbedNodeView({ node, selected }: NodeViewProps) {
                 href={attrs.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-text-link hover:text-text-link-hover underline"
+                className="text-xs text-text-link underline hover:text-text-link-hover"
               >
                 {attrs.url}
               </a>
@@ -166,10 +171,7 @@ export const EmbedNode = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return [
-      "div",
-      mergeAttributes(HTMLAttributes, { "data-type": "embed" }),
-    ];
+    return ["div", mergeAttributes(HTMLAttributes, { "data-type": "embed" })];
   },
 
   addNodeView() {

@@ -19,7 +19,6 @@ function formatDateForInput(value: Date | string | null): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-
 function CaptureEditForm({
   capture,
   onSave,
@@ -84,7 +83,7 @@ function CaptureEditForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter a title…"
-          className="w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary placeholder:text-text-placeholder focus:border-accent-primary focus:outline-none"
+          className="placeholder:text-text-placeholder w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:border-accent-primary focus:outline-none"
         />
       </div>
 
@@ -97,14 +96,14 @@ function CaptureEditForm({
           value={tagsInput}
           onChange={(e) => setTagsInput(e.target.value)}
           placeholder="work, home, urgent…"
-          className="w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary placeholder:text-text-placeholder focus:border-accent-primary focus:outline-none"
+          className="placeholder:text-text-placeholder w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:border-accent-primary focus:outline-none"
         />
         {parsedTags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {parsedTags.map((tag, i) => (
               <span
                 key={i}
-                className="rounded-full bg-accent-primary/10 px-2 py-0.5 font-ui text-xs text-accent-primary"
+                className="bg-accent-primary/10 rounded-full px-2 py-0.5 font-ui text-xs text-accent-primary"
               >
                 #{tag}
               </span>
@@ -114,7 +113,9 @@ function CaptureEditForm({
       </div>
 
       <div>
-        <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Due date</label>
+        <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+          Due date
+        </label>
         <input
           type="date"
           value={dueDate}
@@ -124,7 +125,9 @@ function CaptureEditForm({
       </div>
 
       <div>
-        <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Action items</label>
+        <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+          Action items
+        </label>
         <div className="flex flex-col gap-1.5">
           {actionItems.map((item, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -133,7 +136,7 @@ function CaptureEditForm({
                 value={item}
                 onChange={(e) => updateActionItem(idx, e.target.value)}
                 placeholder={`Action item ${idx + 1}…`}
-                className="flex-1 rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary placeholder:text-text-placeholder focus:border-accent-primary focus:outline-none"
+                className="placeholder:text-text-placeholder flex-1 rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:border-accent-primary focus:outline-none"
               />
               {actionItems.length > 1 && (
                 <button
@@ -162,7 +165,7 @@ function CaptureEditForm({
         <button
           type="submit"
           disabled={updateMutation.isPending}
-          className="flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-white hover:bg-accent-primary/90 disabled:opacity-50"
+          className="hover:bg-accent-primary/90 flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 font-ui text-xs font-medium text-white disabled:opacity-50"
         >
           {updateMutation.isPending ? (
             <Loader2 size={12} className="animate-spin" />
@@ -180,9 +183,7 @@ function CaptureEditForm({
           Cancel
         </button>
         {updateMutation.isError && (
-          <span className="font-ui text-xs text-accent-danger">
-            {updateMutation.error.message}
-          </span>
+          <span className="font-ui text-xs text-accent-danger">{updateMutation.error.message}</span>
         )}
       </div>
     </form>
@@ -214,14 +215,16 @@ function CaptureCard({ capture: initialCapture }: { capture: Capture }) {
               {capture.title ?? capture.raw_text.slice(0, 80)}
             </p>
             {capture.ai_parsed && (
-              <span className="shrink-0 rounded-full bg-accent-info/10 px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-info">
+              <span className="bg-accent-info/10 shrink-0 rounded-full px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-info">
                 AI
               </span>
             )}
           </div>
 
           {capture.title && (
-            <p className="mt-0.5 truncate font-ui text-xs text-text-tertiary">{capture.raw_text.slice(0, 100)}</p>
+            <p className="mt-0.5 truncate font-ui text-xs text-text-tertiary">
+              {capture.raw_text.slice(0, 100)}
+            </p>
           )}
 
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -230,7 +233,7 @@ function CaptureCard({ capture: initialCapture }: { capture: Capture }) {
                 {capture.tags.map((tag, i) => (
                   <span
                     key={i}
-                    className="rounded-full bg-accent-primary/10 px-2 py-0.5 font-ui text-xs text-accent-primary"
+                    className="bg-accent-primary/10 rounded-full px-2 py-0.5 font-ui text-xs text-accent-primary"
                   >
                     #{tag}
                   </span>
@@ -278,9 +281,13 @@ function CaptureCard({ capture: initialCapture }: { capture: Capture }) {
             onClick={() => deleteMutation.mutate({ id: capture.id })}
             disabled={deleteMutation.isPending}
             aria-label="Delete capture"
-            className="rounded p-1.5 text-text-tertiary transition-colors hover:bg-accent-danger/10 hover:text-accent-danger disabled:opacity-50"
+            className="hover:bg-accent-danger/10 rounded p-1.5 text-text-tertiary transition-colors hover:text-accent-danger disabled:opacity-50"
           >
-            {deleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            {deleteMutation.isPending ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}
           </button>
         </div>
       </div>

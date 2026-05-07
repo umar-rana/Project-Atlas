@@ -30,7 +30,12 @@ interface Props {
   onRefresh: () => void;
 }
 
-export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Props): React.ReactElement {
+export function TablesFolderTreeNode({
+  folder,
+  depth,
+  pathname,
+  onRefresh,
+}: Props): React.ReactElement {
   const [collapsed, setCollapsed] = React.useState(false);
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [draftName, setDraftName] = React.useState(folder.name);
@@ -62,7 +67,10 @@ export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Pro
   function handleRenameSubmit(e: React.FormEvent) {
     e.preventDefault();
     const name = draftName.trim();
-    if (!name || name === folder.name) { setIsRenaming(false); return; }
+    if (!name || name === folder.name) {
+      setIsRenaming(false);
+      return;
+    }
     rename.mutate({ id: folder.id, name });
   }
 
@@ -75,7 +83,11 @@ export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Pro
           className="shrink-0 p-0.5 text-text-disabled hover:text-text-tertiary"
         >
           {hasChildren ? (
-            collapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />
+            collapsed ? (
+              <ChevronRight size={10} />
+            ) : (
+              <ChevronDown size={10} />
+            )
           ) : (
             <span className="size-[10px]" />
           )}
@@ -87,7 +99,9 @@ export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Pro
               autoFocus
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Escape") setIsRenaming(false); }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setIsRenaming(false);
+              }}
               onBlur={handleRenameSubmit}
               className="min-w-0 flex-1 rounded-sm border border-border-focus bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-primary focus:outline-none"
             />
@@ -109,7 +123,9 @@ export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Pro
             )}
             <span className="flex-1 truncate">{folder.name}</span>
             {folder.table_count > 0 && (
-              <span className="font-mono text-2xs text-text-tertiary tabular-nums">{folder.table_count}</span>
+              <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                {folder.table_count}
+              </span>
             )}
           </Link>
         )}
@@ -125,7 +141,12 @@ export function TablesFolderTreeNode({ folder, depth, pathname, onRefresh }: Pro
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => { setDraftName(folder.name); setIsRenaming(true); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setDraftName(folder.name);
+                  setIsRenaming(true);
+                }}
+              >
                 <Pencil size={12} className="mr-2" /> Rename
               </DropdownMenuItem>
               <DropdownMenuSeparator />

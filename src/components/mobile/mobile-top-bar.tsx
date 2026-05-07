@@ -31,7 +31,7 @@ export function MobileTopBar(): React.ReactElement {
         className={cn(
           "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
           "bg-accent-primary text-white",
-          "transition-colors active:bg-accent-primary/90",
+          "active:bg-accent-primary/90 transition-colors",
         )}
       >
         <Plus size={20} aria-hidden />

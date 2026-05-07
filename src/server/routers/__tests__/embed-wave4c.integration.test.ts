@@ -6,10 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { notesRouter } from "@/server/routers/notes";
 
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });

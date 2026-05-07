@@ -67,7 +67,9 @@ function CaptureCard({
               AI
             </span>
           )}
-          <span className="font-ui text-xs text-text-tertiary">{localeFormatDate(created_at, locale)}</span>
+          <span className="font-ui text-xs text-text-tertiary">
+            {localeFormatDate(created_at, locale)}
+          </span>
         </div>
       </div>
 
@@ -141,7 +143,7 @@ export function CapturesList() {
       setNextCursor(query.data.nextCursor);
       setIsLoadingMore(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data]);
 
   React.useEffect(() => {
@@ -193,7 +195,7 @@ export function CapturesList() {
               placeholder="Search captures…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-md border border-border-default bg-surface-base py-1.5 pl-8 pr-3 font-ui text-sm text-text-primary placeholder:text-text-placeholder focus:border-accent-primary focus:outline-none"
+              className="placeholder:text-text-placeholder w-full rounded-md border border-border-default bg-surface-base py-1.5 pl-8 pr-3 font-ui text-sm text-text-primary focus:border-accent-primary focus:outline-none"
             />
           </div>
           {hasFilters && (

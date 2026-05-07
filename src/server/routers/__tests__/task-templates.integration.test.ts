@@ -5,10 +5,7 @@ import type { User } from "@prisma/client";
 import { taskTemplatesRouter } from "@/server/routers/task-templates";
 
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });
@@ -97,9 +94,9 @@ describe("taskTemplates.create", () => {
 
   it("rejects unknown tag_ids (FORBIDDEN)", async () => {
     const caller = makeCaller();
-    await expect(
-      caller.create({ name: "Bad tag", tag_ids: [uuidv7()] }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.create({ name: "Bad tag", tag_ids: [uuidv7()] })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 
@@ -161,17 +158,17 @@ describe("taskTemplates.update", () => {
   it("rejects unknown context_ids on update (FORBIDDEN)", async () => {
     const caller = makeCaller();
     const created = await caller.create({ name: "Update context security" });
-    await expect(
-      caller.update({ id: created!.id, context_ids: [uuidv7()] }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.update({ id: created!.id, context_ids: [uuidv7()] })).rejects.toMatchObject(
+      { code: "FORBIDDEN" },
+    );
   });
 
   it("rejects unknown tag_ids on update (FORBIDDEN)", async () => {
     const caller = makeCaller();
     const created = await caller.create({ name: "Update tag security" });
-    await expect(
-      caller.update({ id: created!.id, tag_ids: [uuidv7()] }),
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.update({ id: created!.id, tag_ids: [uuidv7()] })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 });
 

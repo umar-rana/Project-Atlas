@@ -175,9 +175,7 @@ function ToolbarButton({ active, onClick, title, children, className }: ToolbarB
       className={cn(
         "flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-sm font-medium transition-colors duration-fast ease-standard",
         "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
-        active
-          ? "bg-surface-hover text-text-primary"
-          : "text-text-tertiary",
+        active ? "bg-surface-hover text-text-primary" : "text-text-tertiary",
         className,
       )}
     >
@@ -222,7 +220,7 @@ function LinkEditor({ editor, onClose }: LinkEditorProps) {
           if (e.key === "Enter") apply();
           if (e.key === "Escape") onClose();
         }}
-        className="h-7 w-52 rounded border border-border-default bg-surface-base px-2 text-xs text-text-primary placeholder:text-text-disabled outline-none focus:border-border-focus"
+        className="h-7 w-52 rounded border border-border-default bg-surface-base px-2 text-xs text-text-primary outline-none placeholder:text-text-disabled focus:border-border-focus"
       />
       <button
         type="button"
@@ -269,9 +267,7 @@ function BlockDropdown({ editor, onClose }: BlockDropdownProps) {
             active === bt.id && "bg-surface-hover font-medium text-text-primary",
           )}
         >
-          <span className="w-6 text-center text-xs font-mono text-text-tertiary">
-            {bt.icon}
-          </span>
+          <span className="w-6 text-center font-mono text-xs text-text-tertiary">{bt.icon}</span>
           {bt.label}
         </button>
       ))}
@@ -311,8 +307,8 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
                 c.value === null
                   ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
                   : activeTextColor === c.value
-                  ? "border-accent-primary"
-                  : "border-transparent",
+                    ? "border-accent-primary"
+                    : "border-transparent",
               )}
               style={c.value ? { backgroundColor: c.value } : undefined}
             >
@@ -343,8 +339,8 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
                 c.value === null
                   ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
                   : activeHighlight === c.value
-                  ? "border-accent-primary"
-                  : "border-transparent",
+                    ? "border-accent-primary"
+                    : "border-transparent",
               )}
               style={c.value ? { backgroundColor: c.value } : undefined}
             >
@@ -402,7 +398,7 @@ export function EditorBubbleMenu({ editor }: Props) {
       shouldShow={shouldShow}
     >
       <div
-        className="flex items-center rounded-lg border border-border-default bg-surface-raised shadow-2 animate-in fade-in-0 zoom-in-95 duration-100"
+        className="flex items-center rounded-lg border border-border-default bg-surface-raised shadow-2 duration-100 animate-in fade-in-0 zoom-in-95"
         onMouseDown={(e) => e.preventDefault()}
       >
         {mode === "toolbar" && (
@@ -481,17 +477,11 @@ export function EditorBubbleMenu({ editor }: Props) {
           </>
         )}
 
-        {mode === "link" && (
-          <LinkEditor editor={editor} onClose={closePopover} />
-        )}
+        {mode === "link" && <LinkEditor editor={editor} onClose={closePopover} />}
 
-        {mode === "block" && (
-          <BlockDropdown editor={editor} onClose={closePopover} />
-        )}
+        {mode === "block" && <BlockDropdown editor={editor} onClose={closePopover} />}
 
-        {mode === "color" && (
-          <ColorPopover editor={editor} onClose={closePopover} />
-        )}
+        {mode === "color" && <ColorPopover editor={editor} onClose={closePopover} />}
 
         {mode !== "toolbar" && (
           <button

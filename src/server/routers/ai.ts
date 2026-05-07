@@ -9,11 +9,7 @@ function utcStartOfDayInTz(tz: string, now: Date): Date {
   return fromZonedTime(zonedMidnight, tz);
 }
 
-function utcStartOfWeekInTz(
-  tz: string,
-  now: Date,
-  weekStart: "sunday" | "monday",
-): Date {
+function utcStartOfWeekInTz(tz: string, now: Date, weekStart: "sunday" | "monday"): Date {
   const weekStartsOn = weekStart === "monday" ? 1 : 0;
   const zoned = toZonedTime(now, tz);
   const zonedWeekStart = startOfWeek(zoned, { weekStartsOn });
@@ -36,44 +32,46 @@ export const aiRouter = router({
       return fromZonedTime(startOfDay(zonedMonthStart), timezone);
     })();
 
-    const [allTime, daily, weekly, monthly, byTask, failureCount, recentErrors] = await Promise.all([
-      db.aICallLog.aggregate({
-        where: { user_id: userId },
-        _count: { id: true },
-        _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
-      }),
-      db.aICallLog.aggregate({
-        where: { user_id: userId, created_at: { gte: startOfDayUtc } },
-        _count: { id: true },
-        _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
-      }),
-      db.aICallLog.aggregate({
-        where: { user_id: userId, created_at: { gte: startOfWeekUtc } },
-        _count: { id: true },
-        _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
-      }),
-      db.aICallLog.aggregate({
-        where: { user_id: userId, created_at: { gte: startOfMonthUtc } },
-        _count: { id: true },
-        _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
-      }),
-      db.aICallLog.groupBy({
-        by: ["task"],
-        where: { user_id: userId },
-        _count: { id: true },
-        _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
-        orderBy: { _sum: { cost_usd: "desc" } },
-      }),
-      db.aICallLog.count({
-        where: { user_id: userId, success: false },
-      }),
-      db.aICallLog.findMany({
-        where: { user_id: userId, success: false },
-        orderBy: { created_at: "desc" },
-        take: 5,
-        select: { id: true, task: true, error: true, created_at: true },
-      }),
-    ]);
+    const [allTime, daily, weekly, monthly, byTask, failureCount, recentErrors] = await Promise.all(
+      [
+        db.aICallLog.aggregate({
+          where: { user_id: userId },
+          _count: { id: true },
+          _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
+        }),
+        db.aICallLog.aggregate({
+          where: { user_id: userId, created_at: { gte: startOfDayUtc } },
+          _count: { id: true },
+          _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
+        }),
+        db.aICallLog.aggregate({
+          where: { user_id: userId, created_at: { gte: startOfWeekUtc } },
+          _count: { id: true },
+          _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
+        }),
+        db.aICallLog.aggregate({
+          where: { user_id: userId, created_at: { gte: startOfMonthUtc } },
+          _count: { id: true },
+          _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
+        }),
+        db.aICallLog.groupBy({
+          by: ["task"],
+          where: { user_id: userId },
+          _count: { id: true },
+          _sum: { input_tokens: true, output_tokens: true, cost_usd: true },
+          orderBy: { _sum: { cost_usd: "desc" } },
+        }),
+        db.aICallLog.count({
+          where: { user_id: userId, success: false },
+        }),
+        db.aICallLog.findMany({
+          where: { user_id: userId, success: false },
+          orderBy: { created_at: "desc" },
+          take: 5,
+          select: { id: true, task: true, error: true, created_at: true },
+        }),
+      ],
+    );
 
     return {
       budgetUsd: ctx.user.ai_budget_usd ?? null,

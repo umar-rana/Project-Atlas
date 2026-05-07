@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Table2,
-  SlidersHorizontal,
-  Filter,
-} from "lucide-react";
+import { ArrowLeft, Table2, SlidersHorizontal, Filter } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { NotesShell } from "@/components/notes/notes-shell";
 import { TableGrid } from "@/components/tables/table-grid";
@@ -29,7 +24,11 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 }
 
 function saveToStorage(key: string, value: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
 }
 
 export default function TableEditorPage() {
@@ -42,11 +41,11 @@ export default function TableEditorPage() {
   const currencySymbol = userQuery.data?.currency_symbol ?? "$";
 
   const [sort, setSort] = React.useState<SortState>(() =>
-    loadFromStorage(SORT_STORAGE_KEY(tableId), { column_id: null, direction: "asc" as const })
+    loadFromStorage(SORT_STORAGE_KEY(tableId), { column_id: null, direction: "asc" as const }),
   );
 
   const [filter, setFilter] = React.useState<FilterState | null>(() =>
-    loadFromStorage(FILTER_STORAGE_KEY(tableId), null)
+    loadFromStorage(FILTER_STORAGE_KEY(tableId), null),
   );
 
   const [showSortPanel, setShowSortPanel] = React.useState(false);
@@ -77,9 +76,12 @@ export default function TableEditorPage() {
     } else if (filterOp === "contains_any_of" || filterOp === "contains_all_of") {
       handleFilterChange({ column_id: filterColId, operator: filterOp, value: filterMultiIds });
     } else {
-      const val = (col?.type === "number" || col?.type === "currency") ? parseFloat(filterVal) || null
-        : col?.type === "checkbox" ? filterVal === "true"
-        : filterVal || null;
+      const val =
+        col?.type === "number" || col?.type === "currency"
+          ? parseFloat(filterVal) || null
+          : col?.type === "checkbox"
+            ? filterVal === "true"
+            : filterVal || null;
       handleFilterChange({ column_id: filterColId, operator: filterOp, value: val });
     }
     setShowFilterPanel(false);
@@ -114,7 +116,7 @@ export default function TableEditorPage() {
   // The tRPC inferred return type for tables.get nests too deeply for tsc to
   // resolve; casting via `unknown` severs the chain without losing runtime safety.
   type RawCell = { column_id: string; value: unknown; [k: string]: unknown };
-  type RawRow  = { cells: RawCell[]; [k: string]: unknown };
+  type RawRow = { cells: RawCell[]; [k: string]: unknown };
   const tableRows = table.rows as unknown as RawRow[];
 
   const visibleRowCount = filter
@@ -162,7 +164,10 @@ export default function TableEditorPage() {
             </span>
           )}
           {table.drive_sync_error && (
-            <span className="ml-auto font-ui text-2xs text-destructive" title={table.drive_sync_error}>
+            <span
+              className="text-destructive ml-auto font-ui text-2xs"
+              title={table.drive_sync_error}
+            >
               Sync error
             </span>
           )}
@@ -174,7 +179,10 @@ export default function TableEditorPage() {
           <div className="relative">
             <button
               type="button"
-              onClick={() => { setShowSortPanel(!showSortPanel); setShowFilterPanel(false); }}
+              onClick={() => {
+                setShowSortPanel(!showSortPanel);
+                setShowFilterPanel(false);
+              }}
               className={cn(
                 "flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-ui text-xs",
                 sort.column_id
@@ -183,20 +191,28 @@ export default function TableEditorPage() {
               )}
             >
               <SlidersHorizontal size={12} />
-              Sort{sort.column_id ? `: ${table.columns.find((c) => c.id === sort.column_id)?.name}` : ""}
+              Sort
+              {sort.column_id
+                ? `: ${table.columns.find((c) => c.id === sort.column_id)?.name}`
+                : ""}
             </button>
 
             {showSortPanel && (
-              <div className="absolute left-0 top-9 z-40 w-64 rounded-lg border border-border-default bg-popover shadow-lg">
+              <div className="bg-popover absolute left-0 top-9 z-40 w-64 rounded-lg border border-border-default shadow-lg">
                 <div className="p-3">
                   <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Sort by</p>
                   <div className="flex flex-col gap-1">
                     <button
                       type="button"
-                      onClick={() => { handleSortChange({ column_id: null, direction: "asc" }); setShowSortPanel(false); }}
+                      onClick={() => {
+                        handleSortChange({ column_id: null, direction: "asc" });
+                        setShowSortPanel(false);
+                      }}
                       className={cn(
                         "rounded-sm px-2 py-1 text-left font-ui text-xs",
-                        !sort.column_id ? "bg-accent-primary-subtle text-accent-primary" : "text-text-secondary hover:bg-surface-hover",
+                        !sort.column_id
+                          ? "bg-accent-primary-subtle text-accent-primary"
+                          : "text-text-secondary hover:bg-surface-hover",
                       )}
                     >
                       — None (manual order) —
@@ -207,7 +223,10 @@ export default function TableEditorPage() {
                           <button
                             key={dir}
                             type="button"
-                            onClick={() => { handleSortChange({ column_id: col.id, direction: dir }); setShowSortPanel(false); }}
+                            onClick={() => {
+                              handleSortChange({ column_id: col.id, direction: dir });
+                              setShowSortPanel(false);
+                            }}
                             className={cn(
                               "flex-1 rounded-sm px-2 py-1 text-left font-ui text-xs",
                               sort.column_id === col.id && sort.direction === dir
@@ -230,7 +249,10 @@ export default function TableEditorPage() {
           <div className="relative">
             <button
               type="button"
-              onClick={() => { setShowFilterPanel(!showFilterPanel); setShowSortPanel(false); }}
+              onClick={() => {
+                setShowFilterPanel(!showFilterPanel);
+                setShowSortPanel(false);
+              }}
               className={cn(
                 "flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-ui text-xs",
                 filter
@@ -245,7 +267,7 @@ export default function TableEditorPage() {
             </button>
 
             {showFilterPanel && (
-              <div className="absolute left-0 top-9 z-40 w-72 rounded-lg border border-border-default bg-popover p-3 shadow-lg">
+              <div className="bg-popover absolute left-0 top-9 z-40 w-72 rounded-lg border border-border-default p-3 shadow-lg">
                 <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Filter rows</p>
                 <div className="flex flex-col gap-2">
                   <select
@@ -254,14 +276,16 @@ export default function TableEditorPage() {
                       setFilterColId(e.target.value);
                       setFilterMultiIds([]);
                       const col = table.columns.find((c) => c.id === e.target.value);
-                      const firstOp = getOperatorsForType(col?.type as ColumnType ?? "text")[0];
+                      const firstOp = getOperatorsForType((col?.type as ColumnType) ?? "text")[0];
                       if (firstOp) setFilterOp(firstOp);
                     }}
                     className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
                   >
                     <option value="">— Pick column —</option>
                     {table.columns.map((col) => (
-                      <option key={col.id} value={col.id}>{col.name}</option>
+                      <option key={col.id} value={col.id}>
+                        {col.name}
+                      </option>
                     ))}
                   </select>
 
@@ -272,46 +296,67 @@ export default function TableEditorPage() {
                         onChange={(e) => setFilterOp(e.target.value as FilterOperator)}
                         className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
                       >
-                        {getOperatorsForType(table.columns.find((c) => c.id === filterColId)?.type as ColumnType ?? "text").map((op) => (
-                          <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
+                        {getOperatorsForType(
+                          (table.columns.find((c) => c.id === filterColId)?.type as ColumnType) ??
+                            "text",
+                        ).map((op) => (
+                          <option key={op} value={op}>
+                            {OPERATOR_LABELS[op]}
+                          </option>
                         ))}
                       </select>
 
-                      {filterOp !== "is_empty" && filterOp !== "is_not_empty" && filterOp !== "contains_any_of" && filterOp !== "contains_all_of" && (
-                        <input
-                          value={filterVal}
-                          onChange={(e) => setFilterVal(e.target.value)}
-                          placeholder="Filter value…"
-                          className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
-                        />
-                      )}
-                      {(filterOp === "contains_any_of" || filterOp === "contains_all_of") && (() => {
-                        const col = table.columns.find((c) => c.id === filterColId);
-                        const opts = ((col?.config as Record<string, unknown>)?.options ?? []) as Array<{ id: string; label: string; color?: string }>;
-                        return (
-                          <div className="flex flex-wrap gap-1">
-                            {opts.length === 0 && (
-                              <span className="font-ui text-xs text-text-disabled">No options defined for this column</span>
-                            )}
-                            {opts.map((opt) => {
-                              const active = filterMultiIds.includes(opt.id);
-                              return (
-                                <button
-                                  key={opt.id}
-                                  type="button"
-                                  onClick={() => setFilterMultiIds((prev) =>
-                                    active ? prev.filter((id) => id !== opt.id) : [...prev, opt.id]
-                                  )}
-                                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-xs border ${active ? "border-accent-primary bg-accent-primary-subtle text-accent-primary" : "border-border-default bg-surface-base text-text-secondary"}`}
-                                >
-                                  {opt.color && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: opt.color }} />}
-                                  {opt.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
+                      {filterOp !== "is_empty" &&
+                        filterOp !== "is_not_empty" &&
+                        filterOp !== "contains_any_of" &&
+                        filterOp !== "contains_all_of" && (
+                          <input
+                            value={filterVal}
+                            onChange={(e) => setFilterVal(e.target.value)}
+                            placeholder="Filter value…"
+                            className="rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:outline-none"
+                          />
+                        )}
+                      {(filterOp === "contains_any_of" || filterOp === "contains_all_of") &&
+                        (() => {
+                          const col = table.columns.find((c) => c.id === filterColId);
+                          const opts = ((col?.config as Record<string, unknown>)?.options ??
+                            []) as Array<{ id: string; label: string; color?: string }>;
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {opts.length === 0 && (
+                                <span className="font-ui text-xs text-text-disabled">
+                                  No options defined for this column
+                                </span>
+                              )}
+                              {opts.map((opt) => {
+                                const active = filterMultiIds.includes(opt.id);
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() =>
+                                      setFilterMultiIds((prev) =>
+                                        active
+                                          ? prev.filter((id) => id !== opt.id)
+                                          : [...prev, opt.id],
+                                      )
+                                    }
+                                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-ui text-xs ${active ? "border-accent-primary bg-accent-primary-subtle text-accent-primary" : "border-border-default bg-surface-base text-text-secondary"}`}
+                                  >
+                                    {opt.color && (
+                                      <span
+                                        className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                        style={{ backgroundColor: opt.color }}
+                                      />
+                                    )}
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
 
                       <div className="flex gap-2">
                         <button
@@ -342,7 +387,10 @@ export default function TableEditorPage() {
         {/* Grid */}
         <div
           className="flex-1 overflow-auto"
-          onClick={() => { setShowSortPanel(false); setShowFilterPanel(false); }}
+          onClick={() => {
+            setShowSortPanel(false);
+            setShowFilterPanel(false);
+          }}
         >
           <div className="mx-auto max-w-5xl px-4 py-4">
             <TableGrid

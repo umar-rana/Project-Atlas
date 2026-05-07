@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface UsageChartProps {
   data: Array<{
@@ -32,11 +24,9 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   const value = payload[0]?.value;
   if (value === undefined) return null;
   return (
-    <div className="rounded-lg border border-border-default bg-surface-raised px-3 py-2 shadow-1 text-xs">
+    <div className="rounded-lg border border-border-default bg-surface-raised px-3 py-2 text-xs shadow-1">
       <p className="mb-1 font-mono text-text-secondary">{label}</p>
-      <p className="font-semibold text-accent-primary">
-        ${value.toFixed(4)}
-      </p>
+      <p className="font-semibold text-accent-primary">${value.toFixed(4)}</p>
     </div>
   );
 }

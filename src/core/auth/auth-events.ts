@@ -29,6 +29,9 @@ export async function logAuthEvent(
       throwOnError: true,
     });
   } catch (err) {
-    log.error({ err, action, clerkId, userId }, "Auth event write failed — this indicates a database issue. Check DB connectivity and AuditLog table.");
+    log.error(
+      { err, action, clerkId, userId },
+      "Auth event write failed — this indicates a database issue. Check DB connectivity and AuditLog table.",
+    );
   }
 }

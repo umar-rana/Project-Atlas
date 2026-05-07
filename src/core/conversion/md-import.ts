@@ -1,7 +1,6 @@
 import "server-only";
 import matter from "gray-matter";
 import { markdownToTiptap, tiptapToPlainText } from "./tiptap-converter";
-import { tiptapToMarkdown } from "@/core/editor/markdown-export";
 import type { TiptapDocument } from "./tiptap-converter";
 
 export interface FrontmatterData {
@@ -50,7 +49,12 @@ function resolveTitle(
   }
 
   // Fallback: use filename without extension
-  return fallbackFilename.replace(/\.(md|markdown)$/i, "").replace(/[-_]+/g, " ").trim() || "Untitled";
+  return (
+    fallbackFilename
+      .replace(/\.(md|markdown)$/i, "")
+      .replace(/[-_]+/g, " ")
+      .trim() || "Untitled"
+  );
 }
 
 /**

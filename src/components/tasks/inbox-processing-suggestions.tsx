@@ -93,10 +93,14 @@ export function InboxProcessingSuggestions({
     });
     if (pendingContextNames.length > 0) {
       const existingIds = pendingContextNames
-        .map((cName: string) => (contexts.data ?? []).find((c) => c.name.toLowerCase() === cName.toLowerCase())?.id)
+        .map(
+          (cName: string) =>
+            (contexts.data ?? []).find((c) => c.name.toLowerCase() === cName.toLowerCase())?.id,
+        )
         .filter((id): id is string => !!id);
       const newNames = pendingContextNames.filter(
-        (cName: string) => !(contexts.data ?? []).some((c) => c.name.toLowerCase() === cName.toLowerCase()),
+        (cName: string) =>
+          !(contexts.data ?? []).some((c) => c.name.toLowerCase() === cName.toLowerCase()),
       );
       suggestions.push({
         key: "contexts",
@@ -116,17 +120,21 @@ export function InboxProcessingSuggestions({
     });
     if (pendingTagNames.length > 0) {
       // Split into: already-existing (unapplied) vs brand-new (AI-suggested, never created)
-      const existingUnappliedNames = pendingTagNames.filter(
-        (tName: string) => (tags.data ?? []).some((t) => t.name.toLowerCase() === tName.toLowerCase()),
+      const existingUnappliedNames = pendingTagNames.filter((tName: string) =>
+        (tags.data ?? []).some((t) => t.name.toLowerCase() === tName.toLowerCase()),
       );
       const brandNewNames = pendingTagNames.filter(
-        (tName: string) => !(tags.data ?? []).some((t) => t.name.toLowerCase() === tName.toLowerCase()),
+        (tName: string) =>
+          !(tags.data ?? []).some((t) => t.name.toLowerCase() === tName.toLowerCase()),
       );
 
       // Existing but unapplied: show as normal "Apply tags" suggestion
       if (existingUnappliedNames.length > 0) {
         const existingIds = existingUnappliedNames
-          .map((tName: string) => (tags.data ?? []).find((tag) => tag.name.toLowerCase() === tName.toLowerCase())?.id)
+          .map(
+            (tName: string) =>
+              (tags.data ?? []).find((tag) => tag.name.toLowerCase() === tName.toLowerCase())?.id,
+          )
           .filter((id): id is string => !!id);
         suggestions.push({
           key: "tags",
@@ -162,8 +170,8 @@ export function InboxProcessingSuggestions({
     parseLog.parse_tier === "local_only"
       ? "local"
       : parseLog.parse_tier === "local_plus_ai"
-      ? "local+AI"
-      : "AI";
+        ? "local+AI"
+        : "AI";
   const confidence = parseLog.local_confidence;
 
   async function resolveOrCreateContext(name: string): Promise<string | null> {
@@ -223,7 +231,9 @@ export function InboxProcessingSuggestions({
         else failed.push(name);
       }
       if (failed.length > 0) {
-        toast.error(`Could not create context${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `@${n}`).join(", ")}`);
+        toast.error(
+          `Could not create context${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `@${n}`).join(", ")}`,
+        );
         return;
       }
       const allIds = [...(s.ids ?? []), ...createdIds];
@@ -245,7 +255,9 @@ export function InboxProcessingSuggestions({
         else failed.push(name);
       }
       if (failed.length > 0) {
-        toast.error(`Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`);
+        toast.error(
+          `Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`,
+        );
         return;
       }
       const allIds = [...(s.ids ?? []), ...createdIds];
@@ -269,7 +281,9 @@ export function InboxProcessingSuggestions({
         else failed.push(name);
       }
       if (failed.length > 0) {
-        toast.error(`Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`);
+        toast.error(
+          `Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`,
+        );
         return;
       }
       const newTagsNext = [...new Set([...currentTagIds, ...createdIds])];
@@ -297,7 +311,9 @@ export function InboxProcessingSuggestions({
       else failed.push(name);
     }
     if (failed.length > 0) {
-      toast.error(`Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`);
+      toast.error(
+        `Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`,
+      );
       return;
     }
     const next = [...new Set([...currentTagIds, ...createdIds])];
@@ -329,7 +345,9 @@ export function InboxProcessingSuggestions({
           task_id: taskId,
           field: "project",
           original: s.hint,
-          new_value: (projects.data ?? []).find((p) => p.id === differentProjectId)?.title ?? differentProjectId,
+          new_value:
+            (projects.data ?? []).find((p) => p.id === differentProjectId)?.title ??
+            differentProjectId,
         });
         onProjectAccepted?.(differentProjectId);
         setAccepted((prev) => new Set([...prev, s.key]));
@@ -338,7 +356,10 @@ export function InboxProcessingSuggestions({
         toast.error("Could not apply project — please try again.");
       }
     } else if (s.type === "context" && differentContexts.trim()) {
-      const typedNames = differentContexts.split(",").map((c) => c.trim()).filter(Boolean);
+      const typedNames = differentContexts
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
       const resolvedIds: string[] = [];
       const failed: string[] = [];
       for (const name of typedNames) {
@@ -347,7 +368,9 @@ export function InboxProcessingSuggestions({
         else failed.push(name);
       }
       if (failed.length > 0) {
-        toast.error(`Could not create context${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `@${n}`).join(", ")}`);
+        toast.error(
+          `Could not create context${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `@${n}`).join(", ")}`,
+        );
         return;
       }
       if (resolvedIds.length > 0) {
@@ -368,7 +391,10 @@ export function InboxProcessingSuggestions({
         }
       }
     } else if (s.type === "tag" && differentTags.trim()) {
-      const typedNames = differentTags.split(",").map((t) => t.trim()).filter(Boolean);
+      const typedNames = differentTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
       const resolvedIds: string[] = [];
       const failed: string[] = [];
       for (const name of typedNames) {
@@ -377,7 +403,9 @@ export function InboxProcessingSuggestions({
         else failed.push(name);
       }
       if (failed.length > 0) {
-        toast.error(`Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`);
+        toast.error(
+          `Could not create tag${failed.length > 1 ? "s" : ""}: ${failed.map((n) => `#${n}`).join(", ")}`,
+        );
         return;
       }
       if (resolvedIds.length > 0) {
@@ -406,7 +434,7 @@ export function InboxProcessingSuggestions({
   }
 
   return (
-    <section className="mt-3 rounded-md border border-accent-info/30 bg-accent-info/5 p-2.5">
+    <section className="border-accent-info/30 bg-accent-info/5 mt-3 rounded-md border p-2.5">
       <button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
@@ -431,15 +459,19 @@ export function InboxProcessingSuggestions({
                     <div className="flex min-w-0 items-center gap-1">
                       <Tag size={9} className="shrink-0 text-accent-info" aria-hidden />
                       <span className="font-ui text-2xs text-text-tertiary">Create new tags: </span>
-                      <span className="truncate font-ui text-2xs font-medium text-text-primary">{s.hint}</span>
+                      <span className="truncate font-ui text-2xs font-medium text-text-primary">
+                        {s.hint}
+                      </span>
                     </div>
                     <div className="flex shrink-0 gap-1">
                       <button
                         type="button"
-                        onClick={() => { void handleAccept(s); }}
+                        onClick={() => {
+                          void handleAccept(s);
+                        }}
                         disabled={disabled || updateTask.isPending || tagCreate.isPending}
                         className={cn(
-                          "flex items-center gap-0.5 rounded-sm border border-accent-success/40 bg-accent-success/10 px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
+                          "border-accent-success/40 bg-accent-success/10 flex items-center gap-0.5 rounded-sm border px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
                           "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
                         )}
                       >
@@ -501,15 +533,25 @@ export function InboxProcessingSuggestions({
                       <div className="flex justify-end gap-1">
                         <button
                           type="button"
-                          onClick={() => { void handleAcceptPickedNewTags(s); }}
-                          disabled={pickedNewTags.size === 0 || disabled || updateTask.isPending || tagCreate.isPending}
+                          onClick={() => {
+                            void handleAcceptPickedNewTags(s);
+                          }}
+                          disabled={
+                            pickedNewTags.size === 0 ||
+                            disabled ||
+                            updateTask.isPending ||
+                            tagCreate.isPending
+                          }
                           className="rounded-sm bg-accent-primary px-2 py-0.5 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
                         >
                           Add selected
                         </button>
                         <button
                           type="button"
-                          onClick={() => { setPickWhichOpen(false); setPickedNewTags(new Set()); }}
+                          onClick={() => {
+                            setPickWhichOpen(false);
+                            setPickedNewTags(new Set());
+                          }}
                           className="rounded-sm border border-border-subtle px-2 py-0.5 font-ui text-2xs text-text-tertiary hover:border-border-default"
                         >
                           Cancel
@@ -523,16 +565,26 @@ export function InboxProcessingSuggestions({
                 <div className="flex items-center justify-between gap-2 rounded-sm bg-surface-base px-2 py-1.5">
                   <div className="min-w-0">
                     <span className="font-ui text-2xs text-text-tertiary">{s.label}: </span>
-                    <span className="truncate font-ui text-2xs font-medium text-text-primary">{s.hint}</span>
+                    <span className="truncate font-ui text-2xs font-medium text-text-primary">
+                      {s.hint}
+                    </span>
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <button
                       type="button"
-                      onClick={() => { void handleAccept(s); }}
-                      disabled={disabled || updateTask.isPending || (s.type === "project" && !s.projectId)}
-                      title={s.type === "project" && !s.projectId ? `No project matches "${s.hint}" — use Different… to choose one` : undefined}
+                      onClick={() => {
+                        void handleAccept(s);
+                      }}
+                      disabled={
+                        disabled || updateTask.isPending || (s.type === "project" && !s.projectId)
+                      }
+                      title={
+                        s.type === "project" && !s.projectId
+                          ? `No project matches "${s.hint}" — use Different… to choose one`
+                          : undefined
+                      }
                       className={cn(
-                        "flex items-center gap-0.5 rounded-sm border border-accent-success/40 bg-accent-success/10 px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
+                        "border-accent-success/40 bg-accent-success/10 flex items-center gap-0.5 rounded-sm border px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
                         "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
                       )}
                     >
@@ -575,12 +627,16 @@ export function InboxProcessingSuggestions({
                       >
                         <option value="">Choose a project…</option>
                         {(projects.data ?? []).map((p) => (
-                          <option key={p.id} value={p.id}>{p.title}</option>
+                          <option key={p.id} value={p.id}>
+                            {p.title}
+                          </option>
                         ))}
                       </select>
                       <button
                         type="button"
-                        onClick={() => { void handleDifferentApply(s); }}
+                        onClick={() => {
+                          void handleDifferentApply(s);
+                        }}
                         disabled={!differentProjectId || updateTask.isPending}
                         className="shrink-0 rounded-sm bg-accent-primary px-2 py-1 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
                       >
@@ -598,7 +654,9 @@ export function InboxProcessingSuggestions({
                       />
                       <button
                         type="button"
-                        onClick={() => { void handleDifferentApply(s); }}
+                        onClick={() => {
+                          void handleDifferentApply(s);
+                        }}
                         disabled={!differentContexts.trim() || updateTask.isPending}
                         className="shrink-0 rounded-sm bg-accent-primary px-2 py-1 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
                       >
@@ -616,7 +674,9 @@ export function InboxProcessingSuggestions({
                       />
                       <button
                         type="button"
-                        onClick={() => { void handleDifferentApply(s); }}
+                        onClick={() => {
+                          void handleDifferentApply(s);
+                        }}
                         disabled={!differentTags.trim() || updateTask.isPending}
                         className="shrink-0 rounded-sm bg-accent-primary px-2 py-1 font-ui text-2xs font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
                       >

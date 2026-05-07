@@ -51,9 +51,7 @@ export function TableSidePanel({ tableId, onClose, currencySymbol = "$" }: Table
             {table?.name ?? "Loading…"}
           </h2>
           {table && (
-            <span className="font-ui text-xs text-text-disabled">
-              {table.rows.length} rows
-            </span>
+            <span className="font-ui text-xs text-text-disabled">{table.rows.length} rows</span>
           )}
         </div>
         <div className="flex items-center gap-1">

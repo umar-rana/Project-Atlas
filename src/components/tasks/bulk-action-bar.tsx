@@ -23,32 +23,47 @@ export function BulkActionBar(): React.ReactElement | null {
   const tags = trpc.tags.list.useQuery({ limit: 200 }, { enabled: ids.length > 1 });
 
   const bulkComplete = trpc.tasks.bulkComplete.useMutation({
-    onSuccess: () => { toast.success("Marked complete"); clearSelection(); },
+    onSuccess: () => {
+      toast.success("Marked complete");
+      clearSelection();
+    },
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
     },
   });
   const bulkDelete = trpc.tasks.bulkDelete.useMutation({
-    onSuccess: () => { toast.success("Moved to trash"); clearSelection(); },
+    onSuccess: () => {
+      toast.success("Moved to trash");
+      clearSelection();
+    },
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
     },
   });
   const bulkMove = trpc.tasks.bulkMoveToProject.useMutation({
-    onSuccess: () => { toast.success("Moved to project"); clearSelection(); },
+    onSuccess: () => {
+      toast.success("Moved to project");
+      clearSelection();
+    },
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.projects.list.invalidate();
     },
   });
   const bulkAddContext = trpc.tasks.bulkAddContext.useMutation({
-    onSuccess: () => { toast.success("Context added"); clearSelection(); },
+    onSuccess: () => {
+      toast.success("Context added");
+      clearSelection();
+    },
     onSettled: () => utils.tasks.list.invalidate(),
   });
   const bulkAddTag = trpc.tasks.bulkAddTag.useMutation({
-    onSuccess: () => { toast.success("Tag added"); clearSelection(); },
+    onSuccess: () => {
+      toast.success("Tag added");
+      clearSelection();
+    },
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tags.list.invalidate();
@@ -74,9 +89,14 @@ export function BulkActionBar(): React.ReactElement | null {
               <Folder size={12} /> Move to…
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => bulkMove.mutate({ ids, project_id: null })}>Inbox</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => bulkMove.mutate({ ids, project_id: null })}>
+                Inbox
+              </DropdownMenuItem>
               {(projects.data ?? []).map((p) => (
-                <DropdownMenuItem key={p.id} onSelect={() => bulkMove.mutate({ ids, project_id: p.id })}>
+                <DropdownMenuItem
+                  key={p.id}
+                  onSelect={() => bulkMove.mutate({ ids, project_id: p.id })}
+                >
                   {p.title}
                 </DropdownMenuItem>
               ))}
@@ -88,7 +108,10 @@ export function BulkActionBar(): React.ReactElement | null {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {(contexts.data ?? []).map((c) => (
-                <DropdownMenuItem key={c.id} onSelect={() => bulkAddContext.mutate({ ids, context_id: c.id })}>
+                <DropdownMenuItem
+                  key={c.id}
+                  onSelect={() => bulkAddContext.mutate({ ids, context_id: c.id })}
+                >
                   {c.name}
                 </DropdownMenuItem>
               ))}
@@ -103,7 +126,10 @@ export function BulkActionBar(): React.ReactElement | null {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {(tags.data ?? []).slice(0, 30).map((t) => (
-                <DropdownMenuItem key={t.id} onSelect={() => bulkAddTag.mutate({ ids, tag_id: t.id })}>
+                <DropdownMenuItem
+                  key={t.id}
+                  onSelect={() => bulkAddTag.mutate({ ids, tag_id: t.id })}
+                >
                   #{t.name}
                 </DropdownMenuItem>
               ))}

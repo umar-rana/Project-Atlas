@@ -64,7 +64,10 @@ export function HelpShell({ onClose }: HelpShellProps): React.ReactElement {
         changelogUnread={changelogUnread}
         searchRef={searchRef}
         onNavigate={handleNavigate}
-        onAskAI={() => { setShowAI(true); setShowChangelog(false); }}
+        onAskAI={() => {
+          setShowAI(true);
+          setShowChangelog(false);
+        }}
         onChangelog={handleChangelog}
       />
 

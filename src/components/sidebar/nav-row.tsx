@@ -26,9 +26,7 @@ export function NavRow({ href, active, icon, label, badge }: NavRowProps) {
     >
       <span className="shrink-0 text-text-tertiary">{icon}</span>
       <span className="flex-1 truncate">{label}</span>
-      {badge !== undefined && badge > 0 ? (
-        <Badge variant="neutral" count={badge} />
-      ) : null}
+      {badge !== undefined && badge > 0 ? <Badge variant="neutral" count={badge} /> : null}
     </Link>
   );
 }

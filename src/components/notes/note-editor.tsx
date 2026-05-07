@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import { buildExtensions } from "@/core/editor/tiptap-config";
 import {
@@ -62,10 +57,7 @@ function markdownToTiptapFallback(markdown: string): object {
 
 type PickerPosition = { top: number; left: number };
 
-function useDebouncedCallback<T extends (...args: never[]) => void>(
-  fn: T,
-  delay: number,
-): T {
+function useDebouncedCallback<T extends (...args: never[]) => void>(fn: T, delay: number): T {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fnRef = useRef(fn);
   fnRef.current = fn;
@@ -91,10 +83,7 @@ function getCaretPosition(editor: Editor): PickerPosition {
   };
 }
 
-async function uploadFileToNote(
-  file: File,
-  noteId: string,
-): Promise<{ file_id: string } | null> {
+async function uploadFileToNote(file: File, noteId: string): Promise<{ file_id: string } | null> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("parent_type", "Note");
@@ -208,12 +197,9 @@ export function NoteEditor({
     [noteId, title, updateMutation, utils],
   );
 
-  const debouncedSave = useDebouncedCallback(
-    (editor: Editor, overrideTitle?: string) => {
-      void saveNote(editor, overrideTitle);
-    },
-    1000,
-  );
+  const debouncedSave = useDebouncedCallback((editor: Editor, overrideTitle?: string) => {
+    void saveNote(editor, overrideTitle);
+  }, 1000);
 
   const editor = useEditor({
     extensions: [
@@ -227,9 +213,7 @@ export function NoteEditor({
         try {
           const parsed = JSON.parse(initialJson) as { type?: string; content?: unknown[] };
           const isValidDoc =
-            parsed.type === "doc" &&
-            Array.isArray(parsed.content) &&
-            parsed.content.length > 0;
+            parsed.type === "doc" && Array.isArray(parsed.content) && parsed.content.length > 0;
           if (isValidDoc) {
             return parsed;
           }
@@ -374,10 +358,7 @@ export function NoteEditor({
                 const imgUrl = `/api/attachments/${data.file_id}`;
                 const pos = dropPos?.pos ?? view.state.doc.content.size;
                 view.dispatch(
-                  view.state.tr.insert(
-                    pos,
-                    view.state.schema.nodes.image!.create({ src: imgUrl }),
-                  ),
+                  view.state.tr.insert(pos, view.state.schema.nodes.image!.create({ src: imgUrl })),
                 );
                 invalidateAfterUpload();
               } else {
@@ -522,10 +503,20 @@ export function NoteEditor({
           ...(family_name ? { family_name } : {}),
         });
         if (email.trim()) {
-          await addPersonEmailMutation.mutateAsync({ person_id: newPerson.id, email: email.trim(), type: "work", is_primary: true });
+          await addPersonEmailMutation.mutateAsync({
+            person_id: newPerson.id,
+            email: email.trim(),
+            type: "work",
+            is_primary: true,
+          });
         }
         if (phone.trim()) {
-          await addPersonPhoneMutation.mutateAsync({ person_id: newPerson.id, number: phone.trim(), type: "mobile", is_primary: !email.trim() });
+          await addPersonPhoneMutation.mutateAsync({
+            person_id: newPerson.id,
+            number: phone.trim(),
+            type: "mobile",
+            is_primary: !email.trim(),
+          });
         }
         await utils.people.list.invalidate();
 
@@ -627,33 +618,29 @@ export function NoteEditor({
   );
 
   return (
-    <div className={cn("flex flex-col h-full", className)}>
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border-subtle flex-shrink-0">
+    <div className={cn("flex h-full flex-col", className)}>
+      <div className="flex flex-shrink-0 items-center justify-between border-b border-border-subtle px-4 py-2">
         <input
           type="text"
           value={title}
           onChange={handleTitleChange}
           placeholder="Note title…"
-          className="flex-1 text-xl font-semibold bg-transparent border-none outline-none placeholder:text-text-disabled focus-visible:focus-ring"
+          className="flex-1 border-none bg-transparent text-xl font-semibold outline-none placeholder:text-text-disabled focus-visible:focus-ring"
           disabled={readOnly}
         />
-        <div className="flex items-center gap-2 text-xs text-text-tertiary ml-4 flex-shrink-0">
+        <div className="ml-4 flex flex-shrink-0 items-center gap-2 text-xs text-text-tertiary">
           {saveStatus === "saving" && (
             <span className="flex items-center gap-1">
               <span className="animate-spin">⟳</span>
               saving…
             </span>
           )}
-          {saveStatus === "saved" && (
-            <span className="text-accent-success">✓ saved</span>
-          )}
-          {saveStatus === "error" && (
-            <span className="text-accent-danger">⚠ error saving</span>
-          )}
+          {saveStatus === "saved" && <span className="text-accent-success">✓ saved</span>}
+          {saveStatus === "error" && <span className="text-accent-danger">⚠ error saving</span>}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 px-4 py-1.5 border-b border-border-subtle flex-shrink-0">
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-1 border-b border-border-subtle px-4 py-1.5">
         {currentTags.map(({ tag }) => (
           <Hint key={tag.id} label={`Remove "${tag.name}"`} side="top" delayDuration={600}>
             <button
@@ -746,20 +733,18 @@ export function NoteEditor({
 
       <div
         ref={editorContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4 relative"
+        className="relative flex-1 overflow-y-auto px-4 py-4"
         onClick={handleReferenceNodeClick}
       >
         {editor && !readOnly && <EditorBubbleMenu editor={editor} />}
 
         <EditorContent
           editor={editor}
-          className="note-editor-content prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-full"
+          className="note-editor-content prose prose-sm dark:prose-invert min-h-full max-w-none focus:outline-none"
         />
       </div>
 
-      {editor && !readOnly && (
-        <EditorBlockHandle editor={editor} />
-      )}
+      {editor && !readOnly && <EditorBlockHandle editor={editor} />}
 
       {referencePickerState?.active && editor && (
         <ReferencePicker
@@ -767,9 +752,7 @@ export function NoteEditor({
           query={referencePickerState.query}
           position={referencePickerState.position}
           onSelect={handleReferenceSelect}
-          onCreateNote={
-            referencePickerState.trigger === "note" ? handleCreateNote : undefined
-          }
+          onCreateNote={referencePickerState.trigger === "note" ? handleCreateNote : undefined}
           onCreatePerson={
             referencePickerState.trigger === "person" ? handleCreatePerson : undefined
           }
@@ -804,7 +787,11 @@ export function NoteEditor({
           prefillName={createPersonDialog.prefillName}
           onSubmit={handleCreatePersonSubmit}
           onCancel={() => setCreatePersonDialog(null)}
-          isPending={createPersonMutation.isPending || addPersonEmailMutation.isPending || addPersonPhoneMutation.isPending}
+          isPending={
+            createPersonMutation.isPending ||
+            addPersonEmailMutation.isPending ||
+            addPersonPhoneMutation.isPending
+          }
         />
       )}
     </div>
@@ -818,7 +805,12 @@ type CreatePersonMiniDialogProps = {
   isPending: boolean;
 };
 
-function CreatePersonMiniDialog({ prefillName, onSubmit, onCancel, isPending }: CreatePersonMiniDialogProps) {
+function CreatePersonMiniDialog({
+  prefillName,
+  onSubmit,
+  onCancel,
+  isPending,
+}: CreatePersonMiniDialogProps) {
   const [displayName, setDisplayName] = React.useState(prefillName);
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
@@ -839,13 +831,17 @@ function CreatePersonMiniDialog({ prefillName, onSubmit, onCancel, isPending }: 
   };
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-surface-base/60 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-xl border border-border-default bg-surface-raised p-5 shadow-2 mx-4">
-        <h3 className="font-semibold text-text-primary mb-1 text-sm">Create new person</h3>
-        <p className="text-xs text-text-tertiary mb-4">A name and at least one email or phone is required.</p>
+    <div className="z-modal bg-surface-base/60 fixed inset-0 flex items-center justify-center backdrop-blur-sm">
+      <div className="mx-4 w-full max-w-sm rounded-xl border border-border-default bg-surface-raised p-5 shadow-2">
+        <h3 className="mb-1 text-sm font-semibold text-text-primary">Create new person</h3>
+        <p className="mb-4 text-xs text-text-tertiary">
+          A name and at least one email or phone is required.
+        </p>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Name <span className="text-accent-danger">*</span></label>
+            <label className="mb-1 block text-xs font-medium text-text-secondary">
+              Name <span className="text-accent-danger">*</span>
+            </label>
             <input
               type="text"
               value={displayName}
@@ -856,7 +852,7 @@ function CreatePersonMiniDialog({ prefillName, onSubmit, onCancel, isPending }: 
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Email</label>
+            <label className="mb-1 block text-xs font-medium text-text-secondary">Email</label>
             <input
               type="email"
               value={email}
@@ -866,7 +862,7 @@ function CreatePersonMiniDialog({ prefillName, onSubmit, onCancel, isPending }: 
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">Phone</label>
+            <label className="mb-1 block text-xs font-medium text-text-secondary">Phone</label>
             <input
               type="tel"
               value={phone}
@@ -877,10 +873,18 @@ function CreatePersonMiniDialog({ prefillName, onSubmit, onCancel, isPending }: 
           </div>
           {error && <p className="text-xs text-accent-danger">{error}</p>}
           <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onCancel} className="px-3 py-1.5 text-sm rounded-md border border-border-default text-text-secondary hover:bg-surface-hover">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md border border-border-default px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={isPending} className="px-3 py-1.5 text-sm rounded-md bg-accent-primary text-white hover:opacity-90 disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-md bg-accent-primary px-3 py-1.5 text-sm text-white hover:opacity-90 disabled:opacity-60"
+            >
               {isPending ? "Creating…" : "Create person"}
             </button>
           </div>

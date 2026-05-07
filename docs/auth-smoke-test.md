@@ -19,35 +19,35 @@ Authentication is handled entirely by Clerk. There are no manual OIDC state cook
 
 ### Public routes (no auth required)
 
-| Path pattern | Reason |
-|---|---|
-| `/` | Landing / welcome page |
-| `/welcome(.*)` | Onboarding flow |
-| `/privacy(.*)` | Legal |
-| `/terms(.*)` | Legal |
-| `/sign-in(.*)` | Clerk sign-in widget |
-| `/sign-up(.*)` | Clerk sign-up widget |
-| `/api/auth/test-login(.*)` | Dev-only test helper |
-| `/api/drive/connect(.*)` | Google Drive OAuth initiation |
-| `/api/drive/oauth-callback(.*)` | Google Drive OAuth callback |
-| `/api/health(.*)` | Health check |
-| `/api/trpc/health.ping(.*)` | tRPC health ping |
-| `/api/trpc/waitlist.submit(.*)` | Waitlist submission |
-| `/api/cron/(.*)` | Cron job endpoints |
+| Path pattern                    | Reason                        |
+| ------------------------------- | ----------------------------- |
+| `/`                             | Landing / welcome page        |
+| `/welcome(.*)`                  | Onboarding flow               |
+| `/privacy(.*)`                  | Legal                         |
+| `/terms(.*)`                    | Legal                         |
+| `/sign-in(.*)`                  | Clerk sign-in widget          |
+| `/sign-up(.*)`                  | Clerk sign-up widget          |
+| `/api/auth/test-login(.*)`      | Dev-only test helper          |
+| `/api/drive/connect(.*)`        | Google Drive OAuth initiation |
+| `/api/drive/oauth-callback(.*)` | Google Drive OAuth callback   |
+| `/api/health(.*)`               | Health check                  |
+| `/api/trpc/health.ping(.*)`     | tRPC health ping              |
+| `/api/trpc/waitlist.submit(.*)` | Waitlist submission           |
+| `/api/cron/(.*)`                | Cron job endpoints            |
 
 All other routes are protected and redirect unauthenticated users to `/sign-in`.
 
 ## Smoke Test Results
 
-| # | Route | Expected | Actual | Status |
-|---|-------|----------|--------|--------|
-| 1 | `GET /sign-in` | HTTP 200, renders Clerk sign-in widget | HTTP 200 | PASS |
-| 2 | `GET /` (no session) | HTTP 200 (public route, no redirect) | HTTP 200 | PASS |
-| 3 | `GET /tasks` (no session) | HTTP 307 → `/sign-in?from=%2Ftasks` | HTTP 307 → `/sign-in?from=%2Ftasks` | PASS |
-| 4 | `GET /settings` (no session) | HTTP 307 → `/sign-in?from=%2Fsettings` | HTTP 307 → `/sign-in?from=%2Fsettings` | PASS |
-| 5 | `GET /admin/health` (no session) | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | PASS |
-| 6 | `GET /api/health` (no session) | HTTP 200 (public route) | HTTP 200 | PASS |
-| 7 | `GET /api/cron/nightly-cleanup` (no session) | HTTP 200 (public route) | HTTP 200 | PASS |
+| #   | Route                                        | Expected                                     | Actual                                       | Status |
+| --- | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- | ------ |
+| 1   | `GET /sign-in`                               | HTTP 200, renders Clerk sign-in widget       | HTTP 200                                     | PASS   |
+| 2   | `GET /` (no session)                         | HTTP 200 (public route, no redirect)         | HTTP 200                                     | PASS   |
+| 3   | `GET /tasks` (no session)                    | HTTP 307 → `/sign-in?from=%2Ftasks`          | HTTP 307 → `/sign-in?from=%2Ftasks`          | PASS   |
+| 4   | `GET /settings` (no session)                 | HTTP 307 → `/sign-in?from=%2Fsettings`       | HTTP 307 → `/sign-in?from=%2Fsettings`       | PASS   |
+| 5   | `GET /admin/health` (no session)             | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | HTTP 307 → `/sign-in?from=%2Fadmin%2Fhealth` | PASS   |
+| 6   | `GET /api/health` (no session)               | HTTP 200 (public route)                      | HTTP 200                                     | PASS   |
+| 7   | `GET /api/cron/nightly-cleanup` (no session) | HTTP 200 (public route)                      | HTTP 200                                     | PASS   |
 
 ## Notes
 
@@ -60,6 +60,7 @@ All other routes are protected and redirect unauthenticated users to `/sign-in`.
 The full Clerk sign-in loop (credential entry → Clerk session cookie set → redirect back to app → `userId` present in middleware → access granted) must be verified in a real browser. Clerk's session token is an HttpOnly cookie that cannot be fabricated in a headless curl test.
 
 The user-sync path (`getOrCreateUserFromClerk()` in `src/lib/auth.ts`) was verified by code review:
+
 - `currentUser()` retrieves the authenticated Clerk user (lines 7–8)
 - Primary lookup is by `clerk_id` (line 13)
 - Fallback lookup by email links legacy records and stamps `clerk_id` (lines 18–28)

@@ -50,14 +50,11 @@ export function ProjectAddForm({
     create.mutate({ title: t, color, sequential, status: "active", type });
   }
 
-  const allTypeOptions = [
-    ...CORE_TYPES,
-    ...suggestions.filter((s) => !CORE_TYPES.includes(s)),
-  ];
+  const allTypeOptions = [...CORE_TYPES, ...suggestions.filter((s) => !CORE_TYPES.includes(s))];
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="relative flex flex-wrap items-center gap-1 mb-0.5">
+      <div className="relative mb-0.5 flex flex-wrap items-center gap-1">
         {allTypeOptions.map((t) => (
           <button
             key={t}
@@ -66,7 +63,7 @@ export function ProjectAddForm({
             className={cn(
               "inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs transition-colors",
               type === t
-                ? "bg-accent-primary-subtle text-accent-primary font-medium"
+                ? "bg-accent-primary-subtle font-medium text-accent-primary"
                 : "text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
             )}
           >
@@ -76,14 +73,17 @@ export function ProjectAddForm({
         <button
           type="button"
           onClick={() => setShowCustom(true)}
-          className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-disabled hover:bg-surface-hover hover:text-text-tertiary transition-colors"
+          className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 font-ui text-2xs text-text-disabled transition-colors hover:bg-surface-hover hover:text-text-tertiary"
         >
           Custom…
         </button>
         {showCustom && (
           <CustomTypeDialog
             existingTypes={existingTypes}
-            onConfirm={(t) => { setType(t); setShowCustom(false); }}
+            onConfirm={(t) => {
+              setType(t);
+              setShowCustom(false);
+            }}
             onCancel={() => setShowCustom(false)}
           />
         )}

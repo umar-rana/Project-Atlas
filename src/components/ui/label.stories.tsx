@@ -9,7 +9,9 @@ type Story = StoryObj<typeof Label>;
 export const WithInput: Story = {
   render: () => (
     <div className="flex w-80 flex-col gap-1">
-      <Label htmlFor="project-name" required>Project name</Label>
+      <Label htmlFor="project-name" required>
+        Project name
+      </Label>
       <Input id="project-name" placeholder="Atlas" />
     </div>
   ),

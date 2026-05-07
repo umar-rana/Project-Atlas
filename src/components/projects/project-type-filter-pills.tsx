@@ -20,11 +20,7 @@ interface TypeCount {
 
 const MAX_VISIBLE = 3;
 
-export function ProjectTypeFilterPills({
-  typeCounts,
-}: {
-  typeCounts: TypeCount[];
-}) {
+export function ProjectTypeFilterPills({ typeCounts }: { typeCounts: TypeCount[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -42,8 +38,7 @@ export function ProjectTypeFilterPills({
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
 
-  const activeTypeIsOrphaned =
-    !!activeType && !typeCounts.find((t) => t.type === activeType);
+  const activeTypeIsOrphaned = !!activeType && !typeCounts.find((t) => t.type === activeType);
 
   const sorted = [...typeCounts].sort((a, b) => b.count - a.count);
 
@@ -55,20 +50,14 @@ export function ProjectTypeFilterPills({
     if (activeInOverflow) {
       const leastUsedVisible = visibleTypes[visibleTypes.length - 1];
       if (leastUsedVisible) {
-        visibleTypes = [
-          ...visibleTypes.slice(0, visibleTypes.length - 1),
-          activeInOverflow,
-        ];
-        overflowTypes = [
-          leastUsedVisible,
-          ...overflowTypes.filter((t) => t.type !== activeType),
-        ];
+        visibleTypes = [...visibleTypes.slice(0, visibleTypes.length - 1), activeInOverflow];
+        overflowTypes = [leastUsedVisible, ...overflowTypes.filter((t) => t.type !== activeType)];
       }
     }
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b border-border-subtle">
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-border-subtle px-3 py-2">
       <button
         type="button"
         onClick={() => setFilter(null)}
@@ -105,10 +94,12 @@ export function ProjectTypeFilterPills({
             />
             <span>{getIcon(type)}</span>
             {displayType(type)}
-            <span className={cn(
-              "font-mono text-3xs tabular-nums",
-              isActive ? "opacity-70" : "text-text-disabled",
-            )}>
+            <span
+              className={cn(
+                "font-mono text-3xs tabular-nums",
+                isActive ? "opacity-70" : "text-text-disabled",
+              )}
+            >
               {count}
             </span>
           </button>
@@ -142,7 +133,9 @@ export function ProjectTypeFilterPills({
                 />
                 <span>{getIcon(type)}</span>
                 <span className="flex-1">{displayType(type)}</span>
-                <span className="ml-3 font-mono text-2xs text-text-disabled tabular-nums">{count}</span>
+                <span className="ml-3 font-mono text-2xs tabular-nums text-text-disabled">
+                  {count}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

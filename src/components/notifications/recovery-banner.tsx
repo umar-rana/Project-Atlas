@@ -57,11 +57,10 @@ export function RecoveryBanner() {
   const summary = rows.map(({ label, count }) => `${count} ${label}`).join(", ");
 
   return (
-    <div className="flex items-center gap-3 border-b border-border-subtle bg-surface-elevated px-4 py-2.5">
+    <div className="bg-surface-elevated flex items-center gap-3 border-b border-border-subtle px-4 py-2.5">
       <ShieldCheck size={16} className="shrink-0 text-accent-primary" />
       <p className="flex-1 font-ui text-xs text-text-primary">
-        Your account data has been restored:{" "}
-        <strong>{summary}</strong>.
+        Your account data has been restored: <strong>{summary}</strong>.
       </p>
       <button
         type="button"

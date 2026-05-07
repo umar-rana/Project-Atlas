@@ -90,14 +90,17 @@ export async function withRetry<T>(
       lastError = err;
 
       const code = (err as { data?: { code?: string } })?.data?.code;
-      if (code === "UNAUTHORIZED" || code === "FORBIDDEN" || code === "NOT_FOUND" || code === "BAD_REQUEST") {
+      if (
+        code === "UNAUTHORIZED" ||
+        code === "FORBIDDEN" ||
+        code === "NOT_FOUND" ||
+        code === "BAD_REQUEST"
+      ) {
         throw err;
       }
 
       if (attempt < maxAttempts - 1) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, baseDelayMs * Math.pow(2, attempt)),
-        );
+        await new Promise((resolve) => setTimeout(resolve, baseDelayMs * Math.pow(2, attempt)));
       }
     }
   }

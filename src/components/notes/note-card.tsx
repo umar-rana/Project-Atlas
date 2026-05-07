@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { MoreHorizontal, Star, ExternalLink, Trash2, FolderInput, Tag, PanelRight } from "lucide-react";
+import {
+  MoreHorizontal,
+  Star,
+  ExternalLink,
+  Trash2,
+  FolderInput,
+  Tag,
+  PanelRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
@@ -33,7 +41,7 @@ const PURPOSE_COLORS: Record<string, string> = {
 };
 
 const PURPOSE_OPTIONS = ["note", "meeting_note", "project_brief", "reading_note"] as const;
-type Purpose = typeof PURPOSE_OPTIONS[number];
+type Purpose = (typeof PURPOSE_OPTIONS)[number];
 
 interface NoteCardProps {
   id: string;
@@ -107,13 +115,21 @@ export function NoteCard({
   const flatFolders = flattenFolders(foldersQuery.data ?? []);
 
   const preview = body_text.trim().slice(0, 140);
-  const dateStr = new Date(updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const dateStr = new Date(updated_at).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
   const displayTitle = title.trim() || "Untitled";
 
   return (
     <>
       <div className="group relative flex flex-col gap-1 rounded-lg border border-border-subtle bg-surface-base p-3 transition-colors hover:border-border-default hover:bg-surface-raised">
-        <Link href={`/notes/${id}`} className="absolute inset-0 rounded-lg" aria-label={displayTitle} />
+        <Link
+          href={`/notes/${id}`}
+          className="absolute inset-0 rounded-lg"
+          aria-label={displayTitle}
+        />
 
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -121,7 +137,9 @@ export function NoteCard({
               {is_project_brief && (
                 <Star size={11} className="shrink-0 fill-amber-400 text-amber-400" />
               )}
-              <span className="truncate font-ui text-sm font-medium text-text-primary">{displayTitle}</span>
+              <span className="truncate font-ui text-sm font-medium text-text-primary">
+                {displayTitle}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span
@@ -134,10 +152,13 @@ export function NoteCard({
               </span>
               {projectTitle && (
                 <span className="truncate font-ui text-2xs text-text-tertiary">
-                  {is_project_brief ? "★ " : ""}{projectTitle}
+                  {is_project_brief ? "★ " : ""}
+                  {projectTitle}
                 </span>
               )}
-              <span className="ml-auto shrink-0 font-ui text-2xs text-text-disabled">{dateStr}</span>
+              <span className="ml-auto shrink-0 font-ui text-2xs text-text-disabled">
+                {dateStr}
+              </span>
             </div>
           </div>
 

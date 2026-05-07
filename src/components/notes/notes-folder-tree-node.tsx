@@ -213,7 +213,11 @@ export function NotesFolderTreeNode({
           aria-label={collapsed ? "Expand" : "Collapse"}
         >
           {hasChildren ? (
-            collapsed ? <ChevronRight size={10} /> : <ChevronDown size={10} />
+            collapsed ? (
+              <ChevronRight size={10} />
+            ) : (
+              <ChevronDown size={10} />
+            )
           ) : (
             <span className="size-[10px]" />
           )}
@@ -249,7 +253,9 @@ export function NotesFolderTreeNode({
             )}
             <span className="flex-1 truncate">{folder.name}</span>
             {folder.note_count > 0 && (
-              <span className="font-mono text-2xs text-text-tertiary tabular-nums">{folder.note_count}</span>
+              <span className="font-mono text-2xs tabular-nums text-text-tertiary">
+                {folder.note_count}
+              </span>
             )}
           </Link>
         )}
@@ -272,19 +278,13 @@ export function NotesFolderTreeNode({
               </DropdownMenuItem>
 
               {canMoveUp && (
-                <DropdownMenuItem
-                  onClick={handleMenuMoveUp}
-                  disabled={reorderFolder.isPending}
-                >
+                <DropdownMenuItem onClick={handleMenuMoveUp} disabled={reorderFolder.isPending}>
                   <ArrowUp size={12} className="mr-2" />
                   Move up
                 </DropdownMenuItem>
               )}
               {canMoveDown && (
-                <DropdownMenuItem
-                  onClick={handleMenuMoveDown}
-                  disabled={reorderFolder.isPending}
-                >
+                <DropdownMenuItem onClick={handleMenuMoveDown} disabled={reorderFolder.isPending}>
                   <ArrowDown size={12} className="mr-2" />
                   Move down
                 </DropdownMenuItem>

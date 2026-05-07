@@ -7,8 +7,15 @@ const REQUIRED_SANDBOX = "allow-scripts allow-same-origin allow-presentation";
 describe("iframeSandbox", () => {
   it("returns the required sandbox string for all providers", () => {
     const providers: (EmbedProvider | null)[] = [
-      "youtube", "vimeo", "spotify", "soundcloud", "twitter",
-      "github_gist", "codesandbox", "loom", null,
+      "youtube",
+      "vimeo",
+      "spotify",
+      "soundcloud",
+      "twitter",
+      "github_gist",
+      "codesandbox",
+      "loom",
+      null,
     ];
     for (const provider of providers) {
       expect(iframeSandbox(provider)).toBe(REQUIRED_SANDBOX);

@@ -1,7 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File, Download, FileDown, Loader2, Tag, Plus } from "lucide-react";
+import {
+  Star,
+  Link2,
+  Paperclip,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Image,
+  Film,
+  Music,
+  Archive,
+  File,
+  Download,
+  FileDown,
+  Loader2,
+  Tag,
+  Plus,
+} from "lucide-react";
 import { Hint } from "@/components/ui/hint";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
@@ -35,7 +52,10 @@ function fileTypeIcon(filename: string, mimeType?: string | null): React.ReactEl
   if (mime === "application/pdf" || ext === "pdf") {
     return <FileText size={13} className="shrink-0 text-red-400" />;
   }
-  if (mime.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)) {
+  if (
+    mime.startsWith("image/") ||
+    ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)
+  ) {
     return <Image size={13} className="shrink-0 text-blue-400" />;
   }
   if (mime.startsWith("video/") || ["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) {
@@ -78,11 +98,15 @@ function AttachmentThumbnail({
         src={`/api/attachments/${fileId}`}
         alt={filename}
         onError={() => setImgError(true)}
-        className="h-8 w-8 shrink-0 rounded object-cover border border-border-default"
+        className="h-8 w-8 shrink-0 rounded border border-border-default object-cover"
       />
     );
   }
-  return <div className="flex h-8 w-8 shrink-0 items-center justify-center">{fileTypeIcon(filename, mimeType)}</div>;
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+      {fileTypeIcon(filename, mimeType)}
+    </div>
+  );
 }
 
 function NoteTagsSection({ noteId }: { noteId: string }) {
@@ -123,13 +147,23 @@ function NoteTagsSection({ noteId }: { noteId: string }) {
   }, [pickerOpen]);
 
   const note = noteQuery.data;
-  const currentTags = (note as { tag_on_notes?: { tag: { id: string; name: string; color: string | null } }[] } | null | undefined)?.tag_on_notes ?? [];
+  const currentTags =
+    (
+      note as
+        | { tag_on_notes?: { tag: { id: string; name: string; color: string | null } }[] }
+        | null
+        | undefined
+    )?.tag_on_notes ?? [];
   const currentTagIds = new Set(currentTags.map((t) => t.tag.id));
   const allTags = tagsQuery.data ?? [];
   const availableTags = allTags.filter((t) => !currentTagIds.has(t.id));
 
   return (
-    <CollapsibleSection label="Tags" icon={<Tag size={11} className="text-text-tertiary" />} defaultOpen>
+    <CollapsibleSection
+      label="Tags"
+      icon={<Tag size={11} className="text-text-tertiary" />}
+      defaultOpen
+    >
       <div className="flex flex-col gap-1.5">
         <div className="flex flex-wrap gap-1">
           {currentTags.map(({ tag }) => (
@@ -216,20 +250,24 @@ function CollapsibleSection({
   const [open, setOpen] = React.useState(defaultOpen);
   return (
     <section className="flex flex-col gap-1">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5"
-      >
+      <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-1.5">
         {icon}
         {labelHint ? (
           <Hint label={labelHint} side="right" delayDuration={800}>
-            <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">{label}</span>
+            <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">
+              {label}
+            </span>
           </Hint>
         ) : (
-          <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">{label}</span>
+          <span className="flex-1 text-left font-ui text-2xs font-medium text-text-tertiary">
+            {label}
+          </span>
         )}
-        {open ? <ChevronDown size={10} className="text-text-disabled" /> : <ChevronRight size={10} className="text-text-disabled" />}
+        {open ? (
+          <ChevronDown size={10} className="text-text-disabled" />
+        ) : (
+          <ChevronRight size={10} className="text-text-disabled" />
+        )}
       </button>
       {open ? <div>{children}</div> : null}
     </section>
@@ -360,7 +398,9 @@ export function NoteMetadataPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h2 className="font-ui text-xs font-semibold uppercase tracking-caps text-text-tertiary">Metadata</h2>
+      <h2 className="font-ui text-xs font-semibold uppercase tracking-caps text-text-tertiary">
+        Metadata
+      </h2>
 
       <CollapsibleSection
         label="Purpose"
@@ -372,7 +412,9 @@ export function NoteMetadataPanel({
           className="w-full rounded-md border border-border-default bg-surface-base px-2 py-1.5 font-ui text-xs text-text-primary focus:border-border-focus focus:outline-none"
         >
           {PURPOSE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
         </select>
       </CollapsibleSection>
@@ -385,7 +427,9 @@ export function NoteMetadataPanel({
         >
           <option value="">— No project —</option>
           {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.title}</option>
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
           ))}
         </select>
 
@@ -394,7 +438,9 @@ export function NoteMetadataPanel({
             <div className="flex items-center gap-1.5">
               <Star
                 size={13}
-                className={cn(is_project_brief ? "fill-amber-400 text-amber-400" : "text-text-disabled")}
+                className={cn(
+                  is_project_brief ? "fill-amber-400 text-amber-400" : "text-text-disabled",
+                )}
               />
               <span className="font-ui text-xs text-text-secondary">Mark as brief</span>
             </div>
@@ -428,7 +474,9 @@ export function NoteMetadataPanel({
         >
           <option value="">— No folder —</option>
           {flatFolders.map((f) => (
-            <option key={f.id} value={f.id}>{f.label}</option>
+            <option key={f.id} value={f.id}>
+              {f.label}
+            </option>
           ))}
         </select>
       </CollapsibleSection>
@@ -465,7 +513,7 @@ export function NoteMetadataPanel({
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleAttachmentDrop}
-          className="flex min-h-12 flex-col gap-1 rounded-md border border-dashed border-border-default p-2 transition-colors hover:border-accent-primary hover:bg-accent-primary-subtle/20"
+          className="hover:bg-accent-primary-subtle/20 flex min-h-12 flex-col gap-1 rounded-md border border-dashed border-border-default p-2 transition-colors hover:border-accent-primary"
         >
           {attachments.length === 0 ? (
             <p className="flex-1 text-center font-ui text-2xs text-text-disabled">
@@ -474,8 +522,14 @@ export function NoteMetadataPanel({
           ) : (
             attachments.map((att) => (
               <div key={att.id} className="flex items-center gap-1.5">
-                <AttachmentThumbnail fileId={att.file_id} filename={att.filename} mimeType={att.content_type} />
-                <span className="flex-1 truncate font-ui text-xs text-text-secondary">{att.filename}</span>
+                <AttachmentThumbnail
+                  fileId={att.file_id}
+                  filename={att.filename}
+                  mimeType={att.content_type}
+                />
+                <span className="flex-1 truncate font-ui text-xs text-text-secondary">
+                  {att.filename}
+                </span>
                 <button
                   type="button"
                   onClick={() => deleteAttachment.mutate({ id: att.id })}
@@ -510,10 +564,11 @@ export function NoteMetadataPanel({
             disabled={exportMarkdown.isPending}
             className="flex w-full items-center gap-2 rounded-md border border-border-default px-3 py-2 font-ui text-xs text-text-secondary hover:border-border-focus hover:bg-surface-raised hover:text-text-primary focus-visible:focus-ring disabled:opacity-50"
           >
-            {exportMarkdown.isPending
-              ? <Loader2 size={12} className="shrink-0 animate-spin text-text-disabled" aria-hidden />
-              : <Download size={12} className="shrink-0 text-text-disabled" aria-hidden />
-            }
+            {exportMarkdown.isPending ? (
+              <Loader2 size={12} className="shrink-0 animate-spin text-text-disabled" aria-hidden />
+            ) : (
+              <Download size={12} className="shrink-0 text-text-disabled" aria-hidden />
+            )}
             {exportMarkdown.isPending ? "Exporting…" : "Export as Markdown"}
           </button>
         </div>

@@ -18,7 +18,10 @@ type ShortcutsRegistryAction =
   | { type: "register"; shortcuts: ShortcutItem[] }
   | { type: "unregister"; ids: string[] };
 
-function reducer(state: ShortcutsRegistryState, action: ShortcutsRegistryAction): ShortcutsRegistryState {
+function reducer(
+  state: ShortcutsRegistryState,
+  action: ShortcutsRegistryAction,
+): ShortcutsRegistryState {
   if (action.type === "register") {
     const existing = new Set(state.shortcuts.map((s) => s.id));
     const fresh = action.shortcuts.filter((s) => !existing.has(s.id));
@@ -39,7 +42,11 @@ interface ShortcutsRegistryContext {
 
 export const ShortcutsRegistryContext = React.createContext<ShortcutsRegistryContext | null>(null);
 
-export function ShortcutsRegistryProvider({ children }: { children: React.ReactNode }): React.ReactElement {
+export function ShortcutsRegistryProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement {
   const [state, dispatch] = React.useReducer(reducer, { shortcuts: [] });
 
   const registerShortcuts = React.useCallback((shortcuts: ShortcutItem[]) => {
@@ -51,7 +58,9 @@ export function ShortcutsRegistryProvider({ children }: { children: React.ReactN
   }, []);
 
   return (
-    <ShortcutsRegistryContext.Provider value={{ shortcuts: state.shortcuts, registerShortcuts, unregisterShortcuts }}>
+    <ShortcutsRegistryContext.Provider
+      value={{ shortcuts: state.shortcuts, registerShortcuts, unregisterShortcuts }}
+    >
       {children}
     </ShortcutsRegistryContext.Provider>
   );
@@ -71,6 +80,6 @@ export function useRegisterShortcuts(shortcuts: ShortcutItem[]): void {
     registerShortcuts(shortcutsRef.current);
     const ids = idsRef.current;
     return () => unregisterShortcuts(ids);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registerShortcuts, unregisterShortcuts]);
 }

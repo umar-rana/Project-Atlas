@@ -11,7 +11,6 @@ import {
   StickyNote,
   Activity,
   X,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
@@ -65,7 +64,8 @@ function toLocalDatetimeValue(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const INPUT = "w-full rounded-md border border-border-default bg-surface-raised px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-border-focus";
+const INPUT =
+  "w-full rounded-md border border-border-default bg-surface-raised px-3 py-2 text-sm text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-2 focus:ring-border-focus";
 
 export function LogInteractionModal({ personId, personName, existing, onClose, onSuccess }: Props) {
   const isEdit = !!existing;
@@ -74,9 +74,13 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
   const [isCustomKind, setIsCustomKind] = useState(false);
   const [customKind, setCustomKind] = useState("");
   const [occurredAt, setOccurredAt] = useState(() =>
-    existing ? toLocalDatetimeValue(new Date(existing.occurred_at)) : toLocalDatetimeValue(new Date()),
+    existing
+      ? toLocalDatetimeValue(new Date(existing.occurred_at))
+      : toLocalDatetimeValue(new Date()),
   );
-  const [durationStr, setDurationStr] = useState(existing?.duration_minutes != null ? String(existing.duration_minutes) : "");
+  const [durationStr, setDurationStr] = useState(
+    existing?.duration_minutes != null ? String(existing.duration_minutes) : "",
+  );
   const [location, setLocation] = useState(existing?.location ?? "");
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +139,10 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
     }
 
     const durationMinutes = durationStr.trim() ? parseInt(durationStr, 10) : undefined;
-    if (durationStr.trim() && (isNaN(durationMinutes!) || durationMinutes! < 0 || durationMinutes! > 1440)) {
+    if (
+      durationStr.trim() &&
+      (isNaN(durationMinutes!) || durationMinutes! < 0 || durationMinutes! > 1440)
+    ) {
       setError("Duration must be between 0 and 1440 minutes.");
       return;
     }
@@ -169,39 +176,51 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
   }
 
   return (
-    <div className="fixed inset-0 z-modal flex items-start justify-center bg-surface-base/60 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="z-modal bg-surface-base/60 fixed inset-0 flex items-start justify-center backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="mt-[12vh] w-full max-w-md rounded-xl border border-border-default bg-surface-raised shadow-3 mx-4 overflow-hidden"
+        className="mx-4 mt-[12vh] w-full max-w-md overflow-hidden rounded-xl border border-border-default bg-surface-raised shadow-3"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+        <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
           <h2 className="text-sm font-semibold text-text-primary">
             {isEdit ? "Edit interaction" : `Log interaction with ${personName}`}
           </h2>
-          <button type="button" onClick={onClose} className="text-text-disabled hover:text-text-primary transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-text-disabled transition-colors hover:text-text-primary"
+          >
             <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-5">
           {error && (
-            <div className="rounded-md border border-accent-danger bg-accent-danger/10 px-3 py-2 text-sm text-accent-danger">{error}</div>
+            <div className="bg-accent-danger/10 rounded-md border border-accent-danger px-3 py-2 text-sm text-accent-danger">
+              {error}
+            </div>
           )}
 
           {/* Kind */}
           <div>
-            <label className="block text-xs text-text-tertiary mb-1.5">Type</label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
+            <label className="mb-1.5 block text-xs text-text-tertiary">Type</label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
               {CURATED_KINDS.map((k) => (
                 <button
                   key={k.kind}
                   type="button"
-                  onClick={() => { setKind(k.kind); setIsCustomKind(false); }}
+                  onClick={() => {
+                    setKind(k.kind);
+                    setIsCustomKind(false);
+                  }}
                   className={cn(
-                    "inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs transition-colors",
+                    "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors",
                     !isCustomKind && kind === k.kind
-                      ? "border-accent-primary bg-accent-primary-subtle text-accent-primary font-medium"
-                      : "border-border-default text-text-tertiary hover:text-text-primary hover:border-border-strong",
+                      ? "border-accent-primary bg-accent-primary-subtle font-medium text-accent-primary"
+                      : "border-border-default text-text-tertiary hover:border-border-strong hover:text-text-primary",
                   )}
                 >
                   {k.icon}
@@ -210,11 +229,14 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
               ))}
               <button
                 type="button"
-                onClick={() => { setIsCustomKind(true); setKind("__custom__"); }}
+                onClick={() => {
+                  setIsCustomKind(true);
+                  setKind("__custom__");
+                }}
                 className={cn(
-                  "inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs transition-colors",
+                  "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors",
                   isCustomKind
-                    ? "border-accent-primary bg-accent-primary-subtle text-accent-primary font-medium"
+                    ? "border-accent-primary bg-accent-primary-subtle font-medium text-accent-primary"
                     : "border-border-default text-text-tertiary hover:text-text-primary",
                 )}
               >
@@ -235,7 +257,7 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
 
           {/* Date & time */}
           <div>
-            <label className="block text-xs text-text-tertiary mb-1.5">Date & time</label>
+            <label className="mb-1.5 block text-xs text-text-tertiary">Date & time</label>
             <input
               type="datetime-local"
               className={INPUT}
@@ -247,7 +269,9 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
 
           {/* Duration */}
           <div>
-            <label className="block text-xs text-text-tertiary mb-1.5">Duration (minutes, optional)</label>
+            <label className="mb-1.5 block text-xs text-text-tertiary">
+              Duration (minutes, optional)
+            </label>
             <input
               type="number"
               className={INPUT}
@@ -261,7 +285,7 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
 
           {/* Location */}
           <div>
-            <label className="block text-xs text-text-tertiary mb-1.5">Location (optional)</label>
+            <label className="mb-1.5 block text-xs text-text-tertiary">Location (optional)</label>
             <input
               className={INPUT}
               value={location}
@@ -273,7 +297,7 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
 
           {/* Notes */}
           <div>
-            <label className="block text-xs text-text-tertiary mb-1.5">Notes (optional)</label>
+            <label className="mb-1.5 block text-xs text-text-tertiary">Notes (optional)</label>
             <textarea
               className={cn(INPUT, "min-h-[80px] resize-y")}
               value={notes}
@@ -287,14 +311,14 @@ export function LogInteractionModal({ personId, personName, existing, onClose, o
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 text-sm rounded-md border border-border-default text-text-secondary hover:bg-surface-hover"
+              className="rounded-md border border-border-default px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-1.5 text-sm rounded-md bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-60 transition-colors"
+              className="rounded-md bg-accent-primary px-4 py-1.5 text-sm text-text-on-accent transition-colors hover:bg-accent-primary-hover disabled:opacity-60"
             >
               {submitting ? "Saving…" : isEdit ? "Save changes" : "Log interaction"}
             </button>

@@ -24,7 +24,7 @@ const PURPOSE_OPTIONS = [
   { value: "reading_note", label: "Reading Note" },
 ] as const;
 
-type Purpose = typeof PURPOSE_OPTIONS[number]["value"];
+type Purpose = (typeof PURPOSE_OPTIONS)[number]["value"];
 
 export function DispositionNoteForm({
   captureId,
@@ -95,7 +95,8 @@ export function DispositionNoteForm({
     }
   }
 
-  const inputCls = "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
+  const inputCls =
+    "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
 
   return (
@@ -122,7 +123,7 @@ export function DispositionNoteForm({
               className={cn(
                 "rounded-full border px-3 py-1 font-ui text-xs transition-colors",
                 purpose === opt.value
-                  ? "border-accent-primary bg-accent-primary/10 text-accent-primary"
+                  ? "bg-accent-primary/10 border-accent-primary text-accent-primary"
                   : "border-border-default text-text-secondary hover:bg-surface-hover",
               )}
             >
@@ -141,25 +142,44 @@ export function DispositionNoteForm({
         >
           <option value="">No project</option>
           {(projects.data ?? []).map((p) => (
-            <option key={p.id} value={p.id}>{p.title}</option>
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2">
-        <p className="font-ui text-2xs text-text-tertiary mb-1">Note body (from capture)</p>
-        <p className="font-ui text-xs text-text-secondary whitespace-pre-wrap line-clamp-4">{rawText}</p>
+        <p className="mb-1 font-ui text-2xs text-text-tertiary">Note body (from capture)</p>
+        <p className="line-clamp-4 whitespace-pre-wrap font-ui text-xs text-text-secondary">
+          {rawText}
+        </p>
       </div>
 
-      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border-subtle">
-        <button type="button" onClick={onCancel} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover">
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover"
+        >
           Cancel
         </button>
         <div className="flex gap-2">
-          <button type="button" onClick={submitDefaults} disabled={mut.isPending} className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50" title="⌘↵ Accept parser defaults">
+          <button
+            type="button"
+            onClick={submitDefaults}
+            disabled={mut.isPending}
+            className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+            title="⌘↵ Accept parser defaults"
+          >
             ⌘↵ Defaults
           </button>
-          <button type="button" onClick={submit} disabled={mut.isPending || !title.trim()} className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50">
+          <button
+            type="button"
+            onClick={submit}
+            disabled={mut.isPending || !title.trim()}
+            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+          >
             {mut.isPending ? "Creating…" : "Create Note ↵"}
           </button>
         </div>

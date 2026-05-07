@@ -35,11 +35,17 @@ export const Default: Story = {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>View</DropdownMenuLabel>
-          <DropdownMenuCheckboxItem checked={showHidden} onCheckedChange={(v) => setShowHidden(Boolean(v))}>
+          <DropdownMenuCheckboxItem
+            checked={showHidden}
+            onCheckedChange={(v) => setShowHidden(Boolean(v))}
+          >
             Show hidden items
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem destructive shortcut={<KeyboardShortcut keys={["backspace"]} variant="subtle" />}>
+          <DropdownMenuItem
+            destructive
+            shortcut={<KeyboardShortcut keys={["backspace"]} variant="subtle" />}
+          >
             <Trash2 size={12} /> Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

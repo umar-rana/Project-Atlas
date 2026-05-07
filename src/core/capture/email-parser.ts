@@ -41,7 +41,11 @@ function extractIsCalendar(mail: ParsedMail, attachments: ParsedEmailAttachment[
   const contentType = mail.headers.get("content-type");
   if (typeof contentType === "string" && contentType.includes("text/calendar")) return true;
   for (const att of attachments) {
-    if (att.contentType === "text/calendar" || att.contentType === "application/ics" || att.filename.endsWith(".ics")) {
+    if (
+      att.contentType === "text/calendar" ||
+      att.contentType === "application/ics" ||
+      att.filename.endsWith(".ics")
+    ) {
       return true;
     }
   }
@@ -63,10 +67,7 @@ function stripHtml(html: string): string {
 }
 
 function extractOriginalSender(from: string, bodyText: string): string | null {
-  const forwardPatterns = [
-    /^From:\s*([^\n<>]+?)\s*<([^>]+)>/im,
-    /^From:\s*([^\n]+@[^\n]+)/im,
-  ];
+  const forwardPatterns = [/^From:\s*([^\n<>]+?)\s*<([^>]+)>/im, /^From:\s*([^\n]+@[^\n]+)/im];
   for (const pattern of forwardPatterns) {
     const match = bodyText.match(pattern);
     if (match) {
@@ -95,15 +96,11 @@ export async function parseEmail(rawEmail: string | Buffer): Promise<ParsedEmail
     .map((att: Attachment) => ({
       filename: att.filename ?? "attachment",
       contentType: att.contentType ?? "application/octet-stream",
-      size: att.size ?? (att.content?.byteLength ?? 0),
+      size: att.size ?? att.content?.byteLength ?? 0,
       content: Buffer.isBuffer(att.content) ? att.content : Buffer.from(att.content ?? []),
     }));
 
-  const bodyText = mail.text
-    ? mail.text
-    : mail.html
-      ? stripHtml(mail.html)
-      : "";
+  const bodyText = mail.text ? mail.text : mail.html ? stripHtml(mail.html) : "";
 
   const subject = mail.subject ?? null;
   const isForwarded = !!(subject && /^fwd?:/i.test(subject.trim()));

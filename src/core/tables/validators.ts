@@ -19,29 +19,34 @@ export function validateCellValue(type: ColumnType, value: unknown): ValidationR
 
     case "number": {
       const n = typeof value === "string" ? parseFloat(value) : value;
-      if (typeof n !== "number" || isNaN(n)) return { valid: false, error: "Number value must be a valid number" };
+      if (typeof n !== "number" || isNaN(n))
+        return { valid: false, error: "Number value must be a valid number" };
       return { valid: true, normalized: n };
     }
 
     case "currency": {
       const n = typeof value === "string" ? parseFloat(value) : value;
-      if (typeof n !== "number" || isNaN(n)) return { valid: false, error: "Currency value must be a valid number" };
+      if (typeof n !== "number" || isNaN(n))
+        return { valid: false, error: "Currency value must be a valid number" };
       return { valid: true, normalized: n };
     }
 
     case "date": {
-      if (typeof value !== "string") return { valid: false, error: "Date value must be an ISO date string" };
+      if (typeof value !== "string")
+        return { valid: false, error: "Date value must be an ISO date string" };
       const d = new Date(value);
       if (isNaN(d.getTime())) return { valid: false, error: "Date value must be a valid date" };
       return { valid: true, normalized: value };
     }
 
     case "checkbox":
-      if (typeof value !== "boolean") return { valid: false, error: "Checkbox value must be a boolean" };
+      if (typeof value !== "boolean")
+        return { valid: false, error: "Checkbox value must be a boolean" };
       return { valid: true, normalized: value };
 
     case "single_select":
-      if (typeof value !== "string") return { valid: false, error: "Single select value must be a string (option ID)" };
+      if (typeof value !== "string")
+        return { valid: false, error: "Single select value must be a string (option ID)" };
       return { valid: true, normalized: value };
 
     case "multi_select": {
@@ -54,7 +59,10 @@ export function validateCellValue(type: ColumnType, value: unknown): ValidationR
     }
 
     case "formula":
-      return { valid: false, error: "Formula columns are read-only and cannot have cells written directly." };
+      return {
+        valid: false,
+        error: "Formula columns are read-only and cannot have cells written directly.",
+      };
 
     default:
       return { valid: false, error: `Unknown column type: ${type}` };
@@ -87,7 +95,8 @@ export function formatCellValueForCsv(
   options?: SingleSelectOption[],
 ): string {
   if (value === null || value === undefined) return "";
-  if (typeof value === "object" && !Array.isArray(value) && "__formula_error" in (value as object)) return "#ERROR";
+  if (typeof value === "object" && !Array.isArray(value) && "__formula_error" in (value as object))
+    return "#ERROR";
   switch (type) {
     case "checkbox":
       return value ? "TRUE" : "FALSE";
@@ -98,9 +107,7 @@ export function formatCellValueForCsv(
     case "multi_select": {
       if (!isMultiSelectValue(value) || isMultiSelectEmpty(value)) return "";
       if (!options) return value.option_ids.join("|");
-      return value.option_ids
-        .map((id) => options.find((o) => o.id === id)?.label ?? id)
-        .join("|");
+      return value.option_ids.map((id) => options.find((o) => o.id === id)?.label ?? id).join("|");
     }
     default:
       return String(value);

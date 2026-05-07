@@ -24,7 +24,9 @@ export async function GET(req: NextRequest) {
   const secret = process.env.SESSION_SECRET;
   if (!secret) {
     log.error({}, "SESSION_SECRET not set — cannot generate Calendar OAuth nonce");
-    return NextResponse.redirect(new URL("/settings?cal_error=config&section=integrations", baseUrl));
+    return NextResponse.redirect(
+      new URL("/settings?cal_error=config&section=integrations", baseUrl),
+    );
   }
 
   const nonce = randomBytes(32).toString("hex");

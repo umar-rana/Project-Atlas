@@ -30,14 +30,20 @@ async function checkAI(): Promise<{ ok: boolean; latencyMs?: number; message?: s
   }
   try {
     const client = new Anthropic({
-      baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ?? process.env.ANTHROPIC_BASE_URL ?? undefined,
+      baseURL:
+        process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL ??
+        process.env.ANTHROPIC_BASE_URL ??
+        undefined,
       apiKey,
     });
-    const message = await client.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 8,
-      messages: [{ role: "user", content: "ping" }],
-    }, { timeout: 8000 });
+    const message = await client.messages.create(
+      {
+        model: "claude-haiku-4-5",
+        max_tokens: 8,
+        messages: [{ role: "user", content: "ping" }],
+      },
+      { timeout: 8000 },
+    );
     const latencyMs = Date.now() - start;
     const ok = message.content.length > 0;
     return { ok, latencyMs };

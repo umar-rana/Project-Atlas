@@ -222,13 +222,15 @@ describe("captureAndCreate — ownership validation (tagIdOverrides)", () => {
   });
 
   it("throws when any tagIdOverride is not owned by the user", async () => {
-    mockTagFindMany.mockImplementation(({ where }: { where?: { id?: { in?: string[] }; name?: unknown } }) => {
-      if (where?.id?.in) {
-        const ids = where.id.in;
-        if (ids.includes("tag-not-mine")) return Promise.resolve([{ id: "tag-mine" }]);
-      }
-      return Promise.resolve([]);
-    });
+    mockTagFindMany.mockImplementation(
+      ({ where }: { where?: { id?: { in?: string[] }; name?: unknown } }) => {
+        if (where?.id?.in) {
+          const ids = where.id.in;
+          if (ids.includes("tag-not-mine")) return Promise.resolve([{ id: "tag-mine" }]);
+        }
+        return Promise.resolve([]);
+      },
+    );
 
     const { captureAndCreate } = await import("./service");
     await expect(
@@ -256,12 +258,14 @@ describe("captureAndCreate — ownership validation (tagIdOverrides)", () => {
   });
 
   it("does NOT throw when all tagIdOverrides are owned by the user", async () => {
-    mockTagFindMany.mockImplementation(({ where }: { where?: { id?: { in?: string[] }; name?: unknown } }) => {
-      if (where?.id?.in) {
-        return Promise.resolve(where.id.in.map((id: string) => ({ id })));
-      }
-      return Promise.resolve([]);
-    });
+    mockTagFindMany.mockImplementation(
+      ({ where }: { where?: { id?: { in?: string[] }; name?: unknown } }) => {
+        if (where?.id?.in) {
+          return Promise.resolve(where.id.in.map((id: string) => ({ id })));
+        }
+        return Promise.resolve([]);
+      },
+    );
     mockComplete.mockRejectedValue(new Error("AI unavailable"));
 
     const { captureAndCreate } = await import("./service");
@@ -304,8 +308,7 @@ describe("captureAndCreate — Tier 2 error → Tier 1 preservation (not raw fal
     });
 
     expect(result).toBeDefined();
-    const createCall = mockTaskCreate.mock.calls[0]?.[0] as
-      { data: { title: string } } | undefined;
+    const createCall = mockTaskCreate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
     expect(createCall?.data.title).toBe("call dentist");
   });
 
@@ -326,12 +329,12 @@ describe("captureAndCreate — Tier 2 error → Tier 1 preservation (not raw fal
     });
     await flushEnrichmentQueue();
 
-    const updateCall = mockTaskUpdate.mock.calls[0]?.[0] as
-      { data: { title: string } } | undefined;
+    const updateCall = mockTaskUpdate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
     expect(updateCall?.data.title).toBe("call dentist");
 
     const parseLogCall = mockCaptureParseLogCreate.mock.calls[0]?.[0] as
-      { data: { parse_tier: string; ai_used: boolean } } | undefined;
+      | { data: { parse_tier: string; ai_used: boolean } }
+      | undefined;
     expect(parseLogCall?.data.parse_tier).toBe("local_only");
     expect(parseLogCall?.data.ai_used).toBe(false);
   });
@@ -347,7 +350,9 @@ describe("captureAndCreate — Tier 2 error → Tier 1 preservation (not raw fal
     });
     await flushEnrichmentQueue();
 
-    const allLogCalls = mockCaptureParseLogCreate.mock.calls as Array<[{ data: { parse_tier: string } }]>;
+    const allLogCalls = mockCaptureParseLogCreate.mock.calls as Array<
+      [{ data: { parse_tier: string } }]
+    >;
     const tiers = allLogCalls.map((call) => call[0]?.data?.parse_tier);
     expect(tiers).not.toContain("local_plus_ai");
     expect(tiers).toContain("local_only");
@@ -378,13 +383,13 @@ describe("captureAndCreate — Tier 2 token cap → Tier 1 preserved end-to-end"
     expect(mockComplete).not.toHaveBeenCalled();
 
     const parseLogCall = mockCaptureParseLogCreate.mock.calls[0]?.[0] as
-      { data: { parse_tier: string; ai_used: boolean; title: string } } | undefined;
+      | { data: { parse_tier: string; ai_used: boolean; title: string } }
+      | undefined;
     expect(parseLogCall?.data.parse_tier).toBe("local_only");
     expect(parseLogCall?.data.ai_used).toBe(false);
     expect(parseLogCall?.data.title).toBe("call dentist");
 
-    const updateCall = mockTaskUpdate.mock.calls[0]?.[0] as
-      { data: { title: string } } | undefined;
+    const updateCall = mockTaskUpdate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
     expect(updateCall?.data.title).toBe("call dentist");
   });
 });

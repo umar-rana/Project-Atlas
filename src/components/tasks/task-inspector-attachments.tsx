@@ -91,9 +91,7 @@ function AttachmentCard({
           <p className="truncate font-ui text-xs text-text-primary" title={att.filename}>
             {att.filename}
           </p>
-          <p className="font-ui text-2xs text-text-tertiary">
-            {formatBytes(att.size_bytes)}
-          </p>
+          <p className="font-ui text-2xs text-text-tertiary">{formatBytes(att.size_bytes)}</p>
         </div>
       </button>
 
@@ -121,7 +119,10 @@ function AttachmentCard({
           <button
             type="button"
             title="Detach"
-            onClick={(e) => { e.stopPropagation(); onDetach(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDetach();
+            }}
             className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
           >
             <Tag size={11} />
@@ -129,7 +130,10 @@ function AttachmentCard({
           <button
             type="button"
             title="Remove"
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-accent-danger"
           >
             <X size={11} />
@@ -146,7 +150,11 @@ interface TaskInspectorAttachmentsProps {
   scrollRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function TaskInspectorAttachments({ taskId, inTrash, scrollRef }: TaskInspectorAttachmentsProps) {
+export function TaskInspectorAttachments({
+  taskId,
+  inTrash,
+  scrollRef,
+}: TaskInspectorAttachmentsProps) {
   const utils = trpc.useUtils();
   const attachmentsQuery = trpc.attachments.byTaskId.useQuery(
     { task_id: taskId },
@@ -239,14 +247,18 @@ export function TaskInspectorAttachments({ taskId, inTrash, scrollRef }: TaskIns
     <section
       id="task-attachments"
       className="mt-4"
-      onDragOver={(e) => { e.preventDefault(); if (!inTrash) setIsDragging(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!inTrash) setIsDragging(true);
+      }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
       <div className="mb-1.5 flex items-center justify-between">
         <h3 className="flex items-center gap-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
           <Paperclip size={10} />
-          Attachments {list.length > 0 && <span className="ml-0.5 text-text-disabled">({list.length})</span>}
+          Attachments{" "}
+          {list.length > 0 && <span className="ml-0.5 text-text-disabled">({list.length})</span>}
         </h3>
         {!inTrash && (
           <button
@@ -264,14 +276,19 @@ export function TaskInspectorAttachments({ taskId, inTrash, scrollRef }: TaskIns
           type="file"
           multiple
           className="sr-only"
-          onChange={(e) => { if (e.target.files) { void handleFiles(e.target.files); e.target.value = ""; } }}
+          onChange={(e) => {
+            if (e.target.files) {
+              void handleFiles(e.target.files);
+              e.target.value = "";
+            }
+          }}
         />
       </div>
 
       <div
         className={cn(
           "min-h-6 rounded-sm transition-colors",
-          isDragging && "ring-2 ring-accent-primary ring-offset-1 bg-accent-primary-subtle",
+          isDragging && "bg-accent-primary-subtle ring-2 ring-accent-primary ring-offset-1",
         )}
       >
         {list.length > 0 ? (
@@ -301,7 +318,11 @@ export function TaskInspectorAttachments({ taskId, inTrash, scrollRef }: TaskIns
                   }
                 }}
                 onDetach={() => {
-                  if (confirm(`Detach "${att.filename}" from this task? It will move to the Media inbox.`)) {
+                  if (
+                    confirm(
+                      `Detach "${att.filename}" from this task? It will move to the Media inbox.`,
+                    )
+                  ) {
                     detachAttachment.mutate({ id: att.id });
                   }
                 }}

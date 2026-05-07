@@ -40,18 +40,23 @@ export function MigrationSummaryModal({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Inbox organized</DialogTitle>
         </DialogHeader>
 
-        <div className="px-4 py-3 space-y-4">
+        <div className="space-y-4 px-4 py-3">
           <p className="font-ui text-sm text-text-secondary">
             Your inbox has been updated to use the new GTD capture workflow.
           </p>
 
-          <div className="rounded-lg border border-border-default bg-surface-raised p-3 space-y-2">
+          <div className="space-y-2 rounded-lg border border-border-default bg-surface-raised p-3">
             <div className="flex items-center justify-between font-ui text-sm">
               <span className="text-text-secondary">Items converted to captures</span>
               <span className="font-semibold tabular-nums text-accent-success">{converted}</span>
@@ -61,7 +66,7 @@ export function MigrationSummaryModal({
               <span className="font-semibold tabular-nums text-text-primary">{kept}</span>
             </div>
             {total > 0 && (
-              <div className="border-t border-border-subtle pt-2 flex items-center justify-between font-ui text-xs text-text-tertiary">
+              <div className="flex items-center justify-between border-t border-border-subtle pt-2 font-ui text-xs text-text-tertiary">
                 <span>Total items</span>
                 <span className="tabular-nums">{total}</span>
               </div>
@@ -70,8 +75,8 @@ export function MigrationSummaryModal({
 
           {converted > 0 && (
             <p className="font-ui text-xs text-text-tertiary">
-              Converted items now appear at the top of your inbox as unprocessed captures.
-              Use the process button to decide what to do with each one.
+              Converted items now appear at the top of your inbox as unprocessed captures. Use the
+              process button to decide what to do with each one.
             </p>
           )}
         </div>

@@ -20,7 +20,7 @@ export function BottomTabBar(): React.ReactElement {
   return (
     <nav
       aria-label="Main navigation"
-      className="flex shrink-0 items-stretch border-t border-border-subtle bg-surface-base safe-area-inset-bottom"
+      className="safe-area-inset-bottom flex shrink-0 items-stretch border-t border-border-subtle bg-surface-base"
     >
       {TABS.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -32,9 +32,7 @@ export function BottomTabBar(): React.ReactElement {
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-center",
               "min-h-[56px] transition-colors",
-              active
-                ? "text-accent-primary"
-                : "text-text-tertiary hover:text-text-secondary",
+              active ? "text-accent-primary" : "text-text-tertiary hover:text-text-secondary",
             )}
           >
             <Icon size={22} aria-hidden strokeWidth={active ? 2.5 : 1.75} />

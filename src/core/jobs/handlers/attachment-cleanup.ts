@@ -22,7 +22,8 @@ export async function handleAttachmentCleanup(): Promise<AttachmentCleanupResult
   let errors = 0;
 
   // ── Phase 1: Delete storage objects for soft-deleted attachment records ──────
-  let deletedAttachments: { id: string; storage_path: string; thumbnail_path: string | null }[] = [];
+  let deletedAttachments: { id: string; storage_path: string; thumbnail_path: string | null }[] =
+    [];
   try {
     deletedAttachments = await db.attachment.findMany({
       where: { deleted_at: { lt: cutoff, not: null } },
@@ -41,12 +42,18 @@ export async function handleAttachmentCleanup(): Promise<AttachmentCleanupResult
       }
       attachments++;
     } catch (err) {
-      log.warn({ err, storagePath: att.storage_path }, "attachment-cleanup: failed to delete storage object");
+      log.warn(
+        { err, storagePath: att.storage_path },
+        "attachment-cleanup: failed to delete storage object",
+      );
       errors++;
     }
   }
 
-  log.debug({ attachments, errors }, "attachment-cleanup: phase 1 complete (soft-deleted storage objects)");
+  log.debug(
+    { attachments, errors },
+    "attachment-cleanup: phase 1 complete (soft-deleted storage objects)",
+  );
 
   // ── Phase 2: Sweep R2 for orphaned export/import keys with no DB record ──────
   // We list keys under the users/ prefix, filter to export/import paths,

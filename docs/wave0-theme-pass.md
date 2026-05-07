@@ -5,6 +5,7 @@
 both `data-theme="dark"` (default) and `data-theme="light"`.
 
 ## Method
+
 1. **Static audit.** `rg` over `src/components/**` for hardcoded hex/rgb/hsl
    colors and Tailwind `dark:` variants — **zero matches**. Every component
    resolves color through Stratum tokens defined in `src/styles/tokens.css`.
@@ -23,6 +24,7 @@ both `data-theme="dark"` (default) and `data-theme="light"`.
    inputs, card) frame‑by‑frame in both themes.
 
 ## Results
+
 - **69 stories × 2 themes = 138 default screenshots** — `ok: 138`,
   `failed: 0`, console issues: 0. Raw output checked in at
   `docs/wave0-theme-pass/results.json`.
@@ -33,6 +35,7 @@ both `data-theme="dark"` (default) and `data-theme="light"`.
 - **No contrast, no token, no broken‑story regressions** in either theme.
 
 ### Filtered noise
+
 Both sweep scripts ignore a small allowlist of known transient signatures
 the static Storybook iframe occasionally emits during the sweep — they
 are not visual regressions:
@@ -54,6 +57,7 @@ captured in `/tmp/story_ids.txt`.) Note: `README.md` historically rounded
 this to "41" — the source‑of‑truth count from `src/components/**` is 40.
 
 ### Primitives — `src/components/ui/` (27)
+
 1. alert-dialog
 2. avatar
 3. badge
@@ -83,6 +87,7 @@ this to "41" — the source‑of‑truth count from `src/components/**` is 40.
 27. tooltip
 
 ### Composed — `src/components/composed/` (7)
+
 1. command-palette
 2. empty-state
 3. entity-link
@@ -92,6 +97,7 @@ this to "41" — the source‑of‑truth count from `src/components/**` is 40.
 7. tag-pill
 
 ### Layout — `src/components/layout/` (6)
+
 1. app-shell
 2. module-switcher
 3. page-header
@@ -106,6 +112,7 @@ exercised implicitly by every story flipping themes.)
 ## Bugs filed and fixed
 
 ### B‑01 — Toast did not follow Atlas theme
+
 - **File:** `src/components/ui/toast.tsx`
 - **Symptom:** `<Toaster theme="system" />` made Sonner read the OS color
   scheme, so toasts were always dark on a light Atlas page (and vice versa
@@ -139,17 +146,18 @@ kill "$SB_PID"
 
 Optional environment variables (both scripts):
 
-| Variable         | Default                       | Purpose                                          |
-| ---------------- | ----------------------------- | ------------------------------------------------ |
-| `STORYBOOK_URL`  | `http://localhost:5000`       | Where the built Storybook is being served.       |
-| `OUT_DIR`        | `/tmp/storybook-sweep`        | Destination for PNG screenshots + `*.json`.      |
-| `CHROMIUM_PATH`  | _(unset → playwright managed)_| Override Chromium binary (e.g. system Chromium). |
-| `SKIP_EXISTING`  | _(unset)_                     | Skip stories whose screenshot file already exists (theme sweep only). |
+| Variable        | Default                        | Purpose                                                               |
+| --------------- | ------------------------------ | --------------------------------------------------------------------- |
+| `STORYBOOK_URL` | `http://localhost:5000`        | Where the built Storybook is being served.                            |
+| `OUT_DIR`       | `/tmp/storybook-sweep`         | Destination for PNG screenshots + `*.json`.                           |
+| `CHROMIUM_PATH` | _(unset → playwright managed)_ | Override Chromium binary (e.g. system Chromium).                      |
+| `SKIP_EXISTING` | _(unset)_                      | Skip stories whose screenshot file already exists (theme sweep only). |
 
 A successful run prints `Total: …, Failed: 0, With console issues: 0`
 for each script.
 
 ## CI snapshots — recommendation (not wired)
+
 The two sweep scripts are deterministic and headless; wiring them into CI
 is straightforward but **deferred** to keep Wave 0 free of new infra:
 
@@ -161,6 +169,7 @@ Captured as a follow‑up (`#6 — Catch theme regressions automatically on
 every change`) rather than landing here.
 
 ## Artifacts
+
 - `scripts/storybook-theme-sweep.mjs` — default story sweep
 - `scripts/storybook-overlay-sweep.mjs` — overlay open‑state sweep
 - `/tmp/storybook-sweep/results.json` — 138 entries, all `ok`

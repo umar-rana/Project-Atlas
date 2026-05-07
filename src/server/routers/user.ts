@@ -4,9 +4,16 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { logActivity } from "@/core/audit";
-import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES, LANGUAGE_OPTIONS } from "@/core/locale/presets";
+import {
+  LOCALE_PRESETS,
+  DATE_FORMAT_OPTIONS,
+  NUMBER_FORMAT_OPTIONS,
+  ISO_4217_CURRENCY_CODES,
+  LANGUAGE_OPTIONS,
+} from "@/core/locale/presets";
 
-const EMAIL_OR_DOMAIN_RE = /^([^\s@]+@[^\s@]+\.[^\s@]+|(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+)$/;
+const EMAIL_OR_DOMAIN_RE =
+  /^([^\s@]+@[^\s@]+\.[^\s@]+|(@)?[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+)$/;
 
 export const userRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -81,14 +88,22 @@ export const userRouter = router({
       } = input;
 
       const tasksPrefsUpdate: Record<string, unknown> = {};
-      if (tasks_default_review_interval_days !== undefined) tasksPrefsUpdate.default_review_interval_days = tasks_default_review_interval_days;
-      if (tasks_default_forecast_days !== undefined) tasksPrefsUpdate.default_forecast_days = parseInt(tasks_default_forecast_days, 10);
-      if (tasks_default_sequential !== undefined) tasksPrefsUpdate.default_sequential = tasks_default_sequential;
-      if (gtd_someday_review_cadence !== undefined) tasksPrefsUpdate.gtd_someday_review_cadence = gtd_someday_review_cadence;
-      if (gtd_waiting_for_default_window !== undefined) tasksPrefsUpdate.gtd_waiting_for_default_window = gtd_waiting_for_default_window;
-      if (gtd_two_minute_reminder !== undefined) tasksPrefsUpdate.gtd_two_minute_reminder = gtd_two_minute_reminder;
-      if (email_filter_auto_replies !== undefined) tasksPrefsUpdate.email_filter_auto_replies = email_filter_auto_replies;
-      if (email_filter_calendar !== undefined) tasksPrefsUpdate.email_filter_calendar = email_filter_calendar;
+      if (tasks_default_review_interval_days !== undefined)
+        tasksPrefsUpdate.default_review_interval_days = tasks_default_review_interval_days;
+      if (tasks_default_forecast_days !== undefined)
+        tasksPrefsUpdate.default_forecast_days = parseInt(tasks_default_forecast_days, 10);
+      if (tasks_default_sequential !== undefined)
+        tasksPrefsUpdate.default_sequential = tasks_default_sequential;
+      if (gtd_someday_review_cadence !== undefined)
+        tasksPrefsUpdate.gtd_someday_review_cadence = gtd_someday_review_cadence;
+      if (gtd_waiting_for_default_window !== undefined)
+        tasksPrefsUpdate.gtd_waiting_for_default_window = gtd_waiting_for_default_window;
+      if (gtd_two_minute_reminder !== undefined)
+        tasksPrefsUpdate.gtd_two_minute_reminder = gtd_two_minute_reminder;
+      if (email_filter_auto_replies !== undefined)
+        tasksPrefsUpdate.email_filter_auto_replies = email_filter_auto_replies;
+      if (email_filter_calendar !== undefined)
+        tasksPrefsUpdate.email_filter_calendar = email_filter_calendar;
       if (email_blocklist !== undefined) {
         const raw = Array.isArray(email_blocklist)
           ? email_blocklist.map((s) => s.trim().toLowerCase()).filter(Boolean)
@@ -111,12 +126,17 @@ export const userRouter = router({
 
       if (hasTasksPrefs) {
         const existing = await db.user.findUnique({ where: { id: ctx.user.id } });
-        const currentPrefs = (typeof existing?.tasks_prefs === "object" && existing?.tasks_prefs !== null
-          ? existing.tasks_prefs
-          : {}) as Record<string, unknown>;
+        const currentPrefs = (
+          typeof existing?.tasks_prefs === "object" && existing?.tasks_prefs !== null
+            ? existing.tasks_prefs
+            : {}
+        ) as Record<string, unknown>;
         const updated = await db.user.update({
           where: { id: ctx.user.id },
-          data: { ...coreFields, tasks_prefs: { ...currentPrefs, ...tasksPrefsUpdate } as Prisma.InputJsonValue },
+          data: {
+            ...coreFields,
+            tasks_prefs: { ...currentPrefs, ...tasksPrefsUpdate } as Prisma.InputJsonValue,
+          },
         });
         return updated;
       }
@@ -133,15 +153,17 @@ export const userRouter = router({
       z.union([
         z.object({
           preset: z.enum(["pakistan", "us", "uk"]),
-          language: z.enum(LANGUAGE_OPTIONS.map((o) => o.value) as [string, ...string[]]).optional(),
+          language: z
+            .enum(LANGUAGE_OPTIONS.map((o) => o.value) as [string, ...string[]])
+            .optional(),
         }),
         z.object({
           preset: z.literal("custom"),
           date_format: z.enum(DATE_FORMAT_OPTIONS as [string, ...string[]]).optional(),
           time_format: z.enum(["12h", "24h"]).optional(),
-          number_format: z.enum(
-            NUMBER_FORMAT_OPTIONS.map((o) => o.value) as [string, ...string[]],
-          ).optional(),
+          number_format: z
+            .enum(NUMBER_FORMAT_OPTIONS.map((o) => o.value) as [string, ...string[]])
+            .optional(),
           currency_code: z
             .string()
             .trim()
@@ -150,8 +172,15 @@ export const userRouter = router({
               message: "Currency code must be a valid ISO 4217 code (e.g. USD, EUR, PKR)",
             })
             .optional(),
-          currency_symbol: z.string().trim().min(1, "Currency symbol is required").max(5, "Currency symbol must be 5 characters or fewer").optional(),
-          language: z.enum(LANGUAGE_OPTIONS.map((o) => o.value) as [string, ...string[]]).optional(),
+          currency_symbol: z
+            .string()
+            .trim()
+            .min(1, "Currency symbol is required")
+            .max(5, "Currency symbol must be 5 characters or fewer")
+            .optional(),
+          language: z
+            .enum(LANGUAGE_OPTIONS.map((o) => o.value) as [string, ...string[]])
+            .optional(),
         }),
       ]),
     )

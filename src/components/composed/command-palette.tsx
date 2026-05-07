@@ -142,7 +142,9 @@ export function CommandPalette({
                     >
                       {item.icon ? <span className="text-text-tertiary">{item.icon}</span> : null}
                       <span className="flex-1 truncate">{item.label}</span>
-                      {item.shortcut ? <KeyboardShortcut keys={item.shortcut} variant="subtle" /> : null}
+                      {item.shortcut ? (
+                        <KeyboardShortcut keys={item.shortcut} variant="subtle" />
+                      ) : null}
                     </CommandPrimitive.Item>
                   ))}
                 </CommandPrimitive.Group>

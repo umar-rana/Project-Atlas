@@ -16,51 +16,53 @@ Object Storage (Cloudflare R2) was explicitly out of scope and was not touched.
 
 ## Environment Variables in Use (Post-Decommission)
 
-| Variable | Purpose | Notes |
-|---|---|---|
-| `DATABASE_URL_NEON` | Runtime connection (pooled) | Used by Prisma at app runtime via `resolveDbUrl()` |
-| `DATABASE_URL` | Replit Postgres (original) | ~~Removed~~ — Replit Postgres integration detached 2026-05-05; variable no longer injected |
-| `REPLIT_DATABASE_URL_BACKUP` | Replit Postgres backup reference | ~~Deleted~~ — removed from Secrets 2026-05-05 |
-| `NEON_DATABASE_URL_POOLED` | Original Neon pooled secret | Source of truth for `DATABASE_URL_NEON` |
-| `NEON_DATABASE_URL_DIRECT` | Original Neon direct secret | Kept for reference (non-pooled connection) |
+| Variable                     | Purpose                          | Notes                                                                                      |
+| ---------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `DATABASE_URL_NEON`          | Runtime connection (pooled)      | Used by Prisma at app runtime via `resolveDbUrl()`                                         |
+| `DATABASE_URL`               | Replit Postgres (original)       | ~~Removed~~ — Replit Postgres integration detached 2026-05-05; variable no longer injected |
+| `REPLIT_DATABASE_URL_BACKUP` | Replit Postgres backup reference | ~~Deleted~~ — removed from Secrets 2026-05-05                                              |
+| `NEON_DATABASE_URL_POOLED`   | Original Neon pooled secret      | Source of truth for `DATABASE_URL_NEON`                                                    |
+| `NEON_DATABASE_URL_DIRECT`   | Original Neon direct secret      | Kept for reference (non-pooled connection)                                                 |
 
 ---
 
 ## Code Changes
 
 ### `src/core/db/index.ts`
+
 - Added `resolveDbUrl()` helper that reads `DATABASE_URL_NEON ?? DATABASE_URL` and strips any surrounding single-quote characters. This was needed because Replit's Secrets UI preserved the surrounding quotes that were accidentally included when the secrets were first entered; the same issue was observed on both the pooled and direct URLs. The stripping is single-quote only — double quotes are untouched.
 - Updated `createPrismaClient()` to pass `datasources.db.url` explicitly using `resolveDbUrl()`.
 - **2026-05-05 (task #133):** Removed the `?? process.env.DATABASE_URL` fallback from `resolveDbUrl()`. The function now reads only `DATABASE_URL_NEON`. The Replit Postgres fallback is no longer needed or valid.
 
 ### `prisma/schema.prisma`
+
 - Added a `directUrl` to the datasource block to support Prisma migrations against Neon's direct (non-pooled) connection. This `directUrl` was subsequently removed (task #184) as migrations run cleanly through the pooled connection.
 
 ---
 
 ## Row Counts: Pre vs Post Migration
 
-| Table | Pre-Migration | Post-Migration | Match |
-|---|---|---|---|
-| User | 1 | 1 | ✅ |
-| AuditLog | 1 | 1 | ✅ |
-| AICallLog | 0 | 0 | ✅ |
-| Attachment | 0 | 0 | ✅ |
-| Capture | 0 | 0 | ✅ |
-| CaptureParseLog | 0 | 0 | ✅ |
-| Context | 0 | 0 | ✅ |
-| ContextOnTask | 0 | 0 | ✅ |
-| DriveConfig | 0 | 0 | ✅ |
-| EmailCapture | 0 | 0 | ✅ |
-| IntegrationToken | 0 | 0 | ✅ |
-| Person | 0 | 0 | ✅ |
-| Project | 0 | 0 | ✅ |
-| ProjectFolder | 0 | 0 | ✅ |
-| RateLimitTracker | 0 | 0 | ✅ |
-| SyncState | 0 | 0 | ✅ |
-| Tag | 0 | 0 | ✅ |
-| TagOnTask | 0 | 0 | ✅ |
-| Task | 0 | 0 | ✅ |
+| Table            | Pre-Migration | Post-Migration | Match |
+| ---------------- | ------------- | -------------- | ----- |
+| User             | 1             | 1              | ✅    |
+| AuditLog         | 1             | 1              | ✅    |
+| AICallLog        | 0             | 0              | ✅    |
+| Attachment       | 0             | 0              | ✅    |
+| Capture          | 0             | 0              | ✅    |
+| CaptureParseLog  | 0             | 0              | ✅    |
+| Context          | 0             | 0              | ✅    |
+| ContextOnTask    | 0             | 0              | ✅    |
+| DriveConfig      | 0             | 0              | ✅    |
+| EmailCapture     | 0             | 0              | ✅    |
+| IntegrationToken | 0             | 0              | ✅    |
+| Person           | 0             | 0              | ✅    |
+| Project          | 0             | 0              | ✅    |
+| ProjectFolder    | 0             | 0              | ✅    |
+| RateLimitTracker | 0             | 0              | ✅    |
+| SyncState        | 0             | 0              | ✅    |
+| Tag              | 0             | 0              | ✅    |
+| TagOnTask        | 0             | 0              | ✅    |
+| Task             | 0             | 0              | ✅    |
 
 **All 19 tables matched exactly.**
 
@@ -83,18 +85,18 @@ User identity verified: `umar@insightive.org` (id: `019dcebe-15bf-7cdc-a679-268a
 
 Completed by user on 2026-04-28 after the switch to Neon:
 
-| # | Check | Result |
-|---|---|---|
-| 1 | Sign out and sign back in | ✅ |
-| 2 | `/admin/health` all green | ✅ |
-| 3 | Inbox view loads | ✅ |
-| 4 | Capture a new task | ✅ |
-| 5 | Mark task complete | ✅ |
-| 6 | Settings page loads | ✅ |
-| 7 | Search works | ✅ |
-| 8 | Project view loads | ✅ |
-| 9 | Forecast view loads | ✅ |
-| 10 | Attachment UI | ⚠️ Out of scope — Attachments use Replit Object Storage, which was explicitly excluded from this migration. Separate future task. |
+| #   | Check                     | Result                                                                                                                            |
+| --- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Sign out and sign back in | ✅                                                                                                                                |
+| 2   | `/admin/health` all green | ✅                                                                                                                                |
+| 3   | Inbox view loads          | ✅                                                                                                                                |
+| 4   | Capture a new task        | ✅                                                                                                                                |
+| 5   | Mark task complete        | ✅                                                                                                                                |
+| 6   | Settings page loads       | ✅                                                                                                                                |
+| 7   | Search works              | ✅                                                                                                                                |
+| 8   | Project view loads        | ✅                                                                                                                                |
+| 9   | Forecast view loads       | ✅                                                                                                                                |
+| 10  | Attachment UI             | ⚠️ Out of scope — Attachments use Replit Object Storage, which was explicitly excluded from this migration. Separate future task. |
 
 **9/9 database-dependent checks passed.**
 
@@ -120,12 +122,12 @@ Reviewed by Atlas agent (task #127) on 2026-04-29. Safety window has **not yet p
 
 ### Findings
 
-| Item | Status |
-|---|---|
-| `DATABASE_URL_NEON` secret present | ✅ — Neon is the active database |
-| `REPLIT_DATABASE_URL_BACKUP` secret present | ✅ — Still intact as rollback target |
-| `DATABASE_URL` | ⚠️ Runtime-managed by Replit Postgres service (cannot be manually deleted; it is removed automatically when the Replit Postgres integration is detached from the project) |
-| `resolveDbUrl()` fallback (`?? process.env.DATABASE_URL`) | Still in place — safe to remove after decommission |
+| Item                                                      | Status                                                                                                                                                                    |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL_NEON` secret present                        | ✅ — Neon is the active database                                                                                                                                          |
+| `REPLIT_DATABASE_URL_BACKUP` secret present               | ✅ — Still intact as rollback target                                                                                                                                      |
+| `DATABASE_URL`                                            | ⚠️ Runtime-managed by Replit Postgres service (cannot be manually deleted; it is removed automatically when the Replit Postgres integration is detached from the project) |
+| `resolveDbUrl()` fallback (`?? process.env.DATABASE_URL`) | Still in place — safe to remove after decommission                                                                                                                        |
 
 **Decommission is pending. No action taken on 2026-04-29.**
 
@@ -135,12 +137,12 @@ Reviewed by Atlas agent (task #127) on 2026-04-29. Safety window has **not yet p
 
 Completed by Atlas agent (task #133) on 2026-05-05. Safety window had passed.
 
-| Step | Status |
-|---|---|
-| `REPLIT_DATABASE_URL_BACKUP` secret deleted | ✅ — Removed from Replit Secrets |
-| Replit Postgres (Helium) integration detached | ✅ — `DATABASE_URL` runtime variable removed (requires manual detach via Replit UI) |
-| `?? process.env.DATABASE_URL` fallback removed from `resolveDbUrl()` | ✅ — `src/core/db/index.ts` updated; only `DATABASE_URL_NEON` is used |
-| This document updated | ✅ |
+| Step                                                                 | Status                                                                              |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `REPLIT_DATABASE_URL_BACKUP` secret deleted                          | ✅ — Removed from Replit Secrets                                                    |
+| Replit Postgres (Helium) integration detached                        | ✅ — `DATABASE_URL` runtime variable removed (requires manual detach via Replit UI) |
+| `?? process.env.DATABASE_URL` fallback removed from `resolveDbUrl()` | ✅ — `src/core/db/index.ts` updated; only `DATABASE_URL_NEON` is used               |
+| This document updated                                                | ✅                                                                                  |
 
 **Decommission is complete. Neon is the sole database.**
 

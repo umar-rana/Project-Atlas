@@ -82,11 +82,14 @@ export function InspectorPanel({
           <details
             key={section.id}
             open={section.defaultOpen ?? true}
-            className="border-b border-border-subtle [&_summary]:list-none [&_summary::-webkit-details-marker]:hidden"
+            className="border-b border-border-subtle [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none"
           >
             <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 font-ui text-2xs font-semibold uppercase tracking-caps text-text-secondary hover:bg-surface-hover">
               {section.title}
-              <span aria-hidden className="font-mono text-text-tertiary transition-transform group-open:rotate-90">
+              <span
+                aria-hidden
+                className="font-mono text-text-tertiary transition-transform group-open:rotate-90"
+              >
                 ›
               </span>
             </summary>

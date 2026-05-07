@@ -22,10 +22,12 @@ function escapeHtml(s: string): string {
 export const emailsRouter = router({
   list: protectedProcedure
     .input(
-      z.object({
-        limit: z.number().int().min(1).max(50).default(10),
-        cursor: z.string().uuid().optional(),
-      }).optional(),
+      z
+        .object({
+          limit: z.number().int().min(1).max(50).default(10),
+          cursor: z.string().uuid().optional(),
+        })
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
       const limit = input?.limit ?? 10;
@@ -74,46 +76,46 @@ export const emailsRouter = router({
       return capture;
     }),
 
-  sendVerificationEmail: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      const apiKey = process.env.RESEND_API_KEY ?? process.env.RESEND_KEY;
-      if (!apiKey) {
-        log.error({ userId: ctx.user.id }, "Resend API key not configured");
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "Outbound email is not configured. Set RESEND_API_KEY to enable verification emails.",
-        });
-      }
+  sendVerificationEmail: protectedProcedure.mutation(async ({ ctx }) => {
+    const apiKey = process.env.RESEND_API_KEY ?? process.env.RESEND_KEY;
+    if (!apiKey) {
+      log.error({ userId: ctx.user.id }, "Resend API key not configured");
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message:
+          "Outbound email is not configured. Set RESEND_API_KEY to enable verification emails.",
+      });
+    }
 
-      const recipient = ctx.user.email;
-      if (!recipient || !recipient.includes("@")) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Your account has no valid email address on file.",
-        });
-      }
+    const recipient = ctx.user.email;
+    if (!recipient || !recipient.includes("@")) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Your account has no valid email address on file.",
+      });
+    }
 
-      const directAddress = `inbox+${ctx.user.id}@${EMAIL_DOMAIN}`;
-      const subject = "Atlas inbox routing test";
-      const text = [
-        `Hi,`,
-        ``,
-        `This is a test email from Atlas to confirm that inbox routing works for you.`,
-        ``,
-        `Because this email was sent to your account address (${recipient}), Atlas now knows that the plain inbox address will work when you forward or send mail from this account:`,
-        ``,
-        `  ${PLAIN_INBOX}`,
-        ``,
-        `You can also always use your personal direct address, which routes regardless of sender:`,
-        ``,
-        `  ${directAddress}`,
-        ``,
-        `If you didn't request this email, you can safely ignore it.`,
-        ``,
-        `— Atlas`,
-      ].join("\n");
+    const directAddress = `inbox+${ctx.user.id}@${EMAIL_DOMAIN}`;
+    const subject = "Atlas inbox routing test";
+    const text = [
+      `Hi,`,
+      ``,
+      `This is a test email from Atlas to confirm that inbox routing works for you.`,
+      ``,
+      `Because this email was sent to your account address (${recipient}), Atlas now knows that the plain inbox address will work when you forward or send mail from this account:`,
+      ``,
+      `  ${PLAIN_INBOX}`,
+      ``,
+      `You can also always use your personal direct address, which routes regardless of sender:`,
+      ``,
+      `  ${directAddress}`,
+      ``,
+      `If you didn't request this email, you can safely ignore it.`,
+      ``,
+      `— Atlas`,
+    ].join("\n");
 
-      const html = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a1a; line-height: 1.5; max-width: 560px; margin: 0 auto; padding: 24px;">
@@ -128,46 +130,46 @@ export const emailsRouter = router({
 </body>
 </html>`.trim();
 
-      try {
-        const res = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: FROM_ADDRESS,
-            to: [recipient],
-            subject,
-            text,
-            html,
-          }),
-        });
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: FROM_ADDRESS,
+          to: [recipient],
+          subject,
+          text,
+          html,
+        }),
+      });
 
-        if (!res.ok) {
-          const errBody = await res.text().catch(() => "");
-          log.error(
-            { userId: ctx.user.id, status: res.status, body: errBody.slice(0, 500) },
-            "Resend send failed",
-          );
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Email send failed (${res.status}). Please try again later.`,
-          });
-        }
-
-        const data = (await res.json().catch(() => ({}))) as { id?: string };
-        log.info({ userId: ctx.user.id, recipient, resendId: data.id }, "Verification email sent");
-        return { success: true as const, recipient, id: data.id };
-      } catch (err) {
-        if (err instanceof TRPCError) throw err;
-        log.error({ userId: ctx.user.id, err }, "Verification email exception");
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        log.error(
+          { userId: ctx.user.id, status: res.status, body: errBody.slice(0, 500) },
+          "Resend send failed",
+        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Email send failed. Please try again later.",
+          message: `Email send failed (${res.status}). Please try again later.`,
         });
       }
-    }),
+
+      const data = (await res.json().catch(() => ({}))) as { id?: string };
+      log.info({ userId: ctx.user.id, recipient, resendId: data.id }, "Verification email sent");
+      return { success: true as const, recipient, id: data.id };
+    } catch (err) {
+      if (err instanceof TRPCError) throw err;
+      log.error({ userId: ctx.user.id, err }, "Verification email exception");
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Email send failed. Please try again later.",
+      });
+    }
+  }),
 
   discardCapture: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

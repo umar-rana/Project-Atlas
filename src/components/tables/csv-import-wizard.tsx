@@ -44,7 +44,7 @@ type WizardStep = 1 | 2 | 3;
 function fileToText(file: File, encoding: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string ?? "");
+    reader.onload = (e) => resolve((e.target?.result as string) ?? "");
     reader.onerror = () => reject(new Error("Failed to read file"));
     reader.readAsText(file, encoding);
   });
@@ -72,11 +72,19 @@ export function CsvImportWizard({
   const projectsQuery = trpc.projects.list.useQuery({ include_all_statuses: false });
 
   type FlatFolder = { id: string; label: string };
-  function flattenFolders(nodes: { id: string; name: string; children: unknown[] }[], depth: number): FlatFolder[] {
+  function flattenFolders(
+    nodes: { id: string; name: string; children: unknown[] }[],
+    depth: number,
+  ): FlatFolder[] {
     const out: FlatFolder[] = [];
     for (const n of nodes) {
       out.push({ id: n.id, label: `${"  ".repeat(depth)}${n.name}` });
-      out.push(...flattenFolders(n.children as { id: string; name: string; children: unknown[] }[], depth + 1));
+      out.push(
+        ...flattenFolders(
+          n.children as { id: string; name: string; children: unknown[] }[],
+          depth + 1,
+        ),
+      );
     }
     return out;
   }
@@ -139,11 +147,15 @@ export function CsvImportWizard({
       return;
     }
     if (rows.length > MAX_ROWS) {
-      setFileError(`Too many rows. Maximum is ${MAX_ROWS.toLocaleString()} rows, but this file has ${rows.length.toLocaleString()}.`);
+      setFileError(
+        `Too many rows. Maximum is ${MAX_ROWS.toLocaleString()} rows, but this file has ${rows.length.toLocaleString()}.`,
+      );
       return;
     }
     if (headers.length > MAX_COLS) {
-      setFileError(`Too many columns. Maximum is ${MAX_COLS} columns, but this file has ${headers.length}.`);
+      setFileError(
+        `Too many columns. Maximum is ${MAX_COLS} columns, but this file has ${headers.length}.`,
+      );
       return;
     }
 
@@ -176,15 +188,11 @@ export function CsvImportWizard({
   }
 
   function updateColumnName(idx: number, name: string) {
-    setColumns((cols) =>
-      cols.map((c, i) => (i === idx ? { ...c, name } : c)),
-    );
+    setColumns((cols) => cols.map((c, i) => (i === idx ? { ...c, name } : c)));
   }
 
   function updateColumnType(idx: number, type: ColumnType) {
-    setColumns((cols) =>
-      cols.map((c, i) => (i === idx ? { ...c, type } : c)),
-    );
+    setColumns((cols) => cols.map((c, i) => (i === idx ? { ...c, type } : c)));
   }
 
   async function handleImport() {
@@ -198,13 +206,24 @@ export function CsvImportWizard({
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("table_name", tableName.trim() || parsed.fileName.replace(/\.csv$/i, "") || "Imported table");
+      formData.append(
+        "table_name",
+        tableName.trim() || parsed.fileName.replace(/\.csv$/i, "") || "Imported table",
+      );
       formData.append("folder_id", folderId || "");
       formData.append("project_id", projectId || "");
-      formData.append("columns", JSON.stringify(columns.map((c) => ({ name: c.name, type: c.type }))));
+      formData.append(
+        "columns",
+        JSON.stringify(columns.map((c) => ({ name: c.name, type: c.type }))),
+      );
 
       const res = await fetch(IMPORT_TABLE_ENDPOINT, { method: "POST", body: formData });
-      const json = (await res.json()) as { table_id?: string; imported_row_count?: number; failed_cell_count?: number; error?: string };
+      const json = (await res.json()) as {
+        table_id?: string;
+        imported_row_count?: number;
+        failed_cell_count?: number;
+        error?: string;
+      };
 
       if (!res.ok) {
         throw new Error(json.error ?? "Import failed. Please try again.");
@@ -219,8 +238,7 @@ export function CsvImportWizard({
       );
       onImported(json.table_id!);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Import failed. Please try again.";
+      const msg = err instanceof Error ? err.message : "Import failed. Please try again.";
       toast.error(msg);
     } finally {
       setIsPending(false);
@@ -338,11 +356,12 @@ export function CsvImportWizard({
 
               <div className="flex items-center justify-between">
                 <p className="font-ui text-xs text-text-secondary">
-                  <span className="font-medium text-text-primary">{parsed.totalRows.toLocaleString()}</span>{" "}
-                  rows · <span className="font-medium text-text-primary">{columns.length}</span> columns
-                  {parsed.totalRows > PREVIEW_ROWS && (
-                    <> · showing first {PREVIEW_ROWS} rows</>
-                  )}
+                  <span className="font-medium text-text-primary">
+                    {parsed.totalRows.toLocaleString()}
+                  </span>{" "}
+                  rows · <span className="font-medium text-text-primary">{columns.length}</span>{" "}
+                  columns
+                  {parsed.totalRows > PREVIEW_ROWS && <> · showing first {PREVIEW_ROWS} rows</>}
                 </p>
                 <p className="font-ui text-xs text-text-disabled">{parsed.fileName}</p>
               </div>
@@ -352,7 +371,10 @@ export function CsvImportWizard({
                   <thead>
                     <tr className="border-b border-border-subtle bg-surface-sunken">
                       {columns.map((col, idx) => (
-                        <th key={idx} className="min-w-36 border-r border-border-subtle px-2 py-2 text-left last:border-r-0">
+                        <th
+                          key={idx}
+                          className="min-w-36 border-r border-border-subtle px-2 py-2 text-left last:border-r-0"
+                        >
                           <div className="flex flex-col gap-1">
                             <input
                               value={col.name}
@@ -422,7 +444,9 @@ export function CsvImportWizard({
                 <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
                   Folder
                   <Hint label="Optional — organise this table inside a folder" side="right">
-                    <span className="ml-1 cursor-default font-ui text-xs text-text-disabled">(optional)</span>
+                    <span className="ml-1 cursor-default font-ui text-xs text-text-disabled">
+                      (optional)
+                    </span>
                   </Hint>
                 </label>
                 <select
@@ -443,7 +467,9 @@ export function CsvImportWizard({
                 <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
                   Project
                   <Hint label="Optional — link this table to a project" side="right">
-                    <span className="ml-1 cursor-default font-ui text-xs text-text-disabled">(optional)</span>
+                    <span className="ml-1 cursor-default font-ui text-xs text-text-disabled">
+                      (optional)
+                    </span>
                   </Hint>
                 </label>
                 <select
@@ -463,7 +489,9 @@ export function CsvImportWizard({
               <div className="rounded-md border border-border-subtle bg-surface-sunken px-3 py-2.5">
                 <p className="font-ui text-xs text-text-secondary">
                   Ready to import{" "}
-                  <span className="font-medium text-text-primary">{parsed.totalRows.toLocaleString()} rows</span>{" "}
+                  <span className="font-medium text-text-primary">
+                    {parsed.totalRows.toLocaleString()} rows
+                  </span>{" "}
                   across{" "}
                   <span className="font-medium text-text-primary">{columns.length} columns</span>.
                   Cells that can't be parsed for their column type will be left empty.

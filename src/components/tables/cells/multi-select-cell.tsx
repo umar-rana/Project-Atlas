@@ -31,9 +31,7 @@ export function MultiSelectCell({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const searchRef = React.useRef<HTMLInputElement>(null);
   const [search, setSearch] = React.useState("");
-  const [localSelected, setLocalSelected] = React.useState<string[]>(
-    () => (value?.option_ids ?? []),
-  );
+  const [localSelected, setLocalSelected] = React.useState<string[]>(() => value?.option_ids ?? []);
 
   const selectedOptions = localSelected
     .map((id) => options.find((o) => o.id === id))
@@ -80,9 +78,7 @@ export function MultiSelectCell({
   }, [isEditing, commitAndClose, onCancel]);
 
   function toggleOption(id: string) {
-    setLocalSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setLocalSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function handleCreateOption() {
@@ -93,9 +89,7 @@ export function MultiSelectCell({
     setSearch("");
   }
 
-  const filtered = options.filter((o) =>
-    o.label.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()));
 
   const canCreate =
     search.trim().length > 0 &&

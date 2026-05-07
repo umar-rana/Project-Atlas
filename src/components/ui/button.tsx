@@ -17,12 +17,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover active:bg-accent-primary-active",
+        primary:
+          "bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover active:bg-accent-primary-active",
         secondary:
           "bg-surface-raised border-border-default text-text-primary hover:bg-surface-hover hover:border-border-strong active:bg-surface-active",
         ghost:
           "bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text-primary active:bg-surface-active",
-        destructive: "bg-accent-danger text-text-on-accent hover:brightness-110 active:brightness-95",
+        destructive:
+          "bg-accent-danger text-text-on-accent hover:brightness-110 active:brightness-95",
       },
       size: {
         sm: "h-22 px-2 text-2xs rounded-sm",
@@ -35,8 +37,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -52,7 +53,18 @@ const Spinner = ({ size = 14 }: { size?: number }) => (
 );
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, variant, size, asChild, isLoading, leftIcon, rightIcon, children, disabled, ...props },
+  {
+    className,
+    variant,
+    size,
+    asChild,
+    isLoading,
+    leftIcon,
+    rightIcon,
+    children,
+    disabled,
+    ...props
+  },
   ref,
 ) {
   const Comp = asChild ? Slot : "button";
@@ -69,9 +81,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function 
         <Spinner />
       ) : (
         <>
-          {leftIcon ? <span aria-hidden className="-ml-0.5 inline-flex">{leftIcon}</span> : null}
+          {leftIcon ? (
+            <span aria-hidden className="-ml-0.5 inline-flex">
+              {leftIcon}
+            </span>
+          ) : null}
           <span>{children}</span>
-          {rightIcon ? <span aria-hidden className="-mr-0.5 inline-flex">{rightIcon}</span> : null}
+          {rightIcon ? (
+            <span aria-hidden className="-mr-0.5 inline-flex">
+              {rightIcon}
+            </span>
+          ) : null}
         </>
       )}
     </Comp>

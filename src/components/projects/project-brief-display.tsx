@@ -26,11 +26,11 @@ export function ProjectBriefDisplay({ projectId }: { projectId: string }) {
         <FileText size={10} />
         Brief
       </div>
-      <p className="mb-1 font-ui text-sm font-medium text-text-primary line-clamp-1">
+      <p className="mb-1 line-clamp-1 font-ui text-sm font-medium text-text-primary">
         {brief.title || "Untitled note"}
       </p>
       {excerpt && (
-        <p className="mb-2 font-ui text-2xs text-text-secondary line-clamp-2">{excerpt}</p>
+        <p className="mb-2 line-clamp-2 font-ui text-2xs text-text-secondary">{excerpt}</p>
       )}
       <Link
         href={`/notes/${brief.id}`}

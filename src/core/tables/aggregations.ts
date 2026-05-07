@@ -1,4 +1,8 @@
-import type { ColumnType, CellValue, AggregationType, TableRowData, TableColumnData } from "./types";
+import type {
+  ColumnType,
+  AggregationType,
+  TableRowData,
+} from "./types";
 import { isMultiSelectEmpty } from "./types";
 import { isFormulaError } from "./formula-shared";
 
@@ -75,7 +79,8 @@ export function computeAggregation(
 
 function formatNumber(n: number, type: ColumnType): string {
   if (isNaN(n)) return "0";
-  const formatted = n % 1 === 0 ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const formatted =
+    n % 1 === 0 ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   return formatted;
 }
 

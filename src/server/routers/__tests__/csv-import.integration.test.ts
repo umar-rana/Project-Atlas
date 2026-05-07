@@ -20,10 +20,7 @@ import {
 } from "@/core/tables/csv-type-detect";
 
 function resolveDbUrl(): string {
-  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(
-    /^'+|'+$/g,
-    "",
-  );
+  return (process.env.DATABASE_URL_NEON ?? process.env.DATABASE_URL ?? "").replace(/^'+|'+$/g, "");
 }
 
 const rawDb = new PrismaClient({ datasources: { db: { url: resolveDbUrl() } } });
@@ -242,7 +239,10 @@ describe("tables.importFromCsv — validation", () => {
   it("rejects too many columns (> 50)", async () => {
     const user = await createTestUser();
     const caller = tablesRouter.createCaller({ user });
-    const columns = Array.from({ length: 51 }, (_, i) => ({ name: `col${i}`, type: "text" as const }));
+    const columns = Array.from({ length: 51 }, (_, i) => ({
+      name: `col${i}`,
+      type: "text" as const,
+    }));
     await expect(
       caller.importFromCsv({
         table_name: "TooManyCols",
@@ -330,7 +330,9 @@ describe("tables.importFromCsv — successful import", () => {
     expect(singleSelectCol).toBeTruthy();
     expect(multiSelectCol).toBeTruthy();
 
-    const config = singleSelectCol!.config as { options?: { id: string; label: string; color: string }[] };
+    const config = singleSelectCol!.config as {
+      options?: { id: string; label: string; color: string }[];
+    };
     expect(config.options).toHaveLength(2);
     expect(config.options![0]!.label).toBe("Active");
     expect(config.options![0]!.color).toBe("var(--viz-1)");

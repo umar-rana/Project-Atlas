@@ -33,11 +33,14 @@ describe("scoreConfidence — edge cases", () => {
 
   it("applies full vagueness penalty for all-noise text (multiple vague words)", () => {
     const noisy = "something anything whatever stuff thing";
-    const result = scoreConfidence(noisy, makePartial({ title: "something anything whatever stuff" }));
+    const result = scoreConfidence(
+      noisy,
+      makePartial({ title: "something anything whatever stuff" }),
+    );
 
     const vagueSignal = result.signals.find((s) => s.name === "vague_words");
     expect(vagueSignal).toBeDefined();
-    expect(vagueSignal!.contribution).toBe(-0.40);
+    expect(vagueSignal!.contribution).toBe(-0.4);
     expect(result.score).toBe(0);
   });
 
@@ -57,7 +60,7 @@ describe("scoreConfidence — edge cases", () => {
 
     const vagueSignal = result.signals.find((s) => s.name === "vague_words");
     expect(vagueSignal).toBeDefined();
-    expect(vagueSignal!.contribution).toBe(-0.40);
+    expect(vagueSignal!.contribution).toBe(-0.4);
   });
 
   it("caps abstract language penalty at -0.30 even with many abstract phrases", () => {
@@ -66,7 +69,7 @@ describe("scoreConfidence — edge cases", () => {
 
     const abstractSignal = result.signals.find((s) => s.name === "abstract_language");
     expect(abstractSignal).toBeDefined();
-    expect(abstractSignal!.contribution).toBe(-0.30);
+    expect(abstractSignal!.contribution).toBe(-0.3);
   });
 
   it("returns score in [0, 1] range regardless of inputs", () => {
@@ -87,7 +90,10 @@ describe("scoreConfidence — edge cases", () => {
   });
 
   it("adds title_quality signal for a clean 2–12 word title", () => {
-    const result = scoreConfidence("call dentist tomorrow", makePartial({ title: "call dentist tomorrow" }));
+    const result = scoreConfidence(
+      "call dentist tomorrow",
+      makePartial({ title: "call dentist tomorrow" }),
+    );
     const titleSignal = result.signals.find((s) => s.name === "title_quality");
     expect(titleSignal).toBeDefined();
     expect(titleSignal!.contribution).toBe(0.25);
@@ -97,7 +103,7 @@ describe("scoreConfidence — edge cases", () => {
     const result = scoreConfidence("dentistry", makePartial({ title: "dentistry" }));
     const weakSignal = result.signals.find((s) => s.name === "title_quality_weak");
     expect(weakSignal).toBeDefined();
-    expect(weakSignal!.contribution).toBe(0.10);
+    expect(weakSignal!.contribution).toBe(0.1);
   });
 
   it("adds no title signal when title is a single very short word", () => {
@@ -117,18 +123,21 @@ describe("scoreConfidence — edge cases", () => {
     const result = scoreConfidence("email Alice", makePartial({ entity_refs: ["Alice"] }));
     const entSignal = result.signals.find((s) => s.name === "entities_found");
     expect(entSignal).toBeDefined();
-    expect(entSignal!.contribution).toBe(0.10);
+    expect(entSignal!.contribution).toBe(0.1);
   });
 
   it("adds date_found signal when due_date is present", () => {
     const result = scoreConfidence("buy milk tomorrow", makePartial({ due_date: new Date() }));
     const dateSignal = result.signals.find((s) => s.name === "date_found");
     expect(dateSignal).toBeDefined();
-    expect(dateSignal!.contribution).toBe(0.30);
+    expect(dateSignal!.contribution).toBe(0.3);
   });
 
   it("adds urgency signal for urgency_signals", () => {
-    const result = scoreConfidence("urgent meeting now", makePartial({ urgency_signals: ["urgent"] }));
+    const result = scoreConfidence(
+      "urgent meeting now",
+      makePartial({ urgency_signals: ["urgent"] }),
+    );
     const urgSignal = result.signals.find((s) => s.name === "urgency_signals");
     expect(urgSignal).toBeDefined();
     expect(urgSignal!.contribution).toBe(0.05);

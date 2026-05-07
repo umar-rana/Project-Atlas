@@ -235,7 +235,9 @@ describe("captureAndCreate — AI enrichment tag gating", () => {
     // "fitness" is auto-applied (findFirst found it, no create needed)
     // "brandnew" should NOT have triggered a create call
     const createCalls = mockTagCreate.mock.calls;
-    const createdNames = createCalls.map((call) => (call[0] as { data: { name: string } }).data?.name);
+    const createdNames = createCalls.map(
+      (call) => (call[0] as { data: { name: string } }).data?.name,
+    );
     expect(createdNames).not.toContain("brandnew");
   });
 });

@@ -144,7 +144,9 @@ function Wave2Commands(): null {
       icon: <LogOut size={14} />,
       onRun: () => {
         toast("Signing out…", { duration: 2000 });
-        setTimeout(() => { window.location.href = "/api/auth/logout"; }, 600);
+        setTimeout(() => {
+          window.location.href = "/api/auth/logout";
+        }, 600);
       },
     },
   ]);
@@ -159,21 +161,22 @@ export function CommandPaletteWired(): React.ReactElement {
   const [searchItems, setSearchItems] = React.useState<CommandItem[]>([]);
   const queryRef = React.useRef<string>("");
 
-  const handleQueryChange = React.useCallback(async (q: string) => {
-    queryRef.current = q;
-    if (!q.trim() || searchProviders.length === 0) {
-      setSearchItems([]);
-      return;
-    }
+  const handleQueryChange = React.useCallback(
+    async (q: string) => {
+      queryRef.current = q;
+      if (!q.trim() || searchProviders.length === 0) {
+        setSearchItems([]);
+        return;
+      }
 
-    const results = await Promise.all(
-      searchProviders.map((p) =>
-        Promise.resolve(p.search(q)).catch(() => [] as CommandItem[])
-      )
-    );
-    if (queryRef.current !== q) return;
-    setSearchItems(results.flat());
-  }, [searchProviders]);
+      const results = await Promise.all(
+        searchProviders.map((p) => Promise.resolve(p.search(q)).catch(() => [] as CommandItem[])),
+      );
+      if (queryRef.current !== q) return;
+      setSearchItems(results.flat());
+    },
+    [searchProviders],
+  );
 
   React.useEffect(() => {
     if (!commandPaletteOpen) setSearchItems([]);

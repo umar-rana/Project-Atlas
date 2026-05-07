@@ -7,7 +7,10 @@ import { importMarkdown } from "@/core/conversion/md-import";
 import { importDocx } from "@/core/conversion/docx-import";
 import { detectMarkdownFormat } from "@/core/conversion/format-detector";
 import { processNotionMarkdown } from "@/core/conversion/md-import-notion";
-import { parseClaudeConversation, claudeConversationToMarkdown } from "@/core/conversion/md-import-claude";
+import {
+  parseClaudeConversation,
+  claudeConversationToMarkdown,
+} from "@/core/conversion/md-import-claude";
 import { checkTitleConflict } from "@/core/conversion/conflict-resolver";
 import { createLogger } from "@/core/logging";
 import { markdownToTiptap, tiptapToPlainText } from "@/core/conversion/tiptap-converter";
@@ -125,7 +128,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           const segments = parseClaudeConversation(content);
           processedContent = claudeConversationToMarkdown(
             segments,
-            (claudeMode as "single" | "assistant_only"),
+            claudeMode as "single" | "assistant_only",
           );
         }
       }
@@ -138,7 +141,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       importResult = await importMarkdown({
         buffer: Buffer.from(processedContent),
         filename,
-        importedFrom: detectedFormat === "notion" ? "notion_md" : detectedFormat === "claude" ? "claude_md" : "md",
+        importedFrom:
+          detectedFormat === "notion"
+            ? "notion_md"
+            : detectedFormat === "claude"
+              ? "claude_md"
+              : "md",
         existingTagNames: existingTags.map((t) => t.name),
       });
       importResult.warnings.push(...extraWarnings);
@@ -258,7 +266,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           parentId: note.id,
         });
       } catch (err) {
-        log.warn({ err, noteId: note.id }, "Failed to store original .docx as attachment — non-fatal");
+        log.warn(
+          { err, noteId: note.id },
+          "Failed to store original .docx as attachment — non-fatal",
+        );
       }
     }
 

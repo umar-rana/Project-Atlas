@@ -10,8 +10,8 @@ export const CAPTURE_PARSE_LIMITS = {
   maxOutputTokens: 500,
   hourlyCallsPerUser: 30,
   dailyCallsPerUser: 200,
-  dailyCostUsdHardCap: 1.00,
-  dailyCostUsdSoftAlert: 0.50,
+  dailyCostUsdHardCap: 1.0,
+  dailyCostUsdSoftAlert: 0.5,
 } as const;
 
 export interface LimitCheckResult {
@@ -19,9 +19,7 @@ export interface LimitCheckResult {
   reason?: string;
 }
 
-export async function checkCaptureParseLimits(
-  userId: string,
-): Promise<LimitCheckResult> {
+export async function checkCaptureParseLimits(userId: string): Promise<LimitCheckResult> {
   const now = new Date();
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
   const dayStart = new Date(now);

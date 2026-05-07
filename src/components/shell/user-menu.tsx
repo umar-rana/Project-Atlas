@@ -46,7 +46,9 @@ export function UserMenu({ name, email, image, isAdmin }: UserMenuProps): React.
 
   function handleSignOut() {
     toast("Signing out…", { duration: 2000 });
-    setTimeout(() => { signOut({ redirectUrl: "/sign-in" }); }, 600);
+    setTimeout(() => {
+      signOut({ redirectUrl: "/sign-in" });
+    }, 600);
   }
 
   function handleTheme(value: "light" | "dark" | "system") {
@@ -67,7 +69,9 @@ export function UserMenu({ name, email, image, isAdmin }: UserMenuProps): React.
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="px-2 py-2">
-          <p className="truncate font-ui text-sm font-semibold text-text-primary">{name ?? email.split("@")[0]}</p>
+          <p className="truncate font-ui text-sm font-semibold text-text-primary">
+            {name ?? email.split("@")[0]}
+          </p>
           <p className="truncate font-ui text-xs text-text-tertiary">{email}</p>
         </div>
         <DropdownMenuSeparator />

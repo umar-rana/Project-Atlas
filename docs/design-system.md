@@ -22,15 +22,15 @@ a value, add a token first.
 
 ### Token families
 
-| Family       | Example variables                                                                 | Tailwind utility examples                              |
-| ------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Surfaces     | `--surface-base`, `--surface-raised`, `--surface-overlay`, `--surface-sunken`, `--surface-hover`, `--surface-active`, `--surface-selected`, `--surface-selected-hover` | `bg-surface-raised`, `hover:bg-surface-hover`         |
-| Borders      | `--border-subtle`, `--border-default`, `--border-strong`, `--border-focus`, `--border-error` | `border-border-subtle`, `border-border-error`         |
-| Text         | `--text-primary`, `--text-secondary`, `--text-tertiary`, `--text-disabled`, `--text-on-accent`, `--text-link` | `text-text-secondary`, `text-text-on-accent`          |
-| Accents      | `--accent-primary`, `--accent-primary-hover`, `--accent-primary-active`, `--accent-primary-muted`, `--accent-primary-subtle`, plus the same suffixes for `success`, `warning`, `danger`, `info`, `neutral` | `bg-accent-primary`, `bg-accent-danger-muted`         |
-| Viz palette  | `--viz-1..12`, `--viz-1-light..12-light`, `--viz-1-strong..12-strong`             | `bg-viz-3`, `text-viz-3-strong`, `bg-viz-7-light`     |
-| Cal palette  | `--cal-1-fill..12-fill`, `--cal-1-soft..12-soft`, `--cal-1-border..12-border`     | `bg-cal-7-soft`, `border-cal-7-border`                |
-| Scrims & rings | `--scrim-modal`, `--scrim-drawer`, `--ring-input`, `--ring-input-error`, `--ring-card-selected`, `--backdrop-blur-overlay` | `bg-surface-scrim-modal`, `shadow-ring-input`, `backdrop-blur-overlay` |
+| Family         | Example variables                                                                                                                                                                                          | Tailwind utility examples                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Surfaces       | `--surface-base`, `--surface-raised`, `--surface-overlay`, `--surface-sunken`, `--surface-hover`, `--surface-active`, `--surface-selected`, `--surface-selected-hover`                                     | `bg-surface-raised`, `hover:bg-surface-hover`                          |
+| Borders        | `--border-subtle`, `--border-default`, `--border-strong`, `--border-focus`, `--border-error`                                                                                                               | `border-border-subtle`, `border-border-error`                          |
+| Text           | `--text-primary`, `--text-secondary`, `--text-tertiary`, `--text-disabled`, `--text-on-accent`, `--text-link`                                                                                              | `text-text-secondary`, `text-text-on-accent`                           |
+| Accents        | `--accent-primary`, `--accent-primary-hover`, `--accent-primary-active`, `--accent-primary-muted`, `--accent-primary-subtle`, plus the same suffixes for `success`, `warning`, `danger`, `info`, `neutral` | `bg-accent-primary`, `bg-accent-danger-muted`                          |
+| Viz palette    | `--viz-1..12`, `--viz-1-light..12-light`, `--viz-1-strong..12-strong`                                                                                                                                      | `bg-viz-3`, `text-viz-3-strong`, `bg-viz-7-light`                      |
+| Cal palette    | `--cal-1-fill..12-fill`, `--cal-1-soft..12-soft`, `--cal-1-border..12-border`                                                                                                                              | `bg-cal-7-soft`, `border-cal-7-border`                                 |
+| Scrims & rings | `--scrim-modal`, `--scrim-drawer`, `--ring-input`, `--ring-input-error`, `--ring-card-selected`, `--backdrop-blur-overlay`                                                                                 | `bg-surface-scrim-modal`, `shadow-ring-input`, `backdrop-blur-overlay` |
 
 > **Note:** there is no `--accent-*-soft` or `--status-*` family. Status colors
 > live under `--accent-{success,warning,danger,info}` and their `-muted` /
@@ -67,7 +67,7 @@ a value, add a token first.
   `shadow-ring`, `shadow-ring-input`, `shadow-ring-input-error`,
   `shadow-ring-card-selected`.
 - **Z-index** — `z-{base,rail,top-bar,overlay,drawer-backdrop,drawer,
-  modal-backdrop,modal-content,toast,tooltip}`.
+modal-backdrop,modal-content,toast,tooltip}`.
 - **Modal sizing** — `w-modal-base`, `max-w-modal-{sm,md,lg,xl,alert,cmd}`,
   `top-modal-top`, `top-modal-top-cmd`. Menus use `min-w-menu` /
   `min-w-menu-select`; the command palette list uses `max-h-menu-cmd`.

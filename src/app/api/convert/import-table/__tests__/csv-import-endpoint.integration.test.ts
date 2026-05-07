@@ -87,7 +87,7 @@ describe("POST /api/convert/import-table — validation", () => {
     fd.append("table_name", "T");
     const res = await POST(makeRequest(fd));
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
+    const json = (await res.json()) as { error: string };
     expect(json.error).toMatch(/no csv file/i);
   });
 
@@ -97,7 +97,7 @@ describe("POST /api/convert/import-table — validation", () => {
     const fd = csvFormData({ csvText: "Name,Score\n", tableName: "T" });
     const res = await POST(makeRequest(fd));
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
+    const json = (await res.json()) as { error: string };
     expect(json.error).toMatch(/no data rows/i);
   });
 
@@ -110,7 +110,7 @@ describe("POST /api/convert/import-table — validation", () => {
     const fd = csvFormData({ csvText, tableName: "T" });
     const res = await POST(makeRequest(fd));
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
+    const json = (await res.json()) as { error: string };
     expect(json.error).toMatch(/too many columns/i);
   });
 
@@ -124,7 +124,7 @@ describe("POST /api/convert/import-table — validation", () => {
     fd.append("table_name", "T");
     const res = await POST(makeRequest(fd));
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
+    const json = (await res.json()) as { error: string };
     expect(json.error).toMatch(/too large/i);
   });
 
@@ -134,7 +134,7 @@ describe("POST /api/convert/import-table — validation", () => {
     const fd = csvFormData({ csvText: "Name\nAlice" });
     const res = await POST(makeRequest(fd));
     expect(res.status).toBe(400);
-    const json = await res.json() as { error: string };
+    const json = (await res.json()) as { error: string };
     expect(json.error).toMatch(/table_name/i);
   });
 });
@@ -149,7 +149,11 @@ describe("POST /api/convert/import-table — server-side type detection", () => 
     });
     const res = await POST(makeRequest(fd));
     expect(res.status).toBe(200);
-    const json = await res.json() as { table_id: string; imported_row_count: number; failed_cell_count: number };
+    const json = (await res.json()) as {
+      table_id: string;
+      imported_row_count: number;
+      failed_cell_count: number;
+    };
     expect(json.imported_row_count).toBe(2);
     expect(json.failed_cell_count).toBe(0);
 
@@ -172,10 +176,11 @@ describe("POST /api/convert/import-table — rate limit", () => {
     const user = await createEndpointTestUser();
     vi.mocked(auth).mockResolvedValue({ userId: user.clerk_id } as never);
 
-    const fd = () => csvFormData({
-      csvText: "Name\nAlice",
-      tableName: "RL Table",
-    });
+    const fd = () =>
+      csvFormData({
+        csvText: "Name\nAlice",
+        tableName: "RL Table",
+      });
 
     for (let i = 0; i < 5; i++) {
       const res = await POST(makeRequest(fd()));
@@ -184,7 +189,7 @@ describe("POST /api/convert/import-table — rate limit", () => {
 
     const blocked = await POST(makeRequest(fd()));
     expect(blocked.status).toBe(429);
-    const json = await blocked.json() as { error: string };
+    const json = (await blocked.json()) as { error: string };
     expect(json.error).toMatch(/too many/i);
 
     vi.mocked(auth).mockResolvedValue({ userId: null } as never);

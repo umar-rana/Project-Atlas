@@ -1,4 +1,4 @@
-import 'server-only';
+import "server-only";
 import { Client } from "@replit/object-storage";
 import type { StorageProvider, StorageProviderName } from "../types";
 import { createLogger } from "@/core/logging";
@@ -18,11 +18,7 @@ export class ReplitProvider implements StorageProvider {
     );
   }
 
-  async upload(params: {
-    path: string;
-    data: Buffer;
-    contentType: string;
-  }): Promise<void> {
+  async upload(params: { path: string; data: Buffer; contentType: string }): Promise<void> {
     const result = await this.client.uploadFromBytes(params.path, params.data);
     if (!result.ok) {
       throw new Error(`Replit storage upload failed: ${result.error}`);
@@ -37,13 +33,8 @@ export class ReplitProvider implements StorageProvider {
     return Buffer.from(result.value[0] as Uint8Array);
   }
 
-  async getUrl(_params: {
-    path: string;
-    expiresInSeconds?: number;
-  }): Promise<string> {
-    throw new Error(
-      "ReplitProvider does not support signed URLs. Switch STORAGE_PROVIDER=r2.",
-    );
+  async getUrl(_params: { path: string; expiresInSeconds?: number }): Promise<string> {
+    throw new Error("ReplitProvider does not support signed URLs. Switch STORAGE_PROVIDER=r2.");
   }
 
   async delete(path: string): Promise<void> {

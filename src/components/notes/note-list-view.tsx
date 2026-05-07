@@ -10,7 +10,7 @@ import { ImportProgressDialog } from "./import-progress-dialog";
 import { cn } from "@/lib/utils";
 
 const PURPOSE_VALUES = ["note", "meeting_note", "project_brief", "reading_note"] as const;
-type PurposeFilter = typeof PURPOSE_VALUES[number];
+type PurposeFilter = (typeof PURPOSE_VALUES)[number];
 
 interface NoteListViewProps {
   title: string;
@@ -19,7 +19,12 @@ interface NoteListViewProps {
   projectId?: string | null;
 }
 
-export function NoteListView({ title, folderId, purpose, projectId }: NoteListViewProps): React.ReactElement {
+export function NoteListView({
+  title,
+  folderId,
+  purpose,
+  projectId,
+}: NoteListViewProps): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -31,10 +36,7 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
 
   const [importFormat, setImportFormat] = React.useState<"md" | "docx" | null>(null);
 
-  const activeTagIds = React.useMemo(
-    () => searchParams.getAll("tag"),
-    [searchParams],
-  );
+  const activeTagIds = React.useMemo(() => searchParams.getAll("tag"), [searchParams]);
 
   const tagsQuery = trpc.tags.list.useQuery();
   const allTags = tagsQuery.data ?? [];
@@ -73,13 +75,10 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
     { enabled: search.length >= 2 },
   );
 
-  const rawNotes = search.length >= 2
-    ? (searchQuery.data ?? [])
-    : (notesQuery.data?.notes ?? []);
+  const rawNotes = search.length >= 2 ? (searchQuery.data ?? []) : (notesQuery.data?.notes ?? []);
 
-  const notes = search.length >= 2 && purpose
-    ? rawNotes.filter((n) => n.purpose === purpose)
-    : rawNotes;
+  const notes =
+    search.length >= 2 && purpose ? rawNotes.filter((n) => n.purpose === purpose) : rawNotes;
 
   const projectIds = Array.from(
     new Set(
@@ -128,7 +127,11 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
         <h1 className="font-ui text-md font-semibold text-text-primary">{title}</h1>
         <div className="ml-auto flex items-center gap-2">
           <div className="relative">
-            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-disabled" aria-hidden />
+            <Search
+              size={13}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-disabled"
+              aria-hidden
+            />
             <input
               type="text"
               placeholder="Search notes…"
@@ -168,7 +171,9 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
               <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border-default bg-surface-base shadow-lg">
                 <div className="py-1">
                   <div className="px-3 py-1">
-                    <span className="font-ui text-2xs font-medium uppercase tracking-caps text-text-disabled">Import</span>
+                    <span className="font-ui text-2xs font-medium uppercase tracking-caps text-text-disabled">
+                      Import
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -248,14 +253,22 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
             </p>
             {search.length < 2 && !hasTagFilter && (
               <p className="font-ui text-2xs text-text-disabled">
-                Use the <strong className="text-text-tertiary">+ New note</strong> button above to create one.
+                Use the <strong className="text-text-tertiary">+ New note</strong> button above to
+                create one.
               </p>
             )}
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="sm:grid-cols-2 lg:grid-cols-3 grid gap-3">
             {notes.map((note) => {
-              const noteTags = "tag_on_notes" in note ? (note as { tag_on_notes: { tag: { id: string; name: string; color: string | null } }[] }).tag_on_notes : undefined;
+              const noteTags =
+                "tag_on_notes" in note
+                  ? (
+                      note as {
+                        tag_on_notes: { tag: { id: string; name: string; color: string | null } }[];
+                      }
+                    ).tag_on_notes
+                  : undefined;
               return (
                 <NoteCard
                   key={note.id}
@@ -279,7 +292,9 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
       {/* Import dialogs */}
       <ImportProgressDialog
         open={importFormat !== null}
-        onOpenChange={(open) => { if (!open) setImportFormat(null); }}
+        onOpenChange={(open) => {
+          if (!open) setImportFormat(null);
+        }}
         format={importFormat ?? "md"}
         folderId={folderId}
         projectId={projectId}

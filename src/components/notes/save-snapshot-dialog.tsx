@@ -64,8 +64,7 @@ export function SaveSnapshotDialog({
         <div className="px-4 pb-2 pt-3">
           <div className="flex flex-col gap-2">
             <Label htmlFor="snapshot-summary" className="font-ui text-xs text-text-secondary">
-              Change summary{" "}
-              <span className="text-text-disabled">(optional)</span>
+              Change summary <span className="text-text-disabled">(optional)</span>
             </Label>
             <Textarea
               id="snapshot-summary"

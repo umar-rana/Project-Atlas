@@ -21,7 +21,8 @@ const iconButtonVariants = cva(
       variant: {
         ghost: "",
         solid: "bg-surface-raised border-border-default text-text-secondary hover:bg-surface-hover",
-        primary: "bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover hover:text-text-on-accent",
+        primary:
+          "bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover hover:text-text-on-accent",
         destructive: "text-accent-danger hover:bg-accent-danger-muted hover:text-accent-danger",
       },
       size: {
@@ -35,8 +36,7 @@ const iconButtonVariants = cva(
 );
 
 export interface IconButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof iconButtonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof iconButtonVariants> {
   /** Required for screen readers — icon-only buttons must label themselves. */
   "aria-label": string;
   isActive?: boolean;

@@ -55,11 +55,23 @@ describe("tiptapToMarkdown — embed node serialization", () => {
       content: [
         {
           type: "embed",
-          attrs: { provider: "youtube", url: YOUTUBE_URL, embed_url: YOUTUBE_EMBED, title: "Vid A", thumbnail_url: "" },
+          attrs: {
+            provider: "youtube",
+            url: YOUTUBE_URL,
+            embed_url: YOUTUBE_EMBED,
+            title: "Vid A",
+            thumbnail_url: "",
+          },
         },
         {
           type: "embed",
-          attrs: { provider: "loom", url: LOOM_URL, embed_url: "https://www.loom.com/embed/abc123def456", title: "Vid B", thumbnail_url: "" },
+          attrs: {
+            provider: "loom",
+            url: LOOM_URL,
+            embed_url: "https://www.loom.com/embed/abc123def456",
+            title: "Vid B",
+            thumbnail_url: "",
+          },
         },
       ],
     };

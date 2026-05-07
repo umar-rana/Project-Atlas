@@ -30,9 +30,7 @@ export function Hint({
 
   return (
     <TooltipPrimitive.Root delayDuration={delayDuration}>
-      <TooltipPrimitive.Trigger asChild>
-        {children}
-      </TooltipPrimitive.Trigger>
+      <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
           side={side}
@@ -45,9 +43,7 @@ export function Hint({
           )}
         >
           <span>{label}</span>
-          {shortcut ? (
-            <KeyboardShortcut keys={[shortcut]} variant="subtle" />
-          ) : null}
+          {shortcut ? <KeyboardShortcut keys={[shortcut]} variant="subtle" /> : null}
           <TooltipPrimitive.Arrow className="fill-text-primary" />
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>

@@ -31,14 +31,24 @@ export function RequestAccessForm() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    submitMutation.mutate({ name: name.trim(), email: email.trim(), message: message.trim() || undefined });
+    submitMutation.mutate({
+      name: name.trim(),
+      email: email.trim(),
+      message: message.trim() || undefined,
+    });
   }
 
   if (submitted) {
     return (
       <div className="rounded-xl border border-border-subtle bg-surface-raised p-8 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-primary-subtle">
-          <svg className="h-6 w-6 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className="h-6 w-6 text-accent-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -64,7 +74,10 @@ export function RequestAccessForm() {
       </div>
       <div className="grid gap-4 tablet:grid-cols-2">
         <div>
-          <label htmlFor="waitlist-name" className="mb-1.5 block text-sm font-medium text-text-primary">
+          <label
+            htmlFor="waitlist-name"
+            className="mb-1.5 block text-sm font-medium text-text-primary"
+          >
             Name
           </label>
           <input
@@ -80,16 +93,23 @@ export function RequestAccessForm() {
             }}
             className={[
               "w-full rounded-lg border bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary",
-              "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent-primary/30",
-              fieldErrors.name ? "border-red-500" : "border-border-default focus-visible:border-accent-primary",
+              "focus-visible:ring-accent-primary/30 outline-none transition-colors focus-visible:ring-2",
+              fieldErrors.name
+                ? "border-red-500"
+                : "border-border-default focus-visible:border-accent-primary",
             ].join(" ")}
           />
           {fieldErrors.name && (
-            <p className="mt-1 text-xs text-red-500" role="alert">{fieldErrors.name}</p>
+            <p className="mt-1 text-xs text-red-500" role="alert">
+              {fieldErrors.name}
+            </p>
           )}
         </div>
         <div>
-          <label htmlFor="waitlist-email" className="mb-1.5 block text-sm font-medium text-text-primary">
+          <label
+            htmlFor="waitlist-email"
+            className="mb-1.5 block text-sm font-medium text-text-primary"
+          >
             Email
           </label>
           <input
@@ -105,18 +125,25 @@ export function RequestAccessForm() {
             }}
             className={[
               "w-full rounded-lg border bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary",
-              "outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent-primary/30",
-              fieldErrors.email ? "border-red-500" : "border-border-default focus-visible:border-accent-primary",
+              "focus-visible:ring-accent-primary/30 outline-none transition-colors focus-visible:ring-2",
+              fieldErrors.email
+                ? "border-red-500"
+                : "border-border-default focus-visible:border-accent-primary",
             ].join(" ")}
           />
           {fieldErrors.email && (
-            <p className="mt-1 text-xs text-red-500" role="alert">{fieldErrors.email}</p>
+            <p className="mt-1 text-xs text-red-500" role="alert">
+              {fieldErrors.email}
+            </p>
           )}
         </div>
       </div>
 
       <div>
-        <label htmlFor="waitlist-message" className="mb-1.5 block text-sm font-medium text-text-primary">
+        <label
+          htmlFor="waitlist-message"
+          className="mb-1.5 block text-sm font-medium text-text-primary"
+        >
           Anything else? <span className="font-normal text-text-tertiary">(optional)</span>
         </label>
         <textarea
@@ -126,12 +153,14 @@ export function RequestAccessForm() {
           placeholder="How do you currently manage your tasks and notes…"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="w-full resize-none rounded-lg border border-border-default bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-colors focus-visible:border-accent-primary focus-visible:ring-2 focus-visible:ring-accent-primary/30"
+          className="focus-visible:ring-accent-primary/30 w-full resize-none rounded-lg border border-border-default bg-surface-base px-4 py-2.5 text-sm text-text-primary outline-none transition-colors placeholder:text-text-tertiary focus-visible:border-accent-primary focus-visible:ring-2"
         />
       </div>
 
       {serverError && (
-        <p className="text-sm text-red-500" role="alert">{serverError}</p>
+        <p className="text-sm text-red-500" role="alert">
+          {serverError}
+        </p>
       )}
 
       <button

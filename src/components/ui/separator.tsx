@@ -4,8 +4,9 @@ import * as React from "react";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import { cn } from "@/lib/utils";
 
-export interface SeparatorProps
-  extends React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root> {
+export interface SeparatorProps extends React.ComponentPropsWithoutRef<
+  typeof SeparatorPrimitive.Root
+> {
   label?: string;
   strong?: boolean;
 }
@@ -23,11 +24,21 @@ export const Separator = React.forwardRef<
         role={decorative ? undefined : "separator"}
         className={cn("flex w-full items-center gap-2", className)}
       >
-        <span className={cn("flex-1 border-t", strong ? "border-border-default" : "border-border-subtle")} />
+        <span
+          className={cn(
+            "flex-1 border-t",
+            strong ? "border-border-default" : "border-border-subtle",
+          )}
+        />
         <span className="font-ui text-3xs font-medium uppercase tracking-caps text-text-tertiary">
           {label}
         </span>
-        <span className={cn("flex-1 border-t", strong ? "border-border-default" : "border-border-subtle")} />
+        <span
+          className={cn(
+            "flex-1 border-t",
+            strong ? "border-border-default" : "border-border-subtle",
+          )}
+        />
       </div>
     );
   }

@@ -27,7 +27,9 @@ export function NotesShell({ children, rightPanel }: NotesShellProps): React.Rea
       const next = !c;
       try {
         localStorage.setItem(PANEL_STORAGE_KEY, String(next));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 function ChartSkeleton() {
   return (
     <div className="flex flex-col gap-2 py-2">
-      <div className="flex items-end gap-2 h-[180px]">
+      <div className="flex h-[180px] items-end gap-2">
         {[60, 90, 45, 75, 110, 55, 80].map((h, i) => (
           <Skeleton
             key={i}
@@ -22,10 +22,10 @@ function ChartSkeleton() {
   );
 }
 
-const UsageChart = dynamic(
-  () => import("./usage-chart").then((m) => m.UsageChart),
-  { loading: () => <ChartSkeleton />, ssr: false },
-);
+const UsageChart = dynamic(() => import("./usage-chart").then((m) => m.UsageChart), {
+  loading: () => <ChartSkeleton />,
+  ssr: false,
+});
 
 function formatCost(usd: number): string {
   if (usd === 0) return "$0.00";
@@ -100,9 +100,7 @@ export function UsageClient() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
-          AI Usage
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">AI Usage</h1>
       </div>
 
       {isLoading && (
@@ -119,26 +117,29 @@ export function UsageClient() {
 
       {data && (
         <>
-          {data.budgetUsd != null && (() => {
-            const pct = data.monthly.costUsd / data.budgetUsd;
-            if (pct < 0.8) return null;
-            const exceeded = pct >= 1;
-            return (
-              <div className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
-                exceeded
-                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                  : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-              }`}>
-                {exceeded
-                  ? `Monthly budget exceeded — ${formatCost(data.monthly.costUsd)} spent of ${formatCost(data.budgetUsd)} limit.`
-                  : `You've used ${(pct * 100).toFixed(0)}% of your ${formatCost(data.budgetUsd)} monthly budget — ${formatCost(data.monthly.costUsd)} spent so far.`}
-              </div>
-            );
-          })()}
+          {data.budgetUsd != null &&
+            (() => {
+              const pct = data.monthly.costUsd / data.budgetUsd;
+              if (pct < 0.8) return null;
+              const exceeded = pct >= 1;
+              return (
+                <div
+                  className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
+                    exceeded
+                      ? "border border-red-500/20 bg-red-500/10 text-red-400"
+                      : "border border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                  }`}
+                >
+                  {exceeded
+                    ? `Monthly budget exceeded — ${formatCost(data.monthly.costUsd)} spent of ${formatCost(data.budgetUsd)} limit.`
+                    : `You've used ${(pct * 100).toFixed(0)}% of your ${formatCost(data.budgetUsd)} monthly budget — ${formatCost(data.monthly.costUsd)} spent so far.`}
+                </div>
+              );
+            })()}
 
           <section className="mb-8">
             <h2 className="mb-3 text-sm font-semibold text-text-secondary">Overview</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="sm:grid-cols-3 grid grid-cols-1 gap-4">
               <StatCard
                 label="Today"
                 calls={data.daily.calls}
@@ -186,9 +187,7 @@ export function UsageClient() {
           )}
 
           <section className="mb-8">
-            <h2 className="mb-3 text-sm font-semibold text-text-secondary">
-              Cost by task type
-            </h2>
+            <h2 className="mb-3 text-sm font-semibold text-text-secondary">Cost by task type</h2>
             <div className="rounded-xl border border-border-default bg-surface-raised p-4 shadow-1">
               <UsageChart data={data.byTask} />
             </div>
@@ -226,9 +225,7 @@ export function UsageClient() {
                       <tr
                         key={row.task}
                         className={
-                          i < data.byTask.length - 1
-                            ? "border-b border-border-subtle"
-                            : ""
+                          i < data.byTask.length - 1 ? "border-b border-border-subtle" : ""
                         }
                       >
                         <td className="px-4 py-3 font-mono text-xs text-text-primary">

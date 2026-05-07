@@ -14,7 +14,12 @@ interface NewTableDialogProps {
   onCreated: (tableId: string) => void;
 }
 
-export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onCreated }: NewTableDialogProps) {
+export function NewTableDialog({
+  defaultFolderId,
+  defaultProjectId,
+  onClose,
+  onCreated,
+}: NewTableDialogProps) {
   const [name, setName] = React.useState("");
   const [folderId, setFolderId] = React.useState<string>(defaultFolderId ?? "");
   const [projectId, setProjectId] = React.useState<string>(defaultProjectId ?? "");
@@ -50,26 +55,44 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
   }
 
   type FlatFolder = { id: string; label: string };
-  function flattenFolders(nodes: { id: string; name: string; children: unknown[] }[], depth: number): FlatFolder[] {
+  function flattenFolders(
+    nodes: { id: string; name: string; children: unknown[] }[],
+    depth: number,
+  ): FlatFolder[] {
     const out: FlatFolder[] = [];
     for (const n of nodes) {
       out.push({ id: n.id, label: `${"  ".repeat(depth)}${n.name}` });
-      out.push(...flattenFolders(n.children as { id: string; name: string; children: unknown[] }[], depth + 1));
+      out.push(
+        ...flattenFolders(
+          n.children as { id: string; name: string; children: unknown[] }[],
+          depth + 1,
+        ),
+      );
     }
     return out;
   }
 
-  const folderOptions = flattenFolders((foldersQuery.data ?? []) as { id: string; name: string; children: unknown[] }[], 0);
+  const folderOptions = flattenFolders(
+    (foldersQuery.data ?? []) as { id: string; name: string; children: unknown[] }[],
+    0,
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-md rounded-lg border border-border-default bg-surface-base p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-ui text-base font-semibold text-text-primary">New table</h2>
-          <button type="button" onClick={onClose} className="text-text-tertiary hover:text-text-primary">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-text-tertiary hover:text-text-primary"
+          >
             <X size={16} />
           </button>
         </div>
@@ -89,7 +112,9 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
           </div>
 
           <div>
-            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Folder (optional)</label>
+            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+              Folder (optional)
+            </label>
             <select
               value={folderId}
               onChange={(e) => setFolderId(e.target.value)}
@@ -97,13 +122,17 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
             >
               <option value="">— No folder —</option>
               {folderOptions.map((f) => (
-                <option key={f.id} value={f.id}>{f.label}</option>
+                <option key={f.id} value={f.id}>
+                  {f.label}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Project (optional)</label>
+            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+              Project (optional)
+            </label>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
@@ -111,7 +140,9 @@ export function NewTableDialog({ defaultFolderId, defaultProjectId, onClose, onC
             >
               <option value="">— No project —</option>
               {(projectsQuery.data ?? []).map((p) => (
-                <option key={p.id} value={p.id}>{p.title}</option>
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
               ))}
             </select>
           </div>

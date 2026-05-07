@@ -22,13 +22,6 @@ export interface PdfExportResult {
   expiresAt: Date;
 }
 
-const PAGE_SIZES: Record<PageSize, { width: number; height: number }> = {
-  A4: { width: 595, height: 842 },
-  Letter: { width: 612, height: 792 },
-  Legal: { width: 612, height: 1008 },
-  A3: { width: 842, height: 1190 },
-};
-
 /**
  * Generates a PDF from note content using pdfkit.
  * Stores the result in R2 at users/{userId}/exports/{exportId}/{slug}.pdf
@@ -107,7 +100,12 @@ async function generatePdf(params: PdfGenerationParams): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: pageSize,
-      margins: { top: options.includeHeader ? 100 : 72, bottom: options.includeFooter ? 100 : 72, left: 72, right: 72 },
+      margins: {
+        top: options.includeHeader ? 100 : 72,
+        bottom: options.includeFooter ? 100 : 72,
+        left: 72,
+        right: 72,
+      },
       bufferPages: needsPageRange,
       info: {
         Title: title,
@@ -194,7 +192,10 @@ async function generatePdf(params: PdfGenerationParams): Promise<Buffer> {
             .fontSize(8)
             .fillColor("#999999")
             .text(title, marginLeft, headerY, { width: contentWidth / 2, align: "left" })
-            .text("Atlas", marginLeft + contentWidth / 2, headerY, { width: contentWidth / 2, align: "right" });
+            .text("Atlas", marginLeft + contentWidth / 2, headerY, {
+              width: contentWidth / 2,
+              align: "right",
+            });
           doc
             .moveTo(marginLeft, headerY + 14)
             .lineTo(pageWidth - marginRight, headerY + 14)
@@ -216,8 +217,16 @@ async function generatePdf(params: PdfGenerationParams): Promise<Buffer> {
             .font("Helvetica")
             .fontSize(8)
             .fillColor("#999999")
-            .text(`Exported ${exportDateStr}`, marginLeft, footerY + 6, { width: contentWidth / 2, align: "left" })
-            .text(`${i - pages.start + 1} / ${pages.count}`, marginLeft + contentWidth / 2, footerY + 6, { width: contentWidth / 2, align: "right" });
+            .text(`Exported ${exportDateStr}`, marginLeft, footerY + 6, {
+              width: contentWidth / 2,
+              align: "left",
+            })
+            .text(
+              `${i - pages.start + 1} / ${pages.count}`,
+              marginLeft + contentWidth / 2,
+              footerY + 6,
+              { width: contentWidth / 2, align: "right" },
+            );
         }
       }
     }
@@ -231,11 +240,7 @@ interface RenderOptions {
   contentWidth: number;
 }
 
-function renderMarkdownToPdf(
-  doc: PDFKit.PDFDocument,
-  markdown: string,
-  opts: RenderOptions,
-) {
+function renderMarkdownToPdf(doc: PDFKit.PDFDocument, markdown: string, opts: RenderOptions) {
   const lines = markdown.split("\n");
   let i = 0;
 
@@ -314,9 +319,14 @@ function renderMarkdownToPdf(
         .font("Helvetica")
         .fontSize(11)
         .fillColor("#222222")
-        .text(`${orderedMatch[1]}. ${stripMarkdownInline(orderedMatch[2]!)}`, opts.marginLeft + 12, doc.y, {
-          width: opts.contentWidth - 12,
-        });
+        .text(
+          `${orderedMatch[1]}. ${stripMarkdownInline(orderedMatch[2]!)}`,
+          opts.marginLeft + 12,
+          doc.y,
+          {
+            width: opts.contentWidth - 12,
+          },
+        );
       doc.moveDown(0.2);
       i++;
       continue;

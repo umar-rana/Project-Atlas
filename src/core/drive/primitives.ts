@@ -17,9 +17,7 @@ async function drive<T>(userId: string, fn: (d: drive_v3.Drive) => Promise<T>): 
 }
 
 export async function listSharedDrives(userId: string) {
-  return drive(userId, (d) =>
-    d.drives.list({ pageSize: 50 }).then((r) => r.data.drives ?? []),
-  );
+  return drive(userId, (d) => d.drives.list({ pageSize: 50 }).then((r) => r.data.drives ?? []));
 }
 
 export async function browseFolder(userId: string, folderId: string, driveId?: string) {
@@ -67,11 +65,7 @@ export async function getFileMetadata(userId: string, fileId: string) {
   );
 }
 
-export async function listFiles(
-  userId: string,
-  folderId: string,
-  query?: string,
-) {
+export async function listFiles(userId: string, folderId: string, query?: string) {
   return drive(userId, (d) =>
     d.files
       .list({

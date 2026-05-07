@@ -36,7 +36,9 @@ export const SlashCommandExtension = Extension.create({
             if (state?.active && event.key === "Escape") {
               view.dispatch(
                 view.state.tr.setMeta(SLASH_COMMAND_PLUGIN_KEY, {
-                  active: false, query: "", from: 0,
+                  active: false,
+                  query: "",
+                  from: 0,
                 }),
               );
               return true;
@@ -45,7 +47,9 @@ export const SlashCommandExtension = Extension.create({
               if (state.query === "") {
                 view.dispatch(
                   view.state.tr.setMeta(SLASH_COMMAND_PLUGIN_KEY, {
-                    active: false, query: "", from: 0,
+                    active: false,
+                    query: "",
+                    from: 0,
                   }),
                 );
               } else {

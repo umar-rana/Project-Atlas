@@ -17,9 +17,7 @@ interface BacklinksPanelProps {
 
 export function BacklinksPanel({ backlinks }: BacklinksPanelProps): React.ReactElement {
   if (backlinks.length === 0) {
-    return (
-      <p className="font-ui text-2xs text-text-disabled">No backlinks yet.</p>
-    );
+    return <p className="font-ui text-2xs text-text-disabled">No backlinks yet.</p>;
   }
 
   return (

@@ -123,7 +123,9 @@ export function ReferenceAutocomplete({
                   >
                     {item.icon ? <span className="text-text-tertiary">{item.icon}</span> : null}
                     <span className="flex-1 truncate">{item.label}</span>
-                    {item.hint ? <span className="font-mono text-2xs text-text-tertiary">{item.hint}</span> : null}
+                    {item.hint ? (
+                      <span className="font-mono text-2xs text-text-tertiary">{item.hint}</span>
+                    ) : null}
                   </CommandPrimitive.Item>
                 ))}
               </CommandPrimitive.Group>

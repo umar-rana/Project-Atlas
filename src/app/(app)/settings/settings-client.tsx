@@ -32,23 +32,34 @@ import { TemplatesSettingsSection } from "@/components/task-templates/templates-
 import { JobsManagement } from "@/components/settings/jobs-management";
 import { MigrationSummaryModal } from "@/components/tasks/migration-summary-modal";
 import { ADMIN_EMAILS } from "@/lib/admin-gate";
-import { LOCALE_PRESETS, DATE_FORMAT_OPTIONS, NUMBER_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, ISO_4217_CURRENCY_CODES, LANGUAGE_OPTIONS } from "@/core/locale/presets";
+import {
+  LOCALE_PRESETS,
+  DATE_FORMAT_OPTIONS,
+  NUMBER_FORMAT_OPTIONS,
+  TIME_FORMAT_OPTIONS,
+  ISO_4217_CURRENCY_CODES,
+  LANGUAGE_OPTIONS,
+} from "@/core/locale/presets";
 import type { LocalePresetKey } from "@/core/locale/presets";
-import { formatDate, formatTime, formatNumber, formatCurrency, formatWeekdayAbbrev, formatMonthAbbrev } from "@/core/locale/formatters";
+import {
+  formatDate,
+  formatTime,
+  formatNumber,
+  formatCurrency,
+  formatWeekdayAbbrev,
+  formatMonthAbbrev,
+} from "@/core/locale/formatters";
 import type { LocaleSettings } from "@/core/locale/formatters";
 import { cn } from "@/lib/utils";
 
-const DriveWizard = dynamic(
-  () => import("./drive-wizard").then((m) => m.DriveWizard),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-24 items-center justify-center rounded-lg border border-border-default bg-surface-overlay">
-        <span className="font-ui text-sm text-text-tertiary">Loading…</span>
-      </div>
-    ),
-  },
-);
+const DriveWizard = dynamic(() => import("./drive-wizard").then((m) => m.DriveWizard), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-24 items-center justify-center rounded-lg border border-border-default bg-surface-overlay">
+      <span className="font-ui text-sm text-text-tertiary">Loading…</span>
+    </div>
+  ),
+});
 
 const CalendarManageDialogLazy = dynamic(
   () => import("@/components/calendar/calendar-manage-dialog").then((m) => m.CalendarManageDialog),
@@ -152,7 +163,7 @@ function PlaceholderSection({ title, description }: { title: string; description
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader title={title} description={description} />
-      <div className="rounded-xl border border-border-dashed border-dashed bg-surface-sunken px-6 py-10 text-center">
+      <div className="border-border-dashed rounded-xl border border-dashed bg-surface-sunken px-6 py-10 text-center">
         <p className="font-ui text-sm text-text-tertiary">Coming in a future wave</p>
       </div>
     </div>
@@ -209,7 +220,9 @@ function ProfileSection({ initialUser }: { initialUser: User }) {
           />
         </div>
         <div>
-          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Email</label>
+          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+            Email
+          </label>
           <input
             className="w-full cursor-not-allowed rounded-md border border-border-subtle bg-surface-base px-3 py-2 font-ui text-sm text-text-tertiary"
             value={user.email}
@@ -218,33 +231,43 @@ function ProfileSection({ initialUser }: { initialUser: User }) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Timezone</label>
+            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+              Timezone
+            </label>
             <select
               className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
               defaultValue={user.timezone}
               onBlur={(e) => handleBlur("timezone", e.target.value)}
             >
               {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>{tz}</option>
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Date format</label>
+            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+              Date format
+            </label>
             <select
               className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
               defaultValue={user.date_format}
               onBlur={(e) => handleBlur("date_format", e.target.value)}
             >
               {DATE_FORMATS.map((f) => (
-                <option key={f} value={f}>{f}</option>
+                <option key={f} value={f}>
+                  {f}
+                </option>
               ))}
             </select>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Time format</label>
+            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+              Time format
+            </label>
             <div className="flex gap-2">
               {["12h", "24h"].map((f) => (
                 <button
@@ -262,7 +285,9 @@ function ProfileSection({ initialUser }: { initialUser: User }) {
             </div>
           </div>
           <div>
-            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Week starts</label>
+            <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+              Week starts
+            </label>
             <div className="flex gap-2">
               {["sunday", "monday"].map((d) => (
                 <button
@@ -286,11 +311,15 @@ function ProfileSection({ initialUser }: { initialUser: User }) {
         <div className="mb-3 flex items-center justify-between">
           <div>
             <h3 className="font-ui text-sm font-semibold text-text-primary">Active Sessions</h3>
-            <p className="font-ui text-xs text-text-secondary">Sessions expire 7 days after signing in.</p>
+            <p className="font-ui text-xs text-text-secondary">
+              Sessions expire 7 days after signing in.
+            </p>
           </div>
           {otherSessions.length > 0 && (
             <button
-              onClick={() => { if (confirm("Sign out of all other sessions?")) revokeAllMutation.mutate(); }}
+              onClick={() => {
+                if (confirm("Sign out of all other sessions?")) revokeAllMutation.mutate();
+              }}
               disabled={revokeAllMutation.isPending}
               className="rounded-md border border-accent-danger px-3 py-1.5 font-ui text-xs font-medium text-accent-danger hover:bg-accent-danger-muted disabled:opacity-50"
             >
@@ -305,12 +334,19 @@ function ProfileSection({ initialUser }: { initialUser: User }) {
         ) : (
           <ul className="flex flex-col gap-2">
             {sessions.map((s) => (
-              <li key={s.id} className="flex items-center justify-between rounded-lg border border-border-default bg-surface-overlay px-4 py-3">
+              <li
+                key={s.id}
+                className="flex items-center justify-between rounded-lg border border-border-default bg-surface-overlay px-4 py-3"
+              >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-ui text-sm font-medium text-text-primary">{parseUserAgent(s.user_agent)}</span>
+                    <span className="truncate font-ui text-sm font-medium text-text-primary">
+                      {parseUserAgent(s.user_agent)}
+                    </span>
                     {s.isCurrent && (
-                      <span className="shrink-0 rounded-full bg-accent-success-muted px-2 py-0.5 font-ui text-xs font-medium text-accent-success">current</span>
+                      <span className="shrink-0 rounded-full bg-accent-success-muted px-2 py-0.5 font-ui text-xs font-medium text-accent-success">
+                        current
+                      </span>
                     )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 font-ui text-xs text-text-tertiary">
@@ -321,7 +357,10 @@ function ProfileSection({ initialUser }: { initialUser: User }) {
                 </div>
                 {!s.isCurrent && (
                   <button
-                    onClick={() => { setRevokingId(s.id); revokeMutation.mutate({ sessionId: s.id }); }}
+                    onClick={() => {
+                      setRevokingId(s.id);
+                      revokeMutation.mutate({ sessionId: s.id });
+                    }}
                     disabled={revokingId === s.id}
                     className="ml-4 shrink-0 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary hover:border-accent-danger hover:text-accent-danger disabled:opacity-50"
                   >
@@ -395,7 +434,12 @@ function EmailStatusBadge({ status }: { status: string }) {
     processing: "Processing",
   };
   return (
-    <span className={cn("rounded-full px-2 py-0.5 font-ui text-2xs font-medium", styles[status] ?? styles.pending)}>
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 font-ui text-2xs font-medium",
+        styles[status] ?? styles.pending,
+      )}
+    >
       {labels[status] ?? status}
     </span>
   );
@@ -521,8 +565,11 @@ function BlocklistChipInput({
             <button
               type="button"
               disabled={disabled}
-              onClick={(e) => { e.stopPropagation(); removeChip(i); }}
-              className="ml-0.5 rounded-full p-0.5 text-text-tertiary hover:bg-border-subtle hover:text-text-primary transition-colors disabled:opacity-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeChip(i);
+              }}
+              className="ml-0.5 rounded-full p-0.5 text-text-tertiary transition-colors hover:bg-border-subtle hover:text-text-primary disabled:opacity-50"
               aria-label={`Remove ${chip}`}
             >
               <X size={10} />
@@ -532,11 +579,19 @@ function BlocklistChipInput({
         <input
           ref={inputRef}
           value={inputValue}
-          onChange={(e) => { setInputValue(e.target.value); setDuplicateHint(false); setInvalidHint(false); }}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setDuplicateHint(false);
+            setInvalidHint(false);
+          }}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={disabled}
-          placeholder={chips.length === 0 ? "noreply@example.com, example.com, *.example.com, or *@example.com" : ""}
+          placeholder={
+            chips.length === 0
+              ? "noreply@example.com, example.com, *.example.com, or *@example.com"
+              : ""
+          }
           className="min-w-[160px] flex-1 bg-transparent font-mono text-xs text-text-primary placeholder:text-text-tertiary focus:outline-none disabled:opacity-50"
         />
       </div>
@@ -544,7 +599,10 @@ function BlocklistChipInput({
         <p className="font-ui text-2xs text-accent-warning">Already in the blocklist.</p>
       )}
       {invalidHint && (
-        <p className="font-ui text-2xs text-accent-warning">Enter a valid email, domain, or wildcard pattern (e.g. example.com, *.example.com, or *@example.com).</p>
+        <p className="font-ui text-2xs text-accent-warning">
+          Enter a valid email, domain, or wildcard pattern (e.g. example.com, *.example.com, or
+          *@example.com).
+        </p>
       )}
     </div>
   );
@@ -561,7 +619,12 @@ type MigrationPhase =
 function InboxMigrationCard() {
   const [state, setState] = useState<MigrationPhase>({ phase: "idle" });
   const [showSummary, setShowSummary] = useState(false);
-  const [summary, setSummary] = useState<{ converted: number; kept: number; errors: number; ranAt: string } | null>(null);
+  const [summary, setSummary] = useState<{
+    converted: number;
+    kept: number;
+    errors: number;
+    ranAt: string;
+  } | null>(null);
 
   const migrationMutation = trpc.capture.runInboxMigration.useMutation({
     onSuccess: (data) => {
@@ -606,9 +669,13 @@ function InboxMigrationCard() {
         <MigrationSummaryModal summary={summary} onClose={() => setShowSummary(false)} />
       )}
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
-        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Migrate inbox to captures</h3>
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+          Migrate inbox to captures
+        </h3>
         <p className="mb-3 font-ui text-xs text-text-secondary">
-          Convert legacy inbox tasks to the new GTD capture workflow. Simple tasks with no meaningful metadata will become captures; tasks with due dates, tags, notes, or contexts will stay as-is.
+          Convert legacy inbox tasks to the new GTD capture workflow. Simple tasks with no
+          meaningful metadata will become captures; tasks with due dates, tags, notes, or contexts
+          will stay as-is.
         </p>
 
         {state.phase === "error" && (
@@ -619,7 +686,7 @@ function InboxMigrationCard() {
         )}
 
         {(state.phase === "preview" || state.phase === "running") && (
-          <div className="mb-4 rounded-lg border border-border-default bg-surface-overlay p-3 space-y-2">
+          <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-overlay p-3">
             <div className="flex items-center justify-between font-ui text-sm">
               <span className="text-text-secondary">Will convert to captures</span>
               <span className="font-semibold tabular-nums text-accent-success">
@@ -633,7 +700,9 @@ function InboxMigrationCard() {
               </span>
             </div>
             {state.phase === "preview" && state.total === 0 && (
-              <p className="pt-1 font-ui text-xs text-text-tertiary">No inbox tasks found to migrate.</p>
+              <p className="pt-1 font-ui text-xs text-text-tertiary">
+                No inbox tasks found to migrate.
+              </p>
             )}
           </div>
         )}
@@ -733,9 +802,10 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
     onError: () => setOptimisticChips(null),
   });
 
-  const tasksPrefs = (typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
-    ? userData.tasks_prefs as Record<string, unknown>
-    : {});
+  const tasksPrefs =
+    typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
+      ? (userData.tasks_prefs as Record<string, unknown>)
+      : {};
 
   const filterAutoReplies = tasksPrefs["email_filter_auto_replies"] !== false;
   const filterCalendar = tasksPrefs["email_filter_calendar"] !== false;
@@ -773,7 +843,8 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Email-to-inbox</h3>
         <p className="mb-4 font-ui text-xs text-text-secondary">
-          Forward or send emails to one of the addresses below and they will appear as Inbox tasks automatically.
+          Forward or send emails to one of the addresses below and they will appear as Inbox tasks
+          automatically.
         </p>
 
         <div className="flex flex-col gap-3">
@@ -785,18 +856,25 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
               <span className="font-ui text-xs font-medium text-text-primary">Direct address</span>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2">
-              <code className="flex-1 font-mono text-sm text-text-primary break-all">{directAddress}</code>
+              <code className="flex-1 break-all font-mono text-sm text-text-primary">
+                {directAddress}
+              </code>
               <button
                 type="button"
                 onClick={handleCopyDirect}
-                className="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                className="shrink-0 rounded-md p-1.5 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
                 title="Copy address"
               >
-                {copiedDirect ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
+                {copiedDirect ? (
+                  <Check size={14} className="text-accent-success" />
+                ) : (
+                  <Copy size={14} />
+                )}
               </button>
             </div>
             <p className="mt-1 font-ui text-2xs text-text-tertiary">
-              Your personal inbox address. Emails sent here are always routed to your account, regardless of which address you send from.
+              Your personal inbox address. Emails sent here are always routed to your account,
+              regardless of which address you send from.
             </p>
           </div>
 
@@ -810,19 +888,26 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
               <span className="font-ui text-xs font-medium text-text-primary">Plain address</span>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-border-default bg-surface-overlay px-3 py-2">
-              <code className="flex-1 font-mono text-sm text-text-primary break-all">{plainAddress}</code>
+              <code className="flex-1 break-all font-mono text-sm text-text-primary">
+                {plainAddress}
+              </code>
               <button
                 type="button"
                 onClick={handleCopyPlain}
-                className="shrink-0 rounded-md p-1.5 text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
+                className="shrink-0 rounded-md p-1.5 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
                 title="Copy address"
               >
-                {copiedPlain ? <Check size={14} className="text-accent-success" /> : <Copy size={14} />}
+                {copiedPlain ? (
+                  <Check size={14} className="text-accent-success" />
+                ) : (
+                  <Copy size={14} />
+                )}
               </button>
             </div>
             <p className="mt-1 font-ui text-2xs text-text-tertiary">
               Shared inbox address. Only works when you email from{" "}
-              <span className="font-medium text-text-secondary">{userEmail}</span> — the address registered on your account.
+              <span className="font-medium text-text-secondary">{userEmail}</span> — the address
+              registered on your account.
             </p>
           </div>
         </div>
@@ -830,7 +915,9 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-border-subtle bg-surface-sunken px-3 py-2.5">
           <Info size={13} className="mt-0.5 shrink-0 text-text-tertiary" />
           <p className="font-ui text-2xs text-text-tertiary">
-            <span className="font-medium text-text-secondary">Tip:</span> Use the direct address when forwarding from a different email account, or when emailing via an alias. Forwarded emails are supported — the original sender is extracted where possible.
+            <span className="font-medium text-text-secondary">Tip:</span> Use the direct address
+            when forwarding from a different email account, or when emailing via an alias. Forwarded
+            emails are supported — the original sender is extracted where possible.
           </p>
         </div>
 
@@ -840,7 +927,8 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
               <p className="font-ui text-sm font-medium text-text-primary">Verify routing</p>
               <p className="font-ui text-xs text-text-tertiary">
                 Send a one-time test email to{" "}
-                <span className="font-medium text-text-secondary">{userEmail}</span> to confirm Atlas can reach you.
+                <span className="font-medium text-text-secondary">{userEmail}</span> to confirm
+                Atlas can reach you.
               </p>
             </div>
             <button
@@ -889,7 +977,8 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
             <div>
               <p className="font-ui text-sm text-text-primary">Discard auto-replies</p>
               <p className="font-ui text-xs text-text-tertiary">
-                Emails with an <code className="font-mono text-2xs">Auto-Submitted</code> header are silently discarded.
+                Emails with an <code className="font-mono text-2xs">Auto-Submitted</code> header are
+                silently discarded.
               </p>
             </div>
             <Toggle
@@ -903,7 +992,8 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
             <div>
               <p className="font-ui text-sm text-text-primary">Discard calendar invites</p>
               <p className="font-ui text-xs text-text-tertiary">
-                Emails with <code className="font-mono text-2xs">.ics</code> attachments or calendar content-type are discarded.
+                Emails with <code className="font-mono text-2xs">.ics</code> attachments or calendar
+                content-type are discarded.
               </p>
             </div>
             <Toggle
@@ -916,7 +1006,8 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
           <div>
             <p className="mb-1 font-ui text-sm text-text-primary">Sender blocklist</p>
             <p className="mb-2 font-ui text-xs text-text-tertiary">
-              Type an address or domain and press Enter or comma to add. Emails from matching senders are discarded.
+              Type an address or domain and press Enter or comma to add. Emails from matching
+              senders are discarded.
             </p>
             <BlocklistChipInput
               chips={displayedChips}
@@ -931,17 +1022,21 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="font-ui text-sm font-semibold text-text-primary">Recent emails</h3>
-            <p className="font-ui text-xs text-text-secondary">The 10 most recently received emails.</p>
+            <p className="font-ui text-xs text-text-secondary">
+              The 10 most recently received emails.
+            </p>
           </div>
         </div>
 
         {emailsLoading ? (
           <p className="font-ui text-sm text-text-tertiary">Loading…</p>
         ) : !emailsData || emailsData.captures.length === 0 ? (
-          <div className="rounded-lg border border-border-dashed border-dashed bg-surface-sunken px-4 py-8 text-center">
+          <div className="border-border-dashed rounded-lg border border-dashed bg-surface-sunken px-4 py-8 text-center">
             <p className="font-ui text-sm text-text-tertiary">No emails received yet.</p>
             <p className="mt-1 font-ui text-xs text-text-tertiary">
-              Send an email to <span className="font-medium text-text-secondary">{directAddress}</span> to get started.
+              Send an email to{" "}
+              <span className="font-medium text-text-secondary">{directAddress}</span> to get
+              started.
             </p>
           </div>
         ) : (
@@ -949,11 +1044,21 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border-subtle bg-surface-sunken">
-                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">From</th>
-                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Subject</th>
-                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Status</th>
-                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Task</th>
-                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">Block</th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">
+                    From
+                  </th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">
+                    Subject
+                  </th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">
+                    Status
+                  </th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">
+                    Task
+                  </th>
+                  <th className="px-3 py-2 text-left font-ui text-2xs font-medium text-text-tertiary">
+                    Block
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -969,7 +1074,9 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
                       {capture.from_address}
                     </td>
                     <td className="max-w-[200px] truncate px-3 py-2 font-ui text-xs text-text-primary">
-                      {capture.subject ?? <span className="italic text-text-tertiary">No subject</span>}
+                      {capture.subject ?? (
+                        <span className="italic text-text-tertiary">No subject</span>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <EmailStatusBadge status={capture.status} />
@@ -987,29 +1094,33 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      {capture.from_address ? (() => {
-                        const addr = capture.from_address.trim().toLowerCase();
-                        const isBlocked = displayedChips.includes(addr);
-                        return (
-                          <button
-                            onClick={() => {
-                              const updated = isBlocked
-                                ? displayedChips.filter((c) => c !== addr)
-                                : [...displayedChips, addr];
-                              handleBlocklistChange(updated);
-                            }}
-                            disabled={updateMutation.isPending}
-                            className={cn(
-                              "rounded px-2 py-0.5 font-ui text-2xs font-medium transition-colors disabled:opacity-50",
-                              isBlocked
-                                ? "bg-surface-sunken text-text-secondary hover:bg-surface-overlay"
-                                : "bg-accent-danger-muted text-accent-danger hover:opacity-80",
-                            )}
-                          >
-                            {isBlocked ? "Unblock" : "Block"}
-                          </button>
-                        );
-                      })() : <span className="font-ui text-xs text-text-tertiary">—</span>}
+                      {capture.from_address ? (
+                        (() => {
+                          const addr = capture.from_address.trim().toLowerCase();
+                          const isBlocked = displayedChips.includes(addr);
+                          return (
+                            <button
+                              onClick={() => {
+                                const updated = isBlocked
+                                  ? displayedChips.filter((c) => c !== addr)
+                                  : [...displayedChips, addr];
+                                handleBlocklistChange(updated);
+                              }}
+                              disabled={updateMutation.isPending}
+                              className={cn(
+                                "rounded px-2 py-0.5 font-ui text-2xs font-medium transition-colors disabled:opacity-50",
+                                isBlocked
+                                  ? "bg-surface-sunken text-text-secondary hover:bg-surface-overlay"
+                                  : "bg-accent-danger-muted text-accent-danger hover:opacity-80",
+                              )}
+                            >
+                              {isBlocked ? "Unblock" : "Block"}
+                            </button>
+                          );
+                        })()
+                      ) : (
+                        <span className="font-ui text-xs text-text-tertiary">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1040,7 +1151,10 @@ function IntegrationsSection({
   const utils = trpc.useUtils();
   const router = useRouter();
   const [showWizard, setShowWizard] = useState(autoOpenWizard ?? false);
-  const [driveBanner, setDriveBanner] = useState<{ type: "success" | "error"; message: string } | null>(() => {
+  const [driveBanner, setDriveBanner] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(() => {
     if (driveLinked) return { type: "success", message: "Google Drive connected successfully." };
     if (driveError) {
       const msg = DRIVE_ERROR_MESSAGES[driveError] ?? "An unexpected error occurred.";
@@ -1058,29 +1172,35 @@ function IntegrationsSection({
     exchange: "Failed to exchange authorization code. Please try again.",
   };
 
-  const [calBanner, setCalBanner] = useState<{ type: "success" | "error"; message: string } | null>(() => {
-    if (calLinked) return { type: "success", message: "Google Calendar connected successfully." };
-    if (calError) {
-      const msg = CAL_ERROR_MESSAGES[calError] ?? "An unexpected error occurred.";
-      return { type: "error", message: msg };
-    }
-    return null;
-  });
+  const [calBanner, setCalBanner] = useState<{ type: "success" | "error"; message: string } | null>(
+    () => {
+      if (calLinked) return { type: "success", message: "Google Calendar connected successfully." };
+      if (calError) {
+        const msg = CAL_ERROR_MESSAGES[calError] ?? "An unexpected error occurred.";
+        return { type: "error", message: msg };
+      }
+      return null;
+    },
+  );
 
   const [isCalSyncing, setIsCalSyncing] = useState(false);
   const [manageCalOpen, setManageCalOpen] = useState(false);
   const [disconnectConfirm, setDisconnectConfirm] = useState(false);
 
-  const { data: calStatus, refetch: refetchCalStatus } = trpc.calendar.connected.useQuery(undefined, {
-    staleTime: 30_000,
-  });
+  const { data: calStatus, refetch: refetchCalStatus } = trpc.calendar.connected.useQuery(
+    undefined,
+    {
+      staleTime: 30_000,
+    },
+  );
   const calDisconnect = trpc.calendar.disconnect.useMutation({
     onSuccess: () => {
       utils.calendar.connected.invalidate();
       setCalBanner({ type: "success", message: "Google Calendar disconnected." });
       setDisconnectConfirm(false);
     },
-    onError: (err: { message?: string }) => setCalBanner({ type: "error", message: err.message ?? "Disconnect failed" }),
+    onError: (err: { message?: string }) =>
+      setCalBanner({ type: "error", message: err.message ?? "Disconnect failed" }),
   });
 
   async function handleCalSync() {
@@ -1151,7 +1271,10 @@ function IntegrationsSection({
       } else if (data?.ok) {
         setTestResult({ ok: true, message: "Connection is working." });
       } else {
-        setTestResult({ ok: false, message: data?.reason ?? "Drive access could not be verified." });
+        setTestResult({
+          ok: false,
+          message: data?.reason ?? "Drive access could not be verified.",
+        });
       }
     } catch {
       setTestResult({ ok: false, message: "Connection check failed." });
@@ -1166,20 +1289,29 @@ function IntegrationsSection({
       <SectionHeader title="Integrations" description="Connect external services to Atlas." />
 
       {driveBanner && (
-        <div className={`flex items-start justify-between gap-3 rounded-lg border px-4 py-3 font-ui text-sm ${
-          driveBanner.type === "success"
-            ? "border-accent-success bg-accent-success-muted text-accent-success"
-            : "border-accent-danger bg-accent-danger-muted text-accent-danger"
-        }`}>
+        <div
+          className={`flex items-start justify-between gap-3 rounded-lg border px-4 py-3 font-ui text-sm ${
+            driveBanner.type === "success"
+              ? "border-accent-success bg-accent-success-muted text-accent-success"
+              : "border-accent-danger bg-accent-danger-muted text-accent-danger"
+          }`}
+        >
           <span>{driveBanner.message}</span>
-          <button onClick={() => setDriveBanner(null)} className="flex-shrink-0 opacity-60 hover:opacity-100">✕</button>
+          <button
+            onClick={() => setDriveBanner(null)}
+            className="flex-shrink-0 opacity-60 hover:opacity-100"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <div className="mb-4">
           <h3 className="font-ui text-sm font-semibold text-text-primary">Google Drive</h3>
-          <p className="font-ui text-xs text-text-secondary">Link a Drive folder to store your Atlas files.</p>
+          <p className="font-ui text-xs text-text-secondary">
+            Link a Drive folder to store your Atlas files.
+          </p>
         </div>
 
         {showWizard ? (
@@ -1193,10 +1325,16 @@ function IntegrationsSection({
                   <p className="font-ui text-sm font-medium text-text-primary">Drive connected</p>
                 </div>
                 <p className="pl-4 font-ui text-xs text-text-secondary">
-                  Folder: <span className="font-medium text-text-primary">{driveStatus.config?.root_folder_name}</span>
+                  Folder:{" "}
+                  <span className="font-medium text-text-primary">
+                    {driveStatus.config?.root_folder_name}
+                  </span>
                 </p>
-                <p className="pl-4 font-ui text-xs text-text-secondary capitalize">
-                  Type: <span className="font-medium text-text-primary">{driveStatus.config?.drive_type ?? "personal"}</span>
+                <p className="pl-4 font-ui text-xs capitalize text-text-secondary">
+                  Type:{" "}
+                  <span className="font-medium text-text-primary">
+                    {driveStatus.config?.drive_type ?? "personal"}
+                  </span>
                 </p>
                 {driveSyncStatus?.lastSynced ? (
                   <p className="pl-4 font-ui text-xs text-text-tertiary">
@@ -1229,7 +1367,10 @@ function IntegrationsSection({
                   Change folder
                 </button>
                 <button
-                  onClick={() => { if (confirm("Unlink Drive? Atlas will lose access to your Drive folder.")) unlinkDrive.mutate(); }}
+                  onClick={() => {
+                    if (confirm("Unlink Drive? Atlas will lose access to your Drive folder."))
+                      unlinkDrive.mutate();
+                  }}
                   className="rounded-md border border-accent-danger px-3 py-1.5 font-ui text-xs font-medium text-accent-danger hover:bg-accent-danger-muted"
                 >
                   Unlink
@@ -1237,12 +1378,14 @@ function IntegrationsSection({
               </div>
             </div>
             {testResult && (
-              <div className={cn(
-                "border-t px-4 py-2 font-ui text-xs",
-                testResult.ok
-                  ? "border-accent-success bg-accent-success-muted text-accent-success"
-                  : "border-accent-danger bg-accent-danger-muted text-accent-danger",
-              )}>
+              <div
+                className={cn(
+                  "border-t px-4 py-2 font-ui text-xs",
+                  testResult.ok
+                    ? "border-accent-success bg-accent-success-muted text-accent-success"
+                    : "border-accent-danger bg-accent-danger-muted text-accent-danger",
+                )}
+              >
                 {testResult.message}
               </div>
             )}
@@ -1258,20 +1401,29 @@ function IntegrationsSection({
       </div>
 
       {calBanner && (
-        <div className={`flex items-start justify-between gap-3 rounded-lg border px-4 py-3 font-ui text-sm ${
-          calBanner.type === "success"
-            ? "border-accent-success bg-accent-success-muted text-accent-success"
-            : "border-accent-danger bg-accent-danger-muted text-accent-danger"
-        }`}>
+        <div
+          className={`flex items-start justify-between gap-3 rounded-lg border px-4 py-3 font-ui text-sm ${
+            calBanner.type === "success"
+              ? "border-accent-success bg-accent-success-muted text-accent-success"
+              : "border-accent-danger bg-accent-danger-muted text-accent-danger"
+          }`}
+        >
           <span>{calBanner.message}</span>
-          <button onClick={() => setCalBanner(null)} className="flex-shrink-0 opacity-60 hover:opacity-100">✕</button>
+          <button
+            onClick={() => setCalBanner(null)}
+            className="flex-shrink-0 opacity-60 hover:opacity-100"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <div className="mb-4">
           <h3 className="font-ui text-sm font-semibold text-text-primary">Google Calendar</h3>
-          <p className="font-ui text-xs text-text-secondary">Sync events and time-blocks with your Google Calendar.</p>
+          <p className="font-ui text-xs text-text-secondary">
+            Sync events and time-blocks with your Google Calendar.
+          </p>
         </div>
 
         {calStatus?.connected ? (
@@ -1280,11 +1432,14 @@ function IntegrationsSection({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 flex-shrink-0 rounded-full bg-accent-success" />
-                  <p className="font-ui text-sm font-medium text-text-primary">Calendar connected</p>
+                  <p className="font-ui text-sm font-medium text-text-primary">
+                    Calendar connected
+                  </p>
                 </div>
                 {calStatus.email && (
                   <p className="pl-4 font-ui text-xs text-text-secondary">
-                    Account: <span className="font-medium text-text-primary">{calStatus.email}</span>
+                    Account:{" "}
+                    <span className="font-medium text-text-primary">{calStatus.email}</span>
                   </p>
                 )}
                 <p className="pl-4 font-ui text-xs text-text-secondary">
@@ -1302,7 +1457,9 @@ function IntegrationsSection({
                     </span>
                   </p>
                 ) : (
-                  <p className="pl-4 font-ui text-xs text-text-tertiary">Syncs daily at 02:30 UTC</p>
+                  <p className="pl-4 font-ui text-xs text-text-tertiary">
+                    Syncs daily at 02:30 UTC
+                  </p>
                 )}
               </div>
               <div className="flex flex-shrink-0 flex-wrap gap-2">
@@ -1329,7 +1486,7 @@ function IntegrationsSection({
             </div>
 
             {disconnectConfirm && (
-              <div className="border-t border-accent-danger/30 bg-accent-danger-muted px-4 py-3">
+              <div className="border-accent-danger/30 border-t bg-accent-danger-muted px-4 py-3">
                 <p className="mb-2 font-ui text-xs text-accent-danger">
                   Disconnecting will revoke access and soft-delete all synced calendar events.
                 </p>
@@ -1380,9 +1537,12 @@ function IntegrationsSection({
       <div className="rounded-xl border border-border-subtle bg-surface-base p-5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-ui text-sm font-semibold text-text-primary">Resend (Inbound Email)</h3>
+            <h3 className="font-ui text-sm font-semibold text-text-primary">
+              Resend (Inbound Email)
+            </h3>
             <p className="font-ui text-xs text-text-tertiary">
-              Routes emails sent to your inbox address to Atlas tasks. Configure your inbox address in{" "}
+              Routes emails sent to your inbox address to Atlas tasks. Configure your inbox address
+              in{" "}
               <button
                 type="button"
                 className="text-accent-primary hover:underline"
@@ -1391,7 +1551,8 @@ function IntegrationsSection({
                 }}
               >
                 Settings → Capture
-              </button>.
+              </button>
+              .
             </p>
           </div>
           <span className="rounded-full bg-accent-success-muted px-2.5 py-0.5 font-ui text-2xs font-medium text-accent-success">
@@ -1432,11 +1593,10 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
     onSuccess: () => utils.user.me.invalidate(),
   });
 
-  const capturePrefs = (
-    typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
+  const capturePrefs =
+    ((typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
       ? (userData.tasks_prefs as Record<string, unknown>).capture_prefs
-      : {}
-  ) as Record<string, unknown> | undefined ?? {};
+      : {}) as Record<string, unknown> | undefined) ?? {};
 
   const aiCaptureEnabled = (capturePrefs.ai_capture_enabled as boolean | undefined) ?? true;
   const parseReviewModal = (capturePrefs.parse_review_modal as string | undefined) ?? "never";
@@ -1454,8 +1614,12 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-ui text-xs font-medium text-text-primary">Enable AI capture parsing</p>
-            <p className="font-ui text-2xs text-text-tertiary">Master toggle — disable to use local-only parsing for all captures.</p>
+            <p className="font-ui text-xs font-medium text-text-primary">
+              Enable AI capture parsing
+            </p>
+            <p className="font-ui text-2xs text-text-tertiary">
+              Master toggle — disable to use local-only parsing for all captures.
+            </p>
           </div>
           <ToggleSwitch
             checked={aiCaptureEnabled}
@@ -1465,8 +1629,12 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
 
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-ui text-xs font-medium text-text-primary">AI fallback for hard cases</p>
-            <p className="font-ui text-2xs text-text-tertiary">Use AI when local confidence is below threshold.</p>
+            <p className="font-ui text-xs font-medium text-text-primary">
+              AI fallback for hard cases
+            </p>
+            <p className="font-ui text-2xs text-text-tertiary">
+              Use AI when local confidence is below threshold.
+            </p>
           </div>
           <ToggleSwitch
             checked={aiFallbackEnabled}
@@ -1475,13 +1643,19 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
         </div>
 
         <div>
-          <label className="mb-1 block font-ui text-xs font-medium text-text-primary">Show parse review modal</label>
+          <label className="mb-1 block font-ui text-xs font-medium text-text-primary">
+            Show parse review modal
+          </label>
           <p className="mb-1.5 font-ui text-2xs text-text-tertiary">
             Appear before saving so you can inspect and adjust what was parsed.
           </p>
           <select
             value={parseReviewModal}
-            onChange={(e) => updatePrefs.mutate({ parse_review_modal: e.target.value as "never" | "when_uncertain" | "always" })}
+            onChange={(e) =>
+              updatePrefs.mutate({
+                parse_review_modal: e.target.value as "never" | "when_uncertain" | "always",
+              })
+            }
             className="rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
           >
             <option value="never">Never</option>
@@ -1493,7 +1667,9 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="font-ui text-xs font-medium text-text-primary">Allow auto-create tags</p>
-            <p className="font-ui text-2xs text-text-tertiary">Automatically create new tags from capture hints.</p>
+            <p className="font-ui text-2xs text-text-tertiary">
+              Automatically create new tags from capture hints.
+            </p>
           </div>
           <ToggleSwitch
             checked={autoCreateTags}
@@ -1503,8 +1679,12 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
 
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-ui text-xs font-medium text-text-primary">Allow auto-link to projects</p>
-            <p className="font-ui text-2xs text-text-tertiary">Automatically link tasks to existing projects by name.</p>
+            <p className="font-ui text-xs font-medium text-text-primary">
+              Allow auto-link to projects
+            </p>
+            <p className="font-ui text-2xs text-text-tertiary">
+              Automatically link tasks to existing projects by name.
+            </p>
           </div>
           <ToggleSwitch
             checked={autoLinkProjects}
@@ -1514,8 +1694,12 @@ function CaptureParsingSection({ userData }: { userData: User | undefined }) {
 
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-ui text-xs font-medium text-text-primary">Allow auto-link to people</p>
-            <p className="font-ui text-2xs text-text-tertiary">Automatically link @mentions to Atlas People entries.</p>
+            <p className="font-ui text-xs font-medium text-text-primary">
+              Allow auto-link to people
+            </p>
+            <p className="font-ui text-2xs text-text-tertiary">
+              Automatically link @mentions to Atlas People entries.
+            </p>
           </div>
           <ToggleSwitch
             checked={autoLinkPeople}
@@ -1552,11 +1736,10 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
     onSuccess: () => utils.user.me.invalidate(),
   });
 
-  const capturePrefs = (
-    typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
+  const capturePrefs =
+    ((typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
       ? (userData.tasks_prefs as Record<string, unknown>).capture_prefs
-      : {}
-  ) as Record<string, unknown> | undefined ?? {};
+      : {}) as Record<string, unknown> | undefined) ?? {};
   const aiFallbackEnabled = (capturePrefs.ai_fallback_enabled as boolean | undefined) ?? true;
 
   const st = strategyStats.data;
@@ -1567,8 +1750,10 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
   const strategyVerdict = (() => {
     if (!st || st.totalCaptures === 0) return null;
     const localPct = (st.byTier.local_only / st.totalCaptures) * 100;
-    if (localPct >= 70) return { label: "Working well", color: "text-accent-success", bg: "bg-accent-success/10" };
-    if (localPct >= 40) return { label: "Marginal", color: "text-accent-warning", bg: "bg-accent-warning/10" };
+    if (localPct >= 70)
+      return { label: "Working well", color: "text-accent-success", bg: "bg-accent-success/10" };
+    if (localPct >= 40)
+      return { label: "Marginal", color: "text-accent-warning", bg: "bg-accent-warning/10" };
     return { label: "Underperforming", color: "text-accent-danger", bg: "bg-accent-danger/10" };
   })();
 
@@ -1619,7 +1804,13 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
         <div className="mb-3 flex items-center justify-between">
           <h4 className="font-ui text-sm font-semibold text-text-primary">Strategy performance</h4>
           {strategyVerdict && (
-            <span className={cn("rounded-full px-2.5 py-0.5 font-ui text-2xs font-medium", strategyVerdict.bg, strategyVerdict.color)}>
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 font-ui text-2xs font-medium",
+                strategyVerdict.bg,
+                strategyVerdict.color,
+              )}
+            >
               {strategyVerdict.label}
             </span>
           )}
@@ -1631,7 +1822,9 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
         ) : (
           <div className="flex flex-col gap-3">
             <div>
-              <p className="mb-1 font-ui text-2xs text-text-tertiary">Parse tier distribution ({st.totalCaptures} total)</p>
+              <p className="mb-1 font-ui text-2xs text-text-tertiary">
+                Parse tier distribution ({st.totalCaptures} total)
+              </p>
               <div className="flex h-4 w-full overflow-hidden rounded-full bg-surface-sunken">
                 {st.byTier.local_only > 0 && (
                   <div
@@ -1673,11 +1866,15 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-border-subtle bg-surface-base p-3">
                 <p className="font-ui text-2xs text-text-tertiary">Actual AI cost</p>
-                <p className="font-ui text-sm font-semibold text-text-primary">${st.totalAiCost.toFixed(4)}</p>
+                <p className="font-ui text-sm font-semibold text-text-primary">
+                  ${st.totalAiCost.toFixed(4)}
+                </p>
               </div>
               <div className="rounded-lg border border-border-subtle bg-surface-base p-3">
                 <p className="font-ui text-2xs text-text-tertiary">Estimated pure-AI</p>
-                <p className="font-ui text-sm font-semibold text-text-primary">${st.estimatedPureAiCost.toFixed(4)}</p>
+                <p className="font-ui text-sm font-semibold text-text-primary">
+                  ${st.estimatedPureAiCost.toFixed(4)}
+                </p>
               </div>
               <div className="rounded-lg border border-border-subtle bg-surface-base p-3">
                 <p className="font-ui text-2xs text-text-tertiary">Savings</p>
@@ -1712,7 +1909,12 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
               </div>
               <div className="rounded-lg border border-border-subtle bg-surface-base p-3">
                 <p className="font-ui text-2xs text-text-tertiary">AI error rate</p>
-                <p className={cn("font-ui text-sm font-semibold", qt.aiFailureRate > 0.1 ? "text-accent-danger" : "text-text-primary")}>
+                <p
+                  className={cn(
+                    "font-ui text-sm font-semibold",
+                    qt.aiFailureRate > 0.1 ? "text-accent-danger" : "text-text-primary",
+                  )}
+                >
                   {(qt.aiFailureRate * 100).toFixed(1)}%
                 </p>
               </div>
@@ -1737,28 +1939,39 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-lg border border-border-subtle bg-surface-base p-3">
-                    <p className="font-ui text-2xs text-text-tertiary">Suggestion acceptance rate</p>
+                    <p className="font-ui text-2xs text-text-tertiary">
+                      Suggestion acceptance rate
+                    </p>
                     <div className="flex items-baseline gap-1">
-                      <p className={cn(
-                        "font-ui text-sm font-semibold",
-                        ov.overrideRate > 0.3 ? "text-accent-warning" : "text-accent-success",
-                      )}>
+                      <p
+                        className={cn(
+                          "font-ui text-sm font-semibold",
+                          ov.overrideRate > 0.3 ? "text-accent-warning" : "text-accent-success",
+                        )}
+                      >
                         {ov.totalCaptures > 0
                           ? `${(100 - ov.overrideRate * 100).toFixed(0)}%`
                           : "—"}
                       </p>
-                      {ov.previousOverrideRate !== null && ov.previousOverrideRate !== undefined && (
-                        <span className={cn(
-                          "font-ui text-2xs font-medium",
-                          ov.overrideRate > ov.previousOverrideRate
-                            ? "text-accent-danger"
-                            : ov.overrideRate < ov.previousOverrideRate
-                            ? "text-accent-success"
-                            : "text-text-tertiary",
-                        )}>
-                          {ov.overrideRate > ov.previousOverrideRate ? "↑ more overrides" : ov.overrideRate < ov.previousOverrideRate ? "↓ fewer overrides" : "→ stable"}
-                        </span>
-                      )}
+                      {ov.previousOverrideRate !== null &&
+                        ov.previousOverrideRate !== undefined && (
+                          <span
+                            className={cn(
+                              "font-ui text-2xs font-medium",
+                              ov.overrideRate > ov.previousOverrideRate
+                                ? "text-accent-danger"
+                                : ov.overrideRate < ov.previousOverrideRate
+                                  ? "text-accent-success"
+                                  : "text-text-tertiary",
+                            )}
+                          >
+                            {ov.overrideRate > ov.previousOverrideRate
+                              ? "↑ more overrides"
+                              : ov.overrideRate < ov.previousOverrideRate
+                                ? "↓ fewer overrides"
+                                : "→ stable"}
+                          </span>
+                        )}
                     </div>
                   </div>
                   <div className="rounded-lg border border-border-subtle bg-surface-base p-3">
@@ -1841,8 +2054,8 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
                 <p className="font-ui text-2xs text-text-secondary">
                   At this threshold, based on last {rangeDays}d:{" "}
                   <span className="font-semibold">{ti.wouldSkipAi} captures</span> go local-only,{" "}
-                  <span className="font-semibold">{ti.wouldUseAi} uses AI</span>,{" "}
-                  estimated cost <span className="font-semibold">${ti.estimatedDailyCost.toFixed(4)}</span>.
+                  <span className="font-semibold">{ti.wouldUseAi} uses AI</span>, estimated cost{" "}
+                  <span className="font-semibold">${ti.estimatedDailyCost.toFixed(4)}</span>.
                 </p>
               </div>
             )}
@@ -1855,9 +2068,7 @@ function CaptureIntelligenceSection({ userData }: { userData: User | undefined }
               >
                 {updateThreshold.isPending ? "Saving…" : "Apply changes"}
               </button>
-              {sliderApplied && (
-                <span className="font-ui text-xs text-accent-success">Saved</span>
-              )}
+              {sliderApplied && <span className="font-ui text-xs text-accent-success">Saved</span>}
             </div>
           </div>
 
@@ -1949,7 +2160,8 @@ function AISection({ userData }: { userData?: User }) {
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Monthly AI Budget</h3>
         <p className="mb-3 font-ui text-xs text-text-secondary">
-          Set a monthly spending limit. You will see a warning on the usage page when you reach 80% of your budget.
+          Set a monthly spending limit. You will see a warning on the usage page when you reach 80%
+          of your budget.
         </p>
         <div className="flex items-center gap-2">
           <span className="font-ui text-sm text-text-secondary">$</span>
@@ -1974,7 +2186,10 @@ function AISection({ userData }: { userData?: User }) {
           {budgetInput !== "" && (
             <button
               type="button"
-              onClick={() => { setBudgetInput(""); updateBudgetMutation.mutate({ ai_budget_usd: null }); }}
+              onClick={() => {
+                setBudgetInput("");
+                updateBudgetMutation.mutate({ ai_budget_usd: null });
+              }}
               className="font-ui text-xs text-text-tertiary hover:text-text-secondary"
             >
               Clear
@@ -1983,12 +2198,14 @@ function AISection({ userData }: { userData?: User }) {
           {budgetSaved && <span className="font-ui text-xs text-accent-success">Saved</span>}
         </div>
         {budgetUsd != null && budgetPct != null && budgetPct >= 0.8 && (
-          <div className={cn(
-            "mt-3 rounded-lg px-3 py-2 font-ui text-xs font-medium",
-            budgetPct >= 1
-              ? "bg-accent-danger-muted text-accent-danger"
-              : "bg-accent-warning-muted text-accent-warning",
-          )}>
+          <div
+            className={cn(
+              "mt-3 rounded-lg px-3 py-2 font-ui text-xs font-medium",
+              budgetPct >= 1
+                ? "bg-accent-danger-muted text-accent-danger"
+                : "bg-accent-warning-muted text-accent-warning",
+            )}
+          >
             {budgetPct >= 1
               ? `Budget exceeded — $${monthlyUsd.toFixed(4)} spent of $${budgetUsd.toFixed(2)} limit.`
               : `Heads up — you've used ${(budgetPct * 100).toFixed(0)}% of your $${budgetUsd.toFixed(2)} monthly budget.`}
@@ -2030,7 +2247,8 @@ function AISection({ userData }: { userData?: User }) {
       <div className="rounded-xl border border-border-subtle bg-surface-base p-5">
         <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Model</h3>
         <p className="font-ui text-xs text-text-secondary">
-          Atlas uses Claude (Anthropic) for all AI features. Model selection and per-feature toggles coming in a future wave.
+          Atlas uses Claude (Anthropic) for all AI features. Model selection and per-feature toggles
+          coming in a future wave.
         </p>
       </div>
 
@@ -2092,11 +2310,13 @@ function TasksSection() {
     },
   });
 
-  const tasksPrefs = (typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
-    ? userData.tasks_prefs as Record<string, unknown>
-    : {});
+  const tasksPrefs =
+    typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
+      ? (userData.tasks_prefs as Record<string, unknown>)
+      : {};
 
-  const defaultReviewInterval = (tasksPrefs.default_review_interval_days as number | null | undefined) ?? null;
+  const defaultReviewInterval =
+    (tasksPrefs.default_review_interval_days as number | null | undefined) ?? null;
   const defaultForecastDays = (tasksPrefs.default_forecast_days as number | undefined) ?? 7;
   const defaultSequential = (tasksPrefs.default_sequential as boolean | undefined) ?? false;
 
@@ -2111,7 +2331,9 @@ function TasksSection() {
       )}
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
-        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Default Review Interval</h3>
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+          Default Review Interval
+        </h3>
         <p className="mb-3 font-ui text-xs text-text-secondary">
           How many days between project reviews when creating a new project.
         </p>
@@ -2137,7 +2359,9 @@ function TasksSection() {
       </div>
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
-        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Forecast Default Range</h3>
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+          Forecast Default Range
+        </h3>
         <p className="mb-3 font-ui text-xs text-text-secondary">
           How many days to show in the Forecast view by default.
         </p>
@@ -2146,7 +2370,9 @@ function TasksSection() {
             <button
               key={n}
               type="button"
-              onClick={() => updateMutation.mutate({ tasks_default_forecast_days: n.toString() as "7" | "14" })}
+              onClick={() =>
+                updateMutation.mutate({ tasks_default_forecast_days: n.toString() as "7" | "14" })
+              }
               className={cn(
                 "flex-1 rounded-xl border px-4 py-3 font-ui text-sm font-medium transition-colors",
                 defaultForecastDays === n
@@ -2163,9 +2389,12 @@ function TasksSection() {
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Sequential Projects by Default</h3>
+            <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+              Sequential Projects by Default
+            </h3>
             <p className="font-ui text-xs text-text-secondary">
-              When enabled, new projects will be sequential by default — only the first incomplete task is available at a time.
+              When enabled, new projects will be sequential by default — only the first incomplete
+              task is available at a time.
             </p>
           </div>
           <button
@@ -2205,12 +2434,14 @@ function GtdSection() {
     },
   });
 
-  const tasksPrefs = (typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
-    ? userData.tasks_prefs as Record<string, unknown>
-    : {});
+  const tasksPrefs =
+    typeof userData?.tasks_prefs === "object" && userData?.tasks_prefs !== null
+      ? (userData.tasks_prefs as Record<string, unknown>)
+      : {};
 
   const somedayCadence = (tasksPrefs.gtd_someday_review_cadence as string | undefined) ?? "weekly";
-  const waitingForWindow = (tasksPrefs.gtd_waiting_for_default_window as string | undefined) ?? "1w";
+  const waitingForWindow =
+    (tasksPrefs.gtd_waiting_for_default_window as string | undefined) ?? "1w";
   const twoMinuteReminder = (tasksPrefs.gtd_two_minute_reminder as boolean | undefined) ?? true;
 
   return (
@@ -2227,16 +2458,21 @@ function GtdSection() {
       )}
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
-        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Someday / Maybe Review Cadence</h3>
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+          Someday / Maybe Review Cadence
+        </h3>
         <p className="mb-3 font-ui text-xs text-text-secondary">
-          How often you want to review your Someday / Maybe list. This sets the default review interval when deferring a capture.
+          How often you want to review your Someday / Maybe list. This sets the default review
+          interval when deferring a capture.
         </p>
         <div className="flex gap-3">
-          {([
-            { value: "weekly", label: "Weekly" },
-            { value: "biweekly", label: "Bi-weekly" },
-            { value: "monthly", label: "Monthly" },
-          ] as const).map((opt) => (
+          {(
+            [
+              { value: "weekly", label: "Weekly" },
+              { value: "biweekly", label: "Bi-weekly" },
+              { value: "monthly", label: "Monthly" },
+            ] as const
+          ).map((opt) => (
             <button
               key={opt.value}
               type="button"
@@ -2255,16 +2491,20 @@ function GtdSection() {
       </div>
 
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
-        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Waiting For Default Follow-up Window</h3>
+        <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+          Waiting For Default Follow-up Window
+        </h3>
         <p className="mb-3 font-ui text-xs text-text-secondary">
           When recording a follow-up for a Waiting For item, this is the default window used.
         </p>
         <div className="flex gap-3">
-          {([
-            { value: "1w", label: "1 week" },
-            { value: "2w", label: "2 weeks" },
-            { value: "1m", label: "1 month" },
-          ] as const).map((opt) => (
+          {(
+            [
+              { value: "1w", label: "1 week" },
+              { value: "2w", label: "2 weeks" },
+              { value: "1m", label: "1 month" },
+            ] as const
+          ).map((opt) => (
             <button
               key={opt.value}
               type="button"
@@ -2285,7 +2525,9 @@ function GtdSection() {
       <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">Two-Minute Rule Reminder</h3>
+            <h3 className="mb-1 font-ui text-sm font-semibold text-text-primary">
+              Two-Minute Rule Reminder
+            </h3>
             <p className="font-ui text-xs text-text-secondary">
               Show a reminder when processing captures that could be done in under two minutes.
             </p>
@@ -2322,27 +2564,29 @@ function LocalePreviewBlock({ locale }: { locale: LocaleSettings }) {
   const weekdays = Array.from({ length: 7 }, (_, i) => new Date(2025, 11, 28 + i));
 
   // Previous, current, and next month relative to sampleDate (Nov, Dec, Jan)
-  const months = [
-    new Date(2025, 10, 1),
-    new Date(2025, 11, 1),
-    new Date(2026, 0, 1),
-  ];
+  const months = [new Date(2025, 10, 1), new Date(2025, 11, 1), new Date(2026, 0, 1)];
 
   return (
     <div className="grid grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-surface-sunken p-4">
       <div>
         <p className="font-ui text-2xs font-medium text-text-tertiary">Date</p>
-        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatDate(sampleDate, locale)}</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">
+          {formatDate(sampleDate, locale)}
+        </p>
       </div>
       <div>
         <p className="font-ui text-2xs font-medium text-text-tertiary">Time</p>
-        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatTime(sampleDate, locale)}</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">
+          {formatTime(sampleDate, locale)}
+        </p>
       </div>
       <div className="col-span-2">
         <p className="font-ui text-2xs font-medium text-text-tertiary">Weekdays</p>
         <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
           {weekdays.map((d, i) => (
-            <span key={i} className="font-mono text-sm text-text-primary">{formatWeekdayAbbrev(d, locale.language)}</span>
+            <span key={i} className="font-mono text-sm text-text-primary">
+              {formatWeekdayAbbrev(d, locale.language)}
+            </span>
           ))}
         </div>
       </div>
@@ -2350,17 +2594,23 @@ function LocalePreviewBlock({ locale }: { locale: LocaleSettings }) {
         <p className="font-ui text-2xs font-medium text-text-tertiary">Months</p>
         <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
           {months.map((d, i) => (
-            <span key={i} className="font-mono text-sm text-text-primary">{formatMonthAbbrev(d, locale.language)}</span>
+            <span key={i} className="font-mono text-sm text-text-primary">
+              {formatMonthAbbrev(d, locale.language)}
+            </span>
           ))}
         </div>
       </div>
       <div>
         <p className="font-ui text-2xs font-medium text-text-tertiary">Number</p>
-        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatNumber(sampleNumber, locale)}</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">
+          {formatNumber(sampleNumber, locale)}
+        </p>
       </div>
       <div>
         <p className="font-ui text-2xs font-medium text-text-tertiary">Currency</p>
-        <p className="mt-0.5 font-mono text-sm text-text-primary">{formatCurrency(sampleCurrency, locale)}</p>
+        <p className="mt-0.5 font-mono text-sm text-text-primary">
+          {formatCurrency(sampleCurrency, locale)}
+        </p>
       </div>
     </div>
   );
@@ -2398,7 +2648,15 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
       language: user.language ?? "ur",
     });
     setShowCustom(serverPreset === "custom");
-  }, [serverPreset, user.date_format, user.time_format, user.number_format, user.currency_code, user.currency_symbol, user.language]);
+  }, [
+    serverPreset,
+    user.date_format,
+    user.time_format,
+    user.number_format,
+    user.currency_code,
+    user.currency_symbol,
+    user.language,
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore -- TS2589: tRPC type inference depth; safe at runtime
@@ -2424,7 +2682,10 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
     if (!p) return;
     setLocalLocale(p.settings);
     setShowCustom(false);
-    updateLocale.mutate({ preset: preset as "pakistan" | "us" | "uk", language: p.settings.language });
+    updateLocale.mutate({
+      preset: preset as "pakistan" | "us" | "uk",
+      language: p.settings.language,
+    });
   }
 
   function handleLanguageChange(language: string) {
@@ -2476,30 +2737,39 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Locale preset</label>
+          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+            Locale preset
+          </label>
           <select
             className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
             value={localPreset}
             onChange={(e) => handlePresetChange(e.target.value as LocalePresetKey)}
           >
             {LOCALE_PRESETS.map((p) => (
-              <option key={p.key} value={p.key}>{p.label}</option>
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
             ))}
           </select>
           <p className="mt-1 font-ui text-xs text-text-tertiary">
-            Choose a preset to apply locale defaults, or select Custom to configure each setting individually.
+            Choose a preset to apply locale defaults, or select Custom to configure each setting
+            individually.
           </p>
         </div>
 
         <div>
-          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Language</label>
+          <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+            Language
+          </label>
           <select
             className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
             value={localLocale.language}
             onChange={(e) => handleLanguageChange(e.target.value)}
           >
             {LANGUAGE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
           <p className="mt-1 font-ui text-xs text-text-tertiary">
@@ -2515,28 +2785,38 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
 
       {(showCustom || localPreset === "custom") && (
         <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
-          <h3 className="mb-4 font-ui text-sm font-semibold text-text-primary">Custom locale settings</h3>
+          <h3 className="mb-4 font-ui text-sm font-semibold text-text-primary">
+            Custom locale settings
+          </h3>
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Date format</label>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                  Date format
+                </label>
                 <select
                   className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
                   value={localLocale.date_format}
                   onChange={(e) => setLocalLocale((l) => ({ ...l, date_format: e.target.value }))}
                 >
                   {DATE_FORMAT_OPTIONS.map((f) => (
-                    <option key={f} value={f}>{f}</option>
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Time format</label>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                  Time format
+                </label>
                 <div className="flex gap-2">
                   {TIME_FORMAT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => setLocalLocale((l) => ({ ...l, time_format: opt.value as "12h" | "24h" }))}
+                      onClick={() =>
+                        setLocalLocale((l) => ({ ...l, time_format: opt.value as "12h" | "24h" }))
+                      }
                       className={cn(
                         "flex-1 rounded-md border px-3 py-2 font-ui text-sm font-medium transition-colors",
                         localLocale.time_format === opt.value
@@ -2551,42 +2831,58 @@ function PreferencesSection({ initialUser }: { initialUser: User }) {
               </div>
             </div>
             <div>
-              <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Number format</label>
+              <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                Number format
+              </label>
               <select
                 className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
                 value={localLocale.number_format}
                 onChange={(e) => setLocalLocale((l) => ({ ...l, number_format: e.target.value }))}
               >
                 {NUMBER_FORMAT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Currency code</label>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                  Currency code
+                </label>
                 <input
                   className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-mono text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
                   value={localLocale.currency_code}
                   maxLength={3}
-                  onChange={(e) => setLocalLocale((l) => ({ ...l, currency_code: e.target.value.toUpperCase() }))}
+                  onChange={(e) =>
+                    setLocalLocale((l) => ({ ...l, currency_code: e.target.value.toUpperCase() }))
+                  }
                   placeholder="PKR"
                 />
-                <p className="mt-1 font-ui text-2xs text-text-tertiary">Valid ISO 4217 code (e.g. USD, EUR, PKR)</p>
+                <p className="mt-1 font-ui text-2xs text-text-tertiary">
+                  Valid ISO 4217 code (e.g. USD, EUR, PKR)
+                </p>
               </div>
               <div>
-                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">Currency symbol</label>
+                <label className="mb-1 block font-ui text-xs font-medium text-text-secondary">
+                  Currency symbol
+                </label>
                 <input
                   className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-mono text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
                   value={localLocale.currency_symbol}
                   maxLength={5}
-                  onChange={(e) => setLocalLocale((l) => ({ ...l, currency_symbol: e.target.value }))}
+                  onChange={(e) =>
+                    setLocalLocale((l) => ({ ...l, currency_symbol: e.target.value }))
+                  }
                   placeholder="₨"
                 />
               </div>
             </div>
             <div>
-              <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Preview with custom settings</p>
+              <p className="mb-2 font-ui text-xs font-medium text-text-secondary">
+                Preview with custom settings
+              </p>
               <LocalePreviewBlock locale={localLocale} />
             </div>
             {localeError && (
@@ -2627,7 +2923,22 @@ interface SettingsClientProps {
   calError?: string;
 }
 
-const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "preferences", "capture", "tasks", "templates", "gtd", "integrations", "ai", "backups", "storage", "data", "account", "system"]);
+const VALID_SECTIONS = new Set<Section>([
+  "profile",
+  "appearance",
+  "preferences",
+  "capture",
+  "tasks",
+  "templates",
+  "gtd",
+  "integrations",
+  "ai",
+  "backups",
+  "storage",
+  "data",
+  "account",
+  "system",
+]);
 
 function resolveSection(raw: string | undefined, fallback: Section): Section {
   if (raw && VALID_SECTIONS.has(raw as Section)) return raw as Section;
@@ -2657,18 +2968,24 @@ function StorageSection() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-surface-base p-3">
               <p className="font-ui text-2xs text-text-tertiary">Total files</p>
-              <p className="mt-0.5 font-ui text-xl font-semibold text-text-primary">{s.total_count}</p>
+              <p className="mt-0.5 font-ui text-xl font-semibold text-text-primary">
+                {s.total_count}
+              </p>
             </div>
             <div className="rounded-lg bg-surface-base p-3">
               <p className="font-ui text-2xs text-text-tertiary">Storage used</p>
-              <p className="mt-0.5 font-ui text-xl font-semibold text-text-primary">{fmtBytes(s.total_bytes)}</p>
+              <p className="mt-0.5 font-ui text-xl font-semibold text-text-primary">
+                {fmtBytes(s.total_bytes)}
+              </p>
             </div>
           </div>
         ) : null}
 
         {s && Object.entries(s.by_type).some(([, v]) => v.count > 0) && (
           <div className="mt-4">
-            <h4 className="mb-2 font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">By type</h4>
+            <h4 className="mb-2 font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
+              By type
+            </h4>
             <div className="flex flex-col gap-1">
               {Object.entries(s.by_type)
                 .filter(([, v]) => v.count > 0)
@@ -2696,13 +3013,16 @@ function StorageSection() {
       </div>
 
       {s && (s.unreviewed_count > 0 || s.orphan_count > 0) && (
-        <div className="rounded-xl border border-accent-warning/30 bg-accent-warning/5 p-5">
-          <h3 className="mb-2 font-ui text-sm font-semibold text-text-primary">Cleanup suggestions</h3>
+        <div className="border-accent-warning/30 bg-accent-warning/5 rounded-xl border p-5">
+          <h3 className="mb-2 font-ui text-sm font-semibold text-text-primary">
+            Cleanup suggestions
+          </h3>
           <div className="flex flex-col gap-2">
             {s.unreviewed_count > 0 && (
               <div className="flex items-start justify-between gap-4">
                 <p className="font-ui text-xs text-text-secondary">
-                  You have <strong>{s.unreviewed_count}</strong> unreviewed attachment{s.unreviewed_count !== 1 ? "s" : ""}.
+                  You have <strong>{s.unreviewed_count}</strong> unreviewed attachment
+                  {s.unreviewed_count !== 1 ? "s" : ""}.
                 </p>
                 <a
                   href="/media?reviewed=false"
@@ -2715,7 +3035,8 @@ function StorageSection() {
             {s.orphan_count > 0 && (
               <div className="flex items-start justify-between gap-4">
                 <p className="font-ui text-xs text-text-secondary">
-                  You have <strong>{s.orphan_count}</strong> orphaned attachment{s.orphan_count !== 1 ? "s" : ""} not attached to any task.
+                  You have <strong>{s.orphan_count}</strong> orphaned attachment
+                  {s.orphan_count !== 1 ? "s" : ""} not attached to any task.
                 </p>
                 <a
                   href="/media?source=orphaned"
@@ -2735,9 +3056,21 @@ function StorageSection() {
 type AdminMigrationPhase =
   | { phase: "idle" }
   | { phase: "previewing" }
-  | { phase: "preview"; userCount: number; totalCategoryA: number; totalCategoryB: number; totalItems: number }
+  | {
+      phase: "preview";
+      userCount: number;
+      totalCategoryA: number;
+      totalCategoryB: number;
+      totalItems: number;
+    }
   | { phase: "running" }
-  | { phase: "done"; userCount: number; totalConverted: number; totalKept: number; totalErrors: number }
+  | {
+      phase: "done";
+      userCount: number;
+      totalConverted: number;
+      totalKept: number;
+      totalErrors: number;
+    }
   | { phase: "error"; message: string };
 
 function AdminMigrationPanel() {
@@ -2779,15 +3112,18 @@ function AdminMigrationPanel() {
   }
 
   return (
-    <div className="rounded-xl border border-accent-warning/40 bg-accent-warning/5 p-5">
+    <div className="border-accent-warning/40 bg-accent-warning/5 rounded-xl border p-5">
       <div className="mb-1 flex items-center gap-2">
         <span className="rounded-full bg-accent-warning-muted px-2 py-0.5 font-ui text-2xs font-semibold text-accent-warning">
           Admin only
         </span>
-        <h3 className="font-ui text-sm font-semibold text-text-primary">Inbox migration — all users</h3>
+        <h3 className="font-ui text-sm font-semibold text-text-primary">
+          Inbox migration — all users
+        </h3>
       </div>
       <p className="mb-3 font-ui text-xs text-text-secondary">
-        Run the inbox-to-captures migration for every active user. Each user will see their summary the next time they open their inbox.
+        Run the inbox-to-captures migration for every active user. Each user will see their summary
+        the next time they open their inbox.
       </p>
 
       {state.phase === "error" && (
@@ -2797,32 +3133,38 @@ function AdminMigrationPanel() {
         </div>
       )}
 
-      {(state.phase === "preview") && (
-        <div className="mb-4 rounded-lg border border-border-default bg-surface-overlay p-3 space-y-2">
+      {state.phase === "preview" && (
+        <div className="mb-4 space-y-2 rounded-lg border border-border-default bg-surface-overlay p-3">
           <div className="flex items-center justify-between font-ui text-sm">
             <span className="text-text-secondary">Users</span>
             <span className="font-semibold tabular-nums text-text-primary">{state.userCount}</span>
           </div>
           <div className="flex items-center justify-between font-ui text-sm">
             <span className="text-text-secondary">Total items to convert</span>
-            <span className="font-semibold tabular-nums text-accent-success">{state.totalCategoryA}</span>
+            <span className="font-semibold tabular-nums text-accent-success">
+              {state.totalCategoryA}
+            </span>
           </div>
           <div className="flex items-center justify-between font-ui text-sm">
             <span className="text-text-secondary">Total items to keep</span>
-            <span className="font-semibold tabular-nums text-text-primary">{state.totalCategoryB}</span>
+            <span className="font-semibold tabular-nums text-text-primary">
+              {state.totalCategoryB}
+            </span>
           </div>
         </div>
       )}
 
       {state.phase === "done" && (
-        <div className="mb-4 rounded-lg border border-accent-success/30 bg-accent-success-muted p-3 space-y-2">
+        <div className="border-accent-success/30 mb-4 space-y-2 rounded-lg border bg-accent-success-muted p-3">
           <div className="flex items-center justify-between font-ui text-sm">
             <span className="text-text-secondary">Users migrated</span>
             <span className="font-semibold tabular-nums text-text-primary">{state.userCount}</span>
           </div>
           <div className="flex items-center justify-between font-ui text-sm">
             <span className="text-text-secondary">Total converted</span>
-            <span className="font-semibold tabular-nums text-accent-success">{state.totalConverted}</span>
+            <span className="font-semibold tabular-nums text-accent-success">
+              {state.totalConverted}
+            </span>
           </div>
           <div className="flex items-center justify-between font-ui text-sm">
             <span className="text-text-secondary">Total kept</span>
@@ -2831,7 +3173,9 @@ function AdminMigrationPanel() {
           {state.totalErrors > 0 && (
             <div className="flex items-center justify-between font-ui text-sm">
               <span className="text-text-secondary">Errors</span>
-              <span className="font-semibold tabular-nums text-accent-danger">{state.totalErrors}</span>
+              <span className="font-semibold tabular-nums text-accent-danger">
+                {state.totalErrors}
+              </span>
             </div>
           )}
         </div>
@@ -2871,7 +3215,9 @@ function AdminMigrationPanel() {
           </>
         )}
         {state.phase === "running" && (
-          <span className="font-ui text-sm text-text-tertiary">Running migration for all users…</span>
+          <span className="font-ui text-sm text-text-tertiary">
+            Running migration for all users…
+          </span>
         )}
       </div>
     </div>
@@ -2888,13 +3234,19 @@ export function SettingsClient({
   calError,
 }: SettingsClientProps) {
   const router = useRouter();
-  const defaultSection = resolveSection(initialSection, autoOpenWizard ? "integrations" : "profile");
+  const defaultSection = resolveSection(
+    initialSection,
+    autoOpenWizard ? "integrations" : "profile",
+  );
   const [section, setSection] = useState<Section>(defaultSection);
 
-  const navigate = useCallback((id: Section) => {
-    setSection(id);
-    router.replace(`/settings?section=${id}`, { scroll: false });
-  }, [router]);
+  const navigate = useCallback(
+    (id: Section) => {
+      setSection(id);
+      router.replace(`/settings?section=${id}`, { scroll: false });
+    },
+    [router],
+  );
 
   const nav = (
     <nav aria-label="Settings sections" className="flex flex-col gap-0.5 p-2">
@@ -2907,7 +3259,7 @@ export function SettingsClient({
           className={cn(
             "flex w-full items-center gap-2.5 rounded-md px-3 py-2 font-ui text-sm transition-colors",
             section === id
-              ? "bg-accent-primary-subtle text-accent-primary font-medium"
+              ? "bg-accent-primary-subtle font-medium text-accent-primary"
               : "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
           )}
         >
@@ -2963,8 +3315,10 @@ export function SettingsClient({
               View Trash
             </a>
           </div>
-          <div className="rounded-xl border border-border-dashed border-dashed bg-surface-sunken px-6 py-8 text-center">
-            <p className="font-ui text-sm text-text-tertiary">Export and import tools coming in a future wave.</p>
+          <div className="border-border-dashed rounded-xl border border-dashed bg-surface-sunken px-6 py-8 text-center">
+            <p className="font-ui text-sm text-text-tertiary">
+              Export and import tools coming in a future wave.
+            </p>
           </div>
         </div>
       )}

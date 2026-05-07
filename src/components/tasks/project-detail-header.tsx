@@ -18,7 +18,10 @@ import { MoreHorizontal, RefreshCw, Folder } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { ProjectTypePicker } from "@/components/projects/project-type-picker";
-import { ProjectStatusSelector, type ProjectStatus } from "@/components/projects/project-status-selector";
+import {
+  ProjectStatusSelector,
+  type ProjectStatus,
+} from "@/components/projects/project-status-selector";
 import { ProjectTargetDatePicker } from "@/components/projects/project-target-date-picker";
 import { ProjectHeaderMetrics } from "@/components/projects/project-header-metrics";
 import { TrackerSettingsPanel } from "@/components/projects/tracker-settings-panel";
@@ -37,7 +40,11 @@ const COLORS = Object.keys(PROJECT_COLOR_DOTS);
 
 const INACTIVE_STATUSES = new Set(["completed", "dropped"]);
 
-export function ProjectDetailHeader({ projectId }: { projectId: string }): React.ReactElement | null {
+export function ProjectDetailHeader({
+  projectId,
+}: {
+  projectId: string;
+}): React.ReactElement | null {
   const router = useRouter();
   const utils = trpc.useUtils();
   const project = trpc.projects.get.useQuery({ id: projectId });
@@ -81,7 +88,10 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
 
   const flatFolders = React.useMemo(() => {
     type FolderNode = { id: string; name: string; children?: FolderNode[] };
-    function flatten(nodes: FolderNode[], depth = 0): { id: string; name: string; depth: number }[] {
+    function flatten(
+      nodes: FolderNode[],
+      depth = 0,
+    ): { id: string; name: string; depth: number }[] {
       const out: { id: string; name: string; depth: number }[] = [];
       for (const n of nodes) {
         out.push({ id: n.id, name: n.name, depth });
@@ -106,13 +116,38 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
 
   if (!project.data) return null;
   const data = project.data;
-  const currentFolder = flatFolders.find((f) => f.id === (data as typeof data & { folder_id?: string | null }).folder_id);
-  const projectType = ((data as typeof data & { type?: string }).type ?? "project");
+  const currentFolder = flatFolders.find(
+    (f) => f.id === (data as typeof data & { folder_id?: string | null }).folder_id,
+  );
+  const projectType = (data as typeof data & { type?: string }).type ?? "project";
   const projectStatus = data.status as ProjectStatus;
   const targetDate = (data as typeof data & { target_date?: string | null }).target_date;
   const isInactive = INACTIVE_STATUSES.has(projectStatus);
-  const metrics = (data as typeof data & { metrics?: { task_counts: { total: number; active: number; completed: number }; days_to_target?: number; last_activity_at?: Date | string | null } }).metrics;
-  const tracker = (data as typeof data & { tracker?: { table_id: string; column_id: string; table_name: string | null; column_name: string | null; aggregation: string; current_value: number | null; target_value: number | null; target_label: string | null; percentage: number | null; status: "ok" | "unavailable" } | null }).tracker;
+  const metrics = (
+    data as typeof data & {
+      metrics?: {
+        task_counts: { total: number; active: number; completed: number };
+        days_to_target?: number;
+        last_activity_at?: Date | string | null;
+      };
+    }
+  ).metrics;
+  const tracker = (
+    data as typeof data & {
+      tracker?: {
+        table_id: string;
+        column_id: string;
+        table_name: string | null;
+        column_name: string | null;
+        aggregation: string;
+        current_value: number | null;
+        target_value: number | null;
+        target_label: string | null;
+        percentage: number | null;
+        status: "ok" | "unavailable";
+      } | null;
+    }
+  ).tracker;
 
   const trackerForSettings = tracker
     ? {
@@ -122,13 +157,29 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
         target_value: tracker.target_value ?? null,
         target_label: tracker.target_label ?? null,
       }
-    : (data as typeof data & { tracker_table_id?: string | null; tracker_column_id?: string | null; tracker_aggregation?: string | null; tracker_target_value?: number | null; tracker_target_label?: string | null }).tracker_table_id
+    : (
+          data as typeof data & {
+            tracker_table_id?: string | null;
+            tracker_column_id?: string | null;
+            tracker_aggregation?: string | null;
+            tracker_target_value?: number | null;
+            tracker_target_label?: string | null;
+          }
+        ).tracker_table_id
       ? {
-          table_id: (data as typeof data & { tracker_table_id?: string | null }).tracker_table_id ?? null,
-          column_id: (data as typeof data & { tracker_column_id?: string | null }).tracker_column_id ?? null,
-          aggregation: (data as typeof data & { tracker_aggregation?: string | null }).tracker_aggregation ?? null,
-          target_value: (data as typeof data & { tracker_target_value?: number | null }).tracker_target_value ?? null,
-          target_label: (data as typeof data & { tracker_target_label?: string | null }).tracker_target_label ?? null,
+          table_id:
+            (data as typeof data & { tracker_table_id?: string | null }).tracker_table_id ?? null,
+          column_id:
+            (data as typeof data & { tracker_column_id?: string | null }).tracker_column_id ?? null,
+          aggregation:
+            (data as typeof data & { tracker_aggregation?: string | null }).tracker_aggregation ??
+            null,
+          target_value:
+            (data as typeof data & { tracker_target_value?: number | null }).tracker_target_value ??
+            null,
+          target_label:
+            (data as typeof data & { tracker_target_label?: string | null }).tracker_target_label ??
+            null,
         }
       : null;
 
@@ -155,12 +206,20 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
               : `Every ${data.review_interval_days} days`;
 
   return (
-    <div className={cn(
-      "flex flex-col gap-1 border-b border-border-subtle px-3 py-2",
-      isInactive && "opacity-60",
-    )}>
+    <div
+      className={cn(
+        "flex flex-col gap-1 border-b border-border-subtle px-3 py-2",
+        isInactive && "opacity-60",
+      )}
+    >
       <div className="flex items-center gap-3">
-        <span className={cn("size-3 shrink-0 rounded-full", PROJECT_COLOR_DOTS[data.color ?? ""] ?? "bg-text-disabled")} aria-hidden />
+        <span
+          className={cn(
+            "size-3 shrink-0 rounded-full",
+            PROJECT_COLOR_DOTS[data.color ?? ""] ?? "bg-text-disabled",
+          )}
+          aria-hidden
+        />
         <input
           value={titleDraft}
           onChange={(e) => setTitleDraft(e.target.value)}
@@ -171,20 +230,29 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
               (e.target as HTMLInputElement).blur();
             }
           }}
-          className="min-w-0 flex-1 border-0 bg-transparent p-0 font-display text-base font-semibold text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-border-focus rounded-sm"
+          className="font-display min-w-0 flex-1 rounded-sm border-0 bg-transparent p-0 text-base font-semibold text-text-primary outline-none focus-visible:ring-1 focus-visible:ring-border-focus"
         />
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary" aria-label="Project actions">
+          <DropdownMenuTrigger
+            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            aria-label="Project actions"
+          >
             <MoreHorizontal size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "active" })}
+            <DropdownMenuItem
+              onSelect={() => update.mutate({ id: data.id, status: "active" })}
               className={projectStatus === "active" ? "font-semibold text-accent-primary" : ""}
-            >Set active</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "on_hold" })}
+            >
+              Set active
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => update.mutate({ id: data.id, status: "on_hold" })}
               className={projectStatus === "on_hold" ? "font-semibold text-accent-primary" : ""}
-            >Pause</DropdownMenuItem>
+            >
+              Pause
+            </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 if (confirm("Mark all tasks complete and complete the project?")) {
@@ -196,13 +264,25 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
             >
               Mark complete
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, status: "dropped" })}
+            <DropdownMenuItem
+              onSelect={() => update.mutate({ id: data.id, status: "dropped" })}
               className={projectStatus === "dropped" ? "font-semibold text-accent-primary" : ""}
-            >Abandon</DropdownMenuItem>
+            >
+              Abandon
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Review interval</DropdownMenuLabel>
             {([null, 3, 7, 14, 30] as (number | null)[]).map((days) => {
-              const label = days == null ? "Never" : days === 3 ? "Every 3 days" : days === 7 ? "Weekly" : days === 14 ? "Every 2 weeks" : "Monthly";
+              const label =
+                days == null
+                  ? "Never"
+                  : days === 3
+                    ? "Every 3 days"
+                    : days === 7
+                      ? "Weekly"
+                      : days === 14
+                        ? "Every 2 weeks"
+                        : "Monthly";
               const active = data.review_interval_days === days;
               return (
                 <DropdownMenuItem
@@ -210,13 +290,16 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
                   onSelect={() => update.mutate({ id: data.id, review_interval_days: days })}
                   className={active ? "font-semibold text-accent-primary" : ""}
                 >
-                  {active ? "✓ " : ""}{label}
+                  {active ? "✓ " : ""}
+                  {label}
                 </DropdownMenuItem>
               );
             })}
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Display</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => update.mutate({ id: data.id, sequential: !data.sequential })}>
+            <DropdownMenuItem
+              onSelect={() => update.mutate({ id: data.id, sequential: !data.sequential })}
+            >
               {data.sequential ? "Disable sequential mode" : "Enable sequential mode"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -237,7 +320,11 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
               <DropdownMenuSubContent>
                 <DropdownMenuItem
                   onSelect={() => moveToFolder.mutate({ project_id: data.id, folder_id: null })}
-                  className={(data as typeof data & { folder_id?: string | null }).folder_id == null ? "font-semibold text-accent-primary" : ""}
+                  className={
+                    (data as typeof data & { folder_id?: string | null }).folder_id == null
+                      ? "font-semibold text-accent-primary"
+                      : ""
+                  }
                 >
                   <Folder size={12} className="mr-1.5 shrink-0 text-text-disabled" />
                   <span className="italic">No folder (root)</span>
@@ -247,7 +334,11 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
                     key={f.id}
                     onSelect={() => moveToFolder.mutate({ project_id: data.id, folder_id: f.id })}
                     style={{ paddingLeft: `${12 + f.depth * 12}px` }}
-                    className={(data as typeof data & { folder_id?: string | null }).folder_id === f.id ? "font-semibold text-accent-primary" : ""}
+                    className={
+                      (data as typeof data & { folder_id?: string | null }).folder_id === f.id
+                        ? "font-semibold text-accent-primary"
+                        : ""
+                    }
                   >
                     <Folder size={12} className="mr-1.5 shrink-0 text-text-tertiary" />
                     {f.name}
@@ -283,29 +374,29 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
           onChange={(t) => update.mutate({ id: data.id, type: t })}
           disabled={update.isPending}
         />
-        <span className="text-text-disabled font-ui text-2xs">·</span>
+        <span className="font-ui text-2xs text-text-disabled">·</span>
         <ProjectStatusSelector
           value={projectStatus}
           onChange={(s) => update.mutate({ id: data.id, status: s })}
           disabled={update.isPending}
         />
-        <span className="text-text-disabled font-ui text-2xs">·</span>
+        <span className="font-ui text-2xs text-text-disabled">·</span>
         <ProjectTargetDatePicker
           value={targetDate}
           onChange={(d) => update.mutate({ id: data.id, target_date: d })}
           disabled={update.isPending}
         />
-        <span className="text-text-disabled font-ui text-2xs ml-1">·</span>
-        <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary px-1.5 py-0.5">
+        <span className="ml-1 font-ui text-2xs text-text-disabled">·</span>
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">
           <RefreshCw size={9} />
           {reviewIntervalLabel}
         </span>
         {data.sequential && (
-          <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary px-1.5 py-0.5">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">
             Sequential
           </span>
         )}
-        <span className="inline-flex items-center gap-1 font-ui text-2xs text-text-tertiary px-1.5 py-0.5">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">
           <Folder size={9} />
           {currentFolder ? currentFolder.name : <span className="italic">No folder</span>}
         </span>
@@ -321,7 +412,7 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
       )}
 
       {showTrackerSettings && (
-        <div ref={trackerSettingsRef} className="pl-5 pr-1 pb-1 pt-0.5">
+        <div ref={trackerSettingsRef} className="pb-1 pl-5 pr-1 pt-0.5">
           <TrackerSettingsPanel
             projectId={projectId}
             currentTracker={trackerForSettings}

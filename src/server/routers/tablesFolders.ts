@@ -31,10 +31,7 @@ function buildTree(
     }));
 }
 
-function getDepth(
-  folders: { id: string; parent_id: string | null }[],
-  folderId: string,
-): number {
+function getDepth(folders: { id: string; parent_id: string | null }[], folderId: string): number {
   let depth = 0;
   let current = folderId;
   const parentMap = new Map(folders.map((f) => [f.id, f.parent_id]));
@@ -192,11 +189,17 @@ export const tablesFoldersRouter = router({
 
       if (input.parent_id) {
         if (input.parent_id === input.id) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot move a folder into itself." });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot move a folder into itself.",
+          });
         }
         const descendants = getDescendantIds(allFolders, input.id);
         if (descendants.includes(input.parent_id)) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot move a folder into one of its descendants." });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Cannot move a folder into one of its descendants.",
+          });
         }
         const parentDepth = getDepth(allFolders, input.parent_id);
         if (parentDepth >= MAX_DEPTH - 1) {
@@ -268,7 +271,7 @@ export const tablesFoldersRouter = router({
       }
 
       const ordered = [...siblings];
-      ordered.splice(insertIdx, 0, folder as typeof siblings[0]);
+      ordered.splice(insertIdx, 0, folder as (typeof siblings)[0]);
 
       const STEP = 100;
       const updates = ordered.map((f, i) => ({

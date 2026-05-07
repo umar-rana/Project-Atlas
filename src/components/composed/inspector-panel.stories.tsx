@@ -35,8 +35,12 @@ export const Default: Story = {
               title: "Tags",
               children: (
                 <div className="flex flex-wrap gap-1">
-                  <Tag family="purpose" hue={1}>marketing</Tag>
-                  <Tag family="purpose" hue={3}>q4</Tag>
+                  <Tag family="purpose" hue={1}>
+                    marketing
+                  </Tag>
+                  <Tag family="purpose" hue={3}>
+                    q4
+                  </Tag>
                 </div>
               ),
             },
@@ -44,7 +48,9 @@ export const Default: Story = {
               id: "notes",
               title: "Notes",
               defaultOpen: false,
-              children: <p className="font-ui text-xs text-text-secondary">Plan retro for Friday.</p>,
+              children: (
+                <p className="font-ui text-xs text-text-secondary">Plan retro for Friday.</p>
+              ),
             },
           ]}
         />

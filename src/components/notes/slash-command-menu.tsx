@@ -25,72 +25,63 @@ const SLASH_COMMANDS: SlashCommand[] = [
     label: "Heading 1",
     description: "Large section heading",
     icon: "H1",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().setHeading({ level: 1 }).run(),
+    action: (editor) => editor.chain().focus().clearNodes().setHeading({ level: 1 }).run(),
   },
   {
     id: "heading2",
     label: "Heading 2",
     description: "Medium section heading",
     icon: "H2",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().setHeading({ level: 2 }).run(),
+    action: (editor) => editor.chain().focus().clearNodes().setHeading({ level: 2 }).run(),
   },
   {
     id: "heading3",
     label: "Heading 3",
     description: "Small section heading",
     icon: "H3",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().setHeading({ level: 3 }).run(),
+    action: (editor) => editor.chain().focus().clearNodes().setHeading({ level: 3 }).run(),
   },
   {
     id: "bulletList",
     label: "Bullet List",
     description: "Unordered list",
     icon: "•",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().toggleBulletList().run(),
+    action: (editor) => editor.chain().focus().clearNodes().toggleBulletList().run(),
   },
   {
     id: "orderedList",
     label: "Numbered List",
     description: "Ordered list",
     icon: "1.",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().toggleOrderedList().run(),
+    action: (editor) => editor.chain().focus().clearNodes().toggleOrderedList().run(),
   },
   {
     id: "taskList",
     label: "Task List",
     description: "Interactive checkboxes",
     icon: "☐",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().toggleTaskList().run(),
+    action: (editor) => editor.chain().focus().clearNodes().toggleTaskList().run(),
   },
   {
     id: "codeBlock",
     label: "Code Block",
     description: "Syntax-highlighted code",
     icon: "</>",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().setCodeBlock().run(),
+    action: (editor) => editor.chain().focus().clearNodes().setCodeBlock().run(),
   },
   {
     id: "blockquote",
     label: "Blockquote",
     description: "Quoted text",
     icon: "❝",
-    action: (editor) =>
-      editor.chain().focus().clearNodes().setBlockquote().run(),
+    action: (editor) => editor.chain().focus().clearNodes().setBlockquote().run(),
   },
   {
     id: "horizontalRule",
     label: "Divider",
     description: "Horizontal line",
     icon: "—",
-    action: (editor) =>
-      editor.chain().focus().setHorizontalRule().run(),
+    action: (editor) => editor.chain().focus().setHorizontalRule().run(),
   },
   {
     id: "embed",
@@ -112,7 +103,14 @@ type Props = {
   onEmbedCommand?: (from: number, query: string) => void;
 };
 
-export function SlashCommandMenu({ query, position, editor, from, onClose, onEmbedCommand }: Props) {
+export function SlashCommandMenu({
+  query,
+  position,
+  editor,
+  from,
+  onClose,
+  onEmbedCommand,
+}: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -188,7 +186,7 @@ export function SlashCommandMenu({ query, position, editor, from, onClose, onEmb
   return (
     <div
       style={{ top: position.top, left: position.left }}
-      className="fixed z-overlay overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2 min-w-[240px] max-w-[320px]"
+      className="fixed z-overlay min-w-[240px] max-w-[320px] overflow-hidden rounded-lg border border-border-default bg-surface-raised shadow-2"
     >
       <div className="border-b border-border-default bg-surface-sunken px-3 py-1.5 text-xs font-medium text-text-tertiary">
         Commands

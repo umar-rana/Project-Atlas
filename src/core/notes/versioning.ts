@@ -76,7 +76,10 @@ export async function createSnapshot(
           body_markdown: body.body_markdown,
         },
       });
-      log.debug({ note_id: noteId, version_number: latest.version_number }, "note-version overwritten (debounce)");
+      log.debug(
+        { note_id: noteId, version_number: latest.version_number },
+        "note-version overwritten (debounce)",
+      );
       return;
     }
   }
@@ -117,5 +120,8 @@ async function enforceRetentionCap(noteId: string): Promise<void> {
   if (!oldest) return;
 
   await db.noteVersion.delete({ where: { id: oldest.id } });
-  log.debug({ note_id: noteId, deleted_version: oldest.version_number }, "note-version retention cap: deleted oldest non-anchor");
+  log.debug(
+    { note_id: noteId, deleted_version: oldest.version_number },
+    "note-version retention cap: deleted oldest non-anchor",
+  );
 }

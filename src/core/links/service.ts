@@ -35,18 +35,12 @@ export async function syncLinksForSource(opts: {
     select: { id: true, target_type: true, target_id: true },
   });
 
-  const existingMap = new Map(
-    existing.map((l) => [`${l.target_type}:${l.target_id}`, l.id]),
-  );
+  const existingMap = new Map(existing.map((l) => [`${l.target_type}:${l.target_id}`, l.id]));
 
-  const incomingSet = new Set(
-    opts.resolved.map((r) => `${r.target_type}:${r.target_id}`),
-  );
+  const incomingSet = new Set(opts.resolved.map((r) => `${r.target_type}:${r.target_id}`));
 
   // Links to add: in incoming but not in existing
-  const toAdd = opts.resolved.filter(
-    (r) => !existingMap.has(`${r.target_type}:${r.target_id}`),
-  );
+  const toAdd = opts.resolved.filter((r) => !existingMap.has(`${r.target_type}:${r.target_id}`));
 
   // Links to remove: in existing but not in incoming
   const toRemoveIds = existing

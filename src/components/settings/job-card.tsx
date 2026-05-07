@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { Play, Pause, RotateCcw, CheckCircle, XCircle, Clock, Calendar, ChevronDown } from "lucide-react";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Calendar,
+  ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface JobInfo {
@@ -76,13 +85,7 @@ function formatJobName(name: string): string {
     .join(" ");
 }
 
-export function JobCard({
-  job,
-  onMutated,
-}: {
-  job: JobInfo;
-  onMutated: () => void;
-}) {
+export function JobCard({ job, onMutated }: { job: JobInfo; onMutated: () => void }) {
   const [runQueued, setRunQueued] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
 
@@ -105,8 +108,7 @@ export function JobCard({
   });
 
   const isActive = job.status === "active";
-  const isBusy =
-    runNow.isPending || pause.isPending || resume.isPending;
+  const isBusy = runNow.isPending || pause.isPending || resume.isPending;
 
   const hasBreakdown =
     job.lastRun?.outcome === "completed" &&
@@ -132,9 +134,7 @@ export function JobCard({
               {isActive ? "Active" : "Paused"}
             </span>
           </div>
-          <p className="mt-0.5 font-ui text-xs text-text-secondary">
-            {job.description}
-          </p>
+          <p className="mt-0.5 font-ui text-xs text-text-secondary">{job.description}</p>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
@@ -180,10 +180,8 @@ export function JobCard({
 
       <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
         <div className="flex items-center gap-1.5">
-          <Clock size={12} className="shrink-0 text-text-quaternary" />
-          <span className="font-ui text-xs text-text-secondary">
-            {formatCronHuman(job.cron)}
-          </span>
+          <Clock size={12} className="text-text-quaternary shrink-0" />
+          <span className="font-ui text-xs text-text-secondary">{formatCronHuman(job.cron)}</span>
         </div>
 
         {job.lastRun ? (
@@ -196,13 +194,12 @@ export function JobCard({
             <span
               className={cn(
                 "font-ui text-xs",
-                job.lastRun.outcome === "failed"
-                  ? "text-accent-danger"
-                  : "text-text-secondary",
+                job.lastRun.outcome === "failed" ? "text-accent-danger" : "text-text-secondary",
               )}
               title={formatAbsoluteTime(job.lastRun.completedAt)}
             >
-              Last run {formatRelativeTime(job.lastRun.completedAt)} ({formatAbsoluteTime(job.lastRun.completedAt)})
+              Last run {formatRelativeTime(job.lastRun.completedAt)} (
+              {formatAbsoluteTime(job.lastRun.completedAt)})
               {job.lastRun.result ? ` — ${job.lastRun.result}` : ""}
             </span>
             {hasBreakdown && (
@@ -221,16 +218,14 @@ export function JobCard({
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
-            <Clock size={12} className="shrink-0 text-text-quaternary" />
-            <span className="font-ui text-xs text-text-tertiary">
-              Never run
-            </span>
+            <Clock size={12} className="text-text-quaternary shrink-0" />
+            <span className="font-ui text-xs text-text-tertiary">Never run</span>
           </div>
         )}
 
         {job.nextRun && (
           <div className="flex items-center gap-1.5">
-            <Calendar size={12} className="shrink-0 text-text-quaternary" />
+            <Calendar size={12} className="text-text-quaternary shrink-0" />
             <span className="font-ui text-xs text-text-secondary">
               Next run {formatAbsoluteTime(job.nextRun)}
             </span>
@@ -240,10 +235,10 @@ export function JobCard({
 
       {hasBreakdown && breakdownOpen && job.lastRun?.breakdown && (
         <div className="mt-3 rounded-lg border border-border-default bg-surface-overlay px-3 py-2.5">
-          <p className="mb-2 font-ui text-2xs font-medium uppercase tracking-wide text-text-quaternary">
+          <p className="text-text-quaternary mb-2 font-ui text-2xs font-medium uppercase tracking-wide">
             Breakdown
           </p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
+          <div className="sm:grid-cols-3 grid grid-cols-2 gap-x-6 gap-y-1">
             {Object.entries(job.lastRun.breakdown).map(([label, count]) => (
               <div key={label} className="flex items-center justify-between gap-2">
                 <span className="font-ui text-xs text-text-secondary">{label}</span>
@@ -257,18 +252,15 @@ export function JobCard({
       )}
 
       {job.lastRun?.outcome === "failed" && job.lastRun.result && (
-        <div className="mt-3 rounded-md border border-accent-danger/30 bg-accent-danger-muted px-3 py-2">
-          <p className="font-ui text-xs text-accent-danger">
-            Error: {job.lastRun.result}
-          </p>
+        <div className="border-accent-danger/30 mt-3 rounded-md border bg-accent-danger-muted px-3 py-2">
+          <p className="font-ui text-xs text-accent-danger">Error: {job.lastRun.result}</p>
         </div>
       )}
 
       {(runNow.isError || pause.isError || resume.isError) && (
-        <div className="mt-3 rounded-md border border-accent-danger/30 bg-accent-danger-muted px-3 py-2">
+        <div className="border-accent-danger/30 mt-3 rounded-md border bg-accent-danger-muted px-3 py-2">
           <p className="font-ui text-xs text-accent-danger">
-            {(runNow.error ?? pause.error ?? resume.error)?.message ??
-              "Action failed"}
+            {(runNow.error ?? pause.error ?? resume.error)?.message ?? "Action failed"}
           </p>
         </div>
       )}

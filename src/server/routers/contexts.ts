@@ -42,9 +42,10 @@ export const contextsRouter = router({
         _max: { position: true },
         where: { user_id: ctx.user.id },
       });
-      const position = (max._max.position
-        ? new Prisma.Decimal(max._max.position).plus(1024)
-        : new Prisma.Decimal(1024)
+      const position = (
+        max._max.position
+          ? new Prisma.Decimal(max._max.position).plus(1024)
+          : new Prisma.Decimal(1024)
       ).toString();
       try {
         const c = await db.context.create({
@@ -59,10 +60,7 @@ export const contextsRouter = router({
         });
         return c;
       } catch (err) {
-        if (
-          err instanceof Prisma.PrismaClientKnownRequestError &&
-          err.code === "P2002"
-        ) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
           throw new TRPCError({
             code: "CONFLICT",
             message: "A context with that name already exists",
@@ -83,7 +81,10 @@ export const contextsRouter = router({
         where: { user_id: ctx.user.id, name: input.new_name, id: { not: input.id } },
       });
       if (conflict) {
-        throw new TRPCError({ code: "CONFLICT", message: "A context with that name already exists" });
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "A context with that name already exists",
+        });
       }
       return db.context.update({ where: { id: input.id }, data: { name: input.new_name } });
     }),

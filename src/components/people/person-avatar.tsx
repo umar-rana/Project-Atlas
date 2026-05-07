@@ -44,7 +44,7 @@ export function PersonAvatar({ displayName, photoUrl, size = "md", className }: 
       <img
         src={photoUrl}
         alt={displayName ?? ""}
-        className={cn("rounded-full object-cover flex-shrink-0", SIZE_MAP[size], className)}
+        className={cn("flex-shrink-0 rounded-full object-cover", SIZE_MAP[size], className)}
       />
     );
   }
@@ -52,7 +52,7 @@ export function PersonAvatar({ displayName, photoUrl, size = "md", className }: 
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-full font-ui font-semibold text-white flex-shrink-0",
+        "inline-flex flex-shrink-0 items-center justify-center rounded-full font-ui font-semibold text-white",
         SIZE_MAP[size],
         className,
       )}

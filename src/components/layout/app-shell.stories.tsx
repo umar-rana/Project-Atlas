@@ -42,8 +42,12 @@ export const Default: Story = {
               onOpenSearch={() => {}}
               trailing={
                 <>
-                  <IconButton aria-label="Notifications"><Bell size={14} /></IconButton>
-                  <IconButton aria-label="Settings"><Settings size={14} /></IconButton>
+                  <IconButton aria-label="Notifications">
+                    <Bell size={14} />
+                  </IconButton>
+                  <IconButton aria-label="Settings">
+                    <Settings size={14} />
+                  </IconButton>
                   <Avatar size="sm" initials="AT" />
                 </>
               }
@@ -53,7 +57,9 @@ export const Default: Story = {
           <ThreePaneLayout
             nav={
               <div className="p-3">
-                <p className="m-0 font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">Workspaces</p>
+                <p className="m-0 font-ui text-2xs font-semibold uppercase tracking-caps text-text-tertiary">
+                  Workspaces
+                </p>
               </div>
             }
             list={

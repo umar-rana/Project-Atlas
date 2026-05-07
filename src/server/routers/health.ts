@@ -48,7 +48,7 @@ async function checkTRPC(): Promise<{ ok: boolean; message?: string; latencyMs?:
     if (!res.ok) {
       return { ok: false, latencyMs, message: `HTTP ${res.status}` };
     }
-    const body = await res.json() as { result?: { data?: { pong?: boolean } } };
+    const body = (await res.json()) as { result?: { data?: { pong?: boolean } } };
     const pong = body?.result?.data?.pong === true;
     return { ok: pong, latencyMs, message: pong ? undefined : "No pong in response" };
   } catch (err) {
@@ -104,7 +104,12 @@ export const healthRouter = router({
 
     const [dbCheck, storageCheck, driveCheck, aiCheck, trpcCheck, clerkCheck] = await Promise.all([
       safeCheck("database", async () => {
-        try { await db.$queryRaw`SELECT 1`; return true; } catch { return false; }
+        try {
+          await db.$queryRaw`SELECT 1`;
+          return true;
+        } catch {
+          return false;
+        }
       }),
       safeCheck("storage", checkStorageHealth),
       userId
@@ -131,13 +136,25 @@ export const healthRouter = router({
       ? { ok: driveCheck.result.ok, message: driveCheck.result.reason, latencyMs: driveCheck.ms }
       : { ok: false, message: "Drive check failed", latencyMs: driveCheck.ms };
     checks.ai = aiCheck.result
-      ? { ok: aiCheck.result.ok, message: aiCheck.result.message, latencyMs: aiCheck.result.latencyMs }
+      ? {
+          ok: aiCheck.result.ok,
+          message: aiCheck.result.message,
+          latencyMs: aiCheck.result.latencyMs,
+        }
       : { ok: false, message: "AI check threw", latencyMs: aiCheck.ms };
     checks.trpc = trpcCheck.result
-      ? { ok: trpcCheck.result.ok, message: trpcCheck.result.message, latencyMs: trpcCheck.result.latencyMs }
+      ? {
+          ok: trpcCheck.result.ok,
+          message: trpcCheck.result.message,
+          latencyMs: trpcCheck.result.latencyMs,
+        }
       : { ok: false, message: "tRPC check threw", latencyMs: trpcCheck.ms };
     checks.clerk = clerkCheck.result
-      ? { ok: clerkCheck.result.ok, message: clerkCheck.result.ok ? undefined : clerkCheck.result.message, latencyMs: clerkCheck.result.latencyMs }
+      ? {
+          ok: clerkCheck.result.ok,
+          message: clerkCheck.result.ok ? undefined : clerkCheck.result.message,
+          latencyMs: clerkCheck.result.latencyMs,
+        }
       : { ok: false, message: "Clerk check threw", latencyMs: clerkCheck.ms };
 
     if (ctx.user) {
@@ -149,7 +166,9 @@ export const healthRouter = router({
       });
       checks.auth = {
         ok: !!user,
-        message: user ? `Clerk user ${(user as { email: string }).email} verified in DB` : "Clerk user not found in DB",
+        message: user
+          ? `Clerk user ${(user as { email: string }).email} verified in DB`
+          : "Clerk user not found in DB",
         latencyMs: authMs,
       };
     } else {

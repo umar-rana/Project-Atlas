@@ -58,7 +58,10 @@ export async function runPipeline(
       aiCostUsd = tier2.costUsd;
     } else {
       aiError = tier2.error;
-      log.warn({ userId: ctx.userId, error: tier2.error }, "Tier 2 failed, preserving Tier 1 parse");
+      log.warn(
+        { userId: ctx.userId, error: tier2.error },
+        "Tier 2 failed, preserving Tier 1 parse",
+      );
       parsed = {
         title: tier1.title ?? rawText.slice(0, 80),
         tags: tier1.tags,

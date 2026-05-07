@@ -69,45 +69,48 @@ const TaskListItemWithSubtasks = React.memo(function TaskListItemWithSubtasks({
         quickActionsFocused={quickActionsFocusedTaskId === task.id}
         onDismissQuickActions={onDismissQuickActions}
       />
-      {isProjectView && isExpanded && subtasks.length > 0 && subtasks.map((st) => {
-        const subtaskRow: TaskRow = {
-          id: st.id,
-          title: st.title,
-          notes: null,
-          status: st.status,
-          flagged: st.flagged ?? false,
-          project_id: task.project_id,
-          parent_id: task.id,
-          defer_date: null,
-          due_date: st.due_date ?? null,
-          estimated_minutes: st.estimated_minutes ?? null,
-          contexts: [],
-          tags: [],
-          project: task.project,
-          parent: { id: task.id, title: task.title },
-          subtasks: [],
-          checklist_items: [],
-          is_blocked: false,
-        };
-        return (
-          <TaskListItem
-            key={st.id}
-            task={subtaskRow}
-            selected={selectedTaskId === st.id}
-            isFocused={false}
-            isMultiSelected={selectedTaskIds.has(st.id)}
-            onSelect={(t, e) => {
-              setSelectedTaskId(t.id);
-            }}
-            onMultiToggle={onMultiToggle}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-            inTrash={false}
-            perspective={perspective}
-          />
-        );
-      })}
+      {isProjectView &&
+        isExpanded &&
+        subtasks.length > 0 &&
+        subtasks.map((st) => {
+          const subtaskRow: TaskRow = {
+            id: st.id,
+            title: st.title,
+            notes: null,
+            status: st.status,
+            flagged: st.flagged ?? false,
+            project_id: task.project_id,
+            parent_id: task.id,
+            defer_date: null,
+            due_date: st.due_date ?? null,
+            estimated_minutes: st.estimated_minutes ?? null,
+            contexts: [],
+            tags: [],
+            project: task.project,
+            parent: { id: task.id, title: task.title },
+            subtasks: [],
+            checklist_items: [],
+            is_blocked: false,
+          };
+          return (
+            <TaskListItem
+              key={st.id}
+              task={subtaskRow}
+              selected={selectedTaskId === st.id}
+              isFocused={false}
+              isMultiSelected={selectedTaskIds.has(st.id)}
+              onSelect={(t, e) => {
+                setSelectedTaskId(t.id);
+              }}
+              onMultiToggle={onMultiToggle}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              inTrash={false}
+              perspective={perspective}
+            />
+          );
+        })}
     </>
   );
 });
@@ -257,10 +260,13 @@ export function TaskList({
     enabled: perspective === "inbox",
     staleTime: 30_000,
   });
-  const projectsQuery = trpc.projects.list.useQuery({ status: "active" }, {
-    enabled: perspective === "inbox",
-    staleTime: 60_000,
-  });
+  const projectsQuery = trpc.projects.list.useQuery(
+    { status: "active" },
+    {
+      enabled: perspective === "inbox",
+      staleTime: 60_000,
+    },
+  );
   const bulkUpdateMut = trpc.tasks.update.useMutation({
     onSettled: () => utils.tasks.list.invalidate(),
   });
@@ -295,7 +301,9 @@ export function TaskList({
     highlightApplied.current = true;
     setSelectedTaskId(highlightId);
     requestAnimationFrame(() => {
-      document.querySelector(`[data-task-id="${highlightId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+      document
+        .querySelector(`[data-task-id="${highlightId}"]`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
   }, [highlightId, query.data, query.isLoading, setSelectedTaskId]);
 
@@ -304,7 +312,14 @@ export function TaskList({
 
     let list: TaskRow[];
     if (perspective === "inbox") {
-      type RawCapture = { id: string; title: string | null; raw_text: string | null; due_date: string | null; state: string; created_at: string };
+      type RawCapture = {
+        id: string;
+        title: string | null;
+        raw_text: string | null;
+        due_date: string | null;
+        state: string;
+        created_at: string;
+      };
       const captureData = (inboxCapturesQuery.data ?? []) as unknown as RawCapture[];
       const captureRows: TaskRow[] = captureData.map((c) => ({
         id: c.id,
@@ -337,13 +352,14 @@ export function TaskList({
     }
 
     const now = new Date();
-    const annotated = showDeferred && perspective === "project"
-      ? list.map((t) => {
-          const d = t.defer_date ? new Date(t.defer_date) : null;
-          if (d && d > now) return { ...t, is_blocked: true };
-          return t;
-        })
-      : list;
+    const annotated =
+      showDeferred && perspective === "project"
+        ? list.map((t) => {
+            const d = t.defer_date ? new Date(t.defer_date) : null;
+            if (d && d > now) return { ...t, is_blocked: true };
+            return t;
+          })
+        : list;
     if (sortBy === "manual") return annotated;
     const sorted = [...annotated];
     if (sortBy === "due") {
@@ -363,7 +379,9 @@ export function TaskList({
   const dropTargetId = React.useRef<string | null>(null);
 
   const [focusedIdx, setFocusedIdx] = React.useState(0);
-  const [quickActionsFocusedTaskId, setQuickActionsFocusedTaskId] = React.useState<string | null>(null);
+  const [quickActionsFocusedTaskId, setQuickActionsFocusedTaskId] = React.useState<string | null>(
+    null,
+  );
 
   // Keep mutable refs so the keyboard handler always reads the latest values
   // without being torn down and re-registered on every data refresh.
@@ -376,7 +394,8 @@ export function TaskList({
     function handleKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
-      if (target?.tagName === "BUTTON" || target?.tagName === "SELECT" || target?.tagName === "A") return;
+      if (target?.tagName === "BUTTON" || target?.tagName === "SELECT" || target?.tagName === "A")
+        return;
 
       const currentTasks = tasksRef.current;
       const currentFocusedIdx = focusedIdxRef.current;
@@ -452,11 +471,14 @@ export function TaskList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSelect = React.useCallback((task: TaskRow) => {
-    setSelectedTaskId(task.id);
-    setLastClicked(task.id);
-    clearSelection();
-  }, [setSelectedTaskId, setLastClicked, clearSelection]);
+  const handleSelect = React.useCallback(
+    (task: TaskRow) => {
+      setSelectedTaskId(task.id);
+      setLastClicked(task.id);
+      clearSelection();
+    },
+    [setSelectedTaskId, setLastClicked, clearSelection],
+  );
 
   // Read latest tasks/lastClicked from refs so the callback identity stays
   // stable across renders. Otherwise React.memo on TaskListItem can never
@@ -466,40 +488,46 @@ export function TaskList({
   const lastClickedRef = React.useRef(lastClickedId);
   lastClickedRef.current = lastClickedId;
 
-  const handleMultiToggle = React.useCallback((task: TaskRow, e: React.MouseEvent) => {
-    const currentTasks = tasksRef.current;
-    const currentLastClicked = lastClickedRef.current;
-    if (e.shiftKey && currentLastClicked) {
-      const aIdx = currentTasks.findIndex((t) => t.id === currentLastClicked);
-      const bIdx = currentTasks.findIndex((t) => t.id === task.id);
-      if (aIdx >= 0 && bIdx >= 0) {
-        const [start, end] = aIdx < bIdx ? [aIdx, bIdx] : [bIdx, aIdx];
-        selectMany(currentTasks.slice(start, end + 1).map((t) => t.id));
-        return;
+  const handleMultiToggle = React.useCallback(
+    (task: TaskRow, e: React.MouseEvent) => {
+      const currentTasks = tasksRef.current;
+      const currentLastClicked = lastClickedRef.current;
+      if (e.shiftKey && currentLastClicked) {
+        const aIdx = currentTasks.findIndex((t) => t.id === currentLastClicked);
+        const bIdx = currentTasks.findIndex((t) => t.id === task.id);
+        if (aIdx >= 0 && bIdx >= 0) {
+          const [start, end] = aIdx < bIdx ? [aIdx, bIdx] : [bIdx, aIdx];
+          selectMany(currentTasks.slice(start, end + 1).map((t) => t.id));
+          return;
+        }
       }
-    }
-    toggleSelected(task.id);
-  }, [selectMany, toggleSelected]);
+      toggleSelected(task.id);
+    },
+    [selectMany, toggleSelected],
+  );
 
-  const handleDrop = React.useCallback((targetId: string) => {
-    const sourceId = dragId.current;
-    if (!sourceId || sourceId === targetId) return;
-    const currentTasks = tasksRef.current;
-    const targetIdx = currentTasks.findIndex((t) => t.id === targetId);
-    const sourceIdx = currentTasks.findIndex((t) => t.id === sourceId);
-    if (targetIdx < 0) return;
-    const beforeIdx = sourceIdx > targetIdx ? targetIdx - 1 : targetIdx;
-    const afterIdx = sourceIdx > targetIdx ? targetIdx : targetIdx + 1;
-    const before = currentTasks[beforeIdx];
-    const after = currentTasks[afterIdx];
-    moveMut.mutate({
-      id: sourceId,
-      before_id: before?.id ?? null,
-      after_id: after?.id ?? null,
-    });
-    dragId.current = null;
-    dropTargetId.current = null;
-  }, [moveMut]);
+  const handleDrop = React.useCallback(
+    (targetId: string) => {
+      const sourceId = dragId.current;
+      if (!sourceId || sourceId === targetId) return;
+      const currentTasks = tasksRef.current;
+      const targetIdx = currentTasks.findIndex((t) => t.id === targetId);
+      const sourceIdx = currentTasks.findIndex((t) => t.id === sourceId);
+      if (targetIdx < 0) return;
+      const beforeIdx = sourceIdx > targetIdx ? targetIdx - 1 : targetIdx;
+      const afterIdx = sourceIdx > targetIdx ? targetIdx : targetIdx + 1;
+      const before = currentTasks[beforeIdx];
+      const after = currentTasks[afterIdx];
+      moveMut.mutate({
+        id: sourceId,
+        before_id: before?.id ?? null,
+        after_id: after?.id ?? null,
+      });
+      dragId.current = null;
+      dropTargetId.current = null;
+    },
+    [moveMut],
+  );
 
   const handleDragStart = React.useCallback((id: string) => {
     dragId.current = id;
@@ -545,9 +573,7 @@ export function TaskList({
   }
 
   const showMigrationModal =
-    perspective === "inbox" &&
-    !migrationModalDismissed &&
-    !!migrationSummaryQuery.data;
+    perspective === "inbox" && !migrationModalDismissed && !!migrationSummaryQuery.data;
 
   return (
     <div className="flex h-full flex-col">
@@ -584,7 +610,7 @@ export function TaskList({
               <option value="flagged">Flagged</option>
             </select>
           </label>
-          <span className="font-mono text-2xs text-text-tertiary tabular-nums">
+          <span className="font-mono text-2xs tabular-nums text-text-tertiary">
             {buildHeaderStats()}
           </span>
         </div>
@@ -600,7 +626,7 @@ export function TaskList({
       ) : null}
 
       {bulkPrompt && (
-        <div className="flex items-start gap-3 border-b border-accent-info/20 bg-accent-info/5 px-3 py-2.5">
+        <div className="border-accent-info/20 bg-accent-info/5 flex items-start gap-3 border-b px-3 py-2.5">
           <Sparkles size={13} className="mt-0.5 shrink-0 text-accent-info" aria-hidden />
           <p className="flex-1 font-ui text-xs text-text-primary">
             <span className="font-semibold">{bulkPrompt.taskIds.length} tasks</span> suggested for{" "}
@@ -618,7 +644,7 @@ export function TaskList({
                   setDismissedBulkHints((prev) => new Set([...prev, bulkPrompt.hint]));
                 }}
                 disabled={bulkUpdateMut.isPending}
-                className="rounded-sm border border-accent-success/40 bg-accent-success/10 px-2 py-1 font-ui text-2xs font-medium text-accent-success hover:bg-accent-success/20 disabled:opacity-50"
+                className="border-accent-success/40 bg-accent-success/10 hover:bg-accent-success/20 rounded-sm border px-2 py-1 font-ui text-2xs font-medium text-accent-success disabled:opacity-50"
               >
                 Accept all
               </button>
@@ -631,7 +657,9 @@ export function TaskList({
                 >
                   <option value="">Choose project…</option>
                   {(projectsQuery.data ?? []).map((p) => (
-                    <option key={p.id} value={p.id}>{p.title}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.title}
+                    </option>
                   ))}
                 </select>
                 <button
@@ -645,7 +673,7 @@ export function TaskList({
                     setDismissedBulkHints((prev) => new Set([...prev, bulkPrompt.hint]));
                   }}
                   disabled={!bulkFallbackProjectId || bulkUpdateMut.isPending}
-                  className="rounded-sm border border-accent-success/40 bg-accent-success/10 px-2 py-1 font-ui text-2xs font-medium text-accent-success hover:bg-accent-success/20 disabled:opacity-50"
+                  className="border-accent-success/40 bg-accent-success/10 hover:bg-accent-success/20 rounded-sm border px-2 py-1 font-ui text-2xs font-medium text-accent-success disabled:opacity-50"
                 >
                   Accept all
                 </button>
@@ -678,7 +706,11 @@ export function TaskList({
         <div className="flex flex-1 flex-col">
           {perspective === "inbox" && <InboxWelcomeBanner />}
           <div className="flex flex-1 items-center justify-center">
-            <EmptyState icon={<Inbox size={28} aria-hidden />} title={emptyTitle} body={emptyBody} />
+            <EmptyState
+              icon={<Inbox size={28} aria-hidden />}
+              title={emptyTitle}
+              body={emptyBody}
+            />
           </div>
         </div>
       ) : (
@@ -750,9 +782,7 @@ export function TaskList({
             onClick={() => setShowDeferred((v) => !v)}
             className="font-ui text-2xs text-text-tertiary hover:text-text-secondary"
           >
-            {showDeferred
-              ? "Hide deferred"
-              : `Show deferred (${deferredCount})`}
+            {showDeferred ? "Hide deferred" : `Show deferred (${deferredCount})`}
           </button>
         </div>
       )}

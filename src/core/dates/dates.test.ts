@@ -136,21 +136,33 @@ describe("isThisWeek", () => {
 
 describe("parseUserDate", () => {
   it("parses DD/MM/YYYY correctly (not ambiguous as MM/DD/YYYY)", () => {
-    const d = parseUserDate("15/06/2024", { timezone: "UTC", date_format: "DD/MM/YYYY", time_format: "24h" });
+    const d = parseUserDate("15/06/2024", {
+      timezone: "UTC",
+      date_format: "DD/MM/YYYY",
+      time_format: "24h",
+    });
     expect(d.getUTCFullYear()).toBe(2024);
     expect(d.getUTCMonth()).toBe(5);
     expect(d.getUTCDate()).toBe(15);
   });
 
   it("parses MM/DD/YYYY correctly", () => {
-    const d = parseUserDate("06/15/2024", { timezone: "UTC", date_format: "MM/DD/YYYY", time_format: "24h" });
+    const d = parseUserDate("06/15/2024", {
+      timezone: "UTC",
+      date_format: "MM/DD/YYYY",
+      time_format: "24h",
+    });
     expect(d.getUTCFullYear()).toBe(2024);
     expect(d.getUTCMonth()).toBe(5);
     expect(d.getUTCDate()).toBe(15);
   });
 
   it("parses YYYY-MM-DD ISO-style string", () => {
-    const d = parseUserDate("2024-06-15", { timezone: "UTC", date_format: "YYYY-MM-DD", time_format: "24h" });
+    const d = parseUserDate("2024-06-15", {
+      timezone: "UTC",
+      date_format: "YYYY-MM-DD",
+      time_format: "24h",
+    });
     expect(d.getUTCFullYear()).toBe(2024);
     expect(d.getUTCMonth()).toBe(5);
     expect(d.getUTCDate()).toBe(15);
@@ -158,7 +170,11 @@ describe("parseUserDate", () => {
 
   it("applies user timezone when parsing", () => {
     // 15/06/2024 midnight in Asia/Karachi = 2024-06-14T19:00:00Z (UTC-5)
-    const d = parseUserDate("15/06/2024", { timezone: "Asia/Karachi", date_format: "DD/MM/YYYY", time_format: "24h" });
+    const d = parseUserDate("15/06/2024", {
+      timezone: "Asia/Karachi",
+      date_format: "DD/MM/YYYY",
+      time_format: "24h",
+    });
     expect(d.getUTCFullYear()).toBe(2024);
     // Midnight Karachi = 2024-06-14 19:00 UTC (Karachi is UTC+5)
     expect(d.getUTCDate()).toBe(14);
@@ -166,13 +182,23 @@ describe("parseUserDate", () => {
   });
 
   it("falls back to ISO when format does not match but ISO does", () => {
-    const d = parseUserDate("2024-06-15T00:00:00.000Z", { timezone: "UTC", date_format: "DD/MM/YYYY", time_format: "24h" });
+    const d = parseUserDate("2024-06-15T00:00:00.000Z", {
+      timezone: "UTC",
+      date_format: "DD/MM/YYYY",
+      time_format: "24h",
+    });
     expect(d.getUTCFullYear()).toBe(2024);
     expect(d.getUTCMonth()).toBe(5);
     expect(d.getUTCDate()).toBe(15);
   });
 
   it("throws on completely invalid input", () => {
-    expect(() => parseUserDate("not-a-date", { timezone: "UTC", date_format: "DD/MM/YYYY", time_format: "24h" })).toThrow();
+    expect(() =>
+      parseUserDate("not-a-date", {
+        timezone: "UTC",
+        date_format: "DD/MM/YYYY",
+        time_format: "24h",
+      }),
+    ).toThrow();
   });
 });

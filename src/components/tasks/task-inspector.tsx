@@ -4,7 +4,18 @@ import * as React from "react";
 import { format } from "date-fns";
 import { useLocale } from "@/core/locale/hooks";
 import { formatDate as localeFormatDate } from "@/core/locale/formatters";
-import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock, Palette, CalendarDays, Plus } from "lucide-react";
+import {
+  Flag,
+  X,
+  Trash2,
+  RotateCcw,
+  ChevronLeft,
+  AlertCircle,
+  Clock,
+  Palette,
+  CalendarDays,
+  Plus,
+} from "lucide-react";
 import { Hint } from "@/components/ui/hint";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
@@ -103,10 +114,25 @@ function fmtDateForInput(d: Date | string | null | undefined): string {
 
 function fmtEventTime(date: Date | string): string {
   const d = new Date(date);
-  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
-function ScheduledSection({ taskId, taskTitle, taskNotes, inTrash }: { taskId: string; taskTitle?: string; taskNotes?: string | null; inTrash?: boolean }) {
+function ScheduledSection({
+  taskId,
+  taskTitle,
+  taskNotes,
+  inTrash,
+}: {
+  taskId: string;
+  taskTitle?: string;
+  taskNotes?: string | null;
+  inTrash?: boolean;
+}) {
   const [blockOpen, setBlockOpen] = React.useState(false);
   const { data: events = [], isLoading } = trpc.calendar.tasks.scheduled.useQuery(
     { task_id: taskId },
@@ -117,8 +143,8 @@ function ScheduledSection({ taskId, taskTitle, taskNotes, inTrash }: { taskId: s
 
   return (
     <section className="mt-4">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary flex items-center gap-1">
+      <div className="mb-1 flex items-center justify-between">
+        <h3 className="flex items-center gap-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
           <CalendarDays size={10} />
           Scheduled
         </h3>
@@ -139,16 +165,21 @@ function ScheduledSection({ taskId, taskTitle, taskNotes, inTrash }: { taskId: s
           {events.map((ev) => {
             const dayStr = new Date(ev.start_at).toISOString().slice(0, 10);
             return (
-              <li key={ev.id} className="flex items-center gap-2 rounded border border-border-subtle px-2 py-1">
+              <li
+                key={ev.id}
+                className="flex items-center gap-2 rounded border border-border-subtle px-2 py-1"
+              >
                 <span
                   className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
                   style={{ background: `var(--cal-1-fill)` }}
                 />
-                <span className="font-ui text-2xs text-text-secondary truncate flex-1">
+                <span className="flex-1 truncate font-ui text-2xs text-text-secondary">
                   {fmtEventTime(ev.start_at)}
                 </span>
                 {ev.calendar && (
-                  <span className="font-ui text-3xs text-text-tertiary truncate">{ev.calendar.name}</span>
+                  <span className="truncate font-ui text-3xs text-text-tertiary">
+                    {ev.calendar.name}
+                  </span>
                 )}
                 <a
                   href={`/calendar?view=day&date=${dayStr}`}
@@ -180,8 +211,6 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
   const breadcrumb = useTasksStore((s) => s.inspectorBreadcrumb);
   const setInspectorBreadcrumb = useTasksStore((s) => s.setInspectorBreadcrumb);
-  const navigateToSubtask = useTasksStore((s) => s.navigateToSubtask);
-
   const utils = trpc.useUtils();
   const task = trpc.tasks.get.useQuery(
     { id: taskId, includeDeleted: inTrash ?? false },
@@ -306,7 +335,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             <X size={14} />
           </button>
         </header>
-        <div className="flex flex-1 items-center justify-center font-ui text-2xs text-text-tertiary">Loading…</div>
+        <div className="flex flex-1 items-center justify-center font-ui text-2xs text-text-tertiary">
+          Loading…
+        </div>
       </aside>
     );
   }
@@ -319,15 +350,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
 
   // Detect simple subtasks eligible for migration to checklist items.
   const simpleSubtasks = subtasks.filter(
-    (st) =>
-      st.due_date == null &&
-      !st.flagged &&
-      st.estimated_minutes == null,
+    (st) => st.due_date == null && !st.flagged && st.estimated_minutes == null,
   );
-  const showMigrationPrompt =
-    !migrationDismissed &&
-    simpleSubtasks.length > 0 &&
-    !inTrash;
+  const showMigrationPrompt = !migrationDismissed && simpleSubtasks.length > 0 && !inTrash;
 
   function handleCompleteToggle(newValue: boolean) {
     if (newValue) {
@@ -441,7 +466,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             onClick={() => setTab(t)}
             className={cn(
               "flex-1 px-3 py-1.5 font-ui text-xs",
-              tab === t ? "border-b-2 border-accent-primary text-text-primary" : "text-text-tertiary hover:text-text-secondary",
+              tab === t
+                ? "border-b-2 border-accent-primary text-text-primary"
+                : "text-text-tertiary hover:text-text-secondary",
             )}
           >
             {t === "detail" ? "Details" : "Activity"}
@@ -463,11 +490,12 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               onChange={(e) => setTitleDraft(e.target.value)}
               onBlur={() => {
                 const next = titleDraft.trim();
-                if (next && next !== taskData.title) update.mutate({ id: taskData.id, title: next });
+                if (next && next !== taskData.title)
+                  update.mutate({ id: taskData.id, title: next });
               }}
               disabled={inTrash}
               rows={2}
-              className="flex-1 resize-none border-0 bg-transparent p-0 font-display text-lg font-medium text-text-primary outline-none focus:ring-0 disabled:opacity-60"
+              className="font-display flex-1 resize-none border-0 bg-transparent p-0 text-lg font-medium text-text-primary outline-none focus:ring-0 disabled:opacity-60"
             />
             <button
               type="button"
@@ -475,7 +503,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               disabled={inTrash}
               className={cn(
                 "rounded-sm p-1",
-                taskData.flagged ? "text-accent-warning" : "text-text-tertiary hover:text-text-secondary",
+                taskData.flagged
+                  ? "text-accent-warning"
+                  : "text-text-tertiary hover:text-text-secondary",
               )}
               aria-label={taskData.flagged ? "Unflag task" : "Flag task"}
             >
@@ -517,7 +547,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               >
                 <option value="">Inbox</option>
                 {(projects.data ?? []).map((p) => (
-                  <option key={p.id} value={p.id}>{p.title}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
                 ))}
               </select>
             </label>
@@ -570,7 +602,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           </div>
 
           {taskData.defer_date && new Date(taskData.defer_date) > new Date() && (
-            <div className="mt-3 flex items-center gap-2 rounded-sm border border-accent-info/30 bg-accent-info/5 px-2.5 py-2">
+            <div className="border-accent-info/30 bg-accent-info/5 mt-3 flex items-center gap-2 rounded-sm border px-2.5 py-2">
               <Clock size={12} className="shrink-0 text-accent-info" />
               <p className="font-ui text-xs text-text-secondary">
                 Available from{" "}
@@ -582,8 +614,14 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           )}
 
           <section className="mt-4">
-            <Hint label="Contexts group tasks by location or tool (@home, @phone, @waiting)" side="top" delayDuration={800}>
-              <h3 className="mb-1 inline-block font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Contexts</h3>
+            <Hint
+              label="Contexts group tasks by location or tool (@home, @phone, @waiting)"
+              side="top"
+              delayDuration={800}
+            >
+              <h3 className="mb-1 inline-block font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
+                Contexts
+              </h3>
             </Hint>
             <div className="flex flex-wrap gap-1">
               {(contexts.data ?? []).map((c) => {
@@ -617,12 +655,21 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           </section>
 
           <section className="mt-4">
-            <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Tags</h3>
+            <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
+              Tags
+            </h3>
             <div className="flex flex-wrap gap-1">
               {taskData.tags.map((t) => (
                 <span key={t.tag.id} className="inline-flex items-center gap-0.5">
-                  <Tag family="freeform" removable onRemove={() => patchTags(selectedTagIds.filter((id) => id !== t.tag.id))}>
-                    <span className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.tag.color))} aria-hidden />
+                  <Tag
+                    family="freeform"
+                    removable
+                    onRemove={() => patchTags(selectedTagIds.filter((id) => id !== t.tag.id))}
+                  >
+                    <span
+                      className={cn("size-1.5 shrink-0 rounded-full", colorDotClass(t.tag.color))}
+                      aria-hidden
+                    />
                     #{t.tag.name}
                   </Tag>
                   {!inTrash && (
@@ -651,43 +698,54 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                 className="min-w-20 flex-1 rounded-sm border border-border-subtle bg-surface-base px-1.5 py-0.5 font-ui text-2xs text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-border-focus"
               />
             </div>
-            {coloringTagId && (() => {
-              const tag = taskData.tags.find((t) => t.tag.id === coloringTagId);
-              if (!tag) return null;
-              return (
-                <div className="mt-1.5 flex items-center gap-1 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5">
-                  <span className="mr-1 font-ui text-2xs text-text-tertiary">#{tag.tag.name}</span>
-                  {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map((c) => (
+            {coloringTagId &&
+              (() => {
+                const tag = taskData.tags.find((t) => t.tag.id === coloringTagId);
+                if (!tag) return null;
+                return (
+                  <div className="mt-1.5 flex items-center gap-1 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5">
+                    <span className="mr-1 font-ui text-2xs text-text-tertiary">
+                      #{tag.tag.name}
+                    </span>
+                    {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map(
+                      (c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          title={c}
+                          onClick={() => {
+                            tagUpdate.mutate({ id: coloringTagId, color: c });
+                            setColoringTagId(null);
+                          }}
+                          disabled={tagUpdate.isPending}
+                          className={cn(
+                            "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
+                            colorDotClass(c),
+                            tag.tag.color === c && "ring-2 ring-accent-primary ring-offset-1",
+                          )}
+                        />
+                      ),
+                    )}
                     <button
-                      key={c}
                       type="button"
-                      title={c}
-                      onClick={() => { tagUpdate.mutate({ id: coloringTagId, color: c }); setColoringTagId(null); }}
+                      title="Remove color"
+                      onClick={() => {
+                        tagUpdate.mutate({ id: coloringTagId, color: null });
+                        setColoringTagId(null);
+                      }}
                       disabled={tagUpdate.isPending}
-                      className={cn(
-                        "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
-                        colorDotClass(c),
-                        tag.tag.color === c && "ring-2 ring-offset-1 ring-accent-primary",
-                      )}
+                      className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
                     />
-                  ))}
-                  <button
-                    type="button"
-                    title="Remove color"
-                    onClick={() => { tagUpdate.mutate({ id: coloringTagId, color: null }); setColoringTagId(null); }}
-                    disabled={tagUpdate.isPending}
-                    className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setColoringTagId(null)}
-                    className="ml-auto inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-              );
-            })()}
+                    <button
+                      type="button"
+                      onClick={() => setColoringTagId(null)}
+                      className="ml-auto inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                );
+              })()}
             {newTagInput.trim() && !inTrash && (
               <div className="mt-1.5 flex items-center gap-1 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5">
                 <span className="mr-1 font-ui text-2xs text-text-tertiary">Color:</span>
@@ -700,7 +758,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                     className={cn(
                       "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
                       colorDotClass(c),
-                      newTagColor === c && "ring-2 ring-offset-1 ring-accent-primary",
+                      newTagColor === c && "ring-2 ring-accent-primary ring-offset-1",
                     )}
                   />
                 ))}
@@ -717,7 +775,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           </section>
 
           <section className="mt-4">
-            <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Notes</h3>
+            <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
+              Notes
+            </h3>
             <textarea
               value={notesDraft}
               onChange={(e) => setNotesDraft(e.target.value)}
@@ -744,11 +804,14 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           )}
 
           {showMigrationPrompt && (
-            <div className="mt-4 flex items-start gap-2 rounded-sm border border-accent-info/30 bg-accent-info/5 p-2.5">
+            <div className="border-accent-info/30 bg-accent-info/5 mt-4 flex items-start gap-2 rounded-sm border p-2.5">
               <AlertCircle size={13} className="mt-0.5 shrink-0 text-accent-info" />
               <div className="flex-1">
                 <p className="font-ui text-xs text-text-primary">
-                  <span className="font-semibold">{simpleSubtasks.length} subtask{simpleSubtasks.length === 1 ? "" : "s"}</span> look like simple steps. Convert to checklist items?
+                  <span className="font-semibold">
+                    {simpleSubtasks.length} subtask{simpleSubtasks.length === 1 ? "" : "s"}
+                  </span>{" "}
+                  look like simple steps. Convert to checklist items?
                 </p>
               </div>
               <div className="flex shrink-0 gap-1">
@@ -759,7 +822,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                     setMigrationDismissed(true);
                   }}
                   disabled={migrateChecklist.isPending}
-                  className="rounded-sm border border-accent-info/40 bg-accent-info/10 px-2 py-1 font-ui text-2xs font-medium text-accent-info hover:bg-accent-info/20 disabled:opacity-50"
+                  className="border-accent-info/40 bg-accent-info/10 hover:bg-accent-info/20 rounded-sm border px-2 py-1 font-ui text-2xs font-medium text-accent-info disabled:opacity-50"
                 >
                   Convert
                 </button>
@@ -774,11 +837,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             </div>
           )}
 
-          <ChecklistSection
-            taskId={taskData.id}
-            items={checklistItems}
-            inTrash={inTrash}
-          />
+          <ChecklistSection taskId={taskData.id} items={checklistItems} inTrash={inTrash} />
 
           <SubtaskSection
             parentTaskId={taskData.id}
@@ -795,7 +854,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             if (refs.length === 0) return null;
             return (
               <section className="mt-4">
-                <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">Linked entities</h3>
+                <h3 className="mb-1 font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary">
+                  Linked entities
+                </h3>
                 <ul className="flex flex-col gap-1 font-ui text-xs text-text-secondary">
                   {refs.map((r) => (
                     <li key={`${r.kind}:${r.id}`}>
@@ -809,7 +870,12 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
 
           <TaskInspectorAttachments taskId={taskData.id} inTrash={inTrash} />
 
-          <ScheduledSection taskId={taskData.id} taskTitle={taskData.title} taskNotes={taskData.notes} inTrash={inTrash} />
+          <ScheduledSection
+            taskId={taskData.id}
+            taskTitle={taskData.title}
+            taskNotes={taskData.notes}
+            inTrash={inTrash}
+          />
 
           <footer className="mt-6 flex items-center justify-end gap-2 border-t border-border-subtle pt-3">
             {inTrash ? (
@@ -824,7 +890,8 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm("Permanently delete this task?")) hardDelete.mutate({ id: taskData.id });
+                    if (confirm("Permanently delete this task?"))
+                      hardDelete.mutate({ id: taskData.id });
                   }}
                   className="inline-flex items-center gap-1 rounded-sm border border-border-subtle px-2 py-1 font-ui text-2xs text-accent-danger hover:bg-surface-hover"
                 >

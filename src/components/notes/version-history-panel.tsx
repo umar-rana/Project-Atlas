@@ -10,7 +10,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerBody,
 } from "@/components/ui/drawer";
 import {
   AlertDialog,
@@ -102,10 +101,7 @@ export function VersionHistoryPanel({
   const [selectedVersionNumber, setSelectedVersionNumber] = React.useState<number | null>(null);
   const [restoreConfirmOpen, setRestoreConfirmOpen] = React.useState(false);
 
-  const listQuery = trpc.notes.versions.list.useQuery(
-    { noteId },
-    { enabled: open },
-  );
+  const listQuery = trpc.notes.versions.list.useQuery({ noteId }, { enabled: open });
 
   const versions = listQuery.data ?? [];
   const latestVersionNumber = versions[0]?.version_number ?? null;
@@ -132,7 +128,7 @@ export function VersionHistoryPanel({
 
   const selectedVersion =
     selectedVersionNumber !== null
-      ? versions.find((v) => v.version_number === selectedVersionNumber) ?? null
+      ? (versions.find((v) => v.version_number === selectedVersionNumber) ?? null)
       : null;
 
   const isCurrentVersion = selectedVersionNumber === latestVersionNumber;

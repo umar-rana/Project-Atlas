@@ -139,9 +139,7 @@ async function fetchInboxTasksForUser(userId: string): Promise<InboxTaskForClass
  * Dry-run: count Category A vs B per user and globally.
  * Does NOT make any DB changes.
  */
-export async function runInboxMigrationDryRun(
-  userIds?: string[],
-): Promise<MigrationDryRunResult> {
+export async function runInboxMigrationDryRun(userIds?: string[]): Promise<MigrationDryRunResult> {
   const users = userIds
     ? await db.user.findMany({
         where: { id: { in: userIds }, deleted_at: null },
@@ -219,7 +217,8 @@ export async function runInboxMigrationForUser(userId: string): Promise<Migratio
           data: {
             id: captureId,
             user_id: userId,
-            raw_text: task.title + (task.notes && task.notes !== task.title ? "\n" + task.notes : ""),
+            raw_text:
+              task.title + (task.notes && task.notes !== task.title ? "\n" + task.notes : ""),
             title: task.title,
             tags: [],
             action_items: [],
@@ -290,7 +289,10 @@ export async function saveMigrationSummaryForUser(
   await db.user.update({
     where: { id: userId },
     data: {
-      tasks_prefs: { ...prefs, [MIGRATION_SUMMARY_PREF_KEY]: summary as unknown as Prisma.InputJsonValue },
+      tasks_prefs: {
+        ...prefs,
+        [MIGRATION_SUMMARY_PREF_KEY]: summary as unknown as Prisma.InputJsonValue,
+      },
     },
   });
 }

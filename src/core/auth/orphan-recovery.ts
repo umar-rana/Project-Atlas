@@ -3,7 +3,7 @@
 // TagOnNote: no direct user_id — cascades through Note (which is reattached above). No explicit handling needed.
 // PersonInteraction: no direct user_id — cascades through Person (which is reattached below via tx.person.updateMany). No explicit handling needed.
 
-import { db, newId } from "@/core/db";
+import { db } from "@/core/db";
 import { withDeleted } from "@/core/db/soft-delete";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
@@ -91,40 +91,93 @@ export async function reattachOrphanData(
   const orphanIds: string[] = [];
 
   for (const orphan of orphans) {
-    log.info(
-      { orphan_id: orphan.id, canonical_id: canonicalUser.id },
-      "Reattaching orphan data",
-    );
+    log.info({ orphan_id: orphan.id, canonical_id: canonicalUser.id }, "Reattaching orphan data");
     orphanIds.push(orphan.id);
 
     await db.$transaction(async (tx) => {
-      const [tasks, projects, notes, captures, attachments, tags, contexts, links, tables, emailCaptures, workLogs] =
-        await Promise.all([
-          tx.task.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.project.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.note.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.capture.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.attachment.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.tag.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.context.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.link.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.table.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.emailCapture.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-          tx.taskWorkLog.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        ]);
+      const [
+        tasks,
+        projects,
+        notes,
+        captures,
+        attachments,
+        tags,
+        contexts,
+        links,
+        tables,
+        emailCaptures,
+        workLogs,
+      ] = await Promise.all([
+        tx.task.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
+        tx.project.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.note.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
+        tx.capture.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.attachment.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.tag.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
+        tx.context.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.link.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
+        tx.table.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
+        tx.emailCapture.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.taskWorkLog.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+      ]);
 
       // TaskTemplate: also reattach orphaned templates
-      await tx.taskTemplate.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } });
+      await tx.taskTemplate.updateMany({
+        where: { user_id: orphan.id },
+        data: { user_id: canonicalUser.id },
+      });
 
       await Promise.all([
-        tx.projectFolder.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.notesFolder.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.tablesFolder.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.checklistItem.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.captureParseLog.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.person.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.aICallLog.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
-        tx.auditLog.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
+        tx.projectFolder.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.notesFolder.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.tablesFolder.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.checklistItem.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.captureParseLog.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.person.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.aICallLog.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
+        tx.auditLog.updateMany({
+          where: { user_id: orphan.id },
+          data: { user_id: canonicalUser.id },
+        }),
         // IntegrationToken: @@unique([user_id, provider]) — drop orphan rows where canonical
         // already has the same provider, then migrate the rest.
         tx.$executeRaw`

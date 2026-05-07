@@ -19,7 +19,10 @@ const CHIPS: { id: Perspective; label: string; icon: React.ElementType }[] = [
   { id: "flagged", label: "Flagged", icon: Flag },
 ];
 
-function dueBadge(due: Date | string | null, locale: LocaleSettings): { label: string; className: string } | null {
+function dueBadge(
+  due: Date | string | null,
+  locale: LocaleSettings,
+): { label: string; className: string } | null {
   if (!due) return null;
   const d = typeof due === "string" ? new Date(due) : due;
   let label: string;

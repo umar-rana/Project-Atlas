@@ -60,7 +60,11 @@ const PURPOSES: {
         { type: "paragraph" },
         { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Scope" }] },
         { type: "paragraph" },
-        { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Success criteria" }] },
+        {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: "Success criteria" }],
+        },
         { type: "paragraph" },
       ],
     },
@@ -148,7 +152,7 @@ export function PurposeTemplatePicker({
               className={cn(
                 "flex flex-col gap-2 rounded-lg border border-border-default p-4 text-left transition-colors",
                 "hover:border-accent-primary hover:bg-accent-primary-subtle",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
               <div className="flex items-center gap-2">

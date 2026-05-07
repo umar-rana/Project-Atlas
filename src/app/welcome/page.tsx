@@ -43,8 +43,7 @@ export default function WelcomePage() {
             Welcome to Atlas
           </h1>
           <p className="mt-4 text-base leading-relaxed text-text-secondary">
-            You&apos;ve been invited. Here&apos;s how to get set up in under two
-            minutes.
+            You&apos;ve been invited. Here&apos;s how to get set up in under two minutes.
           </p>
         </div>
 
@@ -58,17 +57,13 @@ export default function WelcomePage() {
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-primary-subtle">
                     <Icon className="h-4 w-4 text-accent-primary" strokeWidth={1.75} />
                   </div>
-                  {!isLast && (
-                    <div className="mt-2 w-px flex-1 bg-border-subtle" />
-                  )}
+                  {!isLast && <div className="mt-2 w-px flex-1 bg-border-subtle" />}
                 </div>
                 <div className="pb-8">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-widest text-text-tertiary">
                     Step {item.step}
                   </span>
-                  <h2 className="text-base font-semibold text-text-primary">
-                    {item.title}
-                  </h2>
+                  <h2 className="text-base font-semibold text-text-primary">{item.title}</h2>
                   <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
                     {item.description}
                   </p>
@@ -80,8 +75,8 @@ export default function WelcomePage() {
 
         <div className="mt-4 rounded-xl border border-border-subtle bg-surface-raised p-6">
           <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-            Ready? Sign in to Atlas and start capturing — your tasks, calendar,
-            notes, and journal are waiting.
+            Ready? Sign in to Atlas and start capturing — your tasks, calendar, notes, and journal
+            are waiting.
           </p>
           <Link
             href="/sign-in"

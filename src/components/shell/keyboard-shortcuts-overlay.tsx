@@ -1,29 +1,24 @@
 "use client";
 
 import * as React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { KeyboardShortcut } from "@/components/ui/keyboard-shortcut";
 import { useShellStore } from "@/lib/shell/store";
 import { useShortcutsRegistry, useRegisterShortcuts } from "@/core/shortcuts/registry";
 
 const WAVE2_SHORTCUTS = [
-  { id: "s-tasks",     label: "Tasks",              group: "Navigation", keys: ["cmd", "1"] },
-  { id: "s-calendar",  label: "Calendar",            group: "Navigation", keys: ["cmd", "2"] },
-  { id: "s-people",    label: "People",              group: "Navigation", keys: ["cmd", "3"] },
-  { id: "s-notes",     label: "Notes",               group: "Navigation", keys: ["cmd", "4"] },
-  { id: "s-journals",  label: "Journals",            group: "Navigation", keys: ["cmd", "5"] },
-  { id: "s-vault",     label: "Vault",               group: "Navigation", keys: ["cmd", "6"] },
-  { id: "s-media",     label: "Media inbox",         group: "Navigation", keys: ["cmd", "8"] },
-  { id: "s-settings",  label: "Open Settings",       group: "Navigation", keys: ["cmd", ","] },
-  { id: "s-palette",   label: "Command Palette",     group: "Global",     keys: ["cmd", "K"] },
-  { id: "s-shortcuts", label: "Keyboard Shortcuts",  group: "Global",     keys: ["cmd", "/"] },
-  { id: "s-shortcuts-q", label: "Keyboard Shortcuts",  group: "Global",   keys: ["?"] },
-  { id: "s-capture",   label: "Quick Capture",       group: "Global",     keys: ["cmd", "shift", "I"] },
+  { id: "s-tasks", label: "Tasks", group: "Navigation", keys: ["cmd", "1"] },
+  { id: "s-calendar", label: "Calendar", group: "Navigation", keys: ["cmd", "2"] },
+  { id: "s-people", label: "People", group: "Navigation", keys: ["cmd", "3"] },
+  { id: "s-notes", label: "Notes", group: "Navigation", keys: ["cmd", "4"] },
+  { id: "s-journals", label: "Journals", group: "Navigation", keys: ["cmd", "5"] },
+  { id: "s-vault", label: "Vault", group: "Navigation", keys: ["cmd", "6"] },
+  { id: "s-media", label: "Media inbox", group: "Navigation", keys: ["cmd", "8"] },
+  { id: "s-settings", label: "Open Settings", group: "Navigation", keys: ["cmd", ","] },
+  { id: "s-palette", label: "Command Palette", group: "Global", keys: ["cmd", "K"] },
+  { id: "s-shortcuts", label: "Keyboard Shortcuts", group: "Global", keys: ["cmd", "/"] },
+  { id: "s-shortcuts-q", label: "Keyboard Shortcuts", group: "Global", keys: ["?"] },
+  { id: "s-capture", label: "Quick Capture", group: "Global", keys: ["cmd", "shift", "I"] },
   { id: "s-inspector", label: "Toggle Inspector panel", group: "Inspector", keys: ["cmd", "\\"] },
 ];
 
@@ -60,7 +55,7 @@ export function KeyboardShortcutsOverlay(): React.ReactElement {
           <DialogHeader>
             <DialogTitle>Keyboard Shortcuts</DialogTitle>
           </DialogHeader>
-          <div className="px-4 pt-2 pb-1">
+          <div className="px-4 pb-1 pt-2">
             <input
               autoFocus
               type="search"
@@ -72,7 +67,9 @@ export function KeyboardShortcutsOverlay(): React.ReactElement {
           </div>
           <div className="max-h-96 overflow-y-auto px-4 pb-4">
             {grouped.length === 0 ? (
-              <p className="py-6 text-center font-ui text-sm text-text-tertiary">No shortcuts found</p>
+              <p className="py-6 text-center font-ui text-sm text-text-tertiary">
+                No shortcuts found
+              </p>
             ) : (
               grouped.map(([group, items]) => (
                 <div key={group} className="mb-4">
@@ -81,7 +78,10 @@ export function KeyboardShortcutsOverlay(): React.ReactElement {
                   </h3>
                   <div className="flex flex-col gap-1">
                     {items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between gap-4 rounded-sm py-1">
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-4 rounded-sm py-1"
+                      >
                         <span className="font-ui text-sm text-text-primary">{item.label}</span>
                         <KeyboardShortcut keys={item.keys} />
                       </div>
