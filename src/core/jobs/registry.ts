@@ -1,10 +1,11 @@
 import { handleDriveSyncNotes } from "./handlers/drive-sync-notes";
 import { handleDriveSyncTables } from "./handlers/drive-sync-tables";
 import { handleDriveSyncAttachments } from "./handlers/drive-sync-attachments";
-import { handleSessionCleanup } from "./handlers/session-cleanup";
 import { handleTrashRetention } from "./handlers/trash-retention";
 import { handleAttachmentCleanup } from "./handlers/attachment-cleanup";
 import { handleImportCleanup } from "./handlers/import-cleanup-job";
+import { handleProcessedCapturesCleanup } from "./handlers/processed-captures-cleanup";
+import { handleJobRecordsCleanup } from "./handlers/job-records-cleanup";
 
 export interface JobDefinition {
   name: string;
@@ -21,12 +22,6 @@ export const JOB_REGISTRY: JobDefinition[] = [
     handler: handleDriveSyncNotes,
   },
   {
-    name: "import-cleanup",
-    cron: "0 6 * * *",
-    description: "Daily cleanup of expired PDF exports from object storage at 06:00 UTC",
-    handler: handleImportCleanup,
-  },
-  {
     name: "drive-sync-tables",
     cron: "0 * * * *",
     description: "Sync tables to Google Drive hourly (exports JSON schema + CSV for each table)",
@@ -39,21 +34,33 @@ export const JOB_REGISTRY: JobDefinition[] = [
     handler: handleDriveSyncAttachments,
   },
   {
-    name: "session-cleanup",
-    cron: "0 3 * * *",
-    description: "Nightly cleanup of expired sessions at 03:00 UTC",
-    handler: handleSessionCleanup,
+    name: "import-cleanup",
+    cron: "0 6 * * *",
+    description: "Daily cleanup of expired PDF exports from object storage at 06:00 UTC",
+    handler: handleImportCleanup,
   },
   {
     name: "trash-retention",
     cron: "0 4 * * *",
-    description: "Nightly purge of soft-deleted records past retention window at 04:00 UTC",
+    description: "Nightly hard-delete of soft-deleted records past the 30-day retention window at 04:00 UTC",
     handler: handleTrashRetention,
   },
   {
     name: "attachment-cleanup",
     cron: "0 5 * * *",
-    description: "Nightly cleanup of orphaned attachments from object storage at 05:00 UTC",
+    description: "Nightly cleanup of storage objects for deleted attachments and untracked orphan files at 05:00 UTC",
     handler: handleAttachmentCleanup,
+  },
+  {
+    name: "processed-captures-cleanup",
+    cron: "30 3 * * 0",
+    description: "Weekly purge of processed inbox captures older than 90 days (Sunday 03:30 UTC)",
+    handler: handleProcessedCapturesCleanup,
+  },
+  {
+    name: "job-records-cleanup",
+    cron: "0 4 * * 0",
+    description: "Weekly pruning of job audit log entries, keeping the 100 most recent per job (Sunday 04:00 UTC)",
+    handler: handleJobRecordsCleanup,
   },
 ];

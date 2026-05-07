@@ -103,23 +103,68 @@ export const jobsRouter = router({
           } else if (lastRun.state === "completed") {
             const output = lastRun.output as Record<string, unknown> | null;
             if (output && typeof output === "object") {
-              const synced =
-                output.synced ?? output.files_synced ?? output.count;
-              if (typeof synced === "number") {
-                const parts: string[] = [`${synced} file${synced !== 1 ? "s" : ""} synced`];
-                const deleted = output.deleted;
-                if (typeof deleted === "number" && deleted > 0) {
-                  parts.push(`${deleted} deleted`);
-                }
-                const errors = output.errors;
-                if (typeof errors === "number" && errors > 0) {
-                  parts.push(`${errors} error${errors !== 1 ? "s" : ""}`);
+              // trash-retention: sum all entity counts
+              if (
+                typeof output.tasks === "number" ||
+                typeof output.projects === "number" ||
+                typeof output.notes === "number"
+              ) {
+                const entityFields = [
+                  "checklistItems", "workLogs", "tasks", "projects", "notes",
+                  "notesFolders", "projectFolders", "captures", "tags",
+                  "contexts", "attachments", "tables", "tableColumns",
+                  "tableRows", "tablesFolders", "taskTemplates",
+                ];
+                const total = entityFields.reduce((sum, k) => {
+                  const v = output[k];
+                  return sum + (typeof v === "number" ? v : 0);
+                }, 0);
+                const parts: string[] = [`${total} record${total !== 1 ? "s" : ""} purged`];
+                const errs = output.errors;
+                if (Array.isArray(errs) && errs.length > 0) {
+                  parts.push(`${errs.length} error${errs.length !== 1 ? "s" : ""}`);
                 }
                 lastResult = parts.join(", ");
-              } else if (typeof output.message === "string") {
-                lastResult = output.message;
-              } else if (typeof output.deleted === "number") {
-                lastResult = `${output.deleted} record${output.deleted !== 1 ? "s" : ""} removed`;
+              // attachment-cleanup: attachments + orphans cleaned
+              } else if (typeof output.attachments === "number" && typeof output.orphans === "number") {
+                const parts: string[] = [];
+                if (output.attachments > 0) {
+                  parts.push(`${output.attachments} attachment${(output.attachments as number) !== 1 ? "s" : ""} cleaned`);
+                }
+                if ((output.orphans as number) > 0) {
+                  parts.push(`${output.orphans} orphan${(output.orphans as number) !== 1 ? "s" : ""} removed`);
+                }
+                if (typeof output.errors === "number" && (output.errors as number) > 0) {
+                  parts.push(`${output.errors} error${(output.errors as number) !== 1 ? "s" : ""}`);
+                }
+                lastResult = parts.length > 0 ? parts.join(", ") : "nothing to clean";
+              // processed-captures-cleanup: captures deleted
+              } else if (typeof output.captures === "number") {
+                const n = output.captures as number;
+                lastResult = `${n} capture${n !== 1 ? "s" : ""} deleted`;
+              // job-records-cleanup: audit entries pruned
+              } else if (typeof output.deleted === "number" && Object.keys(output).length === 1) {
+                const n = output.deleted as number;
+                lastResult = `${n} audit entr${n !== 1 ? "ies" : "y"} pruned`;
+              // drive sync jobs and import-cleanup
+              } else {
+                const synced = output.synced ?? output.files_synced ?? output.count;
+                if (typeof synced === "number") {
+                  const parts: string[] = [`${synced} file${synced !== 1 ? "s" : ""} synced`];
+                  const deleted = output.deleted;
+                  if (typeof deleted === "number" && deleted > 0) {
+                    parts.push(`${deleted} deleted`);
+                  }
+                  const errors = output.errors;
+                  if (typeof errors === "number" && errors > 0) {
+                    parts.push(`${errors} error${errors !== 1 ? "s" : ""}`);
+                  }
+                  lastResult = parts.join(", ");
+                } else if (typeof output.message === "string") {
+                  lastResult = output.message;
+                } else if (typeof output.deleted === "number") {
+                  lastResult = `${output.deleted} record${(output.deleted as number) !== 1 ? "s" : ""} removed`;
+                }
               }
             }
           }
