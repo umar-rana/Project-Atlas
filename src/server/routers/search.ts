@@ -124,9 +124,9 @@ export const searchRouter = router({
         FROM "Note" n
         WHERE n.user_id = ${userId}
           AND n.deleted_at IS NULL
-          AND to_tsvector('english', COALESCE(n.body_text, '') || ' ' || COALESCE(n.title, ''))
-                @@ websearch_to_tsquery('english', ${q})
-        ORDER BY n.updated_at DESC
+          AND n.search_vector @@ websearch_to_tsquery('english', ${q})
+        ORDER BY ts_rank(n.search_vector, websearch_to_tsquery('english', ${q})) DESC,
+                 n.updated_at DESC
         LIMIT ${limit}
       `);
 
