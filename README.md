@@ -99,6 +99,40 @@ scripts/
 
 ---
 
+## Mobile View (/m)
+
+The `/m` sub-app is a lightweight mobile-optimised shell layered inside the same authenticated route group. It is served to users whose browser sends a mobile User-Agent (Android, iPhone, iPad, etc.) and who do not have the `prefer-desktop` cookie set. The redirect logic lives in `src/middleware.ts`.
+
+**Layout shell** (`src/app/(app)/m/layout.tsx`):
+- `MobileTopBar` — sticky top bar with a search button (opens `CommandPalette`) and a `+` capture button (opens `CaptureModal`)
+- `BottomTabBar` — fixed bottom navigation with five tabs; respects `safe-area-inset-bottom` for notched devices
+- Interactive tap targets in the tab bar and task list are at least 44 px tall; top-bar action buttons are 40 px
+
+**Live routes:**
+
+| Route | Component | Description |
+|---|---|---|
+| `/m` | redirect | Redirects to `/m/tasks` |
+| `/m/tasks` | `MobileTasksPage` | Task list with Inbox / Today / Flagged chip filter |
+| `/m/tasks/[taskId]` | `MobileTaskDetailPage` | Task detail: title, notes, metadata rows, complete/reopen button, contexts and tags |
+| `/m/settings` | `MobileSettingsPage` | Theme picker (Light/Dark/System), switch-to-desktop action, profile card, sign-out |
+
+**Placeholder routes (bottom-tab slots that show a "coming soon" screen):**
+
+| Route | Planned wave |
+|---|---|
+| `/m/notes` | Wave 4 |
+| `/m/calendar` | Wave 4 |
+| `/m/journals` | Wave 5 |
+
+**Mobile UX conventions:**
+- 44 px minimum touch targets on tab bar items and list rows (`min-h-[44px]`); top-bar action buttons are 40 px (`h-10 w-10`)
+- `safe-area-inset-bottom` applied to `BottomTabBar` for notch/home-indicator clearance
+- `prefer-desktop` cookie (1-year expiry, `SameSite=Lax`) set by "Switch to desktop site" to opt a device out of the mobile shell permanently
+- The mobile shell reuses the same tRPC routers and Clerk session as the desktop app; no separate API surface
+
+---
+
 ## Architecture Decisions
 
 - **Local-first parsing over AI-first** — Tier 1 (chrono-node + compromise.js) runs synchronously; AI enrichment is enqueued asynchronously and only triggered when confidence < user threshold. This keeps the capture UI instant.
@@ -398,7 +432,7 @@ All jobs are registered in `src/core/jobs/registry.ts` and scheduled on startup.
 | `drive-sync-tables` | `0 * * * *` (hourly) | Export all tables to Google Drive as JSON schema + CSV |
 | `drive-sync-attachments` | `0 * * * *` (hourly) | Upload new attachments to Google Drive |
 | `import-cleanup` | `0 6 * * *` (daily 06:00 UTC) | Purge expired PDF export objects from R2 |
-| `session-cleanup` | `0 3 * * *` (daily 03:00 UTC) | Session cleanup stub — registered and scheduled; handler not yet implemented |
+| `session-cleanup` | `0 3 * * *` (daily 03:00 UTC) | Session cleanup — registered and scheduled; full handler implementation queued (task #18) |
 | `trash-retention` | `0 4 * * *` (daily 04:00 UTC) | Hard-delete soft-deleted records past retention window |
 | `attachment-cleanup` | `0 5 * * *` (daily 05:00 UTC) | Purge orphaned attachment objects from R2 |
 
@@ -497,6 +531,97 @@ Middleware performs desktop/mobile detection and redirects to the appropriate ro
 | `?` | Open Help Center overlay |
 
 Module-level shortcuts are surfaced via the `<Hint>` tooltip component (`src/components/ui/hint.tsx`), which wraps interactive controls and renders keyboard shortcut hints using Radix UI Tooltip.
+
+---
+
+## Recently Merged (Wave 3c and later)
+
+### Wave 3c — Capture intelligence
+- **#43** Hybrid parsing pipeline — three-tier local → AI → raw fallback strategy with `CaptureParseLog` tracking
+- **#44** Email-to-inbox — Resend inbound webhook → `EmailCapture` → `Capture` pipeline
+- **#45** Capture intelligence UI — parse-source badge, confidence score display, AI suggestion accept/dismiss flow
+- **#48** Parse corruption guard — safe fallback for unusual or malformed input text
+
+### Email inbox & attachments
+- **#53** Inbox email address verification — per-user inbound address provisioning and verification flow
+- **#54** Attachments in task detail — view, upload, and download attachments from the task inspector
+- **#55** Attachment soft-delete — delete attachments with `deleted_at`; nightly cleanup purges R2 objects
+- **#56** Image thumbnails — server-generated thumbnails stored in `thumbnail_path`; displayed inline
+- **#57** Sender block from list — block a sender directly from the email list view
+- **#58** Wildcard domain blocking — blocklist patterns support `*@domain.com` style wildcards
+- **#59** Verification email — transactional email sent on inbound address verification
+- **#60** Additional email inbox polish
+
+### Auth migration
+- **#94** Clerk migration — replaced Replit Auth with Clerk (`@clerk/nextjs` v7); full session and user model migration
+- **#96** Google sign-in — added Google OAuth provider via Clerk
+- **#98** Replit auth cleanup — removed legacy Replit auth code and dependencies
+
+### App shell & UI polish
+- **#25** Wave 2 shell — `TwoPaneLayout`, `ModuleSwitcher`, `TopBar`, `CommandPalette`
+- **#26** AI usage inside shell — `/usage` page with spending chart integrated into authenticated shell
+- **#27** Inspector/sidebar persistence — sidebar open/collapsed state preserved across navigation
+- **#40 / #42** Forecast range — configurable date range for the Forecast view, synced to user account
+- **#87** Keyboard shortcut hints — shortcut hints displayed in tooltips and the Help Center
+
+### Test coverage
+- **#75, #77, #79, #80, #82, #83, #84** Task list, drag-and-drop, keyboard, tag, and context inspector e2e tests
+- **#88, #92** Additional e2e coverage and CI integration (Playwright in GitHub Actions)
+
+### Code quality
+- **#69** Code review, lint, and TypeScript cleanup — addressed deferred TS errors and lint warnings
+- **#73** ESLint migration — upgraded ESLint config to flat-config format
+
+---
+
+## In Progress (Drafts)
+
+### AI usage
+- **#14** Spending chart — time-series chart of AI spending on the `/usage` page, grouped by day and model
+- **#30** AI Usage nav icon — dedicated icon for the AI Usage entry in the navigation rail
+
+### Session & auth
+- **#17** Sign-out everywhere — button on the sign-in page to revoke all active sessions when a suspicious session is detected
+- **#18** Nightly session cleanup job — full handler implementation for the `session-cleanup` pg-boss job
+
+### Capture & parsing
+- **#21** Fallback for unusual text — ensure corrupted or edge-case input is always captured safely
+- **#46** Email-to-inbox followups — additional polish and edge-case handling for the inbound email pipeline
+- **#47** Parse-source badge for users — expose parse source (AI vs local) and confidence score to end users in the capture list
+- **#51** Confidence threshold slider debounce — debounce the AI confidence threshold slider so it does not fire on every drag event
+- **#52** Inline suggestion persistence — remember per-capture AI suggestion dismissals between page loads
+
+### Email & attachments
+- **#61** Unblock confirmation — show a confirmation dialog before unblocking a sender from the blocklist
+- **#62** Block from email detail — allow users to block a sender directly from the email capture detail view
+- **#63** Image lightbox — full-size image viewer when clicking an image attachment
+- **#64** PDF preview — inline preview panel for PDF attachments (not just images)
+- **#65** Attachment undo delete — undo an accidental attachment deletion within a grace window
+- **#66** Attachment removal loading state — show a loading indicator while an attachment is being removed
+- **#67** Wildcard match display — show which blocklist entries match a wildcard so users can see what is being blocked
+- **#68** Blocklist pattern tester — UI to test a sender address against current blocklist patterns
+- **#70 / #71 / #72** Inbox verification tracking — additional verification flow states and tracking
+
+### UI state persistence
+- **#28** Sidebar collapse memory — remember the sidebar collapsed/expanded state between sessions
+- **#29** Safe first-load guard — ensure persisted UI state never breaks the app on first load or cold start
+- **#49** Forecast range sync — sync the Forecast date range setting to the user account so it follows across devices
+- **#50** Bulk-accept new-project creation — allow the bulk-accept capture banner to create a new project when no match exists yet
+
+### Test coverage
+- **#81** Bulk-action smoke tests — e2e coverage for the bulk-accept and bulk-delete capture actions
+- **#85** CI video on failure — record Playwright video artifacts on test failure in CI
+- **#86 / #89** Drag-and-drop for non-manual sort — e2e tests covering drag-and-drop outside manual sort mode
+- **#90** Shortcut bar toggle test — e2e coverage for the keyboard shortcut bar show/hide
+- **#91** Shortcut reference overlay test — e2e coverage for the keyboard shortcut reference overlay
+- **#93** E2e with AI parsing — end-to-end test that exercises the AI parsing path
+- **#95** Context inspector tests — e2e coverage for the context inspector panel
+- **#97** CI auth secret — wire `E2E_AUTH_SECRET` into CI so the auth bypass route works in the test environment
+
+### Performance & cleanup
+- **#74** Task-list field projection — limit fields returned by `tasks.list` to reduce payload size
+- **#76** Dead lint suppressions — remove obsolete `eslint-disable` comments left over from the ESLint migration
+- **#78** Auth bypass for e2e — ensure the `GET /api/auth/test-login` shortcut is safely gated and available in CI
 
 ---
 
