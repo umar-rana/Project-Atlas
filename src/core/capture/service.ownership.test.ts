@@ -18,6 +18,8 @@ const mockProjectFindMany = vi.fn();
 const mockProjectFindFirst = vi.fn();
 const mockCaptureParseLogCreate = vi.fn();
 const mockAuditLogCreate = vi.fn();
+const mockCaptureCreate = vi.fn();
+const mockCaptureUpdate = vi.fn();
 
 vi.mock("@/core/db", () => ({
   db: {
@@ -54,6 +56,10 @@ vi.mock("@/core/db", () => ({
     },
     auditLog: {
       create: (...args: unknown[]) => mockAuditLogCreate(...args),
+    },
+    capture: {
+      create: (...args: unknown[]) => mockCaptureCreate(...args),
+      update: (...args: unknown[]) => mockCaptureUpdate(...args),
     },
   },
   newId: () => "test-id-000",
@@ -108,6 +114,8 @@ function setupBaseDb() {
   mockContextFindFirst.mockResolvedValue(null);
   mockContextFindMany.mockResolvedValue([]);
   mockContextCreate.mockResolvedValue({ id: "ctx-id" });
+  mockCaptureCreate.mockResolvedValue({ id: "capture-id" });
+  mockCaptureUpdate.mockResolvedValue({ id: "capture-id" });
 }
 
 // ─── Ownership violation tests ────────────────────────────────────────────────
@@ -308,7 +316,7 @@ describe("captureAndCreate — Tier 2 error → Tier 1 preservation (not raw fal
     });
 
     expect(result).toBeDefined();
-    const createCall = mockTaskCreate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
+    const createCall = mockCaptureCreate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
     expect(createCall?.data.title).toBe("call dentist");
   });
 
@@ -329,7 +337,7 @@ describe("captureAndCreate — Tier 2 error → Tier 1 preservation (not raw fal
     });
     await flushEnrichmentQueue();
 
-    const updateCall = mockTaskUpdate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
+    const updateCall = mockCaptureUpdate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
     expect(updateCall?.data.title).toBe("call dentist");
 
     const parseLogCall = mockCaptureParseLogCreate.mock.calls[0]?.[0] as
@@ -389,7 +397,7 @@ describe("captureAndCreate — Tier 2 token cap → Tier 1 preserved end-to-end"
     expect(parseLogCall?.data.ai_used).toBe(false);
     expect(parseLogCall?.data.title).toBe("call dentist");
 
-    const updateCall = mockTaskUpdate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
+    const updateCall = mockCaptureUpdate.mock.calls[0]?.[0] as { data: { title: string } } | undefined;
     expect(updateCall?.data.title).toBe("call dentist");
   });
 });

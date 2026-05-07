@@ -16,5 +16,9 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules/**", "e2e/**", ".next/**", "storybook-static/**", "src/**/*.integration.test.{ts,tsx}"],
+    coverage: {
+      reporter: ["text", "html"],
+      exclude: ["node_modules/**", "dist/**", ".next/**", "e2e/**"],
+    },
   },
 });

@@ -18,6 +18,9 @@ const mockProjectFindFirst = vi.fn();
 const mockCaptureParseLogCreate = vi.fn();
 const mockAuditLogCreate = vi.fn();
 
+const mockCaptureCreate = vi.fn();
+const mockCaptureUpdate = vi.fn();
+
 vi.mock("@/core/db", () => ({
   db: {
     tag: {
@@ -52,6 +55,10 @@ vi.mock("@/core/db", () => ({
     },
     auditLog: {
       create: (...args: unknown[]) => mockAuditLogCreate(...args),
+    },
+    capture: {
+      create: (...args: unknown[]) => mockCaptureCreate(...args),
+      update: (...args: unknown[]) => mockCaptureUpdate(...args),
     },
   },
   newId: () => "test-id-000",
@@ -138,6 +145,8 @@ describe("captureAndCreate — AI enrichment tag gating", () => {
     mockContextOnTaskCreateMany.mockResolvedValue({});
     mockContextFindFirst.mockResolvedValue(null);
     mockContextCreate.mockResolvedValue({ id: "ctx-id" });
+    mockCaptureCreate.mockResolvedValue({ id: "capture-id" });
+    mockCaptureUpdate.mockResolvedValue({ id: "capture-id" });
   });
 
   it("does NOT call tag.create for AI-suggested tags that do not exist in library", async () => {
@@ -195,12 +204,11 @@ describe("captureAndCreate — AI enrichment tag gating", () => {
       source: "modal",
     });
 
-    // "groceries" was explicit via #tag syntax → tag.create IS called
-    expect(mockTagCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ name: "groceries" }),
-      }),
-    );
+    // "groceries" was explicit via #tag syntax → stored in capture.tags on initial create
+    const captureCreateCall = mockCaptureCreate.mock.calls[0]?.[0] as
+      | { data: { tags: string[] } }
+      | undefined;
+    expect(captureCreateCall?.data.tags).toContain("groceries");
   });
 
   it("auto-applies AI tags that already exist in library without creating new ones", async () => {

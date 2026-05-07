@@ -135,6 +135,10 @@ vi.mock("@/lib/toast", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
+vi.mock("@/components/ui/hint", () => ({
+  Hint: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 // Stub child components that own their own tRPC trees / are out of scope for
 // the selection-model smoke tests. BulkActionBar is intentionally NOT mocked
 // — we want one end-to-end smoke that proves the selection set actually
@@ -224,7 +228,7 @@ describe("TaskList — bulk-action selection model", () => {
   });
 
   function renderList() {
-    return render(<TaskList perspective="inbox" title="Inbox" enableQuickAdd={false} />);
+    return render(<TaskList perspective="today" title="Today" enableQuickAdd={false} />);
   }
 
   function row(container: HTMLElement, id: string) {

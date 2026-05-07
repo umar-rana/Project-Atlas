@@ -71,7 +71,7 @@ vi.mock("@/lib/trpc/client", async () => {
   }
 
   function buildEndpoint(path: string) {
-    return {
+    const endpointObj = {
       useQuery: () => {
         if (path === "tasks.get") {
           return {
@@ -96,8 +96,18 @@ vi.mock("@/lib/trpc/client", async () => {
       useMutation: () => ({
         mutate: getMutate(path),
         mutateAsync: getMutateAsync(path),
+        isPending: false,
+        isError: false,
       }),
     };
+    return new Proxy(endpointObj, {
+      get(target, key: string) {
+        if (key === "useQuery" || key === "useMutation") {
+          return target[key as keyof typeof target];
+        }
+        return buildEndpoint(`${path}.${key}`);
+      },
+    });
   }
 
   const invalidate = vitestVi.fn();
@@ -135,6 +145,36 @@ vi.mock("@/lib/trpc/client", async () => {
 vi.mock("@/lib/toast", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
+
+vi.mock("@/components/ui/hint", () => ({
+  Hint: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock("@/core/locale/formatters", async () => {
+  const { format } = await import("date-fns");
+  return {
+    formatDate: (value: Date | string | null | undefined) => {
+      if (!value) return "";
+      try {
+        const d = value instanceof Date ? value : new Date(value);
+        if (isNaN(d.getTime())) return "";
+        return format(d, "MMMM d, yyyy");
+      } catch {
+        return "";
+      }
+    },
+    formatDateUTCSafe: (value: Date | string | null | undefined) => {
+      if (!value) return "";
+      try {
+        const d = value instanceof Date ? value : new Date(value);
+        if (isNaN(d.getTime())) return "";
+        return format(d, "MMMM d, yyyy");
+      } catch {
+        return "";
+      }
+    },
+  };
+});
 
 // Stub subcomponents that pull in their own tRPC trees — out of scope for
 // these inspector smoke tests.
