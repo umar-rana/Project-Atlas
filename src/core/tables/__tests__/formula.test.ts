@@ -262,6 +262,71 @@ describe("evaluateFormula", () => {
       expect(isFormulaError(42)).toBe(false);
       expect(isFormulaError("text")).toBe(false);
     });
+
+    it("unsupported function returns formula error", () => {
+      const cells: TableCellData[] = [];
+      const result = evaluateFormula("sin(1)", cells, allColumns, "number");
+      expect(isFormulaError(result.value)).toBe(true);
+      expect(result.error).toMatch(/sin/);
+    });
+  });
+
+  describe("WP2 coverage gaps", () => {
+    it("literal arithmetic without column refs", () => {
+      const result = evaluateFormula("2 + 3", [], allColumns, "number");
+      expect(result.value).toBe(5);
+      expect(result.error).toBeUndefined();
+    });
+
+    it("operator precedence: multiplication before addition", () => {
+      const result = evaluateFormula("2 + 3 * 4", [], allColumns, "number");
+      expect(result.value).toBe(14);
+    });
+
+    it("parenthesis overrides operator precedence", () => {
+      const result = evaluateFormula("(2 + 3) * 4", [], allColumns, "number");
+      expect(result.value).toBe(20);
+    });
+
+    it("null cell value coerces to 0 for number columns", () => {
+      const cells: TableCellData[] = [];
+      const result = evaluateFormula("{Price} + 10", cells, allColumns, "number");
+      expect(result.value).toBe(10);
+    });
+
+    it("null cell value coerces to empty string for text columns", () => {
+      const cells: TableCellData[] = [];
+      const result = evaluateFormula('CONCAT({Name}, "!")', cells, allColumns, "text");
+      expect(result.value).toBe("!");
+    });
+
+    it("nested function calls: ABS inside ROUND", () => {
+      const cells = [makeCell("price", -3.7)];
+      const result = evaluateFormula("ROUND(ABS({Price}), 0)", cells, allColumns, "number");
+      expect(result.value).toBe(4);
+    });
+
+    it("division by zero coerces Infinity to null for number return", () => {
+      const cells = [makeCell("price", 1), makeCell("qty", 0)];
+      const result = evaluateFormula("{Price} / {Qty}", cells, allColumns, "number");
+      // mathjs returns Infinity; Number.isFinite(Infinity) is false → null
+      expect(result.value).toBeNull();
+    });
+
+    it("string literal expression without column refs", () => {
+      const result = evaluateFormula('"hello"', [], allColumns, "text");
+      expect(result.value).toBe("hello");
+    });
+
+    it("boolean comparison literal", () => {
+      const result = evaluateFormula("5 > 3", [], allColumns, "boolean");
+      expect(result.value).toBe(true);
+    });
+
+    it("IF with literal condition", () => {
+      const result = evaluateFormula('IF(1 > 0, "yes", "no")', [], allColumns, "text");
+      expect(result.value).toBe("yes");
+    });
   });
 });
 

@@ -1,6 +1,14 @@
 import "server-only";
-import { Parser } from "expr-eval";
-import type { Values } from "expr-eval";
+// Dependency surgery — H-DEP-1 (high-severity advisory, see audit-reports/atlas-audit-2026-05-07.md):
+// The previous formula evaluator was replaced with mathjs (actively maintained, MIT).
+// formula.ts is server-only, so mathjs adds ~0 KB to any client chunk.
+// Server bundle delta: previous evaluator ~15 KB gzipped → mathjs ~85 KB gzipped (server only).
+// Security: import and createUnit are disabled on the shared instance; evaluation is
+// performed via math.parse().compile().evaluate(scope) so the instance-level evaluate
+// override cannot be triggered from within a user formula. Only Atlas-defined functions
+// are permitted — an AST walker rejects any other function call before evaluation.
+import { create, all } from "mathjs";
+import type { MathNode } from "mathjs";
 import type { CellValue, ColumnType, TableColumnData, TableCellData } from "./types";
 import {
   type FormulaReturnType,
@@ -8,6 +16,9 @@ import {
   FORMULA_ERROR_KEY,
   isFormulaError as _isFormulaError,
 } from "./formula-shared";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger({ module: "formula" });
 
 export type { FormulaReturnType };
 export type { FormulaErrorValue };
@@ -20,13 +31,129 @@ export interface FormulaResult {
   error?: string;
 }
 
+// ─── mathjs instance ──────────────────────────────────────────────────────────
+
+const math = create(all!, {});
+
+// Disable dangerous built-ins that could modify the instance or load arbitrary code.
+// Only import and createUnit are overridden here; evaluate/parse remain accessible
+// so that math.parse().compile().evaluate() works correctly in our implementation.
+math.import(
+  {
+    // ── Security overrides ───────────────────────────────────────────────────
+    import: (): never => {
+      throw new Error("Function import is disabled in Atlas formulas");
+    },
+    createUnit: (): never => {
+      throw new Error("Function createUnit is disabled in Atlas formulas");
+    },
+
+    // ── Atlas custom functions ───────────────────────────────────────────────
+    IF(cond: unknown, ifTrue: unknown, ifFalse: unknown): unknown {
+      return cond ? ifTrue : ifFalse;
+    },
+
+    CONCAT(...args: unknown[]): string {
+      return args.map((a) => (a === null || a === undefined ? "" : String(a))).join("");
+    },
+
+    ROUND(n: unknown, decimals?: unknown): number {
+      const num = Number(n);
+      if (isNaN(num)) return 0;
+      const d = decimals !== undefined ? Number(decimals) : 0;
+      const factor = Math.pow(10, isNaN(d) ? 0 : d);
+      return Math.round(num * factor) / factor;
+    },
+
+    ABS(n: unknown): number {
+      return Math.abs(Number(n));
+    },
+
+    MIN(...args: unknown[]): number | null {
+      const nums = args.map(Number).filter((n) => !isNaN(n));
+      return nums.length === 0 ? null : Math.min(...nums);
+    },
+
+    MAX(...args: unknown[]): number | null {
+      const nums = args.map(Number).filter((n) => !isNaN(n));
+      return nums.length === 0 ? null : Math.max(...nums);
+    },
+
+    DAYS_BETWEEN(a: unknown, b: unknown): number | null {
+      const dateA = a instanceof Date ? a : new Date(String(a));
+      const dateB = b instanceof Date ? b : new Date(String(b));
+      if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return null;
+      return Math.round((dateB.getTime() - dateA.getTime()) / 86400000);
+    },
+
+    NOW(): Date {
+      return new Date();
+    },
+
+    LEN(s: unknown): number {
+      if (s === null || s === undefined) return 0;
+      return String(s).length;
+    },
+
+    UPPER(s: unknown): string {
+      if (s === null || s === undefined) return "";
+      return String(s).toUpperCase();
+    },
+
+    LOWER(s: unknown): string {
+      if (s === null || s === undefined) return "";
+      return String(s).toLowerCase();
+    },
+  } as Record<string, unknown>,
+  { override: true },
+);
+
+// ─── Atlas function allowlist ─────────────────────────────────────────────────
+
+const ATLAS_FUNCTIONS = new Set([
+  "IF",
+  "CONCAT",
+  "ROUND",
+  "ABS",
+  "MIN",
+  "MAX",
+  "DAYS_BETWEEN",
+  "NOW",
+  "LEN",
+  "UPPER",
+  "LOWER",
+]);
+
+/**
+ * Walk the parsed AST and throw if any function call is not in the Atlas allowlist.
+ * Arithmetic and comparison operators are OperatorNodes (not FunctionNodes) and
+ * are always permitted.
+ */
+function assertOnlyAtlasFunctions(tree: MathNode): void {
+  const fnNodes = tree.filter((node: MathNode) => node.type === "FunctionNode");
+  for (const node of fnNodes) {
+    const name = (node as MathNode & { name: string }).name;
+    if (!ATLAS_FUNCTIONS.has(name)) {
+      throw new Error(
+        `Function "${name}" is not supported in Atlas formulas. ` +
+          `Supported functions: ${[...ATLAS_FUNCTIONS].join(", ")}.`,
+      );
+    }
+  }
+}
+
 // ─── Expression pre-processing ────────────────────────────────────────────────
 
+// mathjs uses `and`/`or`/`not` keywords; map JS-style logical operators to them.
+// The ! replacement skips occurrences inside quoted string literals so that
+// expressions like CONCAT({Name}, "!") are not mangled.
 function normalizeExpression(expression: string): string {
   return expression
     .replace(/&&/g, " and ")
     .replace(/\|\|/g, " or ")
-    .replace(/!(?!=)/g, " not ");
+    .replace(/"[^"]*"|'[^']*'|(!(?!=))/g, (match, notOp?: string) =>
+      notOp !== undefined ? " not " : match,
+    );
 }
 
 function extractColumnRefs(expression: string): string[] {
@@ -40,7 +167,7 @@ function extractColumnRefs(expression: string): string[] {
   return refs;
 }
 
-// Replace {ColumnName} tokens with safe variable names for expr-eval
+// Replace {ColumnName} tokens with safe variable names for mathjs
 function tokenizeExpression(expression: string): {
   processed: string;
   tokenMap: Map<string, string>;
@@ -96,7 +223,7 @@ function coerceResult(raw: unknown, returnType: FormulaReturnType, _decimals?: n
   switch (returnType) {
     case "number": {
       const n = Number(raw);
-      return isNaN(n) ? null : n;
+      return Number.isFinite(n) ? n : null;
     }
     case "text":
       return raw instanceof Date ? raw.toISOString() : typeof raw === "string" ? raw : String(raw);
@@ -115,88 +242,6 @@ function coerceResult(raw: unknown, returnType: FormulaReturnType, _decimals?: n
       return null;
   }
 }
-
-// ─── Parser factory with custom functions ─────────────────────────────────────
-
-function makeParser(): Parser {
-  const parser = new Parser({
-    operators: {
-      add: true,
-      comparison: true,
-      concatenate: true,
-      conditional: true,
-      divide: true,
-      factorial: false,
-      logical: true,
-      multiply: true,
-      power: true,
-      remainder: true,
-      subtract: true,
-    },
-  });
-
-  parser.functions["IF"] = function (cond: unknown, ifTrue: unknown, ifFalse: unknown) {
-    return cond ? ifTrue : ifFalse;
-  };
-
-  parser.functions["CONCAT"] = function (...args: unknown[]) {
-    return args.map((a) => (a === null || a === undefined ? "" : String(a))).join("");
-  };
-
-  parser.functions["ROUND"] = function (n: unknown, decimals?: unknown) {
-    const num = Number(n);
-    if (isNaN(num)) return 0;
-    const d = decimals !== undefined ? Number(decimals) : 0;
-    const factor = Math.pow(10, isNaN(d) ? 0 : d);
-    return Math.round(num * factor) / factor;
-  };
-
-  parser.functions["ABS"] = function (n: unknown) {
-    return Math.abs(Number(n));
-  };
-
-  parser.functions["MIN"] = function (...args: unknown[]) {
-    const nums = args.map(Number).filter((n) => !isNaN(n));
-    return nums.length === 0 ? null : Math.min(...nums);
-  };
-
-  parser.functions["MAX"] = function (...args: unknown[]) {
-    const nums = args.map(Number).filter((n) => !isNaN(n));
-    return nums.length === 0 ? null : Math.max(...nums);
-  };
-
-  parser.functions["DAYS_BETWEEN"] = function (a: unknown, b: unknown) {
-    const dateA = a instanceof Date ? a : new Date(String(a));
-    const dateB = b instanceof Date ? b : new Date(String(b));
-    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return null;
-    return Math.round((dateB.getTime() - dateA.getTime()) / 86400000);
-  };
-
-  parser.functions["NOW"] = function () {
-    return new Date();
-  };
-
-  parser.functions["LEN"] = function (s: unknown) {
-    if (s === null || s === undefined) return 0;
-    return String(s).length;
-  };
-
-  parser.functions["UPPER"] = function (s: unknown) {
-    if (s === null || s === undefined) return "";
-    return String(s).toUpperCase();
-  };
-
-  parser.functions["LOWER"] = function (s: unknown) {
-    if (s === null || s === undefined) return "";
-    return String(s).toLowerCase();
-  };
-
-  return parser;
-}
-
-// ─── Shared parser instance ───────────────────────────────────────────────────
-
-const sharedParser = makeParser();
 
 // ─── Circular reference detection ─────────────────────────────────────────────
 
@@ -303,6 +348,7 @@ export function injectFormulaVirtualCells(
       allColumns,
       cfg.return_type ?? "text",
       cfg.decimals,
+      { columnId: col.id },
     );
     out.push({
       id: `formula-${rowId}-${col.id}`,
@@ -319,6 +365,7 @@ export function injectFormulaVirtualCells(
 
 /**
  * Evaluate a formula expression for a single row.
+ * Optional context (columnId, tableId) is included in error logs when provided.
  */
 export function evaluateFormula(
   expression: string,
@@ -326,13 +373,14 @@ export function evaluateFormula(
   allColumns: TableColumnData[],
   returnType: FormulaReturnType,
   decimals?: number,
+  context?: { columnId?: string; tableId?: string },
 ): FormulaResult {
   try {
     const { processed, tokenMap } = tokenizeExpression(expression);
     const normalized = normalizeExpression(processed);
 
-    // Build variables map — typed as Values so no any cast needed
-    const vars: Values = {};
+    // Build variables map — plain Record<string, unknown> (mathjs scope)
+    const vars: Record<string, unknown> = {};
     for (const [colName, varName] of tokenMap) {
       const col = allColumns.find((c) => c.name === colName);
       if (!col) {
@@ -342,20 +390,30 @@ export function evaluateFormula(
         };
       }
       const cell = rowCells.find((c) => c.column_id === col.id);
-      // coerceForColumn returns number | string | boolean | null
-      // expr-eval Values = number | string | fn | object — no boolean/null.
-      // Map: null → 0, true → 1, false → 0  (expr-eval evaluates 1/0 in logical context correctly)
+      // Map null→0, true→1, false→0 for consistent numeric arithmetic
       const coerced = coerceForColumn(col.type as ColumnType, cell?.value ?? null);
       vars[varName] = coerced === null ? 0 : coerced === true ? 1 : coerced === false ? 0 : coerced;
     }
 
-    const parsed = sharedParser.parse(normalized);
-    const raw = parsed.evaluate(vars);
+    // Parse, validate function surface, then compile+evaluate
+    const tree = math.parse(normalized);
+    assertOnlyAtlasFunctions(tree);
+    const raw: unknown = tree.compile().evaluate(vars);
     const value = coerceResult(raw, returnType, decimals);
 
     return { value };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    log.warn(
+      {
+        formula_eval_error: true,
+        expression: expression.slice(0, 200),
+        error: msg,
+        ...(context?.columnId !== undefined && { column_id: context.columnId }),
+        ...(context?.tableId !== undefined && { table_id: context.tableId }),
+      },
+      "Formula evaluation failed",
+    );
     return {
       value: { [FORMULA_ERROR_KEY]: msg },
       error: msg,
@@ -387,12 +445,13 @@ export function validateFormula(
     return errors;
   }
 
-  // 1. Parse expression (syntax check)
+  // 1. Parse expression (syntax check) and validate function surface
   let parseOk = false;
   try {
     const { processed } = tokenizeExpression(expression);
     const normalized = normalizeExpression(processed);
-    sharedParser.parse(normalized);
+    const tree = math.parse(normalized);
+    assertOnlyAtlasFunctions(tree);
     parseOk = true;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -460,7 +519,7 @@ export function validateFormula(
     try {
       const { processed, tokenMap } = tokenizeExpression(expression);
       const normalized = normalizeExpression(processed);
-      const dummyVars: Values = {};
+      const dummyVars: Record<string, unknown> = {};
       for (const [colName, varName] of tokenMap) {
         const col = tableColumns.find((c) => c.name === colName);
         if (!col) continue;
@@ -479,8 +538,7 @@ export function validateFormula(
             dummyVars[varName] = "sample";
         }
       }
-      const parsed = sharedParser.parse(normalized);
-      const raw = parsed.evaluate(dummyVars);
+      const raw: unknown = math.parse(normalized).compile().evaluate(dummyVars);
 
       if (returnType === "number") {
         const n = Number(raw);
@@ -510,7 +568,12 @@ export function validateFormula(
         }
       }
       // returnType === "text": permissive — any value stringifies
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log.warn(
+        { formula_validate_warn: true, expression: expression.slice(0, 200), error: msg },
+        "Formula validation dry-run failed (non-fatal)",
+      );
       // Dry-run failures (e.g. division by zero) are non-fatal
     }
   }
@@ -519,20 +582,32 @@ export function validateFormula(
 }
 
 function friendlyParseError(msg: string): string {
-  if (msg.includes("Unexpected token")) {
+  if (
+    msg.includes("Unexpected token") ||
+    msg.includes("SyntaxError") ||
+    msg.includes("Parenthesis") ||
+    msg.includes("parenthesis")
+  ) {
     const tokenMatch = msg.match(/Unexpected token (.+)/);
     const token = tokenMatch ? ` near "${tokenMatch[1]}"` : "";
     return `Syntax error in formula${token}. Check for missing operators or mismatched parentheses.`;
   }
-  if (msg.includes("undefined variable")) {
+  if (msg.includes("Undefined symbol") || msg.includes("undefined variable")) {
     return "Unknown variable in formula. Use {ColumnName} syntax to reference columns.";
   }
-  if (msg.includes("is not a function")) {
-    const fnMatch = msg.match(/(\w+) is not a function/);
+  if (msg.includes("is not supported in Atlas formulas")) {
+    return msg;
+  }
+  if (msg.includes("is not a function") || msg.includes("is not defined")) {
+    const fnMatch = msg.match(/(\w+) is not/);
     const fn = fnMatch ? ` "${fnMatch[1]}"` : "";
     return `Unknown function${fn}. See the list of supported functions below.`;
   }
-  if (msg.includes("Unexpected end")) {
+  if (
+    msg.includes("End of expression") ||
+    msg.includes("end of expression") ||
+    msg.includes("Unexpected end")
+  ) {
     return "Formula is incomplete. Check that all parentheses are closed.";
   }
   return `Formula error: ${msg}`;
