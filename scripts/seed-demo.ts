@@ -52,6 +52,27 @@ async function main() {
 
   console.log(`✓ Found user: ${user.email} (id: ${user.id})`)
 
+  // ── Pre-seed wipe ─────────────────────────────────────────────────────────
+  // Remove all existing owned records for this user in FK-safe dependency order
+  // so the seed produces a clean, predictable state.
+  console.log('Wiping existing user data...')
+  await prisma.$executeRaw`DELETE FROM "TagOnTask"    WHERE task_id    IN (SELECT id FROM "Task"    WHERE user_id = ${user.id}::uuid)`
+  await prisma.$executeRaw`DELETE FROM "ContextOnTask" WHERE task_id   IN (SELECT id FROM "Task"    WHERE user_id = ${user.id}::uuid)`
+  await prisma.$executeRaw`DELETE FROM "TaskWorkLog"  WHERE task_id    IN (SELECT id FROM "Task"    WHERE user_id = ${user.id}::uuid)`
+  await prisma.$executeRaw`DELETE FROM "ChecklistItem" WHERE task_id   IN (SELECT id FROM "Task"    WHERE user_id = ${user.id}::uuid)`
+  await prisma.$executeRaw`DELETE FROM "Task"          WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "CaptureParseLog" WHERE user_id = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "Capture"       WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "Note"          WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "NotesFolder"   WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "Project"       WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "ProjectFolder" WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "Context"       WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "Tag"           WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "AuditLog"      WHERE user_id   = ${user.id}::uuid`
+  await prisma.$executeRaw`DELETE FROM "AICallLog"     WHERE user_id   = ${user.id}::uuid`
+  console.log('✓ Existing data wiped')
+
   // Detect which optional schema fields have been migrated to the live DB.
   // The script uses raw SQL for Task/Capture/Note to avoid Prisma applying
   // @default values for columns that haven't yet been applied to Neon.
@@ -98,79 +119,94 @@ async function main() {
 
   // ── Project folders ───────────────────────────────────────────────────────
   console.log('Creating project folders...')
-  const workFolder = await prisma.projectFolder.create({
-    data: { id: uuidv7(), user_id: user.id, name: 'Work', position: 1 },
-  })
-  const personalFolder = await prisma.projectFolder.create({
-    data: { id: uuidv7(), user_id: user.id, name: 'Personal', position: 2 },
-  })
+  const workFolderId = uuidv7()
+  const personalFolderId = uuidv7()
+  await prisma.$executeRaw`
+    INSERT INTO "ProjectFolder" (id, user_id, name, position, created_at, updated_at)
+    VALUES (${workFolderId}::uuid, ${user.id}::uuid, 'Work', 1, ${now}, ${now})
+  `
+  await prisma.$executeRaw`
+    INSERT INTO "ProjectFolder" (id, user_id, name, position, created_at, updated_at)
+    VALUES (${personalFolderId}::uuid, ${user.id}::uuid, 'Personal', 2, ${now}, ${now})
+  `
+  const workFolder = { id: workFolderId }
+  const personalFolder = { id: personalFolderId }
 
   // ── Projects ──────────────────────────────────────────────────────────────
+  // Use raw SQL to avoid Prisma applying @default values for columns that
+  // haven't yet been applied to the live DB (e.g. tracker_table_id).
   console.log('Creating projects...')
 
-  const projQ2 = await prisma.project.create({
-    data: {
-      id: uuidv7(),
-      user_id: user.id,
-      title: 'Q2 Strategic Planning',
-      type: 'project',
-      status: 'active',
-      folder_id: workFolder.id,
-      target_date: daysFromToday(45),
-      position: 1,
-    },
+  async function createProject(opts: {
+    title: string
+    type: string
+    status: string
+    folder_id: string
+    target_date: Date
+    position: number
+  }) {
+    const id = uuidv7()
+    await prisma.$executeRaw`
+      INSERT INTO "Project" (id, user_id, title, type, status, folder_id, target_date, position, created_at, updated_at)
+      VALUES (
+        ${id}::uuid,
+        ${user.id}::uuid,
+        ${opts.title},
+        ${opts.type},
+        ${opts.status},
+        ${opts.folder_id}::uuid,
+        ${opts.target_date},
+        ${opts.position},
+        ${now},
+        ${now}
+      )
+    `
+    return { id }
+  }
+
+  const projQ2 = await createProject({
+    title: 'Q2 Strategic Planning',
+    type: 'project',
+    status: 'active',
+    folder_id: workFolder.id,
+    target_date: daysFromToday(45),
+    position: 1,
   })
 
-  const projAtlas = await prisma.project.create({
-    data: {
-      id: uuidv7(),
-      user_id: user.id,
-      title: 'Atlas product launch',
-      type: 'project',
-      status: 'active',
-      folder_id: workFolder.id,
-      target_date: daysFromToday(90),
-      position: 2,
-    },
+  const projAtlas = await createProject({
+    title: 'Atlas product launch',
+    type: 'project',
+    status: 'active',
+    folder_id: workFolder.id,
+    target_date: daysFromToday(90),
+    position: 2,
   })
 
-  const projDevsinc = await prisma.project.create({
-    data: {
-      id: uuidv7(),
-      user_id: user.id,
-      title: 'Devsinc partnership initiative',
-      type: 'project',
-      status: 'active',
-      folder_id: workFolder.id,
-      target_date: daysFromToday(60),
-      position: 3,
-    },
+  const projDevsinc = await createProject({
+    title: 'Devsinc partnership initiative',
+    type: 'project',
+    status: 'active',
+    folder_id: workFolder.id,
+    target_date: daysFromToday(60),
+    position: 3,
   })
 
-  const projMarathon = await prisma.project.create({
-    data: {
-      id: uuidv7(),
-      user_id: user.id,
-      title: 'Half marathon training',
-      type: 'area',
-      status: 'active',
-      folder_id: personalFolder.id,
-      target_date: daysFromToday(120),
-      position: 1,
-    },
+  const projMarathon = await createProject({
+    title: 'Half marathon training',
+    type: 'area',
+    status: 'active',
+    folder_id: personalFolder.id,
+    target_date: daysFromToday(120),
+    position: 1,
   })
 
-  const projRenovation = await prisma.project.create({
-    data: {
-      id: uuidv7(),
-      user_id: user.id,
-      title: 'Guest room renovation',
-      type: 'project',
-      status: 'active',
-      folder_id: personalFolder.id,
-      target_date: daysFromToday(30),
-      position: 2,
-    },
+  const projRenovation = await createProject({
+    title: 'Guest room renovation',
+    type: 'project',
+    status: 'active',
+    folder_id: personalFolder.id,
+    target_date: daysFromToday(30),
+    position: 2,
   })
 
   // ── Tasks ─────────────────────────────────────────────────────────────────
@@ -320,11 +356,13 @@ async function main() {
   await createTask({ title: 'Awaiting curtain delivery', project_id: projRenovation.id, context_id: ctx.Waiting, delegated_to_text: 'Home Décor Store', follow_up_date: daysFromToday(5), tags: ['delegated'], daysOldCreated: 7 })
   await createTask({ title: 'Plan room arrangement and decoration', project_id: projRenovation.id, context_id: ctx.Home, due_date: daysFromToday(8), estimated_minutes: 60 })
 
-  // Standalone tasks (4)
+  // Standalone tasks (6)
   await createTask({ title: "Mom's birthday — call and arrange flowers", context_id: ctx.Calls, due_date: daysFromToday(6, 18, 0), flagged: true, estimated_minutes: 30 })
   await createTask({ title: 'Renew driving license', context_id: ctx.Errands, due_date: daysFromToday(14), estimated_minutes: 90 })
   await createTask({ title: 'Review investment portfolio quarterly', context_id: ctx.Computer, defer_date: daysFromToday(20), estimated_minutes: 60 })
   await createTask({ title: 'Plan family weekend trip', context_id: ctx.Computer, defer_date: daysFromToday(15), estimated_minutes: 45, tags: ['travel'] })
+  await createTask({ title: 'Prepare monthly expense report', context_id: ctx.Computer, due_date: daysFromToday(4), estimated_minutes: 45, tags: ['review-needed'] })
+  await createTask({ title: 'Call insurance company about renewal', context_id: ctx.Calls, due_date: daysFromToday(9), estimated_minutes: 30 })
 
   // Someday/Maybe tasks (3)
   await createTask({ title: 'Learn Arabic basics', is_someday: true, daysOldCreated: 30 })
@@ -1002,6 +1040,70 @@ Available short notice, charges fairly.`,
   }
 
   console.log('✓ Created audit log entries')
+
+  // ── Post-seed verification ─────────────────────────────────────────────────
+  console.log('\nVerifying seeded counts...')
+  const [countRows] = await prisma.$queryRaw<
+    {
+      projects: bigint
+      project_folders: bigint
+      contexts: bigint
+      tags: bigint
+      tasks: bigint
+      captures: bigint
+      notes_folders: bigint
+      notes: bigint
+      audit_logs: bigint
+    }[]
+  >`
+    SELECT
+      (SELECT COUNT(*) FROM "Project"       WHERE user_id = ${user.id}::uuid) AS projects,
+      (SELECT COUNT(*) FROM "ProjectFolder" WHERE user_id = ${user.id}::uuid) AS project_folders,
+      (SELECT COUNT(*) FROM "Context"       WHERE user_id = ${user.id}::uuid) AS contexts,
+      (SELECT COUNT(*) FROM "Tag"           WHERE user_id = ${user.id}::uuid) AS tags,
+      (SELECT COUNT(*) FROM "Task"          WHERE user_id = ${user.id}::uuid) AS tasks,
+      (SELECT COUNT(*) FROM "Capture"       WHERE user_id = ${user.id}::uuid) AS captures,
+      (SELECT COUNT(*) FROM "NotesFolder"   WHERE user_id = ${user.id}::uuid) AS notes_folders,
+      (SELECT COUNT(*) FROM "Note"          WHERE user_id = ${user.id}::uuid) AS notes,
+      (SELECT COUNT(*) FROM "AuditLog"      WHERE user_id = ${user.id}::uuid) AS audit_logs
+  `
+  const c = {
+    projects: Number(countRows.projects),
+    project_folders: Number(countRows.project_folders),
+    contexts: Number(countRows.contexts),
+    tags: Number(countRows.tags),
+    tasks: Number(countRows.tasks),
+    captures: Number(countRows.captures),
+    notes_folders: Number(countRows.notes_folders),
+    notes: Number(countRows.notes),
+    audit_logs: Number(countRows.audit_logs),
+  }
+  console.log(`  projects:        ${c.projects}  (expected 5)`)
+  console.log(`  project_folders: ${c.project_folders}  (expected 2)`)
+  console.log(`  contexts:        ${c.contexts}  (expected 10)`)
+  console.log(`  tags:            ${c.tags}  (expected 6)`)
+  console.log(`  tasks:           ${c.tasks}  (expected 50)`)
+  console.log(`  captures:        ${c.captures}  (expected 8)`)
+  console.log(`  notes_folders:   ${c.notes_folders}  (expected 9)`)
+  console.log(`  notes:           ${c.notes}  (expected 14)`)
+  console.log(`  audit_logs:      ${c.audit_logs}  (expected 20)`)
+
+  const checks = [
+    c.projects === 5,
+    c.project_folders === 2,
+    c.contexts === 10,
+    c.tags === 6,
+    c.tasks === 50,
+    c.captures === 8,
+    c.notes_folders >= 9,
+    c.notes >= 14,
+    c.audit_logs > 0,
+  ]
+  if (checks.every(Boolean)) {
+    console.log('✓ All counts verified')
+  } else {
+    console.warn('⚠ Some counts do not match expectations — review output above')
+  }
 
   console.log('\n🎉 Demo seed complete!')
   console.log(`
