@@ -80,6 +80,78 @@ export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
       "Fixed an issue where the command palette could return stale search results after a rename. Journal entry auto-save is now more reliable on slow connections. General rendering performance improvements across all modules.",
     tags: ["fixed"],
   },
+  {
+    id: "cl-2026-01-10",
+    version: "1.0",
+    date: "2026-01-10",
+    title: "Forecast range syncs to your account",
+    description:
+      "The date range you choose for the Forecast view is now saved to your account and follows you across browsers and devices. No more resetting it every session.",
+    tags: ["improved"],
+  },
+  {
+    id: "cl-2025-12-20",
+    version: "0.9",
+    date: "2025-12-20",
+    title: "Google sign-in & Clerk auth",
+    description:
+      "You can now sign in to Atlas with your Google account. Authentication is now powered by Clerk, bringing improved session security, multi-device support, and a smoother login experience.",
+    tags: ["new", "improved"],
+  },
+  {
+    id: "cl-2025-12-05",
+    version: "0.9",
+    date: "2025-12-05",
+    title: "App shell — two-pane layout & command palette",
+    description:
+      "The main app shell has been rebuilt with a persistent two-pane layout, a module switcher rail, a top bar, and a searchable command palette (⌘K). Navigation between Tasks, Notes, Calendar, Journals, Vault, and People is now instant.",
+    tags: ["new"],
+  },
+  {
+    id: "cl-2025-11-14",
+    version: "0.8",
+    date: "2025-11-14",
+    title: "Email-to-inbox capture",
+    description:
+      "Forward any email to your personal Atlas inbox address and it will appear as a capture ready to accept as a task. The full email body, subject, and sender are preserved, and attachments are linked automatically.",
+    tags: ["new"],
+  },
+  {
+    id: "cl-2025-11-01",
+    version: "0.8",
+    date: "2025-11-01",
+    title: "Sender blocklist with wildcard support",
+    description:
+      "Block unwanted senders from cluttering your email inbox. Blocklist patterns support wildcards (e.g. *@newsletter.example.com) to silence entire domains at once. Manage the list from the email inbox settings.",
+    tags: ["new"],
+  },
+  {
+    id: "cl-2025-10-18",
+    version: "0.8",
+    date: "2025-10-18",
+    title: "Three-tier capture parsing pipeline",
+    description:
+      "Quick Capture now runs a local NLP parser first (instant, no AI cost), only calling Claude Haiku when confidence is low. A parse-source badge in the capture inbox shows whether AI or local parsing was used, along with a confidence score.",
+    tags: ["new", "improved"],
+  },
+  {
+    id: "cl-2025-09-26",
+    version: "0.7",
+    date: "2025-09-26",
+    title: "Attachments — image thumbnails & task uploads",
+    description:
+      "Attach files directly from the task detail panel. Images generate thumbnails automatically and display inline. All attachments are stored securely in Cloudflare R2 and are accessible from the Vault.",
+    tags: ["new"],
+  },
+  {
+    id: "cl-2025-09-05",
+    version: "0.7",
+    date: "2025-09-05",
+    title: "AI usage & spending dashboard",
+    description:
+      "A new /usage page shows a time-series chart of your AI spending broken down by model (Haiku, Sonnet, Opus) and day. Set a monthly budget cap in Settings → AI to get notified before you overspend.",
+    tags: ["new"],
+  },
 ];
 
 export const CHANGELOG_LS_KEY = "atlas_changelog_last_seen";
