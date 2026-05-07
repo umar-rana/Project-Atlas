@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { useClerk, useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { switchToDesktop } from "@/lib/mobile/switch-to-desktop";
 
 function SettingsRow({
   icon: Icon,
@@ -108,9 +109,8 @@ export default function MobileSettingsPage() {
   const { signOut } = useClerk();
   const { user } = useUser();
 
-  function switchToDesktop() {
-    document.cookie = "prefer-desktop=1; path=/; max-age=31536000; SameSite=Lax";
-    router.push("/tasks");
+  function handleSwitchToDesktop() {
+    switchToDesktop("/tasks");
   }
 
   function handleSignOut() {
@@ -169,7 +169,7 @@ export default function MobileSettingsPage() {
               icon={Monitor}
               label="Switch to desktop site"
               sublabel="Use the full Atlas app on this device"
-              onClick={switchToDesktop}
+              onClick={handleSwitchToDesktop}
             />
           </div>
         </div>
@@ -183,16 +183,13 @@ export default function MobileSettingsPage() {
               icon={User}
               label="Profile & account"
               sublabel="Manage your profile on the desktop site"
-              onClick={() => {
-                switchToDesktop();
-                router.push("/settings?section=profile");
-              }}
+              onClick={() => switchToDesktop("/settings?section=profile")}
             />
             <SettingsRow
               icon={Info}
               label="All settings"
               sublabel="Open full settings on desktop"
-              onClick={switchToDesktop}
+              onClick={handleSwitchToDesktop}
             />
           </div>
         </div>

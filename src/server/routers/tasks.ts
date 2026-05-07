@@ -69,6 +69,8 @@ const TaskUpdateInput = z.object({
   estimated_minutes: z.number().int().min(0).nullable().optional(),
   context_ids: z.array(z.string().uuid()).optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
+  is_someday: z.boolean().optional(),
+  delegated_to_text: z.string().max(500).nullable().optional(),
 });
 
 function nextPosition(maxPos: Prisma.Decimal | null): string {
@@ -124,6 +126,8 @@ const TASK_LIST_SELECT = {
   deleted_at: true,
   recurrence_rule: true,
   recurrence_anchor: true,
+  is_someday: true,
+  delegated_to_text: true,
   contexts: { select: { context: { select: { id: true, name: true } } } },
   tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
   project: { select: { id: true, title: true, color: true } },
@@ -163,11 +167,15 @@ export const tasksRouter = router({
             "inbox",
             "today",
             "tomorrow",
+            "forecast",
             "flagged",
             "project",
             "context",
             "tag",
             "trash",
+            "someday",
+            "waiting_for",
+            "completed",
           ])
           .default("all"),
         project_id: z.string().uuid().optional(),
@@ -235,6 +243,19 @@ export const tasksRouter = router({
             ],
           },
         ];
+      } else if (input.perspective === "forecast") {
+        // Forecast shows tasks with due OR defer dates within the next 14 days.
+        // Intentionally does NOT apply notDeferred: tasks with future defer dates
+        // are the primary content of Forecast and must not be excluded.
+        const fourteenDaysOut = new Date(nowUtc.getTime() + 14 * 24 * 60 * 60 * 1000);
+        where.AND = [
+          {
+            OR: [
+              { due_date: { gte: nowUtc, lte: fourteenDaysOut } },
+              { defer_date: { gte: nowUtc, lte: fourteenDaysOut } },
+            ],
+          },
+        ];
       } else if (input.perspective === "flagged") {
         where.flagged = true;
       } else if (input.perspective === "project") {
@@ -264,16 +285,33 @@ export const tasksRouter = router({
         where.tags = {
           some: { tag: { name: input.tag_name.toLowerCase() } },
         };
+      } else if (input.perspective === "someday") {
+        where.is_someday = true;
+        where.deleted_at = null;
+      } else if (input.perspective === "waiting_for") {
+        where.delegated_to_text = { not: null };
+        where.deleted_at = null;
+      } else if (input.perspective === "completed") {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        where.status = "completed";
+        where.completed_at = { gte: thirtyDaysAgo };
+        where.deleted_at = null;
       }
+
+      const orderBy: Prisma.TaskOrderByWithRelationInput[] =
+        input.perspective === "completed"
+          ? [{ completed_at: "desc" }]
+          : [
+              { flagged: "desc" },
+              { due_date: { sort: "asc", nulls: "last" } },
+              { position: "asc" },
+              { created_at: "desc" },
+            ];
 
       const items = await db.task.findMany({
         where,
-        orderBy: [
-          { flagged: "desc" },
-          { due_date: { sort: "asc", nulls: "last" } },
-          { position: "asc" },
-          { created_at: "desc" },
-        ],
+        orderBy,
         select: TASK_LIST_SELECT,
         take: input.limit,
       });
@@ -469,7 +507,15 @@ export const tasksRouter = router({
         include: TASK_INCLUDE,
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
-      return task;
+
+      // Reverse-lookup: check if this task was created from a capture so the
+      // mobile detail view can show a parse-source badge.
+      const sourceCapture = await db.capture.findFirst({
+        where: { processed_to_id: task.id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true, raw_text: true, ai_parsed: true },
+      });
+
+      return { ...task, source_capture: sourceCapture ?? null };
     }),
 
   // ── Create ────────────────────────────────────────────────────────────
@@ -727,6 +773,8 @@ export const tasksRouter = router({
     if (input.defer_date !== undefined) data.defer_date = input.defer_date;
     if (input.due_date !== undefined) data.due_date = input.due_date;
     if (input.estimated_minutes !== undefined) data.estimated_minutes = input.estimated_minutes;
+    if (input.is_someday !== undefined) data.is_someday = input.is_someday;
+    if (input.delegated_to_text !== undefined) data.delegated_to_text = input.delegated_to_text;
 
     const updated = await db.$transaction(async (tx) => {
       await tx.task.update({
