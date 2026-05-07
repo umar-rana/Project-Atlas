@@ -21,6 +21,7 @@ import { ProjectTypePicker } from "@/components/projects/project-type-picker";
 import { ProjectStatusSelector, type ProjectStatus } from "@/components/projects/project-status-selector";
 import { ProjectTargetDatePicker } from "@/components/projects/project-target-date-picker";
 import { ProjectHeaderMetrics } from "@/components/projects/project-header-metrics";
+import { TrackerSettingsPanel } from "@/components/projects/tracker-settings-panel";
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
   blue: "bg-cal-1-border",
@@ -75,6 +76,9 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
     onError: () => toast.error("Failed to move project"),
   });
 
+  const [showTrackerSettings, setShowTrackerSettings] = React.useState(false);
+  const trackerSettingsRef = React.useRef<HTMLDivElement>(null);
+
   const flatFolders = React.useMemo(() => {
     type FolderNode = { id: string; name: string; children?: FolderNode[] };
     function flatten(nodes: FolderNode[], depth = 0): { id: string; name: string; depth: number }[] {
@@ -93,6 +97,13 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
     if (project.data) setTitleDraft(project.data.title);
   }, [project.data?.title, project.data]);
 
+  function handleReconfigure() {
+    setShowTrackerSettings(true);
+    setTimeout(() => {
+      trackerSettingsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 50);
+  }
+
   if (!project.data) return null;
   const data = project.data;
   const currentFolder = flatFolders.find((f) => f.id === (data as typeof data & { folder_id?: string | null }).folder_id);
@@ -101,6 +112,25 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
   const targetDate = (data as typeof data & { target_date?: string | null }).target_date;
   const isInactive = INACTIVE_STATUSES.has(projectStatus);
   const metrics = (data as typeof data & { metrics?: { task_counts: { total: number; active: number; completed: number }; days_to_target?: number; last_activity_at?: Date | string | null } }).metrics;
+  const tracker = (data as typeof data & { tracker?: { table_id: string; column_id: string; table_name: string | null; column_name: string | null; aggregation: string; current_value: number | null; target_value: number | null; target_label: string | null; percentage: number | null; status: "ok" | "unavailable" } | null }).tracker;
+
+  const trackerForSettings = tracker
+    ? {
+        table_id: tracker.table_id ?? null,
+        column_id: tracker.column_id ?? null,
+        aggregation: tracker.aggregation ?? null,
+        target_value: tracker.target_value ?? null,
+        target_label: tracker.target_label ?? null,
+      }
+    : (data as typeof data & { tracker_table_id?: string | null; tracker_column_id?: string | null; tracker_aggregation?: string | null; tracker_target_value?: number | null; tracker_target_label?: string | null }).tracker_table_id
+      ? {
+          table_id: (data as typeof data & { tracker_table_id?: string | null }).tracker_table_id ?? null,
+          column_id: (data as typeof data & { tracker_column_id?: string | null }).tracker_column_id ?? null,
+          aggregation: (data as typeof data & { tracker_aggregation?: string | null }).tracker_aggregation ?? null,
+          target_value: (data as typeof data & { tracker_target_value?: number | null }).tracker_target_value ?? null,
+          target_label: (data as typeof data & { tracker_target_label?: string | null }).tracker_target_label ?? null,
+        }
+      : null;
 
   function commitTitle() {
     const next = titleDraft.trim();
@@ -229,6 +259,10 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setShowTrackerSettings((v) => !v)}>
+              {showTrackerSettings ? "Hide tracker settings" : "Configure tracker"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               destructive
               onSelect={() => {
@@ -281,7 +315,19 @@ export function ProjectDetailHeader({ projectId }: { projectId: string }): React
         <ProjectHeaderMetrics
           metrics={metrics}
           targetDate={targetDate}
+          tracker={tracker ?? null}
+          onReconfigure={handleReconfigure}
         />
+      )}
+
+      {showTrackerSettings && (
+        <div ref={trackerSettingsRef} className="pl-5 pr-1 pb-1 pt-0.5">
+          <TrackerSettingsPanel
+            projectId={projectId}
+            currentTracker={trackerForSettings}
+            onSaved={() => setShowTrackerSettings(false)}
+          />
+        </div>
       )}
     </div>
   );

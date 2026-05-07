@@ -635,3 +635,450 @@ describe("habit→goal migration SQL", () => {
     expect(auditEntries.length).toBe(0);
   });
 });
+
+// ─── Tracker — setTracker / clearTracker / computed get ───────────────────────
+
+describe("projects tracker — setTracker / clearTracker / get", () => {
+  let trackerProjectId: string;
+  let tableId: string;
+  let numberColumnId: string;
+  let checkboxColumnId: string;
+
+  beforeAll(async () => {
+    trackerProjectId = await insertProject({ title: "Tracker integration project" });
+
+    const table = await rawDb.table.create({
+      data: {
+        id: uuidv7(),
+        user_id: testUser.id,
+        name: "Tracker source table",
+      },
+    });
+    tableId = table.id;
+
+    const numCol = await rawDb.tableColumn.create({
+      data: {
+        id: uuidv7(),
+        table_id: tableId,
+        name: "Amount",
+        type: "number",
+        position: 1,
+      },
+    });
+    numberColumnId = numCol.id;
+
+    const checkCol = await rawDb.tableColumn.create({
+      data: {
+        id: uuidv7(),
+        table_id: tableId,
+        name: "Done",
+        type: "checkbox",
+        position: 2,
+      },
+    });
+    checkboxColumnId = checkCol.id;
+
+    const rows = await Promise.all([
+      rawDb.tableRow.create({ data: { id: uuidv7(), table_id: tableId, position: 1 } }),
+      rawDb.tableRow.create({ data: { id: uuidv7(), table_id: tableId, position: 2 } }),
+      rawDb.tableRow.create({ data: { id: uuidv7(), table_id: tableId, position: 3 } }),
+    ]);
+
+    await Promise.all([
+      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[0]!.id, column_id: numberColumnId, value: 10 } }),
+      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[1]!.id, column_id: numberColumnId, value: 20 } }),
+      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[2]!.id, column_id: numberColumnId, value: 30 } }),
+      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[0]!.id, column_id: checkboxColumnId, value: true } }),
+      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[1]!.id, column_id: checkboxColumnId, value: false } }),
+      rawDb.tableCell.create({ data: { id: uuidv7(), row_id: rows[2]!.id, column_id: checkboxColumnId, value: false } }),
+    ]);
+  });
+
+  afterAll(async () => {
+    await rawDb.$executeRaw`DELETE FROM "TableCell" WHERE row_id IN (SELECT id FROM "TableRow" WHERE table_id = ${tableId}::uuid)`;
+    await rawDb.$executeRaw`DELETE FROM "TableRow" WHERE table_id = ${tableId}::uuid`;
+    await rawDb.$executeRaw`DELETE FROM "TableColumn" WHERE table_id = ${tableId}::uuid`;
+    await rawDb.$executeRaw`DELETE FROM "Table" WHERE id = ${tableId}::uuid`;
+    await rawDb.$executeRaw`DELETE FROM "Project" WHERE id = ${trackerProjectId}::uuid`;
+  });
+
+  it("setTracker stores config and get returns computed sum", async () => {
+    const caller = makeProjectsCaller();
+    const result = await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    expect(result.ok).toBe(true);
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker).not.toBeNull();
+    expect(project.tracker!.status).toBe("ok");
+    expect(project.tracker!.current_value).toBe(60);
+    expect(project.tracker!.column_type).toBe("number");
+    expect(project.tracker!.aggregation).toBe("sum");
+  });
+
+  it("get returns average aggregation correctly", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "average",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.current_value).toBe(20);
+  });
+
+  it("get returns count aggregation correctly", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "count",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.current_value).toBe(3);
+  });
+
+  it("get returns min aggregation correctly", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "min",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.current_value).toBe(10);
+  });
+
+  it("get returns max aggregation correctly", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "max",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.current_value).toBe(30);
+  });
+
+  it("get returns checked_ratio correctly (1 of 3 checked ≈ 0.333)", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: checkboxColumnId,
+      aggregation: "checked_ratio",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.current_value).toBeCloseTo(1 / 3);
+  });
+
+  it("setTracker with target stores target and get returns percentage", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+      target_value: 120,
+      target_label: "points",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.target_value).toBe(120);
+    expect(project.tracker!.target_label).toBe("points");
+    expect(project.tracker!.percentage).toBeCloseTo(50);
+  });
+
+  it("setTracker rejects incompatible aggregation (BAD_REQUEST)", async () => {
+    await expect(
+      makeProjectsCaller().setTracker({
+        project_id: trackerProjectId,
+        table_id: tableId,
+        column_id: numberColumnId,
+        aggregation: "checked_ratio",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("setTracker rejects unknown table (NOT_FOUND)", async () => {
+    await expect(
+      makeProjectsCaller().setTracker({
+        project_id: trackerProjectId,
+        table_id: uuidv7(),
+        column_id: numberColumnId,
+        aggregation: "sum",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("setTracker rejects unknown column (NOT_FOUND)", async () => {
+    await expect(
+      makeProjectsCaller().setTracker({
+        project_id: trackerProjectId,
+        table_id: tableId,
+        column_id: uuidv7(),
+        aggregation: "sum",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("clearTracker removes tracker and get returns null tracker", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    const before = await caller.get({ id: trackerProjectId });
+    expect(before.tracker).not.toBeNull();
+
+    await caller.clearTracker({ project_id: trackerProjectId });
+    const after = await caller.get({ id: trackerProjectId });
+    expect(after.tracker).toBeNull();
+  });
+
+  it("setTracker writes audit log entry (project_tracker_set)", async () => {
+    await makeProjectsCaller().clearTracker({ project_id: trackerProjectId }).catch(() => {});
+    await makeProjectsCaller().setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    const logs = await rawDb.auditLog.findMany({
+      where: { entity_id: trackerProjectId, action: "project_tracker_set" },
+    });
+    expect(logs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("clearTracker writes audit log entry (project_tracker_cleared)", async () => {
+    await makeProjectsCaller().clearTracker({ project_id: trackerProjectId });
+    const logs = await rawDb.auditLog.findMany({
+      where: { entity_id: trackerProjectId, action: "project_tracker_cleared" },
+    });
+    expect(logs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("setTracker twice writes project_tracker_changed on second call", async () => {
+    const caller = makeProjectsCaller();
+    await caller.clearTracker({ project_id: trackerProjectId }).catch(() => {});
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "average",
+    });
+    const logs = await rawDb.auditLog.findMany({
+      where: { entity_id: trackerProjectId, action: "project_tracker_changed" },
+    });
+    expect(logs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("get returns status unavailable when tracker column is soft-deleted", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    await rawDb.tableColumn.update({
+      where: { id: numberColumnId },
+      data: { deleted_at: new Date() },
+    });
+    try {
+      const project = await caller.get({ id: trackerProjectId });
+      expect(project.tracker).not.toBeNull();
+      expect(project.tracker!.status).toBe("unavailable");
+    } finally {
+      await rawDb.tableColumn.update({
+        where: { id: numberColumnId },
+        data: { deleted_at: null },
+      });
+    }
+  });
+
+  it("get returns status unavailable when tracker table is soft-deleted", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    await rawDb.table.update({
+      where: { id: tableId },
+      data: { deleted_at: new Date() },
+    });
+    try {
+      const project = await caller.get({ id: trackerProjectId });
+      expect(project.tracker).not.toBeNull();
+      expect(project.tracker!.status).toBe("unavailable");
+    } finally {
+      await rawDb.table.update({
+        where: { id: tableId },
+        data: { deleted_at: null },
+      });
+    }
+  });
+
+  it("tracker response includes column_type for proper value formatting", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    expect(project.tracker!.column_type).toBe("number");
+  });
+
+  it("setTracker with numeric formula column (return_type: number) allows sum", async () => {
+    const formulaCol = await rawDb.tableColumn.create({
+      data: {
+        id: uuidv7(),
+        table_id: tableId,
+        name: "Formula Num",
+        type: "formula",
+        position: 10,
+        config: { expression: "1 + 1", return_type: "number" },
+      },
+    });
+    try {
+      const result = await makeProjectsCaller().setTracker({
+        project_id: trackerProjectId,
+        table_id: tableId,
+        column_id: formulaCol.id,
+        aggregation: "sum",
+      });
+      expect(result.ok).toBe(true);
+    } finally {
+      await rawDb.tableColumn.delete({ where: { id: formulaCol.id } });
+    }
+  });
+
+  it("setTracker with text formula column (return_type: text) rejects numeric aggregations (BAD_REQUEST)", async () => {
+    const formulaCol = await rawDb.tableColumn.create({
+      data: {
+        id: uuidv7(),
+        table_id: tableId,
+        name: "Formula Text",
+        type: "formula",
+        position: 11,
+        config: { expression: "some text", return_type: "text" },
+      },
+    });
+    try {
+      await expect(
+        makeProjectsCaller().setTracker({
+          project_id: trackerProjectId,
+          table_id: tableId,
+          column_id: formulaCol.id,
+          aggregation: "sum",
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      const result = await makeProjectsCaller().setTracker({
+        project_id: trackerProjectId,
+        table_id: tableId,
+        column_id: formulaCol.id,
+        aggregation: "count",
+      });
+      expect(result.ok).toBe(true);
+    } finally {
+      await rawDb.tableColumn.delete({ where: { id: formulaCol.id } });
+    }
+  });
+
+  it("setTracker with formula column (no return_type) falls back to count-only", async () => {
+    const formulaCol = await rawDb.tableColumn.create({
+      data: {
+        id: uuidv7(),
+        table_id: tableId,
+        name: "Formula NoType",
+        type: "formula",
+        position: 12,
+        config: { expression: "1 + 1" },
+      },
+    });
+    try {
+      await expect(
+        makeProjectsCaller().setTracker({
+          project_id: trackerProjectId,
+          table_id: tableId,
+          column_id: formulaCol.id,
+          aggregation: "sum",
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      const result = await makeProjectsCaller().setTracker({
+        project_id: trackerProjectId,
+        table_id: tableId,
+        column_id: formulaCol.id,
+        aggregation: "count",
+      });
+      expect(result.ok).toBe(true);
+    } finally {
+      await rawDb.tableColumn.delete({ where: { id: formulaCol.id } });
+    }
+  });
+
+  it("tracker returns column_type 'currency' enabling locale currency formatting", async () => {
+    const currencyCol = await rawDb.tableColumn.create({
+      data: {
+        id: uuidv7(),
+        table_id: tableId,
+        name: "Price",
+        type: "currency",
+        position: 20,
+      },
+    });
+    const row = await rawDb.tableRow.create({ data: { id: uuidv7(), table_id: tableId, position: 100 } });
+    await rawDb.tableCell.create({
+      data: { id: uuidv7(), row_id: row.id, column_id: currencyCol.id, value: 49.99 },
+    });
+    try {
+      const caller = makeProjectsCaller();
+      await caller.setTracker({
+        project_id: trackerProjectId,
+        table_id: tableId,
+        column_id: currencyCol.id,
+        aggregation: "sum",
+      });
+      const project = await caller.get({ id: trackerProjectId });
+      expect(project.tracker!.column_type).toBe("currency");
+      expect(typeof project.tracker!.current_value).toBe("number");
+      expect(project.tracker!.current_value).toBeCloseTo(49.99);
+    } finally {
+      await rawDb.tableCell.deleteMany({ where: { row_id: row.id } });
+      await rawDb.tableRow.delete({ where: { id: row.id } });
+      await rawDb.tableColumn.delete({ where: { id: currencyCol.id } });
+    }
+  });
+
+  it("tracker checked_ratio returns value in [0,1] range (UI formats as percentage)", async () => {
+    const caller = makeProjectsCaller();
+    await caller.setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: checkboxColumnId,
+      aggregation: "checked_ratio",
+    });
+    const project = await caller.get({ id: trackerProjectId });
+    const val = project.tracker!.current_value!;
+    expect(val).toBeGreaterThanOrEqual(0);
+    expect(val).toBeLessThanOrEqual(1);
+  });
+});

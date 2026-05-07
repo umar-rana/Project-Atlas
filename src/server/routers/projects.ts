@@ -5,6 +5,9 @@ import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { normalizeProjectType, validateProjectType } from "@/core/projects/type-validation";
+import { injectFormulaVirtualCells } from "@/core/tables/formula";
+import type { TableColumnData, TableCellData, AggregationType, ColumnType } from "@/core/tables/types";
+import { isFormulaError } from "@/core/tables/formula-shared";
 
 const PROJECT_STATUS = z.enum(["active", "on_hold", "completed", "dropped"]);
 const PROJECT_TYPE_STRING = z
@@ -15,6 +18,216 @@ const PROJECT_TYPE_STRING = z
   .refine((v) => validateProjectType(v).valid, {
     message: "Invalid project type: only letters, numbers, spaces, and hyphens allowed",
   });
+
+const TRACKER_AGGREGATION = z.enum(["sum", "average", "count", "min", "max", "checked_ratio"]);
+
+function getCompatibleAggregations(
+  columnType: ColumnType,
+  columnConfig?: Record<string, unknown>,
+): AggregationType[] {
+  switch (columnType) {
+    case "number":
+    case "currency":
+      return ["sum", "average", "count", "min", "max"];
+    case "date":
+      return ["count", "min", "max"];
+    case "checkbox":
+      return ["count", "checked_ratio"];
+    case "formula": {
+      const returnType = (columnConfig as { return_type?: string } | undefined)?.return_type;
+      return returnType === "number"
+        ? ["sum", "average", "count", "min", "max"]
+        : ["count"];
+    }
+    default:
+      return ["count"];
+  }
+}
+
+function isAggregationCompatible(
+  columnType: ColumnType,
+  aggregation: string,
+  columnConfig?: Record<string, unknown>,
+): boolean {
+  return (getCompatibleAggregations(columnType, columnConfig) as string[]).includes(aggregation);
+}
+
+function computeTrackerValue(
+  columnType: ColumnType,
+  aggregation: string,
+  values: unknown[],
+): number | null {
+  const nonNull = values.filter((v) => v !== null && v !== undefined && v !== "" && !isFormulaError(v));
+
+  if (nonNull.length === 0 && aggregation !== "count") return null;
+
+  switch (aggregation) {
+    case "count":
+      return nonNull.length;
+
+    case "sum": {
+      if (columnType !== "number" && columnType !== "currency" && columnType !== "formula") return null;
+      return nonNull.reduce<number>((acc, v) => acc + (Number(v) || 0), 0);
+    }
+
+    case "average": {
+      if (columnType !== "number" && columnType !== "currency" && columnType !== "formula") return null;
+      if (nonNull.length === 0) return null;
+      const total = nonNull.reduce<number>((acc, v) => acc + (Number(v) || 0), 0);
+      return total / nonNull.length;
+    }
+
+    case "min": {
+      if (columnType === "number" || columnType === "currency" || columnType === "formula") {
+        return Math.min(...nonNull.map((v) => Number(v)));
+      }
+      if (columnType === "date") {
+        const timestamps = nonNull
+          .map((v) => new Date(String(v)).getTime())
+          .filter((t) => !isNaN(t));
+        return timestamps.length === 0 ? null : Math.min(...timestamps);
+      }
+      return null;
+    }
+
+    case "max": {
+      if (columnType === "number" || columnType === "currency" || columnType === "formula") {
+        return Math.max(...nonNull.map((v) => Number(v)));
+      }
+      if (columnType === "date") {
+        const timestamps = nonNull
+          .map((v) => new Date(String(v)).getTime())
+          .filter((t) => !isNaN(t));
+        return timestamps.length === 0 ? null : Math.max(...timestamps);
+      }
+      return null;
+    }
+
+    case "checked_ratio": {
+      if (columnType !== "checkbox") return null;
+      if (values.length === 0) return 0;
+      const checked = nonNull.filter((v) => v === true).length;
+      return checked / values.length;
+    }
+
+    default:
+      return null;
+  }
+}
+
+async function computeProjectTracker(project: {
+  user_id: string;
+  tracker_table_id: string | null;
+  tracker_column_id: string | null;
+  tracker_aggregation: string | null;
+  tracker_target_value: number | null;
+  tracker_target_label: string | null;
+}) {
+  if (!project.tracker_table_id || !project.tracker_column_id || !project.tracker_aggregation) {
+    return null;
+  }
+
+  const table = await db.table.findFirst({
+    where: { id: project.tracker_table_id, user_id: project.user_id, deleted_at: null },
+    select: { id: true, name: true },
+  });
+
+  if (!table) {
+    return {
+      table_id: project.tracker_table_id,
+      column_id: project.tracker_column_id,
+      table_name: null,
+      column_name: null,
+      aggregation: project.tracker_aggregation,
+      current_value: null,
+      target_value: project.tracker_target_value,
+      target_label: project.tracker_target_label,
+      percentage: null,
+      status: "unavailable" as const,
+    };
+  }
+
+  const column = await db.tableColumn.findFirst({
+    where: { id: project.tracker_column_id, table_id: table.id, deleted_at: null },
+  });
+
+  if (!column) {
+    return {
+      table_id: project.tracker_table_id,
+      column_id: project.tracker_column_id,
+      table_name: table.name,
+      column_name: null,
+      aggregation: project.tracker_aggregation,
+      current_value: null,
+      target_value: project.tracker_target_value,
+      target_label: project.tracker_target_label,
+      percentage: null,
+      status: "unavailable" as const,
+    };
+  }
+
+  const allColumns = await db.tableColumn.findMany({
+    where: { table_id: table.id, deleted_at: null },
+    orderBy: { position: "asc" },
+  });
+
+  const rows = await db.tableRow.findMany({
+    where: { table_id: table.id, deleted_at: null },
+    include: { cells: true },
+    orderBy: { position: "asc" },
+  });
+
+  const allColumnData: TableColumnData[] = allColumns.map((c) => ({
+    id: c.id,
+    name: c.name,
+    type: c.type as ColumnType,
+    position: Number(c.position),
+    config: (c.config ?? {}) as TableColumnData["config"],
+    aggregation: (c.aggregation ?? null) as AggregationType | null,
+    width: c.width,
+  }));
+
+  let values: unknown[];
+
+  if (column.type === "formula") {
+    values = rows.map((row) => {
+      const regularCells: TableCellData[] = row.cells.map((cell) => ({
+        row_id: cell.row_id,
+        column_id: cell.column_id,
+        value: cell.value as TableCellData["value"],
+      }));
+      const formulaCells = injectFormulaVirtualCells(row.id, regularCells, allColumnData);
+      const formulaCell = formulaCells.find((fc) => fc.column_id === column.id);
+      return formulaCell?.value ?? null;
+    });
+  } else {
+    values = rows.map((row) => {
+      const cell = row.cells.find((c) => c.column_id === column.id);
+      return cell?.value ?? null;
+    });
+  }
+
+  const currentValue = computeTrackerValue(column.type as ColumnType, project.tracker_aggregation, values);
+
+  let percentage: number | null = null;
+  if (currentValue !== null && project.tracker_target_value != null && project.tracker_target_value !== 0) {
+    percentage = (currentValue / project.tracker_target_value) * 100;
+  }
+
+  return {
+    table_id: table.id,
+    column_id: column.id,
+    table_name: table.name,
+    column_name: column.name,
+    column_type: column.type,
+    aggregation: project.tracker_aggregation,
+    current_value: currentValue,
+    target_value: project.tracker_target_value,
+    target_label: project.tracker_target_label,
+    percentage,
+    status: "ok" as const,
+  };
+}
 
 export const projectsRouter = router({
   list: protectedProcedure
@@ -187,13 +400,111 @@ export const projectsRouter = router({
         last_activity_at: lastActivity?.updated_at ?? null,
       };
 
+      const tracker = await computeProjectTracker(project);
+
       return {
         ...project,
         task_count: activeTasks,
         total_tasks: totalTasks,
         completed_tasks: completedTasks,
         metrics,
+        tracker,
       };
+    }),
+
+  setTracker: protectedProcedure
+    .input(
+      z.object({
+        project_id: z.string().uuid(),
+        table_id: z.string().uuid(),
+        column_id: z.string().uuid(),
+        aggregation: TRACKER_AGGREGATION,
+        target_value: z.number().nullable().optional(),
+        target_label: z.string().max(200).nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const project = await db.project.findFirst({
+        where: { id: input.project_id, user_id: ctx.user.id },
+      });
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const table = await db.table.findFirst({
+        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+      });
+      if (!table) throw new TRPCError({ code: "NOT_FOUND", message: "Table not found" });
+
+      const column = await db.tableColumn.findFirst({
+        where: { id: input.column_id, table_id: table.id, deleted_at: null },
+      });
+      if (!column) throw new TRPCError({ code: "NOT_FOUND", message: "Column not found" });
+
+      if (!isAggregationCompatible(column.type as ColumnType, input.aggregation, column.config as Record<string, unknown>)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Aggregation "${input.aggregation}" is not compatible with column type "${column.type}"`,
+        });
+      }
+
+      const hadTracker = !!project.tracker_table_id;
+
+      await db.project.update({
+        where: { id: project.id },
+        data: {
+          tracker_table_id: input.table_id,
+          tracker_column_id: input.column_id,
+          tracker_aggregation: input.aggregation,
+          tracker_target_value: input.target_value ?? null,
+          tracker_target_label: input.target_label ?? null,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Project",
+        entity_id: project.id,
+        action: hadTracker ? "project_tracker_changed" : "project_tracker_set",
+        meta: {
+          table_id: input.table_id,
+          table_name: table.name,
+          column_id: input.column_id,
+          column_name: column.name,
+          aggregation: input.aggregation,
+          target_value: input.target_value ?? null,
+          target_label: input.target_label ?? null,
+        },
+      });
+
+      return { ok: true };
+    }),
+
+  clearTracker: protectedProcedure
+    .input(z.object({ project_id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const project = await db.project.findFirst({
+        where: { id: input.project_id, user_id: ctx.user.id },
+      });
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.project.update({
+        where: { id: project.id },
+        data: {
+          tracker_table_id: null,
+          tracker_column_id: null,
+          tracker_aggregation: null,
+          tracker_target_value: null,
+          tracker_target_label: null,
+        },
+      });
+
+      await logActivity({
+        user_id: ctx.user.id,
+        entity_type: "Project",
+        entity_id: project.id,
+        action: "project_tracker_cleared",
+      });
+
+      return { ok: true };
     }),
 
   create: protectedProcedure

@@ -350,15 +350,23 @@ model Project {
   completed_at         DateTime? @db.Timestamptz
   last_reviewed_at     DateTime? @db.Timestamptz
   review_interval_days Int?      // null = Never; 3, 7, 14, 30
+  // Tracker fields — all nullable; cleared automatically via onDelete:SetNull when source is removed
+  tracker_table_id     String?   @db.Uuid
+  tracker_column_id    String?   @db.Uuid
+  tracker_aggregation  String?   // sum | average | count | min | max | checked_ratio
+  tracker_target_value Float?
+  tracker_target_label String?
   deleted_at           DateTime? @db.Timestamptz
   created_at           DateTime  @default(now()) @db.Timestamptz
   updated_at           DateTime  @updatedAt @db.Timestamptz
 
-  user        User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  folder      ProjectFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
-  tasks       Task[]
-  note_refs   Note[]
-  tables      Table[]
+  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder         ProjectFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
+  tracker_table  Table?         @relation("ProjectTrackerTable", fields: [tracker_table_id], references: [id], onDelete: SetNull)
+  tracker_column TableColumn?   @relation("ProjectTrackerColumn", fields: [tracker_column_id], references: [id], onDelete: SetNull)
+  tasks          Task[]
+  note_refs      Note[]
+  tables         Table[]        @relation("TableProject")
   task_templates TaskTemplate[] @relation("TaskTemplateDefaultProject")
 
   @@index([user_id])
@@ -763,11 +771,12 @@ model Table {
   created_at        DateTime  @default(now()) @db.Timestamptz
   updated_at        DateTime  @updatedAt @db.Timestamptz
 
-  user    User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  folder  TablesFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
-  project Project?      @relation(fields: [project_id], references: [id], onDelete: SetNull)
-  columns TableColumn[]
-  rows    TableRow[]
+  user             User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder           TablesFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
+  project          Project?      @relation("TableProject", fields: [project_id], references: [id], onDelete: SetNull)
+  tracker_projects Project[]     @relation("ProjectTrackerTable")
+  columns          TableColumn[]
+  rows             TableRow[]
 
   @@index([user_id])
   @@index([user_id, folder_id])
@@ -790,8 +799,9 @@ model TableColumn {
   created_at  DateTime  @default(now()) @db.Timestamptz
   updated_at  DateTime  @updatedAt @db.Timestamptz
 
-  table  Table       @relation(fields: [table_id], references: [id], onDelete: Cascade)
-  cells  TableCell[]
+  table            Table       @relation(fields: [table_id], references: [id], onDelete: Cascade)
+  cells            TableCell[]
+  tracker_projects Project[]   @relation("ProjectTrackerColumn")
 
   @@index([table_id])
   @@index([table_id, position])

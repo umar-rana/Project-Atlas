@@ -759,4 +759,27 @@ export const tablesRouter = router({
         rows: input.rows,
       });
     }),
+
+  listColumns: protectedProcedure
+    .input(z.object({ table_id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const table = await db.table.findFirst({
+        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true },
+      });
+      if (!table) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const columns = await db.tableColumn.findMany({
+        where: { table_id: input.table_id, deleted_at: null },
+        orderBy: { position: "asc" },
+        select: { id: true, name: true, type: true, config: true },
+      });
+
+      return columns.map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        config: c.config as Record<string, unknown>,
+      }));
+    }),
 });
