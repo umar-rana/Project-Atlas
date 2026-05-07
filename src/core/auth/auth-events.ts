@@ -26,8 +26,9 @@ export async function logAuthEvent(
         clerk_id: clerkId,
         ...meta,
       },
+      throwOnError: true,
     });
   } catch (err) {
-    log.error({ err, action, clerkId }, "Failed to write auth event log");
+    log.error({ err, action, clerkId, userId }, "Auth event write failed — this indicates a database issue. Check DB connectivity and AuditLog table.");
   }
 }

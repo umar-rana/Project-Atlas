@@ -14,6 +14,12 @@ export interface ActivityEvent {
   before?: Record<string, unknown>;
   after?: Record<string, unknown>;
   meta?: Record<string, unknown>;
+  /**
+   * When true, any database write failure is re-thrown after being logged,
+   * so the caller can handle it explicitly.  Use for critical events (e.g.
+   * auth events) where silent data loss is unacceptable.
+   */
+  throwOnError?: boolean;
 }
 
 export function diffObjects(
@@ -52,6 +58,7 @@ export async function logActivity(event: ActivityEvent): Promise<void> {
     });
   } catch (err) {
     log.error({ err, event }, "Failed to write audit log");
+    if (event.throwOnError) throw err;
   }
 }
 

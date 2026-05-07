@@ -5,6 +5,124 @@ import { verifyIsOrphan, reattachOrphanData, flagForRecoveryNotification } from 
 
 const log = createLogger({ module: "auth/backfill" });
 
+interface ClerkClientLike {
+  users: {
+    getUserList(params: { emailAddress: string[] }): Promise<{
+      totalCount: number;
+      data: Array<{ id: string; firstName: string | null; lastName: string | null }>;
+    }>;
+  };
+}
+
+export interface OrphanedClerkIdReport {
+  scanned: number;
+  resolved: number;
+  not_found_in_clerk: number;
+  errors: string[];
+}
+
+/**
+ * Resolves User rows that have a placeholder `orphaned_<id>` clerk_id assigned
+ * by the migrate-clerk-id-nulls remediation script.
+ *
+ * For each such row, we query the Clerk API by the user's stored email address.
+ * If a real Clerk account exists, the placeholder clerk_id is replaced with the
+ * real one so the next sign-in resolves by Clerk ID rather than creating a new
+ * empty account.
+ *
+ * This function is idempotent — rows that have already been resolved will have
+ * a non-placeholder clerk_id and will be skipped automatically.
+ *
+ * @param clerkClient - A Clerk client instance (from @clerk/backend createClerkClient)
+ */
+export async function resolveOrphanedClerkIds(
+  clerkClient: ClerkClientLike,
+): Promise<OrphanedClerkIdReport> {
+  const report: OrphanedClerkIdReport = {
+    scanned: 0,
+    resolved: 0,
+    not_found_in_clerk: 0,
+    errors: [],
+  };
+
+  const orphanedUsers = await db.$queryRaw<
+    Array<{ id: string; email: string; clerk_id: string; deleted_at: string | null }>
+  >`
+    SELECT id::text, email, clerk_id, deleted_at::text
+    FROM "User"
+    WHERE clerk_id LIKE 'orphaned_%'
+    ORDER BY created_at ASC
+  `;
+
+  if (orphanedUsers.length === 0) {
+    log.info("resolveOrphanedClerkIds: no orphaned_ placeholder rows found — nothing to do");
+    return report;
+  }
+
+  log.info(
+    { count: orphanedUsers.length },
+    "resolveOrphanedClerkIds: scanning users with orphaned_ placeholder clerk_ids",
+  );
+
+  for (const row of orphanedUsers) {
+    report.scanned++;
+    try {
+      const result = await clerkClient.users.getUserList({ emailAddress: [row.email] });
+      if (result.totalCount === 0 || !result.data[0]) {
+        log.info(
+          { user_id: row.id, email: row.email },
+          "resolveOrphanedClerkIds: no Clerk account found for email — user remains orphaned",
+        );
+        report.not_found_in_clerk++;
+        continue;
+      }
+
+      const clerkUser = result.data[0];
+      await db.$executeRaw`
+        UPDATE "User"
+        SET clerk_id = ${clerkUser.id},
+            deleted_at = NULL,
+            updated_at = NOW()
+        WHERE id = ${row.id}::uuid
+          AND clerk_id = ${row.clerk_id}
+      `;
+
+      await logActivity({
+        user_id: row.id,
+        entity_type: "AuthEvent",
+        entity_id: row.id,
+        action: "auth:resolved_by_clerk_id",
+        meta: {
+          clerk_id: clerkUser.id,
+          previous_placeholder: row.clerk_id,
+          email: row.email,
+          note: "clerk_id placeholder resolved by backfill script",
+        },
+      });
+
+      log.info(
+        { user_id: row.id, email: row.email, real_clerk_id: clerkUser.id },
+        "resolveOrphanedClerkIds: resolved placeholder clerk_id to real Clerk account",
+      );
+      report.resolved++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      report.errors.push(`user ${row.id} (${row.email}): ${msg}`);
+      log.error({ err, user_id: row.id, email: row.email }, "resolveOrphanedClerkIds: error processing row");
+    }
+  }
+
+  await logActivity({
+    entity_type: "AuthEvent",
+    entity_id: newId(),
+    action: "backfill_resolve_orphaned_clerk_ids_completed",
+    meta: report as unknown as Record<string, unknown>,
+  });
+
+  log.info(report, "resolveOrphanedClerkIds: completed");
+  return report;
+}
+
 /**
  * Check whether the auth-hardening migration (20260502200000) has been applied
  * by verifying that the recovery_notification_pending column exists on the User
