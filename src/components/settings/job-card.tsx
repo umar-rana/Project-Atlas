@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import { Play, Pause, RotateCcw, CheckCircle, XCircle, Clock, Calendar } from "lucide-react";
+import { Play, Pause, RotateCcw, CheckCircle, XCircle, Clock, Calendar, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface JobInfo {
@@ -14,6 +14,7 @@ export interface JobInfo {
     completedAt: Date | string;
     outcome: "completed" | "failed";
     result: string | null;
+    breakdown: Record<string, number> | null;
   } | null;
   nextRun: Date | string | null;
 }
@@ -83,6 +84,7 @@ export function JobCard({
   onMutated: () => void;
 }) {
   const [runQueued, setRunQueued] = useState(false);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   const runNow = trpc.jobs.runNow.useMutation({
     onSuccess: () => {
@@ -105,6 +107,11 @@ export function JobCard({
   const isActive = job.status === "active";
   const isBusy =
     runNow.isPending || pause.isPending || resume.isPending;
+
+  const hasBreakdown =
+    job.lastRun?.outcome === "completed" &&
+    job.lastRun.breakdown != null &&
+    Object.keys(job.lastRun.breakdown).length > 0;
 
   return (
     <div className="rounded-xl border border-border-default bg-surface-raised p-5 shadow-1">
@@ -198,6 +205,19 @@ export function JobCard({
               Last run {formatRelativeTime(job.lastRun.completedAt)} ({formatAbsoluteTime(job.lastRun.completedAt)})
               {job.lastRun.result ? ` — ${job.lastRun.result}` : ""}
             </span>
+            {hasBreakdown && (
+              <button
+                onClick={() => setBreakdownOpen((o) => !o)}
+                className="ml-0.5 flex items-center gap-0.5 rounded font-ui text-2xs text-text-tertiary transition-colors hover:text-text-secondary"
+                title={breakdownOpen ? "Hide breakdown" : "Show breakdown"}
+              >
+                <ChevronDown
+                  size={12}
+                  className={cn("transition-transform", breakdownOpen && "rotate-180")}
+                />
+                {breakdownOpen ? "Hide" : "Details"}
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-1.5">
@@ -217,6 +237,24 @@ export function JobCard({
           </div>
         )}
       </div>
+
+      {hasBreakdown && breakdownOpen && job.lastRun?.breakdown && (
+        <div className="mt-3 rounded-lg border border-border-default bg-surface-overlay px-3 py-2.5">
+          <p className="mb-2 font-ui text-2xs font-medium uppercase tracking-wide text-text-quaternary">
+            Breakdown
+          </p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3">
+            {Object.entries(job.lastRun.breakdown).map(([label, count]) => (
+              <div key={label} className="flex items-center justify-between gap-2">
+                <span className="font-ui text-xs text-text-secondary">{label}</span>
+                <span className="font-ui text-xs font-medium tabular-nums text-text-primary">
+                  {count.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {job.lastRun?.outcome === "failed" && job.lastRun.result && (
         <div className="mt-3 rounded-md border border-accent-danger/30 bg-accent-danger-muted px-3 py-2">

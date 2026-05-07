@@ -93,6 +93,7 @@ export const jobsRouter = router({
         const nextRun = isActive ? computeNextRun(job.cron) : null;
 
         let lastResult: string | null = null;
+        let lastBreakdown: Record<string, number> | null = null;
         if (lastRun) {
           if (lastRun.state === "failed") {
             const output = lastRun.output as Record<string, unknown> | null;
@@ -109,22 +110,44 @@ export const jobsRouter = router({
                 typeof output.projects === "number" ||
                 typeof output.notes === "number"
               ) {
-                const entityFields = [
-                  "checklistItems", "workLogs", "tasks", "projects", "notes",
-                  "notesFolders", "projectFolders", "captures", "tags",
-                  "contexts", "attachments", "tables", "tableColumns",
-                  "tableRows", "tablesFolders", "taskTemplates",
+                const entityFields: Array<[string, string]> = [
+                  ["tasks", "Tasks"],
+                  ["projects", "Projects"],
+                  ["notes", "Notes"],
+                  ["notesFolders", "Note Folders"],
+                  ["projectFolders", "Project Folders"],
+                  ["captures", "Captures"],
+                  ["tags", "Tags"],
+                  ["contexts", "Contexts"],
+                  ["attachments", "Attachments"],
+                  ["tables", "Tables"],
+                  ["tableColumns", "Table Columns"],
+                  ["tableRows", "Table Rows"],
+                  ["tablesFolders", "Table Folders"],
+                  ["taskTemplates", "Task Templates"],
+                  ["checklistItems", "Checklist Items"],
+                  ["workLogs", "Work Logs"],
                 ];
-                const total = entityFields.reduce((sum, k) => {
-                  const v = output[k];
-                  return sum + (typeof v === "number" ? v : 0);
-                }, 0);
+                let total = 0;
+                const breakdown: Record<string, number> = {};
+                for (const [key, label] of entityFields) {
+                  const v = output[key];
+                  if (typeof v === "number" && v > 0) {
+                    breakdown[label] = v;
+                    total += v;
+                  } else if (typeof v === "number") {
+                    total += v;
+                  }
+                }
                 const parts: string[] = [`${total} record${total !== 1 ? "s" : ""} purged`];
                 const errs = output.errors;
                 if (Array.isArray(errs) && errs.length > 0) {
                   parts.push(`${errs.length} error${errs.length !== 1 ? "s" : ""}`);
                 }
                 lastResult = parts.join(", ");
+                if (Object.keys(breakdown).length > 0) {
+                  lastBreakdown = breakdown;
+                }
               // attachment-cleanup: attachments + orphans cleaned
               } else if (typeof output.attachments === "number" && typeof output.orphans === "number") {
                 const parts: string[] = [];
@@ -138,6 +161,19 @@ export const jobsRouter = router({
                   parts.push(`${output.errors} error${(output.errors as number) !== 1 ? "s" : ""}`);
                 }
                 lastResult = parts.length > 0 ? parts.join(", ") : "nothing to clean";
+                const breakdown: Record<string, number> = {};
+                if (typeof output.attachments === "number" && output.attachments > 0) {
+                  breakdown["Attachments cleaned"] = output.attachments;
+                }
+                if (typeof output.orphans === "number" && output.orphans > 0) {
+                  breakdown["Orphaned files removed"] = output.orphans;
+                }
+                if (typeof output.errors === "number" && output.errors > 0) {
+                  breakdown["Errors"] = output.errors;
+                }
+                if (Object.keys(breakdown).length > 0) {
+                  lastBreakdown = breakdown;
+                }
               // processed-captures-cleanup: captures deleted
               } else if (typeof output.captures === "number") {
                 const n = output.captures as number;
@@ -180,6 +216,7 @@ export const jobsRouter = router({
                 completedAt: lastRun.completed_on ?? lastRun.created_on,
                 outcome: lastRun.state as "completed" | "failed",
                 result: lastResult,
+                breakdown: lastBreakdown,
               }
             : null,
           nextRun: nextRun ?? null,
