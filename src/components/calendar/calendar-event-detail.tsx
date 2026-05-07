@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
 import { getHumanReadableRRule } from "@/core/calendar/rrule";
 
 type CalendarEventDetail = {
@@ -332,9 +333,9 @@ export function CalendarEventDetail({
                     <div key={a.id} className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-1.5">
                         {a.is_organizer && (
-                          <span className="text-accent-warning" title="Organizer">
-                            ★
-                          </span>
+                          <Hint label="Organizer">
+                            <span className="text-accent-warning">★</span>
+                          </Hint>
                         )}
                         <span className="truncate font-ui text-sm text-text-primary">
                           {a.person?.display_name ??
@@ -372,13 +373,15 @@ export function CalendarEventDetail({
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-surface-base px-2 py-1 font-ui text-xs text-text-secondary">
                     <CheckSquare size={11} />
                     {event.linked_task.title}
-                    <button
-                      className="ml-0.5 opacity-50 hover:opacity-100"
-                      onClick={() => linkMutation.mutate({ id: mutationId, linked_task_id: null })}
-                      title="Remove link"
-                    >
-                      ×
-                    </button>
+                    <Hint label="Remove link">
+                      <button
+                        className="ml-0.5 opacity-50 hover:opacity-100"
+                        onClick={() => linkMutation.mutate({ id: mutationId, linked_task_id: null })}
+                        aria-label="Remove task link"
+                      >
+                        ×
+                      </button>
+                    </Hint>
                   </span>
                 ) : (
                   <div className="relative">
@@ -405,15 +408,17 @@ export function CalendarEventDetail({
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-surface-base px-2 py-1 font-ui text-xs text-text-secondary">
                     <FolderOpen size={11} />
                     {event.linked_project.title}
-                    <button
-                      className="ml-0.5 opacity-50 hover:opacity-100"
-                      onClick={() =>
-                        linkMutation.mutate({ id: mutationId, linked_project_id: null })
-                      }
-                      title="Remove link"
-                    >
-                      ×
-                    </button>
+                    <Hint label="Remove link">
+                      <button
+                        className="ml-0.5 opacity-50 hover:opacity-100"
+                        onClick={() =>
+                          linkMutation.mutate({ id: mutationId, linked_project_id: null })
+                        }
+                        aria-label="Remove project link"
+                      >
+                        ×
+                      </button>
+                    </Hint>
                   </span>
                 ) : (
                   <div className="relative">
@@ -440,13 +445,15 @@ export function CalendarEventDetail({
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-surface-base px-2 py-1 font-ui text-xs text-text-secondary">
                     <FileText size={11} />
                     {event.linked_note.title || "Untitled note"}
-                    <button
-                      className="ml-0.5 opacity-50 hover:opacity-100"
-                      onClick={() => linkMutation.mutate({ id: mutationId, linked_note_id: null })}
-                      title="Remove link"
-                    >
-                      ×
-                    </button>
+                    <Hint label="Remove link">
+                      <button
+                        className="ml-0.5 opacity-50 hover:opacity-100"
+                        onClick={() => linkMutation.mutate({ id: mutationId, linked_note_id: null })}
+                        aria-label="Remove note link"
+                      >
+                        ×
+                      </button>
+                    </Hint>
                   </span>
                 ) : (
                   <div className="relative">
@@ -486,13 +493,16 @@ export function CalendarEventDetail({
               </button>
             )}
 
-            <button
-              className="flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary opacity-50"
-              title="Coming in Wave 5a-ii"
-              disabled
-            >
-              Log as interaction
-            </button>
+            <Hint label="Coming in Wave 5a-ii">
+              <span>
+                <button
+                  className="flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary opacity-50"
+                  disabled
+                >
+                  Log as interaction
+                </button>
+              </span>
+            </Hint>
 
             {event.source === "google" && event.external_url && (
               <a

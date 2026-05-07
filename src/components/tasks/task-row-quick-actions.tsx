@@ -26,6 +26,7 @@ import { formatWeekdayAbbrev } from "@/core/locale/formatters";
 import { useLocale } from "@/core/locale/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { useTasksStore } from "@/lib/tasks/store";
@@ -138,17 +139,18 @@ function QuickDatePopover({ taskId, field, currentValue, onOpenChange }: QuickDa
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={label}
-          title={label}
-          onClick={(e) => e.stopPropagation()}
-          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
-        >
-          {icon}
-        </button>
-      </PopoverTrigger>
+      <Hint label={label}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={label}
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          >
+            {icon}
+          </button>
+        </PopoverTrigger>
+      </Hint>
       <PopoverContent align="end" className="w-48 p-1" onClick={(e) => e.stopPropagation()}>
         {dateOptions.map((opt) => (
           <button
@@ -277,7 +279,6 @@ function ProjectPickerPopover({
         <button
           type="button"
           aria-label="Move to project"
-          title="Move to project"
           onClick={(e) => e.stopPropagation()}
           className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
         >
@@ -429,7 +430,6 @@ function MoreMenu({ task, onOpenInspector, onOpenChange }: MoreMenuProps) {
           <button
             type="button"
             aria-label="More actions"
-            title="More actions"
             onClick={(e) => e.stopPropagation()}
             className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
           >
@@ -512,19 +512,20 @@ function MoveToDateButton({ taskId, label, date, icon }: MoveToDateButtonProps) 
   });
 
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={update.isPending}
-      onClick={(e) => {
-        e.stopPropagation();
-        update.mutate({ id: taskId, due_date: date, defer_date: null });
-      }}
-      className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
-    >
-      {icon}
-    </button>
+    <Hint label={label}>
+      <button
+        type="button"
+        aria-label={label}
+        disabled={update.isPending}
+        onClick={(e) => {
+          e.stopPropagation();
+          update.mutate({ id: taskId, due_date: date, defer_date: null });
+        }}
+        className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary disabled:opacity-50"
+      >
+        {icon}
+      </button>
+    </Hint>
   );
 }
 

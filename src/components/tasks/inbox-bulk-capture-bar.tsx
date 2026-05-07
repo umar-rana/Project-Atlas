@@ -155,7 +155,7 @@ export function InboxBulkCaptureBar({
               {dropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                  <div className="absolute bottom-full right-0 z-50 mb-1 w-52 rounded-md border border-border-default bg-surface-overlay py-1 shadow-lg">
+                  <div className="absolute bottom-full right-0 z-50 mb-1 w-52 rounded-md border border-border-default bg-surface-overlay py-1 shadow-3">
                     {DISPOSITION_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}

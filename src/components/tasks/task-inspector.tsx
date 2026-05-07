@@ -148,15 +148,17 @@ function ScheduledSection({
           <CalendarDays size={10} />
           Scheduled
         </h3>
-        <button
-          type="button"
-          onClick={() => setBlockOpen(true)}
-          className="flex items-center gap-0.5 font-ui text-2xs text-text-tertiary hover:text-text-secondary"
-          title="Block time for this task"
-        >
-          <Plus size={10} />
-          Block time
-        </button>
+        <Hint label="Block time for this task">
+          <button
+            type="button"
+            onClick={() => setBlockOpen(true)}
+            className="flex items-center gap-0.5 font-ui text-2xs text-text-tertiary hover:text-text-secondary"
+            aria-label="Block time for this task"
+          >
+            <Plus size={10} />
+            Block time
+          </button>
+        </Hint>
       </div>
       {isLoading ? (
         <p className="font-ui text-2xs text-text-disabled">Loading…</p>
@@ -181,13 +183,15 @@ function ScheduledSection({
                     {ev.calendar.name}
                   </span>
                 )}
-                <a
-                  href={`/calendar?view=day&date=${dayStr}`}
-                  className="flex-shrink-0 font-ui text-3xs text-accent-primary hover:underline"
-                  title="View on calendar"
-                >
-                  View
-                </a>
+                <Hint label="View on calendar">
+                  <a
+                    href={`/calendar?view=day&date=${dayStr}`}
+                    className="flex-shrink-0 font-ui text-3xs text-accent-primary hover:underline"
+                    aria-label="View on calendar"
+                  >
+                    View
+                  </a>
+                </Hint>
               </li>
             );
           })}
@@ -326,14 +330,16 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
       <aside className="flex h-full w-full flex-col border-l border-border-subtle bg-surface-overlay">
         <header className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
           <h2 className="font-ui text-sm font-semibold text-text-primary">Inspector</h2>
-          <button
-            type="button"
-            aria-label="Close inspector"
-            onClick={() => setSelectedTaskId(null)}
-            className="text-text-tertiary hover:text-text-primary"
-          >
-            <X size={14} />
-          </button>
+          <Hint label="Close">
+            <button
+              type="button"
+              aria-label="Close inspector"
+              onClick={() => setSelectedTaskId(null)}
+              className="text-text-tertiary hover:text-text-primary"
+            >
+              <X size={14} />
+            </button>
+          </Hint>
         </header>
         <div className="flex flex-1 items-center justify-center font-ui text-2xs text-text-tertiary">
           Loading…
@@ -426,18 +432,20 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
     <aside className="flex h-full w-full flex-col border-l border-border-subtle bg-surface-overlay">
       <header className="flex items-center gap-2 border-b border-border-subtle px-3 py-2">
         {breadcrumb ? (
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedTaskId(breadcrumb.taskId);
-              setInspectorBreadcrumb(null);
-            }}
-            className="flex items-center gap-0.5 rounded-sm font-ui text-xs text-text-tertiary hover:text-text-secondary"
-            aria-label="Back to parent task"
-          >
-            <ChevronLeft size={13} />
-            <span className="max-w-24 truncate">{breadcrumb.title}</span>
-          </button>
+          <Hint label="Back to parent task">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedTaskId(breadcrumb.taskId);
+                setInspectorBreadcrumb(null);
+              }}
+              className="flex items-center gap-0.5 rounded-sm font-ui text-xs text-text-tertiary hover:text-text-secondary"
+              aria-label="Back to parent task"
+            >
+              <ChevronLeft size={13} />
+              <span className="max-w-24 truncate">{breadcrumb.title}</span>
+            </button>
+          </Hint>
         ) : (
           <h2 className="m-0 flex-1 truncate font-ui text-sm font-semibold text-text-primary">
             {inTrash ? "Trashed task" : "Task"}
@@ -448,14 +456,16 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
             {taskData.title}
           </span>
         )}
-        <button
-          type="button"
-          aria-label="Close inspector"
-          onClick={() => setSelectedTaskId(null)}
-          className="text-text-tertiary hover:text-text-primary"
-        >
-          <X size={14} />
-        </button>
+        <Hint label="Close">
+          <button
+            type="button"
+            aria-label="Close inspector"
+            onClick={() => setSelectedTaskId(null)}
+            className="text-text-tertiary hover:text-text-primary"
+          >
+            <X size={14} />
+          </button>
+        </Hint>
       </header>
 
       <div className="flex border-b border-border-subtle">
@@ -709,33 +719,36 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                     </span>
                     {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map(
                       (c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          title={c}
-                          onClick={() => {
-                            tagUpdate.mutate({ id: coloringTagId, color: c });
-                            setColoringTagId(null);
-                          }}
-                          disabled={tagUpdate.isPending}
-                          className={cn(
-                            "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
-                            colorDotClass(c),
-                            tag.tag.color === c && "ring-2 ring-accent-primary ring-offset-1",
-                          )}
-                        />
+                        <Hint key={c} label={c}>
+                          <button
+                            type="button"
+                            aria-label={c}
+                            onClick={() => {
+                              tagUpdate.mutate({ id: coloringTagId, color: c });
+                              setColoringTagId(null);
+                            }}
+                            disabled={tagUpdate.isPending}
+                            className={cn(
+                              "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
+                              colorDotClass(c),
+                              tag.tag.color === c && "ring-2 ring-accent-primary ring-offset-1",
+                            )}
+                          />
+                        </Hint>
                       ),
                     )}
-                    <button
-                      type="button"
-                      title="Remove color"
-                      onClick={() => {
-                        tagUpdate.mutate({ id: coloringTagId, color: null });
-                        setColoringTagId(null);
-                      }}
-                      disabled={tagUpdate.isPending}
-                      className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
-                    />
+                    <Hint label="Remove color">
+                      <button
+                        type="button"
+                        aria-label="Remove color"
+                        onClick={() => {
+                          tagUpdate.mutate({ id: coloringTagId, color: null });
+                          setColoringTagId(null);
+                        }}
+                        disabled={tagUpdate.isPending}
+                        className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
+                      />
+                    </Hint>
                     <button
                       type="button"
                       onClick={() => setColoringTagId(null)}
@@ -750,25 +763,28 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               <div className="mt-1.5 flex items-center gap-1 rounded-sm border border-border-subtle bg-surface-base px-2 py-1.5">
                 <span className="mr-1 font-ui text-2xs text-text-tertiary">Color:</span>
                 {["blue", "green", "amber", "red", "purple", "teal", "pink", "orange"].map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    title={c}
-                    onClick={() => setNewTagColor(newTagColor === c ? null : c)}
-                    className={cn(
-                      "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
-                      colorDotClass(c),
-                      newTagColor === c && "ring-2 ring-accent-primary ring-offset-1",
-                    )}
-                  />
+                  <Hint key={c} label={c}>
+                    <button
+                      type="button"
+                      aria-label={c}
+                      onClick={() => setNewTagColor(newTagColor === c ? null : c)}
+                      className={cn(
+                        "size-3.5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-offset-1",
+                        colorDotClass(c),
+                        newTagColor === c && "ring-2 ring-accent-primary ring-offset-1",
+                      )}
+                    />
+                  </Hint>
                 ))}
                 {newTagColor && (
-                  <button
-                    type="button"
-                    title="No color"
-                    onClick={() => setNewTagColor(null)}
-                    className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
-                  />
+                  <Hint label="No color">
+                    <button
+                      type="button"
+                      aria-label="No color"
+                      onClick={() => setNewTagColor(null)}
+                      className="size-3.5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
+                    />
+                  </Hint>
                 )}
               </div>
             )}

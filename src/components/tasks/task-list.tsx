@@ -14,6 +14,7 @@ import { InboxWelcomeBanner } from "./inbox-welcome-banner";
 import { MigrationSummaryModal } from "./migration-summary-modal";
 import { formatEstimatedTime, sumEstimatedMinutes } from "@/core/aggregation/time-format";
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh";
+import { Hint } from "@/components/ui/hint";
 
 interface TaskListItemWithSubtasksProps {
   task: TaskRow;
@@ -761,15 +762,16 @@ export function TaskList({
                 <kbd className="rounded bg-surface-raised px-1 py-px font-mono text-2xs">?</kbd>
                 <span className="mx-1.5">all shortcuts</span>
               </p>
-              <button
-                type="button"
-                onClick={() => setShortcutsOverlayOpen(true)}
-                title="Keyboard shortcuts (?)"
-                aria-label="Keyboard shortcuts"
-                className="ml-auto shrink-0 text-text-tertiary hover:text-text-secondary"
-              >
-                <HelpCircle size={13} aria-hidden />
-              </button>
+              <Hint label="Keyboard shortcuts (?)">
+                <button
+                  type="button"
+                  onClick={() => setShortcutsOverlayOpen(true)}
+                  aria-label="Keyboard shortcuts"
+                  className="ml-auto shrink-0 text-text-tertiary hover:text-text-secondary"
+                >
+                  <HelpCircle size={13} aria-hidden />
+                </button>
+              </Hint>
             </div>
           )}
         </>

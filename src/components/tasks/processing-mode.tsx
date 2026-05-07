@@ -13,6 +13,7 @@ import { DispositionProjectForm } from "./disposition-project-form";
 import { DispositionSomedayForm } from "./disposition-someday-form";
 import { DispositionWaitingForForm } from "./disposition-waiting-for-form";
 import { DispositionTwoMinForm } from "./disposition-two-min-form";
+import { Hint } from "@/components/ui/hint";
 import { DispositionTrashForm } from "./disposition-trash-form";
 
 type Disposition = "task" | "note" | "project" | "someday" | "waiting" | "two_min" | "trash" | null;
@@ -253,16 +254,17 @@ function ProcessingModeInner({
         <div className="flex items-center gap-3">
           <h2 className="font-ui text-base font-semibold text-text-primary">Process Inbox</h2>
           {canUndo && (
-            <button
-              type="button"
-              onClick={handleUndo}
-              disabled={undoMut.isPending}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1 font-ui text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50"
-              title="⌘Z"
-            >
-              <Undo2 size={12} aria-hidden />
-              Undo
-            </button>
+            <Hint label="Undo (⌘Z)">
+              <button
+                type="button"
+                onClick={handleUndo}
+                disabled={undoMut.isPending}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border-default px-2.5 py-1 font-ui text-xs text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+              >
+                <Undo2 size={12} aria-hidden />
+                Undo
+              </button>
+            </Hint>
           )}
         </div>
         <button

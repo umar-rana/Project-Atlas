@@ -19,6 +19,8 @@ import {
   Highlighter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
+import { NOTE_HIGHLIGHT_COLORS, NOTE_TEXT_COLORS } from "@/core/notes/colors";
 
 type BubbleMenuProps = {
   editor: Editor;
@@ -96,26 +98,11 @@ const BLOCK_TYPES: { id: BlockType; label: string; icon: string }[] = [
 ];
 
 const HIGHLIGHT_COLORS = [
-  { label: "Yellow", value: "#fef08a" },
-  { label: "Green", value: "#bbf7d0" },
-  { label: "Blue", value: "#bfdbfe" },
-  { label: "Pink", value: "#fbcfe8" },
-  { label: "Orange", value: "#fed7aa" },
-  { label: "Purple", value: "#e9d5ff" },
-  { label: "None", value: null },
-];
+  ...NOTE_HIGHLIGHT_COLORS,
+  { label: "None", value: null, cssVar: null },
+] as const;
 
-const TEXT_COLORS = [
-  { label: "Default", value: null },
-  { label: "Red", value: "#ef4444" },
-  { label: "Orange", value: "#f97316" },
-  { label: "Yellow", value: "#ca8a04" },
-  { label: "Green", value: "#16a34a" },
-  { label: "Blue", value: "#2563eb" },
-  { label: "Purple", value: "#9333ea" },
-  { label: "Pink", value: "#db2777" },
-  { label: "Gray", value: "#6b7280" },
-];
+const TEXT_COLORS = NOTE_TEXT_COLORS;
 
 function getActiveBlockType(editor: Editor): BlockType {
   if (editor.isActive("heading", { level: 1 })) return "heading1";
@@ -161,26 +148,27 @@ function applyBlockType(editor: Editor, type: BlockType) {
 type ToolbarButtonProps = {
   active?: boolean;
   onClick: () => void;
-  title: string;
+  label: string;
   children: React.ReactNode;
   className?: string;
 };
 
-function ToolbarButton({ active, onClick, title, children, className }: ToolbarButtonProps) {
+function ToolbarButton({ active, onClick, label, children, className }: ToolbarButtonProps) {
   return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className={cn(
-        "flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-sm font-medium transition-colors duration-fast ease-standard",
-        "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
-        active ? "bg-surface-hover text-text-primary" : "text-text-tertiary",
-        className,
-      )}
-    >
-      {children}
-    </button>
+    <Hint label={label}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "flex h-7 min-w-[28px] items-center justify-center rounded px-1.5 text-sm font-medium transition-colors duration-fast ease-standard",
+          "hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
+          active ? "bg-surface-hover text-text-primary" : "text-text-tertiary",
+          className,
+        )}
+      >
+        {children}
+      </button>
+    </Hint>
   );
 }
 
@@ -290,30 +278,30 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
         <p className="text-xs font-medium text-text-tertiary">Text colour</p>
         <div className="flex flex-wrap gap-1.5">
           {TEXT_COLORS.map((c) => (
-            <button
-              key={c.label}
-              type="button"
-              title={c.label}
-              onClick={() => {
-                if (!c.value) {
-                  editor.chain().focus().unsetColor().run();
-                } else {
-                  editor.chain().focus().setColor(c.value).run();
-                }
-                onClose();
-              }}
-              className={cn(
-                "h-6 w-6 rounded border-2 transition-all hover:scale-110 focus-visible:focus-ring",
-                c.value === null
-                  ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
-                  : activeTextColor === c.value
-                    ? "border-accent-primary"
-                    : "border-transparent",
-              )}
-              style={c.value ? { backgroundColor: c.value } : undefined}
-            >
-              {c.value === null && "A"}
-            </button>
+            <Hint key={c.label} label={c.label}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!c.value) {
+                    editor.chain().focus().unsetColor().run();
+                  } else {
+                    editor.chain().focus().setColor(c.value).run();
+                  }
+                  onClose();
+                }}
+                className={cn(
+                  "h-6 w-6 rounded border-2 transition-all hover:scale-110 focus-visible:focus-ring",
+                  c.value === null
+                    ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
+                    : activeTextColor === c.value
+                      ? "border-accent-primary"
+                      : "border-transparent",
+                )}
+                style={c.value && c.cssVar ? { backgroundColor: `var(${c.cssVar})` } : undefined}
+              >
+                {c.value === null && "A"}
+              </button>
+            </Hint>
           ))}
         </div>
       </div>
@@ -322,30 +310,30 @@ function ColorPopover({ editor, onClose }: ColorPopoverProps) {
         <p className="text-xs font-medium text-text-tertiary">Highlight</p>
         <div className="flex flex-wrap gap-1.5">
           {HIGHLIGHT_COLORS.map((c) => (
-            <button
-              key={c.label}
-              type="button"
-              title={c.label}
-              onClick={() => {
-                if (!c.value) {
-                  editor.chain().focus().unsetHighlight().run();
-                } else {
-                  editor.chain().focus().toggleHighlight({ color: c.value }).run();
-                }
-                onClose();
-              }}
-              className={cn(
-                "h-6 w-6 rounded border-2 transition-all hover:scale-110 focus-visible:focus-ring",
-                c.value === null
-                  ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
-                  : activeHighlight === c.value
-                    ? "border-accent-primary"
-                    : "border-transparent",
-              )}
-              style={c.value ? { backgroundColor: c.value } : undefined}
-            >
-              {c.value === null && "✕"}
-            </button>
+            <Hint key={c.label} label={c.label}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!c.value) {
+                    editor.chain().focus().unsetHighlight().run();
+                  } else {
+                    editor.chain().focus().toggleHighlight({ color: c.value }).run();
+                  }
+                  onClose();
+                }}
+                className={cn(
+                  "h-6 w-6 rounded border-2 transition-all hover:scale-110 focus-visible:focus-ring",
+                  c.value === null
+                    ? "border-border-default bg-transparent text-[10px] text-text-tertiary"
+                    : activeHighlight === c.value
+                      ? "border-accent-primary"
+                      : "border-transparent",
+                )}
+                style={c.value && c.cssVar ? { backgroundColor: `var(${c.cssVar})` } : undefined}
+              >
+                {c.value === null && "✕"}
+              </button>
+            </Hint>
           ))}
         </div>
       </div>
@@ -403,54 +391,55 @@ export function EditorBubbleMenu({ editor }: Props) {
       >
         {mode === "toolbar" && (
           <>
-            <button
-              type="button"
-              title="Block type"
-              onClick={() => setMode("block")}
-              className={cn(
-                "flex h-7 items-center gap-1 rounded-l-lg px-2 text-xs font-medium transition-colors duration-fast ease-standard",
-                "text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
-                "border-r border-border-default",
-              )}
-            >
-              <span className="font-mono text-[11px]">{activeBlockDef?.icon ?? "¶"}</span>
-              <span className="max-w-[60px] truncate">{activeBlockDef?.label ?? "Text"}</span>
-              <ChevronDown size={11} className="shrink-0 opacity-60" />
-            </button>
+            <Hint label="Block type">
+              <button
+                type="button"
+                onClick={() => setMode("block")}
+                className={cn(
+                  "flex h-7 items-center gap-1 rounded-l-lg px-2 text-xs font-medium transition-colors duration-fast ease-standard",
+                  "text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring",
+                  "border-r border-border-default",
+                )}
+              >
+                <span className="font-mono text-[11px]">{activeBlockDef?.icon ?? "¶"}</span>
+                <span className="max-w-[60px] truncate">{activeBlockDef?.label ?? "Text"}</span>
+                <ChevronDown size={11} className="shrink-0 opacity-60" />
+              </button>
+            </Hint>
 
             <div className="flex items-center gap-0.5 px-1">
               <ToolbarButton
                 active={editor.isActive("bold")}
                 onClick={() => editor.chain().focus().toggleBold().run()}
-                title="Bold (⌘B)"
+                label="Bold (⌘B)"
               >
                 <Bold size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("italic")}
                 onClick={() => editor.chain().focus().toggleItalic().run()}
-                title="Italic (⌘I)"
+                label="Italic (⌘I)"
               >
                 <Italic size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("underline")}
                 onClick={() => editor.chain().focus().toggleUnderline().run()}
-                title="Underline (⌘U)"
+                label="Underline (⌘U)"
               >
                 <Underline size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("strike")}
                 onClick={() => editor.chain().focus().toggleStrike().run()}
-                title="Strikethrough (⌘⇧S)"
+                label="Strikethrough (⌘⇧S)"
               >
                 <Strikethrough size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("code")}
                 onClick={() => editor.chain().focus().toggleCode().run()}
-                title="Inline Code (⌘E)"
+                label="Inline Code (⌘E)"
               >
                 <Code size={13} strokeWidth={2.5} />
               </ToolbarButton>
@@ -462,14 +451,14 @@ export function EditorBubbleMenu({ editor }: Props) {
               <ToolbarButton
                 active={!!activeHighlight}
                 onClick={() => setMode("color")}
-                title="Colour & highlight"
+                label="Colour & highlight"
               >
                 <Highlighter size={13} strokeWidth={2.5} />
               </ToolbarButton>
               <ToolbarButton
                 active={editor.isActive("link")}
                 onClick={() => setMode("link")}
-                title="Link (⌘K)"
+                label="Link (⌘K)"
               >
                 <Link size={13} strokeWidth={2.5} />
               </ToolbarButton>
@@ -484,14 +473,15 @@ export function EditorBubbleMenu({ editor }: Props) {
         {mode === "color" && <ColorPopover editor={editor} onClose={closePopover} />}
 
         {mode !== "toolbar" && (
-          <button
-            type="button"
-            title="Back"
-            onClick={closePopover}
-            className="flex h-7 w-7 items-center justify-center rounded-r-lg border-l border-border-default text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring"
-          >
-            <X size={13} strokeWidth={2.5} />
-          </button>
+          <Hint label="Back">
+            <button
+              type="button"
+              onClick={closePopover}
+              className="flex h-7 w-7 items-center justify-center rounded-r-lg border-l border-border-default text-text-tertiary hover:bg-surface-hover hover:text-text-primary focus-visible:focus-ring"
+            >
+              <X size={13} strokeWidth={2.5} />
+            </button>
+          </Hint>
         )}
       </div>
     </BubbleMenu>

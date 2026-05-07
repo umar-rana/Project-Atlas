@@ -5,6 +5,7 @@ import { Hash, Search, Trash2, MoreHorizontal, Check, X, Plus } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
+import { Hint } from "@/components/ui/hint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,20 +31,24 @@ type ContextItem = {
   task_count: number;
 };
 
+// SC-5: Color options use Stratum viz-* tokens instead of raw Tailwind palette classes.
+// viz-4 (hue 25) = red/orange, viz-3 (hue 75) = amber/yellow, viz-2 (hue 155) = green,
+// viz-1 (hue 250) = blue, viz-5 (hue 305) = purple, viz-7 (hue 350) = pink.
+// Gray has no viz equivalent; accent-neutral (muted grey) is the closest Stratum token.
 const COLOR_OPTIONS = [
-  { value: "red", label: "Red", cls: "bg-red-500" },
-  { value: "orange", label: "Orange", cls: "bg-orange-500" },
-  { value: "yellow", label: "Yellow", cls: "bg-yellow-400" },
-  { value: "green", label: "Green", cls: "bg-green-500" },
-  { value: "blue", label: "Blue", cls: "bg-blue-500" },
-  { value: "purple", label: "Purple", cls: "bg-purple-500" },
-  { value: "pink", label: "Pink", cls: "bg-pink-500" },
-  { value: "gray", label: "Gray", cls: "bg-gray-400" },
+  { value: "red", label: "Red", cls: "bg-viz-4" },
+  { value: "orange", label: "Orange", cls: "bg-viz-4-light" },
+  { value: "yellow", label: "Yellow", cls: "bg-viz-3" },
+  { value: "green", label: "Green", cls: "bg-viz-2" },
+  { value: "blue", label: "Blue", cls: "bg-viz-1" },
+  { value: "purple", label: "Purple", cls: "bg-viz-5" },
+  { value: "pink", label: "Pink", cls: "bg-viz-7" },
+  { value: "gray", label: "Gray", cls: "bg-accent-neutral" },
 ];
 
 function colorDotClass(color: string | null) {
   const match = COLOR_OPTIONS.find((c) => c.value === color);
-  return match ? match.cls : "bg-gray-400";
+  return match ? match.cls : "bg-accent-neutral";
 }
 
 function RenameInline({ context, onDone }: { context: ContextItem; onDone: () => void }) {
@@ -153,17 +158,18 @@ function EditDialog({ context, onClose }: { context: ContextItem; onClose: () =>
             </label>
             <div className="flex flex-wrap gap-2">
               {COLOR_OPTIONS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  title={c.label}
-                  onClick={() => setColor(color === c.value ? "" : c.value)}
-                  className={cn(
-                    "size-6 rounded-full transition-transform hover:scale-110",
-                    c.cls,
-                    color === c.value && "ring-2 ring-accent-primary ring-offset-2",
-                  )}
-                />
+                <Hint key={c.value} label={c.label}>
+                  <button
+                    type="button"
+                    aria-label={c.label}
+                    onClick={() => setColor(color === c.value ? "" : c.value)}
+                    className={cn(
+                      "size-6 rounded-full transition-transform hover:scale-110",
+                      c.cls,
+                      color === c.value && "ring-2 ring-accent-primary ring-offset-2",
+                    )}
+                  />
+                </Hint>
               ))}
               {color ? (
                 <button

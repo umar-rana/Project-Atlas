@@ -133,7 +133,7 @@ export default function AllTablesPage() {
                       </span>
                     )}
                     {table.drive_sync_error && (
-                      <span className="text-destructive font-ui text-2xs">Sync error</span>
+                      <span className="text-accent-danger font-ui text-2xs">Sync error</span>
                     )}
                   </div>
                 </button>

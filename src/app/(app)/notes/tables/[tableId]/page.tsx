@@ -165,7 +165,7 @@ export default function TableEditorPage() {
           )}
           {table.drive_sync_error && (
             <span
-              className="text-destructive ml-auto font-ui text-2xs"
+              className="text-accent-danger ml-auto font-ui text-2xs"
               title={table.drive_sync_error}
             >
               Sync error
@@ -198,7 +198,7 @@ export default function TableEditorPage() {
             </button>
 
             {showSortPanel && (
-              <div className="bg-popover absolute left-0 top-9 z-40 w-64 rounded-lg border border-border-default shadow-lg">
+              <div className="bg-surface-overlay absolute left-0 top-9 z-40 w-64 rounded-lg border border-border-default shadow-3">
                 <div className="p-3">
                   <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Sort by</p>
                   <div className="flex flex-col gap-1">
@@ -267,7 +267,7 @@ export default function TableEditorPage() {
             </button>
 
             {showFilterPanel && (
-              <div className="bg-popover absolute left-0 top-9 z-40 w-72 rounded-lg border border-border-default p-3 shadow-lg">
+              <div className="bg-surface-overlay absolute left-0 top-9 z-40 w-72 rounded-lg border border-border-default p-3 shadow-3">
                 <p className="mb-2 font-ui text-xs font-medium text-text-secondary">Filter rows</p>
                 <div className="flex flex-col gap-2">
                   <select

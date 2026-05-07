@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { colorDotClass } from "./folder-tree-node";
+import { Hint } from "@/components/ui/hint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -434,27 +435,30 @@ function CreateTagDialog({ onClose }: { onClose: () => void }) {
             </label>
             <div className="flex items-center gap-1.5">
               {TAG_COLORS.map((c) => (
+                <Hint key={c} label={c}>
+                  <button
+                    type="button"
+                    aria-label={c}
+                    onClick={() => setColor(color === c ? null : c)}
+                    className={cn(
+                      "size-5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
+                      colorDotClass(c),
+                      color === c && "ring-2 ring-accent-primary ring-offset-1",
+                    )}
+                  />
+                </Hint>
+              ))}
+              <Hint label="No color">
                 <button
-                  key={c}
                   type="button"
-                  title={c}
-                  onClick={() => setColor(color === c ? null : c)}
+                  aria-label="No color"
+                  onClick={() => setColor(null)}
                   className={cn(
-                    "size-5 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
-                    colorDotClass(c),
-                    color === c && "ring-2 ring-accent-primary ring-offset-1",
+                    "size-5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110",
+                    color === null && "ring-2 ring-accent-primary ring-offset-1",
                   )}
                 />
-              ))}
-              <button
-                type="button"
-                title="No color"
-                onClick={() => setColor(null)}
-                className={cn(
-                  "size-5 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110",
-                  color === null && "ring-2 ring-accent-primary ring-offset-1",
-                )}
-              />
+              </Hint>
               {color ? (
                 <span className="ml-1 font-ui text-xs capitalize text-text-secondary">{color}</span>
               ) : (
@@ -742,26 +746,29 @@ export function TagManagement(): React.ReactElement {
                             "pink",
                             "orange",
                           ].map((c) => (
-                            <button
-                              key={c}
-                              type="button"
-                              title={c}
-                              onClick={() => updateColor.mutate({ id: tag.id, color: c })}
-                              disabled={updateColor.isPending}
-                              className={cn(
-                                "size-4 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
-                                colorDotClass(c),
-                                tag.color === c && "ring-2 ring-accent-primary ring-offset-1",
-                              )}
-                            />
+                            <Hint key={c} label={c}>
+                              <button
+                                type="button"
+                                aria-label={c}
+                                onClick={() => updateColor.mutate({ id: tag.id, color: c })}
+                                disabled={updateColor.isPending}
+                                className={cn(
+                                  "size-4 rounded-full transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1",
+                                  colorDotClass(c),
+                                  tag.color === c && "ring-2 ring-accent-primary ring-offset-1",
+                                )}
+                              />
+                            </Hint>
                           ))}
-                          <button
-                            type="button"
-                            title="Remove color"
-                            onClick={() => updateColor.mutate({ id: tag.id, color: null })}
-                            disabled={updateColor.isPending}
-                            className="size-4 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
-                          />
+                          <Hint label="Remove color">
+                            <button
+                              type="button"
+                              aria-label="Remove color"
+                              onClick={() => updateColor.mutate({ id: tag.id, color: null })}
+                              disabled={updateColor.isPending}
+                              className="size-4 rounded-full border border-dashed border-border-default bg-transparent transition-transform hover:scale-110"
+                            />
+                          </Hint>
                           <button
                             type="button"
                             onClick={() => setColoringTagId(null)}

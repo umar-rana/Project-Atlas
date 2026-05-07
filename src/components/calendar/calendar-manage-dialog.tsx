@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { STRATUM_CALENDAR_TOKENS } from "@/core/calendar/validation";
+import { Hint } from "@/components/ui/hint";
 
 const COLOR_LABELS: Record<string, string> = {
   "cal-1": "Blue",
@@ -88,16 +89,18 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2.5">
+                        <Hint label="Change color">
                         <button
                           onClick={() => setColorPicker(colorPicker === cal.id ? null : cal.id)}
                           className="flex-shrink-0"
-                          title="Change color"
+                          aria-label="Change color"
                         >
                           <span
                             className="block size-3.5 rounded-full border border-border-default hover:ring-2 hover:ring-border-focus"
                             style={{ background: `var(--${effectiveColor}-fill)` }}
                           />
                         </button>
+                        </Hint>
                         <div className="min-w-0">
                           <p className="truncate font-ui text-sm font-medium text-text-primary">
                             {cal.name}
@@ -150,13 +153,15 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                             />
                           </button>
                         </label>
-                        <button
-                          onClick={() => setPurgeConfirm(purgeConfirm === cal.id ? null : cal.id)}
-                          className="rounded p-1 text-text-tertiary hover:text-accent-danger"
-                          title="Purge events"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <Hint label="Purge events">
+                          <button
+                            onClick={() => setPurgeConfirm(purgeConfirm === cal.id ? null : cal.id)}
+                            className="rounded p-1 text-text-tertiary hover:text-accent-danger"
+                            aria-label="Purge events"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </Hint>
                       </div>
                     </div>
 
@@ -172,21 +177,22 @@ export function CalendarManageDialog({ open, onClose }: CalendarManageDialogProp
                           Default
                         </button>
                         {STRATUM_CALENDAR_TOKENS.map((token) => (
-                          <button
-                            key={token}
-                            onClick={() => {
-                              updateMutation.mutate({ id: cal.id, color_override: token });
-                              setColorPicker(null);
-                            }}
-                            title={COLOR_LABELS[token] ?? token}
-                            className={cn(
-                              "size-5 rounded-full border-2 transition-transform hover:scale-110",
-                              cal.color_override === token
-                                ? "border-border-focus"
-                                : "border-transparent",
-                            )}
-                            style={{ background: `var(--${token}-fill)` }}
-                          />
+                          <Hint key={token} label={COLOR_LABELS[token] ?? token}>
+                            <button
+                              onClick={() => {
+                                updateMutation.mutate({ id: cal.id, color_override: token });
+                                setColorPicker(null);
+                              }}
+                              aria-label={COLOR_LABELS[token] ?? token}
+                              className={cn(
+                                "size-5 rounded-full border-2 transition-transform hover:scale-110",
+                                cal.color_override === token
+                                  ? "border-border-focus"
+                                  : "border-transparent",
+                              )}
+                              style={{ background: `var(--${token}-fill)` }}
+                            />
+                          </Hint>
                         ))}
                       </div>
                     )}

@@ -5,6 +5,7 @@ import { Archive, ArrowUpCircle, Calendar } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
 import { EmptyState } from "@/components/composed/empty-state";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 import { isPast, isWithinInterval, addMonths, startOfDay } from "date-fns";
 
@@ -95,18 +96,19 @@ function SomedayTaskCard({
           )}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onPromote(task.id);
-        }}
-        title="Promote to active"
-        className="hover:border-accent-success/30 hidden shrink-0 items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-success-muted hover:text-accent-success group-hover:flex"
-      >
-        <ArrowUpCircle size={11} />
-        Promote
-      </button>
+      <Hint label="Promote to active">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPromote(task.id);
+          }}
+          className="hover:border-accent-success/30 hidden shrink-0 items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-success-muted hover:text-accent-success group-hover:flex"
+        >
+          <ArrowUpCircle size={11} />
+          Promote
+        </button>
+      </Hint>
     </div>
   );
 }

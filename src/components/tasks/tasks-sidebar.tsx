@@ -311,7 +311,7 @@ export function TasksSidebar(): React.ReactElement {
         <Plus size={11} />
       </button>
       {showAddMenu && !showCustomTypeInput && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border-default bg-surface-overlay py-1 shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border-default bg-surface-overlay py-1 shadow-3">
           <div className="px-2 pb-1 pt-0.5">
             <p className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-disabled">
               Core

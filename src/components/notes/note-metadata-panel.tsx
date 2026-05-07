@@ -50,22 +50,22 @@ function fileTypeIcon(filename: string, mimeType?: string | null): React.ReactEl
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
   const mime = mimeType ?? "";
   if (mime === "application/pdf" || ext === "pdf") {
-    return <FileText size={13} className="shrink-0 text-red-400" />;
+    return <FileText size={13} className="shrink-0 text-accent-danger" />;
   }
   if (
     mime.startsWith("image/") ||
     ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)
   ) {
-    return <Image size={13} className="shrink-0 text-blue-400" />;
+    return <Image size={13} className="shrink-0 text-accent-primary" />;
   }
   if (mime.startsWith("video/") || ["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) {
-    return <Film size={13} className="shrink-0 text-purple-400" />;
+    return <Film size={13} className="shrink-0 text-viz-5" />;
   }
   if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "flac", "aac"].includes(ext)) {
-    return <Music size={13} className="shrink-0 text-green-400" />;
+    return <Music size={13} className="shrink-0 text-accent-success" />;
   }
   if (["zip", "tar", "gz", "7z", "rar"].includes(ext)) {
-    return <Archive size={13} className="shrink-0 text-amber-400" />;
+    return <Archive size={13} className="shrink-0 text-accent-warning" />;
   }
   if (["doc", "docx", "txt", "md", "csv", "xls", "xlsx", "ppt", "pptx"].includes(ext)) {
     return <FileText size={13} className="shrink-0 text-text-secondary" />;
@@ -439,7 +439,7 @@ export function NoteMetadataPanel({
               <Star
                 size={13}
                 className={cn(
-                  is_project_brief ? "fill-amber-400 text-amber-400" : "text-text-disabled",
+                  is_project_brief ? "fill-accent-warning text-accent-warning" : "text-text-disabled",
                 )}
               />
               <span className="font-ui text-xs text-text-secondary">Mark as brief</span>
@@ -451,7 +451,7 @@ export function NoteMetadataPanel({
               className={cn(
                 "relative inline-flex h-4 w-7 shrink-0 items-center rounded-full border transition-colors",
                 is_project_brief
-                  ? "border-amber-400 bg-amber-400"
+                  ? "border-accent-warning bg-accent-warning"
                   : "border-border-default bg-surface-raised",
               )}
             >

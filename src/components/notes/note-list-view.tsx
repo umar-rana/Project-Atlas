@@ -168,7 +168,7 @@ export function NoteListView({
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border-default bg-surface-base shadow-lg">
+              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border-default bg-surface-base shadow-3">
                 <div className="py-1">
                   <div className="px-3 py-1">
                     <span className="font-ui text-2xs font-medium uppercase tracking-caps text-text-disabled">

@@ -291,7 +291,7 @@ function TablesSection({ pathname }: { pathname: string }) {
               e.stopPropagation();
               setShowNewDialog(true);
             }}
-            title="New table"
+            aria-label="New table"
             className="inline-flex size-4 items-center justify-center rounded-sm text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
           >
             <Plus size={11} />

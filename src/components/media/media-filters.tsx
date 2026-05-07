@@ -114,14 +114,14 @@ export function MediaFilters({ filters, onChange, tags }: MediaFiltersProps) {
         value={filters.date_from ?? ""}
         onChange={(e) => onChange({ ...filters, date_from: e.target.value || undefined })}
         className={SELECT_CLASS}
-        title="From date"
+        aria-label="From date"
       />
       <input
         type="date"
         value={filters.date_to ?? ""}
         onChange={(e) => onChange({ ...filters, date_to: e.target.value || undefined })}
         className={SELECT_CLASS}
-        title="To date"
+        aria-label="To date"
       />
 
       {hasActiveFilters && (

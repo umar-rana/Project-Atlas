@@ -116,7 +116,7 @@ export function ProjectAddForm({
               "size-4 rounded-full border-2 transition",
               color === c ? "border-text-primary" : "border-transparent",
             )}
-            style={{ backgroundColor: c === "amber" ? "#d97706" : c }}
+            style={{ backgroundColor: c === "amber" ? "var(--accent-amber)" : c }}
           />
         ))}
       </div>

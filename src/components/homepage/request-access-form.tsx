@@ -95,12 +95,12 @@ export function RequestAccessForm() {
               "w-full rounded-lg border bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary",
               "focus-visible:ring-accent-primary/30 outline-none transition-colors focus-visible:ring-2",
               fieldErrors.name
-                ? "border-red-500"
+                ? "border-border-error"
                 : "border-border-default focus-visible:border-accent-primary",
             ].join(" ")}
           />
           {fieldErrors.name && (
-            <p className="mt-1 text-xs text-red-500" role="alert">
+            <p className="mt-1 text-xs text-accent-danger" role="alert">
               {fieldErrors.name}
             </p>
           )}
@@ -127,12 +127,12 @@ export function RequestAccessForm() {
               "w-full rounded-lg border bg-surface-base px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary",
               "focus-visible:ring-accent-primary/30 outline-none transition-colors focus-visible:ring-2",
               fieldErrors.email
-                ? "border-red-500"
+                ? "border-border-error"
                 : "border-border-default focus-visible:border-accent-primary",
             ].join(" ")}
           />
           {fieldErrors.email && (
-            <p className="mt-1 text-xs text-red-500" role="alert">
+            <p className="mt-1 text-xs text-accent-danger" role="alert">
               {fieldErrors.email}
             </p>
           )}
@@ -158,7 +158,7 @@ export function RequestAccessForm() {
       </div>
 
       {serverError && (
-        <p className="text-sm text-red-500" role="alert">
+        <p className="text-sm text-accent-danger" role="alert">
           {serverError}
         </p>
       )}

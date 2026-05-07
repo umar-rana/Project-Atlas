@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useShellStore } from "@/lib/shell/store";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
 import { toast } from "@/lib/toast";
 
 interface UserMenuProps {
@@ -80,22 +81,23 @@ export function UserMenu({ name, email, image, isAdmin }: UserMenuProps): React.
         </DropdownMenuLabel>
         <div className="flex gap-1 px-2 pb-1">
           {THEMES.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => handleTheme(value)}
-              title={label}
-              aria-pressed={theme === value}
-              className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 font-ui text-2xs transition-colors",
-                theme === value
-                  ? "bg-accent-primary-subtle text-accent-primary"
-                  : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary",
-              )}
-            >
-              <Icon size={13} aria-hidden />
-              {label}
-            </button>
+            <Hint key={value} label={label}>
+              <button
+                type="button"
+                onClick={() => handleTheme(value)}
+                aria-label={label}
+                aria-pressed={theme === value}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 font-ui text-2xs transition-colors",
+                  theme === value
+                    ? "bg-accent-primary-subtle text-accent-primary"
+                    : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary",
+                )}
+              >
+                <Icon size={13} aria-hidden />
+                {label}
+              </button>
+            </Hint>
           ))}
         </div>
         <DropdownMenuSeparator />

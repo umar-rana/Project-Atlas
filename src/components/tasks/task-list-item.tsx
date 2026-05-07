@@ -19,6 +19,7 @@ import type { TaskRow } from "./task-list";
 import { describeRule } from "@/core/recurrence/rrule-helpers";
 import { RecurrenceQuickPopover } from "./recurrence-quick-popover";
 import { TaskRowQuickActions } from "./task-row-quick-actions";
+import { Hint } from "@/components/ui/hint";
 import { colorDotClass } from "./folder-tree-node";
 import { useLocale } from "@/core/locale/hooks";
 import { formatDate } from "@/core/locale/formatters";
@@ -380,34 +381,36 @@ function TaskListItemImpl({
             </span>
           )}
           {attachmentCount > 0 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(task, e);
-              }}
-              title={`${attachmentCount} attachment${attachmentCount === 1 ? "" : "s"}`}
-              className="inline-flex items-center gap-0.5 hover:text-text-primary"
-            >
-              <Paperclip size={10} />
-              {attachmentCount}
-            </button>
+            <Hint label={`${attachmentCount} attachment${attachmentCount === 1 ? "" : "s"}`}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(task, e);
+                }}
+                className="inline-flex items-center gap-0.5 hover:text-text-primary"
+              >
+                <Paperclip size={10} />
+                {attachmentCount}
+              </button>
+            </Hint>
           )}
         </div>
       </div>
       {task.is_blocked && !task.flagged && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            update.mutate({ id: task.id, flagged: true });
-          }}
-          title="Make this task available now (bypasses sequential order)"
-          aria-label="Make this task available now"
-          className="shrink-0 rounded-sm p-0.5 text-text-disabled opacity-0 transition-opacity hover:text-accent-info group-hover:opacity-100"
-        >
-          <Unlock size={12} />
-        </button>
+        <Hint label="Make this task available now (bypasses sequential order)">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              update.mutate({ id: task.id, flagged: true });
+            }}
+            aria-label="Make this task available now"
+            className="shrink-0 rounded-sm p-0.5 text-text-disabled opacity-0 transition-opacity hover:text-accent-info group-hover:opacity-100"
+          >
+            <Unlock size={12} />
+          </button>
+        </Hint>
       )}
       {showQuickActions ? (
         <TaskRowQuickActions

@@ -51,14 +51,16 @@ export default function ProjectsIndexPage() {
           <h1 className="font-ui text-base font-semibold text-text-primary">All projects</h1>
           <div className="flex items-center gap-1.5">
             {typeCounts.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setManagingTypes(true)}
-                className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
-                title="Manage project types"
-              >
-                <Settings2 size={12} /> Manage types
-              </button>
+              <Hint label="Manage project types">
+                <button
+                  type="button"
+                  onClick={() => setManagingTypes(true)}
+                  className="inline-flex items-center gap-1 rounded-sm border border-border-default px-2 py-1 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+                  aria-label="Manage project types"
+                >
+                  <Settings2 size={12} /> Manage types
+                </button>
+              </Hint>
             )}
             <Hint label="New project" side="bottom">
               <button

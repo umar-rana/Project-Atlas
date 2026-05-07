@@ -185,7 +185,7 @@ export function ExportPdfDialog({
           {step === "done" && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
-                <CheckCircle size={20} className="shrink-0 text-green-400" />
+                <CheckCircle size={20} className="shrink-0 text-accent-success" />
                 <p className="font-ui text-sm font-medium text-text-primary">PDF ready!</p>
               </div>
               <p className="font-ui text-2xs text-text-disabled">
@@ -215,10 +215,10 @@ export function ExportPdfDialog({
 
           {step === "error" && (
             <div className="flex flex-col gap-4">
-              <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3">
+              <div className="rounded-md border border-accent-danger/30 bg-accent-danger/10 p-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" />
-                  <p className="font-ui text-xs text-red-300">{error}</p>
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0 text-accent-danger" />
+                  <p className="font-ui text-xs text-accent-danger">{error}</p>
                 </div>
               </div>
               <div className="flex gap-2">

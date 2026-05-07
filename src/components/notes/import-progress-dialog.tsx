@@ -305,20 +305,20 @@ export function ImportProgressDialog({
             {step === "done" && (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
-                  <CheckCircle size={20} className="shrink-0 text-green-400" />
+                  <CheckCircle size={20} className="shrink-0 text-accent-success" />
                   <p className="font-ui text-sm font-medium text-text-primary">
                     Import successful!
                   </p>
                 </div>
 
                 {warnings.length > 0 && (
-                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+                  <div className="rounded-md border border-accent-warning/30 bg-accent-warning/10 p-3">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-400" />
+                      <AlertTriangle size={14} className="mt-0.5 shrink-0 text-accent-warning" />
                       <div className="flex flex-col gap-1">
-                        <p className="font-ui text-2xs font-medium text-amber-300">Import notes:</p>
+                        <p className="font-ui text-2xs font-medium text-accent-warning">Import notes:</p>
                         {warnings.map((w, i) => (
-                          <p key={i} className="font-ui text-2xs text-amber-200/80">
+                          <p key={i} className="font-ui text-2xs text-accent-warning/80">
                             {w}
                           </p>
                         ))}
@@ -348,10 +348,10 @@ export function ImportProgressDialog({
 
             {step === "error" && (
               <div className="flex flex-col gap-4">
-                <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3">
+                <div className="rounded-md border border-accent-danger/30 bg-accent-danger/10 p-3">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-red-400" />
-                    <p className="font-ui text-xs text-red-300">{error}</p>
+                    <AlertTriangle size={14} className="mt-0.5 shrink-0 text-accent-danger" />
+                    <p className="font-ui text-xs text-accent-danger">{error}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc/client";
 import { AttachmentLightbox } from "@/components/attachments/attachment-lightbox";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
 import { validateFile } from "@/core/attachments/validators";
 import { formatBytes } from "@/core/attachments/validators";
 
@@ -97,47 +98,51 @@ function AttachmentCard({
 
       {hovered && !inTrash && (
         <div className="absolute right-1 top-1 flex items-center gap-0.5 rounded-sm border border-border-default bg-surface-overlay p-0.5 shadow-sm">
-          <a
-            href={src}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            title="View"
-            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-          >
-            <Eye size={11} />
-          </a>
-          <a
-            href={src}
-            download={att.filename}
-            onClick={(e) => e.stopPropagation()}
-            title="Download"
-            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
-          >
-            <Download size={11} />
-          </a>
-          <button
-            type="button"
-            title="Detach"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDetach();
-            }}
-            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
-          >
-            <Tag size={11} />
-          </button>
-          <button
-            type="button"
-            title="Remove"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-accent-danger"
-          >
-            <X size={11} />
-          </button>
+          <Hint label="View">
+            <a
+              href={src}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            >
+              <Eye size={11} />
+            </a>
+          </Hint>
+          <Hint label="Download">
+            <a
+              href={src}
+              download={att.filename}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            >
+              <Download size={11} />
+            </a>
+          </Hint>
+          <Hint label="Detach">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDetach();
+              }}
+              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
+            >
+              <Tag size={11} />
+            </button>
+          </Hint>
+          <Hint label="Remove">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-accent-danger"
+            >
+              <X size={11} />
+            </button>
+          </Hint>
         </div>
       )}
     </li>

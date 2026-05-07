@@ -51,6 +51,7 @@ import {
 } from "@/core/locale/formatters";
 import type { LocaleSettings } from "@/core/locale/formatters";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
 
 const DriveWizard = dynamic(() => import("./drive-wizard").then((m) => m.DriveWizard), {
   ssr: false,
@@ -859,18 +860,20 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
               <code className="flex-1 break-all font-mono text-sm text-text-primary">
                 {directAddress}
               </code>
-              <button
-                type="button"
-                onClick={handleCopyDirect}
-                className="shrink-0 rounded-md p-1.5 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
-                title="Copy address"
-              >
-                {copiedDirect ? (
-                  <Check size={14} className="text-accent-success" />
-                ) : (
-                  <Copy size={14} />
-                )}
-              </button>
+              <Hint label="Copy address">
+                <button
+                  type="button"
+                  onClick={handleCopyDirect}
+                  className="shrink-0 rounded-md p-1.5 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  aria-label="Copy direct address"
+                >
+                  {copiedDirect ? (
+                    <Check size={14} className="text-accent-success" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </Hint>
             </div>
             <p className="mt-1 font-ui text-2xs text-text-tertiary">
               Your personal inbox address. Emails sent here are always routed to your account,
@@ -891,18 +894,20 @@ function CaptureSection({ userId, userEmail }: { userId: string; userEmail: stri
               <code className="flex-1 break-all font-mono text-sm text-text-primary">
                 {plainAddress}
               </code>
-              <button
-                type="button"
-                onClick={handleCopyPlain}
-                className="shrink-0 rounded-md p-1.5 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
-                title="Copy address"
-              >
-                {copiedPlain ? (
-                  <Check size={14} className="text-accent-success" />
-                ) : (
-                  <Copy size={14} />
-                )}
-              </button>
+              <Hint label="Copy address">
+                <button
+                  type="button"
+                  onClick={handleCopyPlain}
+                  className="shrink-0 rounded-md p-1.5 text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  aria-label="Copy plain address"
+                >
+                  {copiedPlain ? (
+                    <Check size={14} className="text-accent-success" />
+                  ) : (
+                    <Copy size={14} />
+                  )}
+                </button>
+              </Hint>
             </div>
             <p className="mt-1 font-ui text-2xs text-text-tertiary">
               Shared inbox address. Only works when you email from{" "}

@@ -135,7 +135,7 @@ export function NoteCard({
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <div className="flex items-center gap-1.5">
               {is_project_brief && (
-                <Star size={11} className="shrink-0 fill-amber-400 text-amber-400" />
+                <Star size={11} className="shrink-0 fill-accent-warning text-accent-warning" />
               )}
               <span className="truncate font-ui text-sm font-medium text-text-primary">
                 {displayTitle}

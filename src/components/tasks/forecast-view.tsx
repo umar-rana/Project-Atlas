@@ -13,6 +13,7 @@ import { CalendarDays, AlertCircle, ChevronLeft, ChevronRight, Calendar } from "
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Hint } from "@/components/ui/hint";
 import { toast } from "@/lib/toast";
 
 const PROJECT_COLOR_DOTS: Record<string, string> = {
@@ -229,22 +230,22 @@ function DayColumn({
         {showCalendar && events.length > 0 && (
           <div className="mb-1 flex flex-col gap-0.5">
             {events.map((ev) => (
-              <a
-                key={ev.id}
-                href={`/calendar?view=day&date=${date}`}
-                className={cn(
-                  "flex items-center gap-1 rounded px-1.5 py-1 font-ui text-2xs",
-                  ev.status === "cancelled"
-                    ? "text-text-disabled line-through"
-                    : "bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary",
-                )}
-                title={ev.title}
-              >
-                <span className="flex-shrink-0 font-mono text-3xs tabular-nums">
-                  {formatEventTime(ev.start_at)}
-                </span>
-                <span className="truncate">{ev.title}</span>
-              </a>
+              <Hint key={ev.id} label={ev.title}>
+                <a
+                  href={`/calendar?view=day&date=${date}`}
+                  className={cn(
+                    "flex items-center gap-1 rounded px-1.5 py-1 font-ui text-2xs",
+                    ev.status === "cancelled"
+                      ? "text-text-disabled line-through"
+                      : "bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary",
+                  )}
+                >
+                  <span className="flex-shrink-0 font-mono text-3xs tabular-nums">
+                    {formatEventTime(ev.start_at)}
+                  </span>
+                  <span className="truncate">{ev.title}</span>
+                </a>
+              </Hint>
             ))}
             <div className="mt-0.5 border-t border-border-subtle" />
           </div>
@@ -414,20 +415,22 @@ export function ForecastView(): React.ReactElement {
           <h1 className="font-ui text-base font-semibold text-text-primary">Forecast</h1>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleShowCalendar}
-            title={showCalendar ? "Hide calendar events" : "Show calendar events"}
-            className={cn(
-              "flex items-center gap-1 rounded-sm border px-2 py-1 font-ui text-2xs transition-colors",
-              showCalendar
-                ? "bg-accent-primary/10 border-accent-primary text-accent-primary"
-                : "border-border-subtle text-text-tertiary hover:bg-surface-hover",
-            )}
-          >
-            <Calendar size={11} />
-            Calendar
-          </button>
+          <Hint label={showCalendar ? "Hide calendar events" : "Show calendar events"}>
+            <button
+              type="button"
+              onClick={toggleShowCalendar}
+              aria-label={showCalendar ? "Hide calendar events" : "Show calendar events"}
+              className={cn(
+                "flex items-center gap-1 rounded-sm border px-2 py-1 font-ui text-2xs transition-colors",
+                showCalendar
+                  ? "bg-accent-primary/10 border-accent-primary text-accent-primary"
+                  : "border-border-subtle text-text-tertiary hover:bg-surface-hover",
+              )}
+            >
+              <Calendar size={11} />
+              Calendar
+            </button>
+          </Hint>
           <div className="flex items-center rounded-sm border border-border-subtle">
             <button
               type="button"

@@ -150,6 +150,9 @@
 
   /* Focus ring */
   --ring-focus: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+
+  /* ---- Amber accent (used for project/tag color swatches) ---  */
+  --accent-amber: #d97706;
 }
 
 /* =============================================================
@@ -282,6 +285,37 @@
   --shadow-5: 0 24px 60px -8px rgba(15, 23, 42, 0.22), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
 
   --ring-focus: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--border-focus);
+
+  /* ---- Amber accent (used for project/tag color swatches) --- */
+  --accent-amber: #d97706;
+}
+
+/* =============================================================
+   12. NOTE EDITOR color palette tokens
+   These are content-layer colors (not theme-adaptive): TipTap stores highlight
+   and text-color marks as literal hex values in its ProseMirror JSON model.
+   These CSS variables give the editor UI chrome (swatches, pickers) a token-
+   based reference to the same hex values. Existing notes saved with literal
+   hex continue to render correctly because TipTap reads them from stored JSON.
+   ============================================================= */
+:root {
+  /* Highlight swatches */
+  --note-highlight-yellow: #fef08a;
+  --note-highlight-green: #bbf7d0;
+  --note-highlight-blue: #bfdbfe;
+  --note-highlight-pink: #fbcfe8;
+  --note-highlight-orange: #fed7aa;
+  --note-highlight-purple: #e9d5ff;
+
+  /* Text color swatches */
+  --note-text-red: #ef4444;
+  --note-text-orange: #f97316;
+  --note-text-yellow: #ca8a04;
+  --note-text-green: #16a34a;
+  --note-text-blue: #2563eb;
+  --note-text-purple: #9333ea;
+  --note-text-pink: #db2777;
+  --note-text-gray: #6b7280;
 }
 
 /* =============================================================

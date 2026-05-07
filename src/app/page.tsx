@@ -65,7 +65,7 @@ function Hero() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-24 text-center tablet:py-32">
       <div className="mx-auto max-w-3xl">
-        <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-primary shadow-lg">
+        <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-primary shadow-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icon.svg" alt="Atlas" width={40} height={40} className="rounded-xl" />
         </div>

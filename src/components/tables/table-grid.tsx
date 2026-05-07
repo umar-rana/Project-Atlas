@@ -1031,7 +1031,7 @@ export function TableGrid({
                       <button
                         type="button"
                         className="text-text-disabled opacity-0 hover:text-text-tertiary group-hover:opacity-100"
-                        title={sort.column_id ? "Reorder disabled while sorted" : "Row options"}
+                        aria-label={sort.column_id ? "Reorder disabled while sorted" : "Row options"}
                       >
                         <GripVertical size={12} />
                       </button>

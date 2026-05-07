@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
 import { toast } from "@/lib/toast";
 
 type FlatFolder = { id: string; name: string; depth: number };
@@ -308,7 +309,7 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
             <h1
               className="flex-1 cursor-pointer truncate font-ui text-base font-semibold text-text-primary hover:text-accent-primary"
               onDoubleClick={() => setEditingName(true)}
-              title="Double-click to rename"
+              aria-label="Double-click to rename"
             >
               {folder.name}
             </h1>
@@ -548,9 +549,9 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                             </span>
                           )}
                       </Link>
+                      <Hint label="Move to folder">
                       <button
                         type="button"
-                        title="Move to folder"
                         aria-label="Move to folder"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -565,11 +566,12 @@ export function FolderDetailView({ folderId }: FolderDetailViewProps): React.Rea
                       >
                         <FolderInput size={13} />
                       </button>
+                      </Hint>
                     </div>
                     {isMoving && (
                       <div
                         ref={pickerRef}
-                        className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border-default bg-surface-overlay shadow-lg"
+                        className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border-default bg-surface-overlay shadow-3"
                       >
                         <p className="px-3 py-1.5 font-ui text-2xs font-semibold uppercase tracking-caps text-text-disabled">
                           Move to folder

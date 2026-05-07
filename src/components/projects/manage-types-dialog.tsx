@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { displayType } from "@/core/projects/type-suggestions";
 import { validateProjectType, normalizeProjectType } from "@/core/projects/type-validation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Hint } from "@/components/ui/hint";
 
 interface TypeCount {
   type: string;
@@ -129,22 +130,26 @@ export function ManageTypesDialog({
                           maxLength={32}
                           className="flex-1 rounded-sm border border-border-default bg-surface-base px-2 py-0.5 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-border-focus"
                         />
-                        <button
-                          type="submit"
-                          disabled={renameType.isPending || !renameValue.trim()}
-                          className="rounded-sm bg-accent-primary p-1 text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
-                          title="Confirm rename"
-                        >
-                          <Check size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelMode}
-                          className="rounded-sm border border-border-default p-1 text-text-secondary hover:bg-surface-hover"
-                          title="Cancel"
-                        >
-                          <X size={12} />
-                        </button>
+                        <Hint label="Confirm rename">
+                          <button
+                            type="submit"
+                            disabled={renameType.isPending || !renameValue.trim()}
+                            className="rounded-sm bg-accent-primary p-1 text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+                            aria-label="Confirm rename"
+                          >
+                            <Check size={12} />
+                          </button>
+                        </Hint>
+                        <Hint label="Cancel">
+                          <button
+                            type="button"
+                            onClick={cancelMode}
+                            className="rounded-sm border border-border-default p-1 text-text-secondary hover:bg-surface-hover"
+                            aria-label="Cancel rename"
+                          >
+                            <X size={12} />
+                          </button>
+                        </Hint>
                       </div>
                       {renameError && (
                         <p className="font-ui text-2xs text-accent-danger">{renameError}</p>
@@ -161,14 +166,16 @@ export function ManageTypesDialog({
                         <span className="font-ui text-xs font-medium text-text-primary">
                           Merge &quot;{displayType(type)}&quot; into…
                         </span>
-                        <button
-                          type="button"
-                          onClick={cancelMode}
-                          className="ml-auto rounded-sm border border-border-default p-0.5 text-text-secondary hover:bg-surface-hover"
-                          title="Cancel"
-                        >
-                          <X size={12} />
-                        </button>
+                        <Hint label="Cancel">
+                          <button
+                            type="button"
+                            onClick={cancelMode}
+                            className="ml-auto rounded-sm border border-border-default p-0.5 text-text-secondary hover:bg-surface-hover"
+                            aria-label="Cancel merge"
+                          >
+                            <X size={12} />
+                          </button>
+                        </Hint>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {mergeTargets.map(({ type: tgt, count: tgtCount }) => (
@@ -233,42 +240,32 @@ export function ManageTypesDialog({
                           mode.kind !== "idle" && !isBuiltIn && "pointer-events-none opacity-30",
                         )}
                       >
-                        <span
-                          title={
-                            isBuiltIn
-                              ? `"${type}" is a built-in type and cannot be renamed`
-                              : undefined
-                          }
-                          className={cn(isBuiltIn && "cursor-default")}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => startRename(type)}
-                            disabled={mode.kind !== "idle" || isBuiltIn}
-                            className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none disabled:opacity-30"
-                            title={isBuiltIn ? undefined : "Rename type"}
-                          >
-                            <Pencil size={12} />
-                          </button>
-                        </span>
-                        {typeCounts.length > 1 && (
-                          <span
-                            title={
-                              isBuiltIn
-                                ? `"${type}" is a built-in type and cannot be merged`
-                                : undefined
-                            }
-                            className={cn(isBuiltIn && "cursor-default")}
-                          >
+                        <span className={cn(isBuiltIn && "cursor-default")}>
+                          <Hint label={isBuiltIn ? `"${type}" is a built-in type and cannot be renamed` : "Rename type"}>
                             <button
                               type="button"
-                              onClick={() => startMerge(type)}
+                              onClick={() => startRename(type)}
                               disabled={mode.kind !== "idle" || isBuiltIn}
                               className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none disabled:opacity-30"
-                              title={isBuiltIn ? undefined : "Merge into another type"}
+                              aria-label={isBuiltIn ? `"${type}" is a built-in type and cannot be renamed` : "Rename type"}
                             >
-                              <GitMerge size={12} />
+                              <Pencil size={12} />
                             </button>
+                          </Hint>
+                        </span>
+                        {typeCounts.length > 1 && (
+                          <span className={cn(isBuiltIn && "cursor-default")}>
+                            <Hint label={isBuiltIn ? `"${type}" is a built-in type and cannot be merged` : "Merge into another type"}>
+                              <button
+                                type="button"
+                                onClick={() => startMerge(type)}
+                                disabled={mode.kind !== "idle" || isBuiltIn}
+                                className="rounded-sm p-1 text-text-tertiary hover:bg-surface-hover hover:text-text-secondary disabled:pointer-events-none disabled:opacity-30"
+                                aria-label={isBuiltIn ? `"${type}" is a built-in type and cannot be merged` : "Merge into another type"}
+                              >
+                                <GitMerge size={12} />
+                              </button>
+                            </Hint>
                           </span>
                         )}
                       </div>

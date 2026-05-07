@@ -87,7 +87,7 @@ export function ProjectNotesSection({ projectId }: { projectId: string }) {
               )}
             >
               {note.is_project_brief ? (
-                <Star size={12} className="shrink-0 text-amber-500" aria-label="Project brief" />
+                <Star size={12} className="shrink-0 text-accent-warning" aria-label="Project brief" />
               ) : (
                 <FileText
                   size={12}

@@ -36,7 +36,7 @@ function ConfirmDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="w-full max-w-sm rounded-xl border border-white/20 bg-[#111] p-6">
+      <div className="w-full max-w-sm rounded-xl border border-border-subtle bg-surface-sunken p-6">
         <h3 className="mb-2 font-mono text-sm font-semibold text-white">{title}</h3>
         <p className="mb-4 font-mono text-xs text-white/50">{description}</p>
         {children}
@@ -84,7 +84,7 @@ function UserPickerDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="w-full max-w-md rounded-xl border border-white/20 bg-[#111] p-6">
+      <div className="w-full max-w-md rounded-xl border border-border-subtle bg-surface-sunken p-6">
         <h3 className="mb-3 font-mono text-sm font-semibold text-white">Select target user</h3>
         <div className="relative mb-3">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />

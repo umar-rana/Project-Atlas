@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 const TAG_STYLES: Record<string, string> = {
   new: "bg-accent-primary-subtle text-accent-primary",
-  improved: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  fixed: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-500",
+  improved: "bg-accent-success/15 text-accent-success",
+  fixed: "bg-accent-warning/15 text-accent-warning",
 };
 
 const TAG_LABELS: Record<string, string> = {

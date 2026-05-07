@@ -5,6 +5,7 @@ import { Clock, CheckCircle2, RefreshCw, ArrowRight, Calendar } from "lucide-rea
 import { trpc } from "@/lib/trpc/client";
 import { useTasksStore } from "@/lib/tasks/store";
 import { EmptyState } from "@/components/composed/empty-state";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 import { isPast, addHours } from "date-fns";
 import { toast } from "@/lib/toast";
@@ -94,39 +95,42 @@ function WaitingForTaskCard({
         </div>
       </div>
       <div className="hidden shrink-0 items-center gap-1 group-hover:flex">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMarkReceived(task.id);
-          }}
-          title="Mark received"
-          className="hover:border-accent-success/30 flex items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-success-muted hover:text-accent-success"
-        >
-          <CheckCircle2 size={11} /> Received
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onFollowUp(task.id);
-          }}
-          title="Record follow-up"
-          className="hover:border-accent-warning/30 flex items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-warning-muted hover:text-accent-warning"
-        >
-          <RefreshCw size={11} /> Follow up
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onConvertToActive(task.id);
-          }}
-          title="Convert to active"
-          className="flex items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-surface-hover"
-        >
-          <ArrowRight size={11} /> Active
-        </button>
+        <Hint label="Mark received">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMarkReceived(task.id);
+            }}
+            className="hover:border-accent-success/30 flex items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-success-muted hover:text-accent-success"
+          >
+            <CheckCircle2 size={11} /> Received
+          </button>
+        </Hint>
+        <Hint label="Record follow-up">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onFollowUp(task.id);
+            }}
+            className="hover:border-accent-warning/30 flex items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-accent-warning-muted hover:text-accent-warning"
+          >
+            <RefreshCw size={11} /> Follow up
+          </button>
+        </Hint>
+        <Hint label="Convert to active">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onConvertToActive(task.id);
+            }}
+            className="flex items-center gap-1 rounded-sm border border-border-subtle px-1.5 py-0.5 font-ui text-2xs text-text-secondary transition-colors hover:bg-surface-hover"
+          >
+            <ArrowRight size={11} /> Active
+          </button>
+        </Hint>
       </div>
     </div>
   );

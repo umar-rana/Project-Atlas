@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+import { Hint } from "@/components/ui/hint";
 import {
   Play,
   Pause,
@@ -143,37 +144,43 @@ export function JobCard({ job, onMutated }: { job: JobInfo; onMutated: () => voi
               Queued
             </span>
           ) : (
-            <button
-              onClick={() => runNow.mutate({ job_name: job.name })}
-              disabled={isBusy}
-              className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary disabled:opacity-50"
-              title="Run now"
-            >
-              <Play size={12} />
-              Run now
-            </button>
+            <Hint label="Run now">
+              <button
+                onClick={() => runNow.mutate({ job_name: job.name })}
+                disabled={isBusy}
+                className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary transition-colors hover:border-accent-primary hover:text-accent-primary disabled:opacity-50"
+                aria-label="Run now"
+              >
+                <Play size={12} />
+                Run now
+              </button>
+            </Hint>
           )}
 
           {isActive ? (
-            <button
-              onClick={() => pause.mutate({ job_name: job.name })}
-              disabled={isBusy}
-              className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary transition-colors hover:border-accent-warning hover:text-accent-warning disabled:opacity-50"
-              title="Pause job"
-            >
-              <Pause size={12} />
-              Pause
-            </button>
+            <Hint label="Pause job">
+              <button
+                onClick={() => pause.mutate({ job_name: job.name })}
+                disabled={isBusy}
+                className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary transition-colors hover:border-accent-warning hover:text-accent-warning disabled:opacity-50"
+                aria-label="Pause job"
+              >
+                <Pause size={12} />
+                Pause
+              </button>
+            </Hint>
           ) : (
-            <button
-              onClick={() => resume.mutate({ job_name: job.name })}
-              disabled={isBusy}
-              className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary transition-colors hover:border-accent-success hover:text-accent-success disabled:opacity-50"
-              title="Resume job"
-            >
-              <RotateCcw size={12} />
-              Resume
-            </button>
+            <Hint label="Resume job">
+              <button
+                onClick={() => resume.mutate({ job_name: job.name })}
+                disabled={isBusy}
+                className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary transition-colors hover:border-accent-success hover:text-accent-success disabled:opacity-50"
+                aria-label="Resume job"
+              >
+                <RotateCcw size={12} />
+                Resume
+              </button>
+            </Hint>
           )}
         </div>
       </div>
@@ -203,17 +210,19 @@ export function JobCard({ job, onMutated }: { job: JobInfo; onMutated: () => voi
               {job.lastRun.result ? ` — ${job.lastRun.result}` : ""}
             </span>
             {hasBreakdown && (
-              <button
-                onClick={() => setBreakdownOpen((o) => !o)}
-                className="ml-0.5 flex items-center gap-0.5 rounded font-ui text-2xs text-text-tertiary transition-colors hover:text-text-secondary"
-                title={breakdownOpen ? "Hide breakdown" : "Show breakdown"}
-              >
-                <ChevronDown
-                  size={12}
-                  className={cn("transition-transform", breakdownOpen && "rotate-180")}
-                />
-                {breakdownOpen ? "Hide" : "Details"}
-              </button>
+              <Hint label={breakdownOpen ? "Hide breakdown" : "Show breakdown"}>
+                <button
+                  onClick={() => setBreakdownOpen((o) => !o)}
+                  className="ml-0.5 flex items-center gap-0.5 rounded font-ui text-2xs text-text-tertiary transition-colors hover:text-text-secondary"
+                  aria-label={breakdownOpen ? "Hide breakdown" : "Show breakdown"}
+                >
+                  <ChevronDown
+                    size={12}
+                    className={cn("transition-transform", breakdownOpen && "rotate-180")}
+                  />
+                  {breakdownOpen ? "Hide" : "Details"}
+                </button>
+              </Hint>
             )}
           </div>
         ) : (

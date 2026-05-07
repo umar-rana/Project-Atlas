@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Hint } from "@/components/ui/hint";
 
 const TRUNCATE_CHARS = 150;
 const EXPAND_MAX_HEIGHT = 800;
@@ -51,7 +52,7 @@ export function WorklogEntry({ id, body, durationMinutes, onEdit, onDelete }: Wo
         {confirmDelete && (
           <div className="mt-1 flex items-center gap-2 font-ui text-2xs">
             <span className="text-text-secondary">Delete this entry?</span>
-            <button onClick={() => onDelete(id)} className="text-red-500 hover:underline">
+            <button onClick={() => onDelete(id)} className="text-accent-danger hover:underline">
               Yes, delete
             </button>
             <button
@@ -64,38 +65,40 @@ export function WorklogEntry({ id, body, durationMinutes, onEdit, onDelete }: Wo
         )}
       </div>
       <div className="absolute right-0 top-0 hidden items-center gap-1 group-hover:flex">
-        <button
-          onClick={() => onEdit(id)}
-          title="Edit"
-          className="hover:bg-bg-hover rounded p-0.5 text-text-tertiary hover:text-text-secondary"
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
+        <Hint label="Edit">
+          <button
+            onClick={() => onEdit(id)}
+            className="hover:bg-bg-hover rounded p-0.5 text-text-tertiary hover:text-text-secondary"
           >
-            <path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" />
-          </svg>
-        </button>
-        <button
-          onClick={() => setConfirmDelete(true)}
-          title="Delete"
-          className="hover:bg-bg-hover rounded p-0.5 text-text-tertiary hover:text-red-400"
-        >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z" />
+            </svg>
+          </button>
+        </Hint>
+        <Hint label="Delete">
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="hover:bg-bg-hover rounded p-0.5 text-text-tertiary hover:text-accent-danger"
           >
-            <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4H5z" />
-          </svg>
-        </button>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M3 4h10M6 4V2h4v2M5 4v9h6V4H5z" />
+            </svg>
+          </button>
+        </Hint>
       </div>
     </div>
   );

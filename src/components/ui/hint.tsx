@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { KeyboardShortcut } from "./keyboard-shortcut";
 
 export interface HintProps {
-  label: string;
+  label: string | undefined;
   shortcut?: string;
   side?: "top" | "right" | "bottom" | "left";
   size?: "sm" | "md";
@@ -24,11 +24,12 @@ export function Hint({
   disabled = false,
   children,
 }: HintProps): React.ReactElement {
-  if (disabled) {
+  if (disabled || !label) {
     return <>{children}</>;
   }
 
   return (
+    <TooltipPrimitive.Provider>
     <TooltipPrimitive.Root delayDuration={delayDuration}>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
@@ -48,5 +49,6 @@ export function Hint({
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
     </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
   );
 }

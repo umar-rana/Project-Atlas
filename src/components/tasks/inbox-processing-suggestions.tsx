@@ -5,6 +5,7 @@ import { Sparkles, Check, ChevronDown, ChevronRight, Tag } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast";
+import { Hint } from "@/components/ui/hint";
 
 interface InboxProcessingSuggestionsProps {
   taskId: string;
@@ -570,27 +571,30 @@ export function InboxProcessingSuggestions({
                     </span>
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleAccept(s);
-                      }}
-                      disabled={
-                        disabled || updateTask.isPending || (s.type === "project" && !s.projectId)
-                      }
-                      title={
+                    <Hint
+                      label={
                         s.type === "project" && !s.projectId
                           ? `No project matches "${s.hint}" — use Different… to choose one`
                           : undefined
                       }
-                      className={cn(
-                        "border-accent-success/40 bg-accent-success/10 flex items-center gap-0.5 rounded-sm border px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
-                        "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
-                      )}
                     >
-                      <Check size={9} />
-                      Accept
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleAccept(s);
+                        }}
+                        disabled={
+                          disabled || updateTask.isPending || (s.type === "project" && !s.projectId)
+                        }
+                        className={cn(
+                          "border-accent-success/40 bg-accent-success/10 flex items-center gap-0.5 rounded-sm border px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-success",
+                          "hover:bg-accent-success/20 disabled:cursor-not-allowed disabled:opacity-40",
+                        )}
+                      >
+                        <Check size={9} />
+                        Accept
+                      </button>
+                    </Hint>
                     <button
                       type="button"
                       onClick={() => handleDifferentOpen(s)}

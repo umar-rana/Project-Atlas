@@ -45,7 +45,7 @@ export function ImportConflictDialog({
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border-default bg-surface-base p-6 shadow-xl focus:outline-none">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-400" />
+              <AlertTriangle size={16} className="text-accent-warning" />
               <Dialog.Title className="font-ui text-sm font-semibold text-text-primary">
                 Note already exists
               </Dialog.Title>
@@ -99,7 +99,7 @@ export function ImportConflictDialog({
               className={cn(
                 "flex flex-col gap-0.5 rounded-md border p-3 text-left transition-colors",
                 resolution === "replace"
-                  ? "border-accent-danger bg-red-500/10"
+                  ? "border-accent-danger bg-accent-danger/10"
                   : "border-border-default hover:border-border-focus",
               )}
             >

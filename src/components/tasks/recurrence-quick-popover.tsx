@@ -8,6 +8,7 @@ import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { PRESET_RULES, type PresetName } from "@/core/recurrence/preset-rules";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Hint } from "@/components/ui/hint";
 
 interface RecurrenceQuickPopoverProps {
   taskId: string;
@@ -113,24 +114,25 @@ export function RecurrenceQuickPopover({
 
   return (
     <Popover open={open} onOpenChange={changeOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          title={hasRule ? "Edit recurrence" : "Set recurrence"}
-          aria-label={hasRule ? "Edit recurrence" : "Set recurrence"}
-          className={cn(
-            "shrink-0 rounded-sm p-0.5 transition-colors",
-            hasRule
-              ? "text-accent-info"
-              : showAlways
-                ? "text-text-tertiary hover:text-text-secondary"
-                : "text-text-tertiary opacity-0 hover:text-text-secondary group-hover:opacity-100",
-          )}
-        >
-          <RefreshCw size={12} />
-        </button>
-      </PopoverTrigger>
+      <Hint label={hasRule ? "Edit recurrence" : "Set recurrence"}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => e.stopPropagation()}
+            aria-label={hasRule ? "Edit recurrence" : "Set recurrence"}
+            className={cn(
+              "shrink-0 rounded-sm p-0.5 transition-colors",
+              hasRule
+                ? "text-accent-info"
+                : showAlways
+                  ? "text-text-tertiary hover:text-text-secondary"
+                  : "text-text-tertiary opacity-0 hover:text-text-secondary group-hover:opacity-100",
+            )}
+          >
+            <RefreshCw size={12} />
+          </button>
+        </PopoverTrigger>
+      </Hint>
       <PopoverContent align="end" className="w-36 p-1" onClick={(e) => e.stopPropagation()}>
         {QUICK_PRESETS.map((opt) => (
           <button

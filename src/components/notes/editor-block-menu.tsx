@@ -2,6 +2,8 @@
 
 import React, { useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { Hint } from "@/components/ui/hint";
+import { NOTE_HIGHLIGHT_COLORS } from "@/core/notes/colors";
 import type { Editor } from "@tiptap/react";
 
 type BlockType =
@@ -27,14 +29,7 @@ const TURN_INTO_OPTIONS: { id: BlockType; label: string; icon: string }[] = [
   { id: "blockquote", label: "Quote", icon: "❝" },
 ];
 
-const HIGHLIGHT_COLORS = [
-  { label: "Yellow", value: "#fef08a" },
-  { label: "Green", value: "#bbf7d0" },
-  { label: "Blue", value: "#bfdbfe" },
-  { label: "Pink", value: "#fbcfe8" },
-  { label: "Orange", value: "#fed7aa" },
-  { label: "Purple", value: "#e9d5ff" },
-];
+const HIGHLIGHT_COLORS = NOTE_HIGHLIGHT_COLORS;
 
 function applyHighlightToBlock(editor: Editor, pos: number, color: string | null) {
   const { state } = editor;
@@ -211,32 +206,33 @@ export function EditorBlockMenu({ editor, pos, anchor, onClose }: Props) {
             <p className="mb-1.5 text-xs font-medium text-text-tertiary">Highlight</p>
             <div className="flex flex-wrap gap-1.5">
               {HIGHLIGHT_COLORS.map((c) => (
+                <Hint key={c.label} label={c.label}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      applyHighlightToBlock(editor, pos, c.value);
+                      onClose();
+                    }}
+                    className="h-6 w-6 rounded border-2 border-transparent transition-all hover:scale-110 hover:border-accent-primary focus-visible:focus-ring"
+                    style={{ backgroundColor: `var(${c.cssVar})` }}
+                  />
+                </Hint>
+              ))}
+              <Hint label="Remove highlight">
                 <button
-                  key={c.label}
                   type="button"
-                  title={c.label}
                   onClick={() => {
-                    applyHighlightToBlock(editor, pos, c.value);
+                    applyHighlightToBlock(editor, pos, null);
                     onClose();
                   }}
-                  className="h-6 w-6 rounded border-2 border-transparent transition-all hover:scale-110 hover:border-accent-primary focus-visible:focus-ring"
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-              <button
-                type="button"
-                title="Remove highlight"
-                onClick={() => {
-                  applyHighlightToBlock(editor, pos, null);
-                  onClose();
-                }}
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded border-2 border-border-default",
-                  "text-[10px] text-text-tertiary hover:border-accent-primary focus-visible:focus-ring",
-                )}
-              >
-                ✕
-              </button>
+                  className={cn(
+                    "flex h-6 w-6 items-center justify-center rounded border-2 border-border-default",
+                    "text-[10px] text-text-tertiary hover:border-accent-primary focus-visible:focus-ring",
+                  )}
+                >
+                  ✕
+                </button>
+              </Hint>
             </div>
           </div>
         )}

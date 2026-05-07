@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 
 interface ParserProposal {
@@ -210,15 +211,17 @@ export function DispositionSomedayForm({
           Cancel
         </button>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={submitDefaults}
-            disabled={mut.isPending}
-            className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
-            title="⌘↵ Accept defaults"
-          >
-            ⌘↵ Defaults
-          </button>
+          <Hint label="⌘↵ Accept defaults">
+            <button
+              type="button"
+              onClick={submitDefaults}
+              disabled={mut.isPending}
+              className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
+              aria-label="⌘↵ Accept defaults"
+            >
+              ⌘↵ Defaults
+            </button>
+          </Hint>
           <button
             type="button"
             onClick={submit}

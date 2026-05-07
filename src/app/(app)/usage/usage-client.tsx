@@ -71,8 +71,8 @@ function StatCard({ label, calls, tokens, cost, failures }: StatCardProps) {
         </div>
         {failures != null && failures > 0 && (
           <div className="flex items-baseline justify-between">
-            <span className="text-sm font-semibold tabular-nums text-red-400">{failures}</span>
-            <span className="text-xs text-red-400/70">failed</span>
+            <span className="text-sm font-semibold tabular-nums text-accent-danger">{failures}</span>
+            <span className="text-xs text-accent-danger/70">failed</span>
           </div>
         )}
         <div className="flex items-baseline justify-between">
@@ -126,8 +126,8 @@ export function UsageClient() {
                 <div
                   className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
                     exceeded
-                      ? "border border-red-500/20 bg-red-500/10 text-red-400"
-                      : "border border-yellow-500/20 bg-yellow-500/10 text-yellow-400"
+                      ? "border border-accent-danger/20 bg-accent-danger/10 text-accent-danger"
+                      : "border border-accent-warning/20 bg-accent-warning/10 text-accent-warning"
                   }`}
                 >
                   {exceeded
@@ -165,7 +165,7 @@ export function UsageClient() {
           {data.recentErrors.length > 0 && (
             <section className="mb-8">
               <h2 className="mb-3 text-sm font-semibold text-text-secondary">Recent errors</h2>
-              <div className="overflow-hidden rounded-xl border border-red-500/20 bg-surface-raised shadow-1">
+              <div className="overflow-hidden rounded-xl border border-accent-danger/20 bg-surface-raised shadow-1">
                 {data.recentErrors.map((err, i) => (
                   <div
                     key={err.id}
@@ -174,7 +174,7 @@ export function UsageClient() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <span className="font-mono text-xs text-text-secondary">{err.task}</span>
-                        <p className="mt-0.5 truncate text-sm text-red-400">{err.error}</p>
+                        <p className="mt-0.5 truncate text-sm text-accent-danger">{err.error}</p>
                       </div>
                       <span className="shrink-0 text-xs text-text-tertiary">
                         {formatRelativeTime(err.createdAt)}

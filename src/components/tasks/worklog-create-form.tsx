@@ -74,7 +74,7 @@ export function WorklogCreateForm({
           <button
             type="submit"
             disabled={saving || !body.trim()}
-            className="bg-accent rounded px-2 py-1 font-ui text-xs text-white disabled:opacity-50"
+            className="bg-accent-primary rounded px-2 py-1 font-ui text-xs text-white disabled:opacity-50"
           >
             {saving ? "Saving…" : "Save"}
           </button>

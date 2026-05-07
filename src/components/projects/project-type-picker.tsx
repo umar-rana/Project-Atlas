@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc/client";
 import { getSuggestedTypes, displayType } from "@/core/projects/type-suggestions";
 import { useTypeConfig } from "@/core/projects/type-config-context";
 import { TypeConfigEditor } from "./type-config-editor";
+import { Hint } from "@/components/ui/hint";
 import { CustomTypeDialog } from "./custom-type-dialog";
 import {
   DropdownMenu,
@@ -144,19 +145,21 @@ export function ProjectTypePicker({
                     <span>{getIcon(t)}</span>
                     {displayType(t)}
                   </DropdownMenuItem>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setEditingType(editingType === t ? null : t);
-                    }}
-                    className="mr-1 shrink-0 rounded p-0.5 text-text-disabled opacity-0 transition-opacity hover:bg-surface-hover hover:text-text-tertiary focus:opacity-100 group-hover:opacity-100 peer-hover:opacity-100"
-                    style={{ opacity: editingType === t ? 1 : undefined }}
-                    title="Customize icon & color"
-                  >
-                    <Settings2 size={11} />
-                  </button>
+                  <Hint label="Customize icon & color">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setEditingType(editingType === t ? null : t);
+                      }}
+                      className="mr-1 shrink-0 rounded p-0.5 text-text-disabled opacity-0 transition-opacity hover:bg-surface-hover hover:text-text-tertiary focus:opacity-100 group-hover:opacity-100 peer-hover:opacity-100"
+                      style={{ opacity: editingType === t ? 1 : undefined }}
+                      aria-label="Customize icon & color"
+                    >
+                      <Settings2 size={11} />
+                    </button>
+                  </Hint>
                   {editingType === t && (
                     <TypeConfigEditor
                       type={t}

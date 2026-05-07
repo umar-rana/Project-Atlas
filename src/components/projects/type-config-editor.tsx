@@ -4,6 +4,7 @@ import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { Hint } from "@/components/ui/hint";
 
 const EMOJI_OPTIONS = [
   "📁",
@@ -98,7 +99,7 @@ export function TypeConfigEditor({
 
   return (
     <div
-      className="absolute left-full top-0 z-[60] ml-1 w-64 rounded-md border border-border-default bg-surface-overlay p-3 shadow-lg"
+      className="absolute left-full top-0 z-[60] ml-1 w-64 rounded-md border border-border-default bg-surface-overlay p-3 shadow-3"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="mb-2 flex items-center justify-between">
@@ -134,17 +135,18 @@ export function TypeConfigEditor({
       <p className="mb-1.5 font-ui text-3xs uppercase tracking-caps text-text-disabled">Color</p>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {COLOR_OPTIONS.map((c) => (
-          <button
-            key={c.value}
-            type="button"
-            title={c.label}
-            onClick={() => handleColorSelect(c.value)}
-            className={cn(
-              "size-5 rounded-full transition-transform hover:scale-110",
-              currentColor === c.value ? "ring-2 ring-border-focus ring-offset-1" : "",
-            )}
-            style={{ backgroundColor: c.value }}
-          />
+          <Hint key={c.value} label={c.label}>
+            <button
+              type="button"
+              aria-label={c.label}
+              onClick={() => handleColorSelect(c.value)}
+              className={cn(
+                "size-5 rounded-full transition-transform hover:scale-110",
+                currentColor === c.value ? "ring-2 ring-border-focus ring-offset-1" : "",
+              )}
+              style={{ backgroundColor: c.value }}
+            />
+          </Hint>
         ))}
       </div>
 

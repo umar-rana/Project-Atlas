@@ -38,7 +38,7 @@ export function CustomTypeDialog({
   }
 
   return (
-    <div className="absolute right-0 top-full z-50 mt-1 w-60 rounded-md border border-border-default bg-surface-overlay p-3 shadow-lg">
+    <div className="absolute right-0 top-full z-50 mt-1 w-60 rounded-md border border-border-default bg-surface-overlay p-3 shadow-3">
       <p className="mb-2 font-ui text-2xs font-medium text-text-secondary">Custom type</p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <div>

@@ -526,19 +526,20 @@ function LastContactOverride({
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => {
-          setValue(
-            currentOverride ? new Date(currentOverride as string).toISOString().slice(0, 10) : "",
-          );
-          setOpen(true);
-        }}
-        className="ml-1 text-2xs text-text-disabled transition-colors hover:text-text-tertiary"
-        title="Override last contact date"
-      >
-        Edit
-      </button>
+      <Hint label="Override last contact date">
+        <button
+          type="button"
+          onClick={() => {
+            setValue(
+              currentOverride ? new Date(currentOverride as string).toISOString().slice(0, 10) : "",
+            );
+            setOpen(true);
+          }}
+          className="ml-1 text-2xs text-text-disabled transition-colors hover:text-text-tertiary"
+        >
+          Edit
+        </button>
+      </Hint>
     );
   }
 
