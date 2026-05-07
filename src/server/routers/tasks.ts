@@ -170,6 +170,7 @@ export const tasksRouter = router({
         project_id: z.string().uuid().optional(),
         context_id: z.string().uuid().optional(),
         tag_name: z.string().optional(),
+        person_id: z.string().uuid().optional(),
         include_completed: z.boolean().default(false),
         include_deferred: z.boolean().default(false),
         limit: z.number().int().min(1).max(500).default(200),
@@ -179,6 +180,7 @@ export const tasksRouter = router({
     .query(async ({ ctx, input }) => {
       const where: Prisma.TaskWhereInput = {
         user_id: ctx.user.id,
+        ...(input.person_id ? { referenced_person_ids: { has: input.person_id } } : {}),
       };
 
       if (input.perspective === "trash") {

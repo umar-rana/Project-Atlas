@@ -67,7 +67,7 @@ const PROVIDERS: ProviderConfig[] = [
     name: "github_gist",
     pattern: /^https?:\/\/gist\.github\.com\/([^/]+)\/([A-Za-z0-9]+)/,
     buildEmbedUrl: (m) =>
-      `/api/embed/gist?user=${encodeURIComponent(m[1])}&id=${encodeURIComponent(m[2])}`,
+      `/api/embed/gist?user=${encodeURIComponent(m[1] ?? "")}&id=${encodeURIComponent(m[2] ?? "")}`,
   },
   {
     name: "codesandbox",

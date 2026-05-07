@@ -244,23 +244,287 @@ model Capture {
   @@index([deleted_at])
 }
 
-// ─── Person (placeholder; full model in Wave 6) ──────────────────────────────
+// ─── Person ──────────────────────────────────────────────────────────────────
+// MAINTENANCE NOTE: Person has a user_id column and is included in
+// reattachOrphanData() in src/core/auth/orphan-recovery.ts.
 
 model Person {
-  id           String    @id @db.Uuid
-  user_id      String    @db.Uuid
-  handle       String
-  display_name String?
-  email        String?
-  deleted_at   DateTime? @db.Timestamptz
-  created_at   DateTime  @default(now()) @db.Timestamptz
-  updated_at   DateTime  @updatedAt @db.Timestamptz
+  id                  String    @id @db.Uuid
+  user_id             String    @db.Uuid
+  handle              String
 
-  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  // Name decomposition (Google Contacts compatible)
+  display_name        String?
+  honorific_prefix    String?   // Mr., Dr., Prof., etc.
+  given_name          String?
+  middle_name         String?
+  family_name         String?
+  honorific_suffix    String?   // Jr., Sr., III, etc.
+  nickname            String?
+
+  // Profile
+  biography           String?
+  photo_url           String?
+
+  // Relationship
+  relationship_type   String?   // friend | colleague | family | client | advisor | mentor | acquaintance | custom
+
+  // Cadence / follow-up (populated in Wave 5a-ii)
+  cadence_days        Int?
+  next_follow_up_at   DateTime? @db.Timestamptz
+  last_contacted_at   DateTime? @db.Timestamptz
+
+  // External data blob for sync provenance
+  external_data       Json?
+
+  deleted_at          DateTime? @db.Timestamptz
+  created_at          DateTime  @default(now()) @db.Timestamptz
+  updated_at          DateTime  @updatedAt @db.Timestamptz
+
+  user                User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  emails              PersonEmail[]
+  phones              PersonPhone[]
+  addresses           PersonAddress[]
+  organizations       PersonOrganization[]
+  urls                PersonUrl[]
+  events              PersonEvent[]
+  relations           PersonRelation[]   @relation("PersonRelations")
+  reverse_relations   PersonRelation[]   @relation("PersonRelationTargets")
+  skills              PersonSkill[]
+  interests           PersonInterest[]
+  tags                TagOnPerson[]
 
   @@unique([user_id, handle])
   @@index([user_id])
+  @@index([user_id, relationship_type])
+  @@index([user_id, next_follow_up_at])
   @@index([deleted_at])
+}
+
+// ─── PersonEmail ──────────────────────────────────────────────────────────────
+
+model PersonEmail {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  email           String
+  type            String    @default("other") // home | work | other | custom
+  is_primary      Boolean   @default(false)
+  source          String?   // google_contacts | manual | import
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([person_id, is_primary])
+  @@index([deleted_at])
+}
+
+// ─── PersonPhone ──────────────────────────────────────────────────────────────
+
+model PersonPhone {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  number          String
+  e164_normalized String?
+  type            String    @default("other") // mobile | home | work | fax | other | custom
+  is_primary      Boolean   @default(false)
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([person_id, is_primary])
+  @@index([deleted_at])
+}
+
+// ─── PersonAddress ────────────────────────────────────────────────────────────
+
+model PersonAddress {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  type            String    @default("other") // home | work | other | custom
+  street          String?
+  city            String?
+  region          String?   // state/province
+  postal_code     String?
+  country_code    String?   // ISO 3166-1 alpha-2
+  country_name    String?
+  formatted       String?   // full formatted address
+  is_primary      Boolean   @default(false)
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([person_id, is_primary])
+  @@index([deleted_at])
+}
+
+// ─── PersonOrganization ───────────────────────────────────────────────────────
+
+model PersonOrganization {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  name            String
+  title           String?
+  department      String?
+  is_current      Boolean   @default(true)
+  is_primary      Boolean   @default(false)
+  start_date      DateTime? @db.Timestamptz
+  end_date        DateTime? @db.Timestamptz
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([person_id, is_primary])
+  @@index([person_id, is_current])
+  @@index([deleted_at])
+}
+
+// ─── PersonUrl ────────────────────────────────────────────────────────────────
+
+model PersonUrl {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  url             String
+  type            String    @default("other") // linkedin | twitter | github | website | other | custom
+  label           String?
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([deleted_at])
+}
+
+// ─── PersonEvent ─────────────────────────────────────────────────────────────
+
+model PersonEvent {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  type            String    @default("other") // birthday | anniversary | other | custom
+  date            DateTime  @db.Timestamptz
+  label           String?
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([deleted_at])
+}
+
+// ─── PersonRelation ───────────────────────────────────────────────────────────
+
+model PersonRelation {
+  id                String    @id @db.Uuid
+  person_id         String    @db.Uuid
+  related_person_id String?   @db.Uuid
+  related_text      String?   // free-text name when no linked person
+  type              String    @default("other") // spouse | partner | parent | child | sibling | friend | colleague | other | custom
+  source            String?
+  source_id         String?
+  source_metadata   Json?
+  last_synced_at    DateTime? @db.Timestamptz
+  deleted_at        DateTime? @db.Timestamptz
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+
+  person            Person    @relation("PersonRelations", fields: [person_id], references: [id], onDelete: Cascade)
+  related_person    Person?   @relation("PersonRelationTargets", fields: [related_person_id], references: [id], onDelete: SetNull)
+
+  @@index([person_id])
+  @@index([related_person_id])
+  @@index([deleted_at])
+}
+
+// ─── PersonSkill ──────────────────────────────────────────────────────────────
+
+model PersonSkill {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  name            String
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([deleted_at])
+}
+
+// ─── PersonInterest ───────────────────────────────────────────────────────────
+
+model PersonInterest {
+  id              String    @id @db.Uuid
+  person_id       String    @db.Uuid
+  name            String
+  source          String?
+  source_id       String?
+  source_metadata Json?
+  last_synced_at  DateTime? @db.Timestamptz
+  deleted_at      DateTime? @db.Timestamptz
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  updated_at      DateTime  @updatedAt @db.Timestamptz
+
+  person          Person    @relation(fields: [person_id], references: [id], onDelete: Cascade)
+
+  @@index([person_id])
+  @@index([deleted_at])
+}
+
+// ─── TagOnPerson (join) ───────────────────────────────────────────────────────
+
+model TagOnPerson {
+  person_id  String   @db.Uuid
+  tag_id     String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  person     Person   @relation(fields: [person_id], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([person_id, tag_id])
+  @@index([tag_id])
 }
 
 // ─── Tag ─────────────────────────────────────────────────────────────────────
@@ -280,6 +544,7 @@ model Tag {
   attachments TagOnAttachment[]
   tag_on_notes TagOnNote[]
   templates   TagOnTaskTemplate[]
+  people      TagOnPerson[]
 
   @@unique([user_id, name])
   @@index([user_id])

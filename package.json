@@ -97,6 +97,7 @@
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "gray-matter": "^4.0.3",
+    "libphonenumber-js": "^1.12.42",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.469.0",
     "mailparser": "^3.9.8",

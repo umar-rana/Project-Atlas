@@ -3,7 +3,7 @@
 import { Node, mergeAttributes, Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 
-export type ReferencePickerType = "note" | "tag" | "context";
+export type ReferencePickerType = "note" | "tag" | "context" | "person";
 
 export type ReferencePickerState = {
   active: boolean;
@@ -54,6 +54,11 @@ const TRIGGER_MAP: Record<string, ReferencePickerType> = {
   "[[": "note",
   "#": "tag",
   "@": "context",
+};
+
+// Two-character triggers checked separately (must come before single-char triggers)
+const DOUBLE_TRIGGER_MAP: Record<string, ReferencePickerType> = {
+  "@@": "person",
 };
 
 export const ReferencePickerExtension = Extension.create({
@@ -120,6 +125,21 @@ export const ReferencePickerExtension = Extension.create({
             const pickerState = REFERENCE_PICKER_PLUGIN_KEY.getState(state);
 
             if (pickerState?.active) {
+              // Special case: user typed `@` while context picker is open with empty query
+              // → upgrade to person (@@) picker and swallow the extra @
+              if (text === "@" && pickerState.trigger === "context" && pickerState.query === "") {
+                view.dispatch(
+                  state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {
+                    active: true,
+                    trigger: "person" as ReferencePickerType,
+                    query: "",
+                    from: pickerState.from,
+                    to: pickerState.to + 1,
+                  }),
+                );
+                return false;
+              }
+
               const newQuery = pickerState.query + text;
               view.dispatch(
                 state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {
@@ -133,6 +153,25 @@ export const ReferencePickerExtension = Extension.create({
 
             const textBefore =
               state.doc.textBetween(Math.max(0, from - 2), from, "") + text;
+
+            // Check two-character triggers first (e.g. @@)
+            for (const [triggerStr, triggerType] of Object.entries(DOUBLE_TRIGGER_MAP)) {
+              if (textBefore.endsWith(triggerStr)) {
+                const charBeforeTrigger = from > 1 ? state.doc.textBetween(from - 2, from - 1, "") : "";
+                if (charBeforeTrigger === "" || /\s/.test(charBeforeTrigger)) {
+                  view.dispatch(
+                    state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {
+                      active: true,
+                      trigger: triggerType,
+                      query: "",
+                      from: from - 1,
+                      to: from + 1,
+                    }),
+                  );
+                  return false;
+                }
+              }
+            }
 
             for (const [triggerStr, triggerType] of Object.entries(TRIGGER_MAP)) {
               if (triggerStr === "[[") {
@@ -151,6 +190,8 @@ export const ReferencePickerExtension = Extension.create({
                 }
               } else if (text === triggerStr) {
                 const charBefore = from > 0 ? state.doc.textBetween(from - 1, from, "") : "";
+                // Don't trigger @ if the prev char is also @ (@@  is handled above)
+                if (triggerStr === "@" && charBefore === "@") continue;
                 if (charBefore === "" || /\s/.test(charBefore)) {
                   view.dispatch(
                     state.tr.setMeta(REFERENCE_PICKER_PLUGIN_KEY, {

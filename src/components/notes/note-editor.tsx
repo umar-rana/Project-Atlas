@@ -177,6 +177,12 @@ export function NoteEditor({
     queryLength: number;
   } | null>(null);
 
+  const [createPersonDialog, setCreatePersonDialog] = useState<{
+    prefillName: string;
+    from: number;
+    query: string;
+  } | null>(null);
+
   const saveNote = useCallback(
     async (editor: Editor, overrideTitle?: string) => {
       const json = JSON.stringify(editor.getJSON());
@@ -482,6 +488,72 @@ export function NoteEditor({
     [editor, referencePickerState, createNoteMutation, utils],
   );
 
+  const createPersonMutation = trpc.people.create.useMutation();
+  const addPersonEmailMutation = trpc.people.emails.add.useMutation();
+  const addPersonPhoneMutation = trpc.people.phones.add.useMutation();
+
+  const handleCreatePerson = useCallback(
+    (nameText: string) => {
+      if (!editor || !referencePickerState) return;
+      const trimmed = nameText.trim();
+      setCreatePersonDialog({
+        prefillName: trimmed,
+        from: referencePickerState.from,
+        query: referencePickerState.query,
+      });
+      setReferencePickerState(null);
+    },
+    [editor, referencePickerState],
+  );
+
+  const handleCreatePersonSubmit = useCallback(
+    async (displayName: string, email: string, phone: string) => {
+      if (!editor || !createPersonDialog) return;
+      const trimmed = displayName.trim();
+      if (!trimmed) return;
+
+      try {
+        const parts = trimmed.split(/\s+/);
+        const given_name = parts[0] ?? trimmed;
+        const family_name = parts.length > 1 ? parts.slice(1).join(" ") : undefined;
+
+        const newPerson = await createPersonMutation.mutateAsync({
+          given_name,
+          ...(family_name ? { family_name } : {}),
+        });
+        if (email.trim()) {
+          await addPersonEmailMutation.mutateAsync({ person_id: newPerson.id, email: email.trim(), type: "work", is_primary: true });
+        }
+        if (phone.trim()) {
+          await addPersonPhoneMutation.mutateAsync({ person_id: newPerson.id, number: phone.trim(), type: "mobile", is_primary: !email.trim() });
+        }
+        await utils.people.list.invalidate();
+
+        const resolvedName =
+          [newPerson.given_name, newPerson.family_name].filter(Boolean).join(" ") ||
+          newPerson.display_name ||
+          trimmed;
+        const { from, query } = createPersonDialog;
+        const triggerLength = 2 + query.length;
+
+        editor
+          .chain()
+          .focus()
+          .deleteRange({ from, to: from + triggerLength })
+          .insertContent({
+            type: "reference",
+            attrs: { target_type: "person", target_id: newPerson.id, display_text: resolvedName },
+          })
+          .run();
+
+        setCreatePersonDialog(null);
+      } catch {
+        setCreatePersonDialog(null);
+      }
+    },
+    [editor, createPersonDialog, createPersonMutation, utils],
+  );
+
   const handleReferenceClose = useCallback(() => {
     setReferencePickerState(null);
     if (editor) {
@@ -698,6 +770,9 @@ export function NoteEditor({
           onCreateNote={
             referencePickerState.trigger === "note" ? handleCreateNote : undefined
           }
+          onCreatePerson={
+            referencePickerState.trigger === "person" ? handleCreatePerson : undefined
+          }
           onClose={handleReferenceClose}
         />
       )}
@@ -723,6 +798,94 @@ export function NoteEditor({
       )}
 
       <ReferenceTooltipLayer containerRef={editorContainerRef} />
+
+      {createPersonDialog && (
+        <CreatePersonMiniDialog
+          prefillName={createPersonDialog.prefillName}
+          onSubmit={handleCreatePersonSubmit}
+          onCancel={() => setCreatePersonDialog(null)}
+          isPending={createPersonMutation.isPending || addPersonEmailMutation.isPending || addPersonPhoneMutation.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+type CreatePersonMiniDialogProps = {
+  prefillName: string;
+  onSubmit: (displayName: string, email: string, phone: string) => void;
+  onCancel: () => void;
+  isPending: boolean;
+};
+
+function CreatePersonMiniDialog({ prefillName, onSubmit, onCancel, isPending }: CreatePersonMiniDialogProps) {
+  const [displayName, setDisplayName] = React.useState(prefillName);
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      setError("Name is required.");
+      return;
+    }
+    if (!email.trim() && !phone.trim()) {
+      setError("Add at least one email or phone number.");
+      return;
+    }
+    setError(null);
+    onSubmit(displayName, email, phone);
+  };
+
+  return (
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-surface-base/60 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-xl border border-border-default bg-surface-raised p-5 shadow-2 mx-4">
+        <h3 className="font-semibold text-text-primary mb-1 text-sm">Create new person</h3>
+        <p className="text-xs text-text-tertiary mb-4">A name and at least one email or phone is required.</p>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">Name <span className="text-accent-danger">*</span></label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Full name…"
+              autoFocus
+              className="w-full rounded-md border border-border-default bg-surface-base px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-1 focus:ring-accent-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@example.com"
+              className="w-full rounded-md border border-border-default bg-surface-base px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-1 focus:ring-accent-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">Phone</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 555 000 0000"
+              className="w-full rounded-md border border-border-default bg-surface-base px-2.5 py-1.5 text-sm text-text-primary placeholder:text-text-disabled focus:outline-none focus:ring-1 focus:ring-accent-primary"
+            />
+          </div>
+          {error && <p className="text-xs text-accent-danger">{error}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onCancel} className="px-3 py-1.5 text-sm rounded-md border border-border-default text-text-secondary hover:bg-surface-hover">
+              Cancel
+            </button>
+            <button type="submit" disabled={isPending} className="px-3 py-1.5 text-sm rounded-md bg-accent-primary text-white hover:opacity-90 disabled:opacity-60">
+              {isPending ? "Creating…" : "Create person"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

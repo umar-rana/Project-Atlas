@@ -8,7 +8,7 @@ import type { ReferencePickerType } from "@/core/editor/reference-extension";
 export type ReferenceItem = {
   id: string;
   display_text: string;
-  target_type: "note" | "tag" | "context" | "task" | "project" | "table";
+  target_type: "note" | "tag" | "context" | "task" | "project" | "table" | "person";
   subtitle?: string;
   group?: string;
 };
@@ -19,6 +19,7 @@ type Props = {
   position: { top: number; left: number };
   onSelect: (item: ReferenceItem) => void;
   onCreateNote?: (title: string) => void;
+  onCreatePerson?: (name: string) => void;
   onClose: () => void;
 };
 
@@ -29,6 +30,7 @@ const TYPE_ICONS: Record<string, string> = {
   tag: "#",
   context: "@",
   table: "⊞",
+  person: "👤",
 };
 
 function useNoteResults(query: string, enabled: boolean): ReferenceItem[] {
@@ -102,6 +104,25 @@ function useContextResults(query: string, enabled: boolean): ReferenceItem[] {
   }));
 }
 
+function usePersonResults(query: string, enabled: boolean): ReferenceItem[] {
+  const { data } = trpc.people.search.useQuery(
+    { query, limit: 8 },
+    { enabled },
+  );
+  return (data ?? []).map((p): ReferenceItem => {
+    const displayName = [p.display_name, p.given_name, p.family_name].filter(Boolean)[0] ?? p.handle;
+    const org = p.organizations[0];
+    const subtitle = org ? [org.title, org.name].filter(Boolean).join(" @ ") : (p.emails[0]?.email ?? undefined);
+    return {
+      id: p.id,
+      display_text: displayName,
+      target_type: "person",
+      subtitle,
+      group: "People",
+    };
+  });
+}
+
 function useTableResults(query: string, enabled: boolean): ReferenceItem[] {
   const { data } = trpc.tables.search.useQuery(
     { query, limit: 8 },
@@ -123,12 +144,14 @@ function useReferenceResults(trigger: ReferencePickerType, query: string): Refer
   const tables = useTableResults(query, trigger === "note");
   const tags = useTagResults(query, trigger === "tag");
   const contexts = useContextResults(query, trigger === "context");
+  const people = usePersonResults(query, trigger === "person");
 
   if (trigger === "note") {
     return [...notes, ...tasks, ...projects, ...tables];
   }
   if (trigger === "tag") return tags;
   if (trigger === "context") return contexts;
+  if (trigger === "person") return people;
   return [];
 }
 
@@ -136,6 +159,7 @@ const TRIGGER_LABELS: Record<ReferencePickerType, string> = {
   note: "Link to…",
   tag: "Tags",
   context: "Contexts",
+  person: "People",
 };
 
 type GroupedItems = { group: string; items: ReferenceItem[]; startIndex: number }[];
@@ -163,13 +187,16 @@ export function ReferencePicker({
   position,
   onSelect,
   onCreateNote,
+  onCreatePerson,
   onClose,
 }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const results = useReferenceResults(trigger, query);
 
-  const totalItems = results.length + (trigger === "note" ? 1 : 0);
+  const hasCreateAction =
+    (trigger === "note") || (trigger === "person" && !!query.trim());
+  const totalItems = results.length + (hasCreateAction ? 1 : 0);
   const grouped = groupItems(results);
 
   useEffect(() => {
@@ -183,9 +210,11 @@ export function ReferencePicker({
         onSelect(item);
       } else if (trigger === "note" && onCreateNote) {
         onCreateNote(query);
+      } else if (trigger === "person" && onCreatePerson) {
+        onCreatePerson(query);
       }
     },
-    [results, trigger, onCreateNote, onSelect, query],
+    [results, trigger, onCreateNote, onCreatePerson, onSelect, query],
   );
 
   useEffect(() => {
@@ -212,7 +241,7 @@ export function ReferencePicker({
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
-  if (totalItems === 0 && trigger !== "note") {
+  if (totalItems === 0 && trigger !== "note" && trigger !== "person") {
     return (
       <div
         style={{ top: position.top, left: position.left }}
@@ -235,7 +264,7 @@ export function ReferencePicker({
       <div ref={listRef} className="max-h-72 overflow-y-auto py-1">
         {grouped.map(({ group, items, startIndex }) => (
           <div key={group}>
-            {trigger === "note" && (
+            {(trigger === "note" || trigger === "person") && (
               <div className="px-3 pt-2 pb-0.5 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
                 {group}
               </div>
@@ -281,6 +310,21 @@ export function ReferencePicker({
           >
             <span className="text-xs w-4 flex-shrink-0">＋</span>
             <span>Create note{query ? `: "${query}"` : ""}</span>
+          </button>
+        )}
+        {trigger === "person" && query.trim() && (
+          <button
+            type="button"
+            data-idx={results.length}
+            className={cn(
+              "w-full text-left px-3 py-2 flex items-center gap-2 transition-colors duration-fast hover:bg-surface-hover text-sm text-text-primary border-t border-border-default mt-1",
+              activeIndex === results.length && "bg-surface-hover",
+            )}
+            onMouseEnter={() => setActiveIndex(results.length)}
+            onClick={() => handleSelect(results.length)}
+          >
+            <span className="text-xs w-4 flex-shrink-0">＋</span>
+            <span>Create person: &ldquo;{query}&rdquo;</span>
           </button>
         )}
       </div>

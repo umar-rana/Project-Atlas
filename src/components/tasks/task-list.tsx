@@ -304,8 +304,7 @@ export function TaskList({
 
     let list: TaskRow[];
     if (perspective === "inbox") {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error TS2589: tRPC type inference exceeds depth limit for the large capture router; runtime types are correct
+      // @ts-expect-error TS2589: tRPC type inference exceeds depth limit; runtime types are correct
       const captureRows: TaskRow[] = (inboxCapturesQuery.data ?? []).map((c) => ({
         id: c.id,
         title: c.title ?? c.raw_text ?? "(untitled capture)",
