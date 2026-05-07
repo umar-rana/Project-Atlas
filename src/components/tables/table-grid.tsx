@@ -21,11 +21,13 @@ import { CheckboxCell } from "./cells/checkbox-cell";
 import { SingleSelectCell } from "./cells/single-select-cell";
 import { MultiSelectCell } from "./cells/multi-select-cell";
 import { CurrencyCell } from "./cells/currency-cell";
+import { FormulaCell } from "./cells/formula-cell";
 import { computeAggregation, getAvailableAggregations, AGGREGATION_LABELS } from "@/core/tables/aggregations";
 import { sortRows } from "@/core/tables/sort";
 import { filterRows } from "@/core/tables/filter";
 import { DEFAULT_AGGREGATIONS, COLUMN_TYPES } from "@/core/tables/types";
 import { uuidv7 } from "uuidv7";
+import type { FormulaReturnType } from "@/core/tables/formula-shared";
 
 // Stratum viz palette — CSS token references cycling for inline-created options
 const OPTION_PALETTE = [
@@ -91,6 +93,12 @@ export function TableGrid({
   const [addingColumn, setAddingColumn] = React.useState(false);
   const [newColName, setNewColName] = React.useState("");
   const [newColType, setNewColType] = React.useState<ColumnType>("text");
+  const [newColFormula, setNewColFormula] = React.useState("");
+  const [newColFormulaReturnType, setNewColFormulaReturnType] = React.useState<FormulaReturnType>("text");
+  const [newColFormulaDecimals, setNewColFormulaDecimals] = React.useState(2);
+  const [formulaErrors, setFormulaErrors] = React.useState<string[]>([]);
+  const [showAutocomplete, setShowAutocomplete] = React.useState(false);
+  const [autocompleteFilter, setAutocompleteFilter] = React.useState("");
   const [renamingCol, setRenamingCol] = React.useState<string | null>(null);
   const [renameDraft, setRenameDraft] = React.useState("");
   const [draggingRowId, setDraggingRowId] = React.useState<string | null>(null);
@@ -130,7 +138,14 @@ export function TableGrid({
     onSuccess: () => {
       setAddingColumn(false);
       setNewColName("");
+      setFormulaErrors([]);
       utils.tables.get.invalidate({ id: tableId });
+    },
+    onError: (err: unknown) => {
+      if (newColType === "formula") {
+        const msg = err instanceof Error ? err.message : String(err);
+        setFormulaErrors([msg]);
+      }
     },
   });
 
@@ -307,7 +322,7 @@ export function TableGrid({
 
       if (!isEditing && e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
         const col = columns.find((c) => c.id === selectedCell.colId);
-        if (col && col.type !== "checkbox") {
+        if (col && col.type !== "checkbox" && col.type !== "formula") {
           setEditingCell(selectedCell);
         }
       }
@@ -391,6 +406,20 @@ export function TableGrid({
             onCommit={(v) => handleCellCommit(row.id, col.id, v)}
           />
         );
+      case "formula": {
+        const cfg = col.config as ColumnConfig;
+        const returnType = (cfg.return_type ?? "text") as FormulaReturnType;
+        const decimals = cfg.decimals ?? 2;
+        return (
+          <FormulaCell
+            value={rawValue}
+            returnType={returnType}
+            decimals={decimals}
+            currencySymbol={currencySymbol}
+            isSelected={state === "selected"}
+          />
+        );
+      }
       case "multi_select": {
         // Merge server options with locally-created (not-yet-refreshed) options,
         // deduplicating by id so a server refresh never produces duplicate chips.
@@ -581,38 +610,194 @@ export function TableGrid({
             ))}
             <th className="border-b-2 border-border-default bg-surface-sunken">
               {addingColumn ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const n = newColName.trim();
-                    if (!n) return;
-                    addColumn.mutate({ table_id: tableId, name: n, type: newColType });
-                  }}
-                  className="flex items-center gap-1 px-2"
-                >
-                  <input
-                    autoFocus
-                    value={newColName}
-                    onChange={(e) => setNewColName(e.target.value)}
-                    placeholder="Column name"
-                    className="min-w-0 flex-1 rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
-                  />
-                  <select
-                    value={newColType}
-                    onChange={(e) => setNewColType(e.target.value as ColumnType)}
-                    className="rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none"
+                <div className="px-2 py-1.5 min-w-[260px]">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const n = newColName.trim();
+                      if (!n) return;
+                      if (newColType === "formula") {
+                        const expr = newColFormula.trim();
+                        if (!expr) {
+                          setFormulaErrors(["Formula expression cannot be empty."]);
+                          return;
+                        }
+                        addColumn.mutate({
+                          table_id: tableId,
+                          name: n,
+                          type: newColType,
+                          config: {
+                            expression: expr,
+                            return_type: newColFormulaReturnType,
+                            ...(newColFormulaReturnType === "number" ? { decimals: newColFormulaDecimals } : {}),
+                          },
+                        });
+                      } else {
+                        addColumn.mutate({ table_id: tableId, name: n, type: newColType });
+                      }
+                    }}
+                    className="flex flex-col gap-1"
                   >
-                    {COLUMN_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                  <button type="submit" className="rounded-sm bg-accent-primary px-1.5 py-0.5 font-ui text-2xs text-text-on-accent">Add</button>
-                  <button type="button" onClick={() => setAddingColumn(false)} className="rounded-sm px-1 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover">✕</button>
-                </form>
+                    <div className="flex items-center gap-1">
+                      <input
+                        autoFocus
+                        value={newColName}
+                        onChange={(e) => setNewColName(e.target.value)}
+                        placeholder="Column name"
+                        className="min-w-0 flex-1 rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                      />
+                      <select
+                        value={newColType}
+                        onChange={(e) => {
+                          setNewColType(e.target.value as ColumnType);
+                          setFormulaErrors([]);
+                          setNewColFormula("");
+                        }}
+                        className="rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none"
+                      >
+                        {COLUMN_TYPES.map((t) => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                      <button type="submit" disabled={addColumn.isPending} className="rounded-sm bg-accent-primary px-1.5 py-0.5 font-ui text-2xs text-text-on-accent disabled:opacity-50">Add</button>
+                      <button type="button" onClick={() => { setAddingColumn(false); setFormulaErrors([]); setNewColFormula(""); }} className="rounded-sm px-1 py-0.5 font-ui text-2xs text-text-tertiary hover:bg-surface-hover">✕</button>
+                    </div>
+
+                    {newColType === "formula" && (
+                      <div className="flex flex-col gap-1.5 pt-1 border-t border-border-subtle">
+                        <div className="flex items-center gap-1">
+                          <span className="font-ui text-2xs text-text-disabled">Returns</span>
+                          <select
+                            value={newColFormulaReturnType}
+                            onChange={(e) => setNewColFormulaReturnType(e.target.value as FormulaReturnType)}
+                            className="rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none"
+                          >
+                            <option value="text">Text</option>
+                            <option value="number">Number</option>
+                            <option value="date">Date</option>
+                            <option value="boolean">Boolean</option>
+                          </select>
+                          {newColFormulaReturnType === "number" && (
+                            <>
+                              <span className="font-ui text-2xs text-text-disabled">Decimals</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={10}
+                                value={newColFormulaDecimals}
+                                onChange={(e) => setNewColFormulaDecimals(Number(e.target.value))}
+                                className="w-10 rounded-sm bg-surface-base px-1 py-0.5 font-ui text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary"
+                              />
+                            </>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <textarea
+                            value={newColFormula}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setNewColFormula(val);
+                              setFormulaErrors([]);
+                              const lastBrace = val.lastIndexOf("{");
+                              if (lastBrace !== -1 && lastBrace === val.length - 1) {
+                                setShowAutocomplete(true);
+                                setAutocompleteFilter("");
+                              } else if (lastBrace !== -1 && !val.includes("}", lastBrace)) {
+                                setShowAutocomplete(true);
+                                setAutocompleteFilter(val.slice(lastBrace + 1));
+                              } else {
+                                setShowAutocomplete(false);
+                                setAutocompleteFilter("");
+                              }
+                            }}
+                            placeholder="e.g. {Price} * {Qty}"
+                            rows={2}
+                            className="w-full rounded-sm bg-surface-base px-2 py-1 font-mono text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-accent-primary resize-none"
+                          />
+                          {showAutocomplete && (
+                            <div className="absolute left-0 top-full z-50 mt-0.5 max-h-40 w-full overflow-y-auto rounded-sm border border-border-default bg-surface-overlay shadow-2">
+                              {columns
+                                .filter((c) => c.name.toLowerCase().includes(autocompleteFilter.toLowerCase()))
+                                .map((c) => (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      const lastBrace = newColFormula.lastIndexOf("{");
+                                      const before = lastBrace !== -1 ? newColFormula.slice(0, lastBrace) : newColFormula;
+                                      setNewColFormula(before + "{" + c.name + "}");
+                                      setShowAutocomplete(false);
+                                      setAutocompleteFilter("");
+                                    }}
+                                    className="flex w-full items-center gap-2 px-2 py-1 text-left font-ui text-xs hover:bg-surface-hover"
+                                  >
+                                    <span className="text-text-primary">{c.name}</span>
+                                    <span className="text-text-disabled capitalize">{c.type}</span>
+                                  </button>
+                                ))}
+                              {["IF", "CONCAT", "ROUND", "ABS", "MIN", "MAX", "DAYS_BETWEEN", "NOW", "LEN", "UPPER", "LOWER"]
+                                .filter((fn) => fn.toLowerCase().includes(autocompleteFilter.toLowerCase()))
+                                .map((fn) => (
+                                  <button
+                                    key={fn}
+                                    type="button"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      const lastBrace = newColFormula.lastIndexOf("{");
+                                      const before = lastBrace !== -1 ? newColFormula.slice(0, lastBrace) : newColFormula;
+                                      setNewColFormula(before + fn + "(");
+                                      setShowAutocomplete(false);
+                                      setAutocompleteFilter("");
+                                    }}
+                                    className="flex w-full items-center gap-2 px-2 py-1 text-left font-ui text-xs hover:bg-surface-hover"
+                                  >
+                                    <span className="text-accent-primary">{fn}()</span>
+                                    <span className="text-text-disabled">function</span>
+                                  </button>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+                        {formulaErrors.length > 0 && (
+                          <div className="rounded-sm bg-accent-danger-muted px-2 py-1">
+                            {formulaErrors.map((err, i) => (
+                              <p key={i} className="font-ui text-2xs text-accent-danger">{err}</p>
+                            ))}
+                          </div>
+                        )}
+                        <div className="rounded-sm bg-surface-sunken px-2 py-1.5">
+                          <p className="mb-1 font-ui text-2xs font-semibold text-text-disabled">Available columns</p>
+                          <div className="flex flex-wrap gap-1 mb-1.5">
+                            {columns.filter((c) => c.type !== "formula").map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setNewColFormula((prev) => prev + "{" + c.name + "}");
+                                }}
+                                className="rounded-xs bg-surface-active px-1.5 py-0.5 font-ui text-2xs text-text-secondary hover:bg-surface-hover"
+                              >
+                                {"{" + c.name + "}"}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="mb-1 font-ui text-2xs font-semibold text-text-disabled">Functions</p>
+                          <div className="flex flex-wrap gap-1">
+                            {["IF(cond, t, f)", "CONCAT(a, b)", "ROUND(n, d)", "ABS(n)", "MIN(a, b)", "MAX(a, b)", "DAYS_BETWEEN(d1, d2)", "NOW()", "LEN(s)", "UPPER(s)", "LOWER(s)"].map((fn) => (
+                              <span key={fn} className="rounded-xs bg-surface-active px-1.5 py-0.5 font-ui text-2xs text-text-tertiary">{fn}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                </div>
               ) : (
                 <button
                   type="button"
-                  onClick={() => { setAddingColumn(true); setNewColName(""); }}
+                  onClick={() => { setAddingColumn(true); setNewColName(""); setFormulaErrors([]); setNewColFormula(""); }}
                   className="flex h-full w-full items-center gap-1 px-2 font-ui text-xs text-text-disabled hover:text-text-tertiary"
                 >
                   <Plus size={12} /> Add column

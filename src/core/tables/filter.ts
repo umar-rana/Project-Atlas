@@ -1,14 +1,18 @@
 import type { ColumnType, CellValue, FilterState, TableRowData, TableColumnData } from "./types";
 import { isMultiSelectValue, isMultiSelectEmpty } from "./types";
+import { isFormulaError } from "./formula-shared";
 
 function testFilter(type: ColumnType, value: CellValue, state: FilterState): boolean {
   const { operator, value: filterValue } = state;
 
+  // Formula errors count as empty/null for filter purposes
+  const effectiveValue = isFormulaError(value) ? null : value;
+
   // Empty detection — multi_select needs special handling
   const isEmpty =
     type === "multi_select"
-      ? isMultiSelectEmpty(value)
-      : value === null || value === undefined || value === "";
+      ? isMultiSelectEmpty(effectiveValue)
+      : effectiveValue === null || effectiveValue === undefined || effectiveValue === "";
 
   switch (operator) {
     case "is_empty":
@@ -22,22 +26,23 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
   switch (type) {
     case "text":
     case "single_select":
+    case "formula":
       switch (operator) {
         case "equals":
-          return String(value).toLowerCase() === String(filterValue ?? "").toLowerCase();
+          return String(effectiveValue).toLowerCase() === String(filterValue ?? "").toLowerCase();
         case "not_equals":
-          return String(value).toLowerCase() !== String(filterValue ?? "").toLowerCase();
+          return String(effectiveValue).toLowerCase() !== String(filterValue ?? "").toLowerCase();
         case "contains":
-          return String(value).toLowerCase().includes(String(filterValue ?? "").toLowerCase());
+          return String(effectiveValue).toLowerCase().includes(String(filterValue ?? "").toLowerCase());
         case "not_contains":
-          return !String(value).toLowerCase().includes(String(filterValue ?? "").toLowerCase());
+          return !String(effectiveValue).toLowerCase().includes(String(filterValue ?? "").toLowerCase());
         default:
           return true;
       }
 
     case "multi_select": {
-      if (!isMultiSelectValue(value)) return false;
-      const selectedIds = value.option_ids;
+      if (!isMultiSelectValue(effectiveValue)) return false;
+      const selectedIds = effectiveValue.option_ids;
       const filterIds: string[] = Array.isArray(filterValue)
         ? (filterValue as string[])
         : typeof filterValue === "string" && filterValue
@@ -57,7 +62,7 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
 
     case "number":
     case "currency": {
-      const numVal = Number(value);
+      const numVal = Number(effectiveValue);
       const numFilter = Number(filterValue ?? 0);
       switch (operator) {
         case "equals": return numVal === numFilter;
@@ -71,7 +76,7 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
     }
 
     case "date": {
-      const dateVal = new Date(String(value)).getTime();
+      const dateVal = new Date(String(effectiveValue)).getTime();
       const dateFilter = new Date(String(filterValue ?? "")).getTime();
       if (isNaN(dateFilter)) return true;
       switch (operator) {
@@ -86,7 +91,7 @@ function testFilter(type: ColumnType, value: CellValue, state: FilterState): boo
     case "checkbox":
       switch (operator) {
         case "equals":
-          return Boolean(value) === Boolean(filterValue);
+          return Boolean(effectiveValue) === Boolean(filterValue);
         default:
           return true;
       }
@@ -106,8 +111,14 @@ export function filterRows(
   const col = columns.find((c) => c.id === filter.column_id);
   if (!col) return rows;
 
+  // Formula columns: filter using the declared return_type for correct operator semantics
+  const effectiveType: ColumnType =
+    col.type === "formula"
+      ? ((col.config as { return_type?: string }).return_type as ColumnType) ?? "text"
+      : col.type;
+
   return rows.filter((row) => {
     const cell = row.cells.find((c) => c.column_id === filter.column_id);
-    return testFilter(col.type, cell?.value ?? null, filter);
+    return testFilter(effectiveType, cell?.value ?? null, filter);
   });
 }

@@ -1,5 +1,6 @@
 import type { ColumnType, CellValue, AggregationType, TableRowData, TableColumnData } from "./types";
 import { isMultiSelectEmpty } from "./types";
+import { isFormulaError } from "./formula-shared";
 
 export function computeAggregation(
   type: ColumnType,
@@ -12,6 +13,7 @@ export function computeAggregation(
   const allValues = rows.map((r) => r.cells.find((c) => c.column_id === columnId)?.value ?? null);
 
   const values = allValues.filter((v) => {
+    if (isFormulaError(v)) return false;
     if (type === "multi_select") return !isMultiSelectEmpty(v);
     return v !== null && v !== undefined && v !== "";
   });

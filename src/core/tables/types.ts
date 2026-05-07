@@ -1,4 +1,4 @@
-export type ColumnType = "text" | "number" | "date" | "checkbox" | "single_select" | "currency" | "multi_select";
+export type ColumnType = "text" | "number" | "date" | "checkbox" | "single_select" | "currency" | "multi_select" | "formula";
 
 export type AggregationType = "sum" | "average" | "count" | "min" | "max" | "checked_ratio" | "none";
 
@@ -15,6 +15,9 @@ export interface MultiSelectValue {
 export interface ColumnConfig {
   options?: SingleSelectOption[];
   decimal_places?: number;
+  expression?: string;
+  return_type?: "number" | "text" | "date" | "boolean";
+  decimals?: number;
 }
 
 export type CellValue =
@@ -33,6 +36,7 @@ export const COLUMN_TYPES: { value: ColumnType; label: string }[] = [
   { value: "single_select", label: "Single Select" },
   { value: "multi_select", label: "Multi Select" },
   { value: "currency", label: "Currency" },
+  { value: "formula", label: "Formula" },
 ];
 
 export const DEFAULT_AGGREGATIONS: Record<ColumnType, AggregationType> = {
@@ -43,6 +47,7 @@ export const DEFAULT_AGGREGATIONS: Record<ColumnType, AggregationType> = {
   single_select: "none",
   multi_select: "count",
   currency: "sum",
+  formula: "none",
 };
 
 export interface TableColumnData {
@@ -107,6 +112,8 @@ export function getOperatorsForType(type: ColumnType): FilterOperator[] {
       return ["equals", "not_equals", "is_empty", "is_not_empty"];
     case "multi_select":
       return ["contains_any_of", "contains_all_of", "is_empty", "is_not_empty"];
+    case "formula":
+      return ["equals", "not_equals", "contains", "not_contains", "is_empty", "is_not_empty"];
     default:
       return ["equals", "not_equals", "is_empty", "is_not_empty"];
   }

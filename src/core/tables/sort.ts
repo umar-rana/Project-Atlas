@@ -1,5 +1,6 @@
 import type { ColumnType, CellValue, SortState, TableRowData, TableColumnData, SingleSelectOption } from "./types";
 import { isMultiSelectValue, isMultiSelectEmpty } from "./types";
+import { isFormulaError } from "./formula-shared";
 
 function getFirstMultiSelectLabel(value: CellValue, options: SingleSelectOption[]): string | null {
   if (!isMultiSelectValue(value) || isMultiSelectEmpty(value)) return null;
@@ -15,6 +16,13 @@ function compareCellValues(
   direction: "asc" | "desc",
   options?: SingleSelectOption[],
 ): number {
+  // Formula errors sort as null
+  const aVal = isFormulaError(a) ? null : a;
+  const bVal = isFormulaError(b) ? null : b;
+  if (aVal !== a || bVal !== b) {
+    return compareCellValues(type, aVal, bVal, direction, options);
+  }
+
   // Empty detection — multi_select needs special handling
   const nullA = type === "multi_select" ? isMultiSelectEmpty(a) : (a === null || a === undefined || a === "");
   const nullB = type === "multi_select" ? isMultiSelectEmpty(b) : (b === null || b === undefined || b === "");
@@ -71,9 +79,15 @@ export function sortRows(
 
   const options = (col.config.options ?? []) as SingleSelectOption[];
 
+  // Formula columns: sort by their computed values using the declared return_type
+  const effectiveType: ColumnType =
+    col.type === "formula"
+      ? ((col.config as { return_type?: string }).return_type as ColumnType) ?? "text"
+      : col.type;
+
   return [...rows].sort((a, b) => {
     const cellA = a.cells.find((c) => c.column_id === sort.column_id);
     const cellB = b.cells.find((c) => c.column_id === sort.column_id);
-    return compareCellValues(col.type, cellA?.value ?? null, cellB?.value ?? null, sort.direction, options);
+    return compareCellValues(effectiveType, cellA?.value ?? null, cellB?.value ?? null, sort.direction, options);
   });
 }

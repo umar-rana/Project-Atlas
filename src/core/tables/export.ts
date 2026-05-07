@@ -2,6 +2,7 @@ import "server-only";
 import type { ColumnConfig, ColumnType, SingleSelectOption } from "./types";
 import { formatCellValueForCsv, deserializeCellValue } from "./validators";
 import { isMultiSelectValue } from "./types";
+import { isFormulaError, FORMULA_ERROR_KEY } from "./formula-shared";
 
 interface ExportColumn {
   id: string;
@@ -44,6 +45,13 @@ export function exportTableCsv(table: ExportTable): string {
       const cell = row.cells.find((c) => c.column_id === col.id);
       const rawVal = cell?.value ?? null;
 
+      // Formula columns: the cell already carries the computed value (injected by the server)
+      if (col.type === "formula") {
+        if (isFormulaError(rawVal)) return csvEscape("#ERROR");
+        if (rawVal === null || rawVal === undefined) return "";
+        return csvEscape(String(rawVal));
+      }
+
       if (col.type === "multi_select") {
         const deserialized = deserializeCellValue(col.type, rawVal);
         const options = (col.config.options ?? []) as SingleSelectOption[];
@@ -72,20 +80,42 @@ export function exportTableJson(table: ExportTable): string {
       created_at: table.created_at.toISOString(),
       updated_at: table.updated_at.toISOString(),
     },
-    columns: cols.map((col) => ({
-      id: col.id,
-      name: col.name,
-      type: col.type,
-      position: col.position,
-      config: col.config,
-      aggregation: col.aggregation ?? null,
-      width: col.width,
-    })),
+    columns: cols.map((col) => {
+      if (col.type === "formula") {
+        return {
+          id: col.id,
+          name: col.name,
+          type: col.type,
+          position: col.position,
+          config: col.config,
+          aggregation: col.aggregation ?? null,
+          width: col.width,
+          formula: {
+            expression: (col.config as { expression?: string }).expression ?? "",
+            return_type: (col.config as { return_type?: string }).return_type ?? "text",
+          },
+        };
+      }
+      return {
+        id: col.id,
+        name: col.name,
+        type: col.type,
+        position: col.position,
+        config: col.config,
+        aggregation: col.aggregation ?? null,
+        width: col.width,
+      };
+    }),
     rows: table.rows.map((row) => ({
       id: row.id,
       cells: cols.map((col) => {
         const cell = row.cells.find((c) => c.column_id === col.id);
         const rawVal = cell?.value ?? null;
+        // Formula cells: store computed value (errors as null)
+        if (col.type === "formula") {
+          if (isFormulaError(rawVal)) return { column_id: col.id, value: null, [FORMULA_ERROR_KEY]: (rawVal as unknown as Record<string, string>)[FORMULA_ERROR_KEY] };
+          return { column_id: col.id, value: rawVal };
+        }
         if (col.type === "multi_select") {
           if (isMultiSelectValue(rawVal)) {
             return { column_id: col.id, option_ids: rawVal.option_ids };

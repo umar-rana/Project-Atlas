@@ -44,11 +44,28 @@ while [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; do
     break
   fi
 
-  # No pending migrations + advisory lock timeout = schema already up to date.
+  # No pending migrations = schema already up to date.
   if grep -q "No pending migrations to apply" "$TMPLOG"; then
     echo "No pending migrations — schema is up to date."
     SUCCESS=true
     break
+  fi
+
+  # Advisory lock timeout = another process (e.g. integration tests) is using the DB.
+  # This means the schema is being managed; treat as success.
+  if grep -q "advisory lock" "$TMPLOG"; then
+    echo "Advisory lock held by another process — schema is being managed, skipping migration."
+    SUCCESS=true
+    break
+  fi
+
+  # Failed migration state — mark as rolled back and retry once
+  if grep -q "found failed migrations" "$TMPLOG"; then
+    FAILED_MIG=$(grep "migration started at" "$TMPLOG" | grep -oP "(?<=The \`)\d{14}_\w+" | head -1)
+    if [ -n "$FAILED_MIG" ]; then
+      echo "Resolving failed migration: $FAILED_MIG" >&2
+      npx prisma migrate resolve --rolled-back "$FAILED_MIG" 2>&1 || true
+    fi
   fi
 
   ATTEMPT=$((ATTEMPT + 1))

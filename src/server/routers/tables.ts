@@ -5,7 +5,9 @@ import { router, protectedProcedure } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { validateCellValue } from "@/core/tables/validators";
+import { injectFormulaVirtualCells, validateFormula } from "@/core/tables/formula";
 import type { ColumnType } from "@/core/tables/types";
+import type { TableCellData } from "@/core/tables/types";
 import { createLogger } from "@/core/logging";
 import {
   checkCsvImportRateLimit,
@@ -15,7 +17,7 @@ import {
 
 const log = createLogger({ module: "tables" });
 
-const COLUMN_TYPES = ["text", "number", "date", "checkbox", "single_select", "currency", "multi_select"] as const;
+const COLUMN_TYPES = ["text", "number", "date", "checkbox", "single_select", "currency", "multi_select", "formula"] as const;
 const AGGREGATION_TYPES = ["sum", "average", "count", "min", "max", "checked_ratio", "none"] as const;
 
 
@@ -91,23 +93,48 @@ export const tablesRouter = router({
 
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });
 
-      return {
-        ...table,
-        columns: table.columns.map((col) => ({
-          ...col,
-          position: toNumber(col.position),
-          config: col.config as Record<string, unknown>,
-        })),
-        rows: table.rows.map((row) => ({
+      const columns = table.columns.map((col) => ({
+        ...col,
+        position: toNumber(col.position),
+        config: col.config as Record<string, unknown>,
+      }));
+
+      const allCols = columns.map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type as ColumnType,
+        position: c.position,
+        config: c.config as Record<string, unknown>,
+        aggregation: c.aggregation ?? null,
+        width: c.width,
+      }));
+
+      const rows = table.rows.map((row) => {
+        const regularCells = row.cells.map((cell) => ({
+          id: cell.id,
+          row_id: cell.row_id,
+          column_id: cell.column_id,
+          value: cell.value,
+        }));
+
+        // Evaluate formula columns in dependency order — formula-on-formula references resolved correctly
+        const formulaCells = injectFormulaVirtualCells(
+          row.id,
+          regularCells as TableCellData[],
+          allCols as import("@/core/tables/types").TableColumnData[],
+        );
+
+        return {
           ...row,
           position: toNumber(row.position),
-          cells: row.cells.map((cell) => ({
-            id: cell.id,
-            row_id: cell.row_id,
-            column_id: cell.column_id,
-            value: cell.value,
-          })),
-        })),
+          cells: [...regularCells, ...formulaCells],
+        };
+      });
+
+      return {
+        ...table,
+        columns,
+        rows,
       };
     }),
 
@@ -262,6 +289,34 @@ export const tablesRouter = router({
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });
 
+      // Validate formula columns
+      if (input.type === "formula") {
+        const cfg = (input.config ?? {}) as { expression?: string; return_type?: string };
+        const expression = cfg.expression ?? "";
+        const returnType = cfg.return_type ?? "text";
+
+        const tableColumns = await db.tableColumn.findMany({
+          where: { table_id: input.table_id, deleted_at: null },
+          select: { id: true, name: true, type: true, config: true },
+        });
+
+        const colsForValidation = tableColumns.map((c) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type,
+          config: (c.config ?? {}) as Record<string, unknown>,
+        }));
+
+        // Pass the new column's name as selfName so circular ref detection includes it
+        const errors = validateFormula(expression, returnType, colsForValidation, undefined, input.name);
+        if (errors.length > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: errors.join(" "),
+          });
+        }
+      }
+
       const maxCol = await db.tableColumn.aggregate({
         _max: { position: true },
         where: { table_id: input.table_id, deleted_at: null },
@@ -310,6 +365,33 @@ export const tablesRouter = router({
         include: { table: { select: { user_id: true, id: true } } },
       });
       if (!column || column.table.user_id !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Validate formula config changes
+      if (column.type === "formula" && input.config !== undefined) {
+        const cfg = input.config as { expression?: string; return_type?: string };
+        const expression = cfg.expression ?? (column.config as { expression?: string }).expression ?? "";
+        const returnType = cfg.return_type ?? (column.config as { return_type?: string }).return_type ?? "text";
+
+        const tableColumns = await db.tableColumn.findMany({
+          where: { table_id: column.table.id, deleted_at: null },
+          select: { id: true, name: true, type: true, config: true },
+        });
+
+        const colsForValidation = tableColumns.map((c) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type,
+          config: (c.config ?? {}) as Record<string, unknown>,
+        }));
+
+        const errors = validateFormula(expression, returnType, colsForValidation, input.id);
+        if (errors.length > 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: errors.join(" "),
+          });
+        }
+      }
 
       const data: Prisma.TableColumnUpdateInput = {};
       if (input.name !== undefined) data.name = input.name;
@@ -566,6 +648,11 @@ export const tablesRouter = router({
         select: { id: true, type: true },
       });
       if (!column) throw new TRPCError({ code: "NOT_FOUND", message: "Column not found" });
+
+      // Formula columns are read-only
+      if (column.type === "formula") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Formula columns are read-only and cannot be edited directly." });
+      }
 
       const validation = validateCellValue(column.type as ColumnType, input.value);
       if (!validation.valid) {

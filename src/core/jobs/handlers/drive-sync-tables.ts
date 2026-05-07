@@ -2,6 +2,8 @@ import "server-only";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { exportTableJson, exportTableCsv } from "@/core/tables/export";
+import { injectFormulaVirtualCells } from "@/core/tables/formula";
+import type { TableColumnData, TableCellData, ColumnType, ColumnConfig, CellValue, AggregationType } from "@/core/tables/types";
 import { pushBufferToDrive } from "@/core/drive/sync";
 import { updateFile } from "@/core/drive/primitives";
 import { refreshDriveTokenIfNeeded } from "@/core/drive/client";
@@ -79,20 +81,32 @@ export async function handleDriveSyncTables(): Promise<DriveSyncTablesResult> {
 
     for (const table of tables) {
       try {
-        const columns = table.columns.map((col) => ({
-          ...col,
+        const allCols: TableColumnData[] = table.columns.map((col) => ({
+          id: col.id,
+          name: col.name,
+          type: col.type as ColumnType,
           position: parseFloat(col.position.toString()),
-          config: col.config as Record<string, unknown>,
+          config: col.config as ColumnConfig,
+          aggregation: (col.aggregation ?? null) as AggregationType | null,
+          width: col.width,
         }));
 
-        const rows = table.rows.map((row) => ({
-          ...row,
-          position: parseFloat(row.position.toString()),
-          cells: row.cells.map((cell) => ({
-            ...cell,
-            value: cell.value,
-          })),
-        }));
+        // Keep a plain-object form for export functions (they accept ExportTable which needs Record config)
+        const columns = allCols;
+
+        const rows = table.rows.map((row) => {
+          const regularCells: TableCellData[] = row.cells.map((cell) => ({
+            row_id: row.id,
+            column_id: cell.column_id,
+            value: cell.value as CellValue,
+          }));
+          const formulaCells = injectFormulaVirtualCells(row.id, regularCells, allCols);
+          return {
+            ...row,
+            position: parseFloat(row.position.toString()),
+            cells: [...regularCells, ...formulaCells],
+          };
+        });
 
         const tableData = {
           ...table,

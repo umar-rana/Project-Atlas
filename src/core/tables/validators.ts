@@ -53,6 +53,9 @@ export function validateCellValue(type: ColumnType, value: unknown): ValidationR
       return { valid: false, error: "Multi-select value must be an object with option_ids array" };
     }
 
+    case "formula":
+      return { valid: false, error: "Formula columns are read-only and cannot have cells written directly." };
+
     default:
       return { valid: false, error: `Unknown column type: ${type}` };
   }
@@ -84,11 +87,13 @@ export function formatCellValueForCsv(
   options?: SingleSelectOption[],
 ): string {
   if (value === null || value === undefined) return "";
+  if (typeof value === "object" && !Array.isArray(value) && "__formula_error" in (value as object)) return "#ERROR";
   switch (type) {
     case "checkbox":
       return value ? "TRUE" : "FALSE";
     case "number":
     case "currency":
+    case "formula":
       return String(value);
     case "multi_select": {
       if (!isMultiSelectValue(value) || isMultiSelectEmpty(value)) return "";
