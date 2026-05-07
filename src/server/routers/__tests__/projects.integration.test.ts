@@ -828,6 +828,39 @@ describe("projects tracker — setTracker / clearTracker / get", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  it("setTracker persists all tracker fields to the database", async () => {
+    await makeProjectsCaller().setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+      target_value: 100,
+      target_label: "units",
+    });
+    const stored = await rawDb.project.findUniqueOrThrow({ where: { id: trackerProjectId } });
+    expect(stored.tracker_table_id).toBe(tableId);
+    expect(stored.tracker_column_id).toBe(numberColumnId);
+    expect(stored.tracker_aggregation).toBe("sum");
+    expect(stored.tracker_target_value).toBe(100);
+    expect(stored.tracker_target_label).toBe("units");
+  });
+
+  it("clearTracker nulls all five tracker fields in the database", async () => {
+    await makeProjectsCaller().setTracker({
+      project_id: trackerProjectId,
+      table_id: tableId,
+      column_id: numberColumnId,
+      aggregation: "sum",
+    });
+    await makeProjectsCaller().clearTracker({ project_id: trackerProjectId });
+    const stored = await rawDb.project.findUniqueOrThrow({ where: { id: trackerProjectId } });
+    expect(stored.tracker_table_id).toBeNull();
+    expect(stored.tracker_column_id).toBeNull();
+    expect(stored.tracker_aggregation).toBeNull();
+    expect(stored.tracker_target_value).toBeNull();
+    expect(stored.tracker_target_label).toBeNull();
+  });
+
   it("clearTracker removes tracker and get returns null tracker", async () => {
     const caller = makeProjectsCaller();
     await caller.setTracker({
@@ -842,6 +875,31 @@ describe("projects tracker — setTracker / clearTracker / get", () => {
     await caller.clearTracker({ project_id: trackerProjectId });
     const after = await caller.get({ id: trackerProjectId });
     expect(after.tracker).toBeNull();
+  });
+
+  it("setTracker rejects unknown project (NOT_FOUND)", async () => {
+    await expect(
+      makeProjectsCaller().setTracker({
+        project_id: uuidv7(),
+        table_id: tableId,
+        column_id: numberColumnId,
+        aggregation: "sum",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("clearTracker rejects unknown project (NOT_FOUND)", async () => {
+    await expect(
+      makeProjectsCaller().clearTracker({ project_id: uuidv7() }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("get returns null tracker when no tracker is configured", async () => {
+    await makeProjectsCaller().clearTracker({ project_id: trackerProjectId }).catch(() => {});
+    const stored = await rawDb.project.findUniqueOrThrow({ where: { id: trackerProjectId } });
+    expect(stored.tracker_table_id).toBeNull();
+    const result = await makeProjectsCaller().get({ id: trackerProjectId });
+    expect(result.tracker).toBeNull();
   });
 
   it("setTracker writes audit log entry (project_tracker_set)", async () => {
