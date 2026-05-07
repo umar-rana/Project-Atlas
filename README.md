@@ -432,7 +432,7 @@ All jobs are registered in `src/core/jobs/registry.ts` and scheduled on startup.
 | `drive-sync-tables` | `0 * * * *` (hourly) | Export all tables to Google Drive as JSON schema + CSV |
 | `drive-sync-attachments` | `0 * * * *` (hourly) | Upload new attachments to Google Drive |
 | `import-cleanup` | `0 6 * * *` (daily 06:00 UTC) | Purge expired PDF export objects from R2 |
-| `session-cleanup` | `0 3 * * *` (daily 03:00 UTC) | Session cleanup — registered and scheduled; full handler implementation queued (task #18) |
+| `session-cleanup` | `0 3 * * *` (daily 03:00 UTC) | Session cleanup — registered and scheduled; stub handler |
 | `trash-retention` | `0 4 * * *` (daily 04:00 UTC) | Hard-delete soft-deleted records past retention window |
 | `attachment-cleanup` | `0 5 * * *` (daily 05:00 UTC) | Purge orphaned attachment objects from R2 |
 
@@ -511,14 +511,11 @@ The `User` model stores per-user locale preferences: `locale_preset`, `language`
 
 ## Mobile Web Views
 
-The `/m` sub-route group (`src/app/(app)/m/`) provides mobile-optimised views for:
-- Tasks
-- Calendar
-- Notes
-- Journals
-- Settings
+The `/m` sub-route group (`src/app/(app)/m/`) provides mobile-optimised views. Middleware performs desktop/mobile detection and redirects based on the `User-Agent` header.
 
-Middleware performs desktop/mobile detection and redirects to the appropriate route group based on the `User-Agent` header.
+**Live routes:** `/m/tasks`, `/m/tasks/[taskId]`, `/m/settings`
+
+**Placeholder routes (coming soon):** `/m/notes`, `/m/calendar`, `/m/journals`
 
 ---
 
@@ -528,100 +525,142 @@ Middleware performs desktop/mobile detection and redirects to the appropriate ro
 |---|---|
 | `⌘K` | Open CommandPalette |
 | `⌘⇧I` | Open CaptureModal |
-| `?` | Open Help Center overlay |
+| `⌘⇧A` | Open quick-actions row for the focused task |
+| `⌘⇧P` | Open the inspector (detail) panel |
+| `?` | Open keyboard shortcuts help overlay / Help Center |
 
 Module-level shortcuts are surfaced via the `<Hint>` tooltip component (`src/components/ui/hint.tsx`), which wraps interactive controls and renders keyboard shortcut hints using Radix UI Tooltip.
 
 ---
 
-## Recently Merged (Wave 3c and later)
+## Merged Changelog
 
-### Wave 3c — Capture intelligence
-- **#43** Hybrid parsing pipeline — three-tier local → AI → raw fallback strategy with `CaptureParseLog` tracking
+### Wave 1 — Foundation (#1–#9)
+- **#1** Initial project scaffold — Next.js 15 App Router, Prisma, Neon Postgres, Clerk auth wiring
+- **#2** Google Drive integration skeleton — OAuth flow, token encryption (`AES-256-GCM`), `DriveConfig` model
+- **#3** AI client foundation — Anthropic SDK wiring, `AICallLog` model, cost constants, `TASK_MODEL_MAP`
+- **#4** Core data models — `Task`, `Note`, `Project`, `Context`, `Tag`, `Person`, `AuditLog` Prisma schema
+- **#5** UUIDv7 PKs — `newId()` helper, all models migrated to UUIDv7
+- **#6** AI usage tracking — per-call token + cost logging to `AICallLog`
+- **#7** Budget cap — `ai_budget_usd` on `User`; requests rejected when cap would be exceeded
+- **#8** Soft-delete foundation — `deleted_at` on tasks, notes, attachments, projects, folders
+- **#9** Pino structured logging — `src/core/logging.ts` factory, request-scoped loggers
+
+### Wave 2 — App Shell (#25–#27)
+- **#25** Shell layout — `TwoPaneLayout`, `ModuleSwitcher`, `TopBar`, `CommandPalette`
+- **#26** AI usage page — `/usage` spending chart integrated into the authenticated shell
+- **#27** Inspector persistence — sidebar open/collapsed state preserved across navigation
+
+### Wave 2 — Google Drive Integration (#2, #10, #11, #22, #23)
+- **#10** Drive OAuth wizard — 4-step wizard in Settings → Integrations; token storage in `IntegrationToken`
+- **#11** Drive sync jobs — `drive-sync-notes`, `drive-sync-tables`, `drive-sync-attachments` hourly cron jobs
+- **#22** Proactive token refresh — tokens refreshed before each sync job when near expiry
+- **#23** Sync state tracking — `SyncState` model for cursor-based sync per resource type
+
+### Wave 2 — AI Usage & Budgeting (#3, #6, #7, #15, #16)
+- **#15** Spending chart — time-series chart on `/usage` grouped by day and model
+- **#16** AI Usage navigation icon — dedicated icon in the navigation rail for the AI usage page
+
+### Wave 3a — Tasks Module (#34, #38, #122–#126, #131, #138–#141, #149, #150, #153, #156, #158–#162)
+- **#34** Tasks module scaffold — Inbox, Today, Tomorrow, Forecast, Someday, Waiting For, Completed, Trash views
+- **#38** Forecast range — configurable date range for the Forecast view, synced to user account (#40 / #42)
+- **#122** Subtasks — self-referential `parent_id` on Task; nested display in task list
+- **#123** Checklists — `ChecklistItem` model; inline checklist in task inspector
+- **#124** Recurrence — RRule string storage on Task; recurrence anchor (due date vs completion date)
+- **#125** Time tracking — `TaskWorkLog` (body + duration); work log panel in task inspector
+- **#126** GTD fields — `is_someday`, `delegated_to_text/person_id`, `follow_up_date`, flagging, estimated minutes
+- **#131** Sequential project mode — tasks must be completed in order when `sequential = true`
+- **#138** Quick-actions row — per-task action row accessible via `⌘⇧A` shortcut
+- **#139** Quick-actions keyboard shortcut — `⌘⇧A` opens the quick-actions row for the focused task
+- **#140** Keyboard shortcut hints — `<Hint>` tooltip component with shortcut display via Radix UI Tooltip
+- **#141** Context and tag assignment — context/tag chips in task inspector with inline creation
+- **#149** Forecast range account sync — Forecast date-range preference synced to `User` account across devices
+- **#150** Inspector panel shortcut — `⌘⇧P` opens the task inspector panel
+- **#153** Shortcuts help overlay — `?` key opens the full keyboard shortcuts reference overlay
+- **#156** Sidebar collapse memory — sidebar collapsed/expanded state persisted to `localStorage`; safe first-load guard
+- **#158** Bulk-accept new project — bulk-accept capture banner can create a new project when no match exists
+- **#159** Parse-source badge — every capture shows AI vs local parse source and raw confidence score
+- **#160** Confidence threshold debounce — `ai_confidence_threshold` slider debounced; no redundant API calls on drag
+- **#161** Inline suggestion persistence — per-capture AI suggestion dismissals remembered between page loads
+- **#162** Sign-out everywhere — button on the sign-in page to revoke all sessions when a suspicious session is detected
+
+### Wave 3b — Notes, Tables, Projects
+- **#33** Notes module — TipTap editor, slash commands, backlinks (`Link` model), folder hierarchy
+- **#35** Tables module — structured data grid: `TableColumn`, `TableRow`, `TableCell`; column types and aggregations
+- **#36** Projects module — free-form projects/areas, folder hierarchy, sequential mode, review scheduling
+- **#37** Help Center — full-screen overlay with 9 sections, 20 articles, AI chat panel
+
+### Wave 3c — Capture & Email (#43–#48, #53–#60)
+- **#43** Hybrid parsing pipeline — three-tier local → AI → raw fallback with `CaptureParseLog` tracking
 - **#44** Email-to-inbox — Resend inbound webhook → `EmailCapture` → `Capture` pipeline
 - **#45** Capture intelligence UI — parse-source badge, confidence score display, AI suggestion accept/dismiss flow
+- **#46** Email pipeline polish — edge-case handling and additional processing states
+- **#47** Parse-source badge (user-facing) — parse source and confidence exposed in the capture list
 - **#48** Parse corruption guard — safe fallback for unusual or malformed input text
-
-### Email inbox & attachments
-- **#53** Inbox email address verification — per-user inbound address provisioning and verification flow
+- **#53** Inbox address verification — per-user inbound address provisioning and verification flow
 - **#54** Attachments in task detail — view, upload, and download attachments from the task inspector
-- **#55** Attachment soft-delete — delete attachments with `deleted_at`; nightly cleanup purges R2 objects
+- **#55** Attachment soft-delete — `deleted_at` on `Attachment`; nightly `attachment-cleanup` job
 - **#56** Image thumbnails — server-generated thumbnails stored in `thumbnail_path`; displayed inline
 - **#57** Sender block from list — block a sender directly from the email list view
-- **#58** Wildcard domain blocking — blocklist patterns support `*@domain.com` style wildcards
+- **#58** Wildcard domain blocking — blocklist patterns support `*@domain.com` wildcards
 - **#59** Verification email — transactional email sent on inbound address verification
-- **#60** Additional email inbox polish
+- **#60** Email inbox polish — additional inbox UX improvements
 
-### Auth migration
+### Mobile (#110, #137)
+- **#110** Mobile shell — `/m` sub-app: `MobileTopBar`, `BottomTabBar`, mobile middleware redirect
+- **#137** Mobile task detail — `MobileTaskDetailPage`: title, notes, metadata rows, complete/reopen, contexts, tags
+
+### Marketing & Onboarding (#115–#121)
+- **#115** Marketing homepage — public landing page in `(marketing)` route group
+- **#116** Waitlist page — public waitlist signup form; `WaitlistEntry` model
+- **#117** Waitlist email — confirmation email sent via Resend on signup
+- **#118** Pricing page — public pricing page
+- **#119** About page — public about page
+- **#120** Blog scaffold — blog route group with article listing
+- **#121** Admin waitlist panel — admin section for reviewing and approving waitlist entries
+
+### Auth Migration (#94, #96, #98, #100–#105)
 - **#94** Clerk migration — replaced Replit Auth with Clerk (`@clerk/nextjs` v7); full session and user model migration
-- **#96** Google sign-in — added Google OAuth provider via Clerk
+- **#96** Google sign-in — Google OAuth provider via Clerk
 - **#98** Replit auth cleanup — removed legacy Replit auth code and dependencies
+- **#100** Orphan recovery — `reattachOrphanData()` re-keys all `user_id` tables after account re-creation
+- **#101** Orphan recovery banner — in-app recovery summary notification on next sign-in
+- **#102** Audit logging — `AuditLog` writes for sign-in, sign-out, profile change, orphan recovery events
+- **#103** Clerk webhook handler — `CLERK_WEBHOOK_SECRET`-verified webhook for user sync events
+- **#104** Session router — `session` tRPC router for session management
+- **#105** Auth test helpers — `GET /api/auth/test-login` bypass route gated to non-production environments
 
-### App shell & UI polish
-- **#25** Wave 2 shell — `TwoPaneLayout`, `ModuleSwitcher`, `TopBar`, `CommandPalette`
-- **#26** AI usage inside shell — `/usage` page with spending chart integrated into authenticated shell
-- **#27** Inspector/sidebar persistence — sidebar open/collapsed state preserved across navigation
-- **#40 / #42** Forecast range — configurable date range for the Forecast view, synced to user account
-- **#87** Keyboard shortcut hints — shortcut hints displayed in tooltips and the Help Center
+### Storage — R2 (#107–#109, #114, #129, #130)
+- **#107** R2 storage wiring — `@aws-sdk/client-s3` client for Cloudflare R2; `STORAGE_PROVIDER` env var
+- **#108** Attachment upload endpoint — `POST /api/attachments/upload` multipart handler
+- **#109** Signed URL retrieval — `GET /api/attachments/[fileId]` returns signed URL
+- **#114** Attachment vault — `/vault` browsable gallery of all attachments
+- **#129** PDF export to R2 — pdfkit PDF generation stored in R2; signed URL returned
+- **#130** Import cleanup job — `import-cleanup` daily job purges expired R2 PDF export objects
 
-### Test coverage
-- **#75, #77, #79, #80, #82, #83, #84** Task list, drag-and-drop, keyboard, tag, and context inspector e2e tests
-- **#88, #92** Additional e2e coverage and CI integration (Playwright in GitHub Actions)
+### Admin & Waitlist (#121, #146)
+- **#146** Admin panel — `/admin`: user management, audit log explorer, job management, health monitoring, orphan recovery tooling
 
-### Code quality
-- **#69** Code review, lint, and TypeScript cleanup — addressed deferred TS errors and lint warnings
-- **#73** ESLint migration — upgraded ESLint config to flat-config format
+### Test Coverage (#75, #77, #79–#84, #88, #92, #148)
+- **#75** Task list e2e — Playwright tests for task list interactions
+- **#77** Drag-and-drop e2e — drag-and-drop reordering tests
+- **#79** Keyboard navigation e2e — keyboard shortcut and focus management tests
+- **#80** Tag inspector e2e — tag assignment and removal tests
+- **#81** Bulk-action smoke tests — bulk-accept and bulk-delete capture action tests
+- **#82** Context inspector e2e — context assignment tests
+- **#83** Capture flow e2e — end-to-end capture creation and processing tests
+- **#84** Notes editor e2e — TipTap editor interaction tests
+- **#88** CI integration — Playwright in GitHub Actions; artifact upload on failure
+- **#92** Additional e2e coverage — supplementary test scenarios
+- **#148** Test-suite fix — corrected flaky assertions and stabilised CI test run (#442)
 
----
-
-## In Progress (Drafts)
-
-### AI usage
-- **#14** Spending chart — time-series chart of AI spending on the `/usage` page, grouped by day and model
-- **#30** AI Usage nav icon — dedicated icon for the AI Usage entry in the navigation rail
-
-### Session & auth
-- **#17** Sign-out everywhere — button on the sign-in page to revoke all active sessions when a suspicious session is detected
-- **#18** Nightly session cleanup job — full handler implementation for the `session-cleanup` pg-boss job
-
-### Capture & parsing
-- **#21** Fallback for unusual text — ensure corrupted or edge-case input is always captured safely
-- **#46** Email-to-inbox followups — additional polish and edge-case handling for the inbound email pipeline
-- **#47** Parse-source badge for users — expose parse source (AI vs local) and confidence score to end users in the capture list
-- **#51** Confidence threshold slider debounce — debounce the AI confidence threshold slider so it does not fire on every drag event
-- **#52** Inline suggestion persistence — remember per-capture AI suggestion dismissals between page loads
-
-### Email & attachments
-- **#61** Unblock confirmation — show a confirmation dialog before unblocking a sender from the blocklist
-- **#62** Block from email detail — allow users to block a sender directly from the email capture detail view
-- **#63** Image lightbox — full-size image viewer when clicking an image attachment
-- **#64** PDF preview — inline preview panel for PDF attachments (not just images)
-- **#65** Attachment undo delete — undo an accidental attachment deletion within a grace window
-- **#66** Attachment removal loading state — show a loading indicator while an attachment is being removed
-- **#67** Wildcard match display — show which blocklist entries match a wildcard so users can see what is being blocked
-- **#68** Blocklist pattern tester — UI to test a sender address against current blocklist patterns
-- **#70 / #71 / #72** Inbox verification tracking — additional verification flow states and tracking
-
-### UI state persistence
-- **#28** Sidebar collapse memory — remember the sidebar collapsed/expanded state between sessions
-- **#29** Safe first-load guard — ensure persisted UI state never breaks the app on first load or cold start
-- **#49** Forecast range sync — sync the Forecast date range setting to the user account so it follows across devices
-- **#50** Bulk-accept new-project creation — allow the bulk-accept capture banner to create a new project when no match exists yet
-
-### Test coverage
-- **#81** Bulk-action smoke tests — e2e coverage for the bulk-accept and bulk-delete capture actions
-- **#85** CI video on failure — record Playwright video artifacts on test failure in CI
-- **#86 / #89** Drag-and-drop for non-manual sort — e2e tests covering drag-and-drop outside manual sort mode
-- **#90** Shortcut bar toggle test — e2e coverage for the keyboard shortcut bar show/hide
-- **#91** Shortcut reference overlay test — e2e coverage for the keyboard shortcut reference overlay
-- **#93** E2e with AI parsing — end-to-end test that exercises the AI parsing path
-- **#95** Context inspector tests — e2e coverage for the context inspector panel
-- **#97** CI auth secret — wire `E2E_AUTH_SECRET` into CI so the auth bypass route works in the test environment
-
-### Performance & cleanup
-- **#74** Task-list field projection — limit fields returned by `tasks.list` to reduce payload size
-- **#76** Dead lint suppressions — remove obsolete `eslint-disable` comments left over from the ESLint migration
-- **#78** Auth bypass for e2e — ensure the `GET /api/auth/test-login` shortcut is safely gated and available in CI
+### Code Quality & Dependencies (#69, #73, #127, #133, #442, #447)
+- **#69** TypeScript & lint cleanup — addressed deferred TS errors and lint warnings
+- **#73** ESLint flat-config migration — upgraded ESLint config to flat-config format
+- **#127** tRPC router audit — verified all routers mounted in `_app.ts`; dead router removal
+- **#133** Prisma schema cleanup — removed unused models; aligned schema with delivered features
+- **#442** Test-suite stability — fixed flaky Playwright assertions; ensured green CI
+- **#447** Dependency surgery — bumped `@anthropic-ai/sdk` to `^0.95.0`, `@aws-sdk/client-s3` to `3.1044.0`; removed `drizzle-zod`; added Renovate for automated dependency updates
 
 ---
 
@@ -646,10 +685,10 @@ Module-level shortcuts are surfaced via the `<Hint>` tooltip component (`src/com
 - `@neondatabase/serverless` — Neon Postgres serverless driver
 
 **AI**
-- `@anthropic-ai/sdk` — Claude API client (Haiku, Sonnet, Opus)
+- `@anthropic-ai/sdk` `^0.95.0` — Claude API client (Haiku, Sonnet, Opus)
 
 **Storage**
-- `@aws-sdk/client-s3` — S3-compatible client for Cloudflare R2
+- `@aws-sdk/client-s3` `3.1044.0` — S3-compatible client for Cloudflare R2
 
 **Background Jobs**
 - `pg-boss` v10 — PostgreSQL-backed durable job queue and cron scheduler
@@ -675,7 +714,11 @@ Module-level shortcuts are surfaced via the `<Hint>` tooltip component (`src/com
 - `date-fns` / `date-fns-tz` — Date manipulation and timezone-aware formatting
 
 **Logging**
-- `pino` + `pino-pretty` — Structured JSON logging with pretty-print in development
+- `pino` — Structured JSON logging
+- `pino-pretty` (devDependency) — Pretty-print log output in development
+
+**Dev tooling**
+- `renovate` — Automated dependency update PRs
 
 **Utilities**
 - `uuidv7` — UUIDv7 generation for sortable PKs
