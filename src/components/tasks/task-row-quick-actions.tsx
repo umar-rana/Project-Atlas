@@ -11,6 +11,7 @@ import {
   Search,
   Plus,
   Check,
+  LayoutTemplate,
 } from "lucide-react";
 import {
   addDays,
@@ -37,7 +38,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RecurrenceQuickPopover } from "./recurrence-quick-popover";
+import { SaveAsTemplateDialog } from "@/components/task-templates/save-as-template-dialog";
 import type { TaskRow } from "./task-list";
+
+const SaveAsTemplateDialogLazy = SaveAsTemplateDialog;
 
 interface TaskRowQuickActionsProps {
   task: TaskRow;
@@ -357,6 +361,7 @@ function MoreMenu({ task, onOpenInspector, onOpenChange }: MoreMenuProps) {
   const utils = trpc.useUtils();
   const queryClient = useQueryClient();
   const prevSnapshots = React.useRef<Array<[readonly unknown[], unknown]>>([]);
+  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = React.useState(false);
 
   const create = trpc.tasks.create.useMutation({
     onSuccess: () => {
@@ -410,35 +415,67 @@ function MoreMenu({ task, onOpenInspector, onOpenChange }: MoreMenuProps) {
     );
   }
 
+  const checklistItems = (task.checklist_items ?? []).map((item) => ({
+    title: item.title,
+    position: item.position?.toString() ?? "0",
+  }));
+
   return (
-    <DropdownMenu onOpenChange={onOpenChange}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="More actions"
-          title="More actions"
-          onClick={(e) => e.stopPropagation()}
-          className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
-        >
-          <MoreHorizontal size={12} />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onSelect={onOpenInspector}>Open inspector</DropdownMenuItem>
-        <DropdownMenuItem disabled={create.isPending} onSelect={handleDuplicate}>
-          Duplicate
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={handleCopyLink}>Copy link</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          destructive
-          disabled={del.isPending}
-          onSelect={() => del.mutate({ id: task.id })}
-        >
-          Move to trash
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu onOpenChange={onOpenChange}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="More actions"
+            title="More actions"
+            onClick={(e) => e.stopPropagation()}
+            className="flex h-6 w-6 items-center justify-center rounded-sm text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          >
+            <MoreHorizontal size={12} />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onSelect={onOpenInspector}>Open inspector</DropdownMenuItem>
+          <DropdownMenuItem disabled={create.isPending} onSelect={handleDuplicate}>
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleCopyLink}>Copy link</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={() => {
+              onOpenChange(false);
+              setSaveAsTemplateOpen(true);
+            }}
+          >
+            <LayoutTemplate size={13} className="text-text-tertiary" />
+            Save as template…
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            destructive
+            disabled={del.isPending}
+            onSelect={() => del.mutate({ id: task.id })}
+          >
+            Move to trash
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <SaveAsTemplateDialogLazy
+        open={saveAsTemplateOpen}
+        onOpenChange={setSaveAsTemplateOpen}
+        prefill={{
+          name: task.title,
+          notes: task.notes,
+          flagged: task.flagged,
+          estimated_minutes: task.estimated_minutes,
+          context_ids: task.contexts.map((c) => c.context.id),
+          tag_ids: task.tags.map((tg) => tg.tag.id),
+          checklist_items: checklistItems,
+          default_project_id: task.project_id,
+        }}
+      />
+    </>
   );
 }
 

@@ -63,6 +63,7 @@ model User {
   links              Link[]
   tables             Table[]
   tables_folders     TablesFolder[]
+  task_templates     TaskTemplate[]
 
   @@index([clerk_id])
   @@index([email])
@@ -278,6 +279,7 @@ model Tag {
   tasks       TagOnTask[]
   attachments TagOnAttachment[]
   tag_on_notes TagOnNote[]
+  templates   TagOnTaskTemplate[]
 
   @@unique([user_id, name])
   @@index([user_id])
@@ -300,6 +302,7 @@ model Context {
 
   user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   tasks      ContextOnTask[]
+  templates  ContextOnTaskTemplate[]
 
   @@unique([user_id, name])
   @@index([user_id])
@@ -356,6 +359,7 @@ model Project {
   tasks       Task[]
   note_refs   Note[]
   tables      Table[]
+  task_templates TaskTemplate[] @relation("TaskTemplateDefaultProject")
 
   @@index([user_id])
   @@index([user_id, type])
@@ -804,4 +808,78 @@ model TableCell {
   @@unique([row_id, column_id])
   @@index([row_id])
   @@index([column_id])
+}
+
+// ─── TaskTemplate ─────────────────────────────────────────────────────────────
+// MAINTENANCE NOTE: TaskTemplate has a user_id column and is included in
+// reattachOrphanData() in src/core/auth/orphan-recovery.ts.
+
+model TaskTemplate {
+  id                String    @id @db.Uuid
+  user_id           String    @db.Uuid
+  name              String
+  notes             String?
+  default_project_id String?  @db.Uuid
+  estimated_minutes Int?
+  flagged           Boolean   @default(false)
+  recurrence_rule   String?
+  usage_count       Int       @default(0)
+  last_used_at      DateTime? @db.Timestamptz
+  deleted_at        DateTime? @db.Timestamptz
+  created_at        DateTime  @default(now()) @db.Timestamptz
+  updated_at        DateTime  @updatedAt @db.Timestamptz
+
+  user              User                          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  default_project   Project?                      @relation("TaskTemplateDefaultProject", fields: [default_project_id], references: [id], onDelete: SetNull)
+  checklist_items   TaskTemplateChecklistItem[]
+  contexts          ContextOnTaskTemplate[]
+  tags              TagOnTaskTemplate[]
+
+  @@index([user_id])
+  @@index([user_id, usage_count])
+  @@index([user_id, deleted_at])
+  @@index([deleted_at])
+}
+
+// ─── TaskTemplateChecklistItem ────────────────────────────────────────────────
+
+model TaskTemplateChecklistItem {
+  id          String       @id @db.Uuid
+  template_id String       @db.Uuid
+  title       String
+  position    Decimal      @default(0) @db.Decimal(20, 10)
+  created_at  DateTime     @default(now()) @db.Timestamptz
+  updated_at  DateTime     @updatedAt @db.Timestamptz
+
+  template    TaskTemplate @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@index([template_id, position])
+}
+
+// ─── ContextOnTaskTemplate (join) ────────────────────────────────────────────
+
+model ContextOnTaskTemplate {
+  template_id String       @db.Uuid
+  context_id  String       @db.Uuid
+  created_at  DateTime     @default(now()) @db.Timestamptz
+
+  template    TaskTemplate @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  context     Context      @relation(fields: [context_id], references: [id], onDelete: Cascade)
+
+  @@id([template_id, context_id])
+  @@index([context_id])
+}
+
+// ─── TagOnTaskTemplate (join) ─────────────────────────────────────────────────
+
+model TagOnTaskTemplate {
+  template_id String       @db.Uuid
+  tag_id      String       @db.Uuid
+  created_at  DateTime     @default(now()) @db.Timestamptz
+
+  template    TaskTemplate @relation(fields: [template_id], references: [id], onDelete: Cascade)
+  tag         Tag          @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([template_id, tag_id])
+  @@index([tag_id])
 }

@@ -112,6 +112,9 @@ export async function reattachOrphanData(
           tx.taskWorkLog.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
         ]);
 
+      // TaskTemplate: also reattach orphaned templates
+      await tx.taskTemplate.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } });
+
       await Promise.all([
         tx.projectFolder.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),
         tx.notesFolder.updateMany({ where: { user_id: orphan.id }, data: { user_id: canonicalUser.id } }),

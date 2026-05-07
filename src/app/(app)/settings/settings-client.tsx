@@ -26,7 +26,9 @@ import {
   Package,
   Sliders,
   Settings2,
+  LayoutTemplate,
 } from "lucide-react";
+import { TemplatesSettingsSection } from "@/components/task-templates/templates-settings-section";
 import { JobsManagement } from "@/components/settings/jobs-management";
 import { MigrationSummaryModal } from "@/components/tasks/migration-summary-modal";
 import { ADMIN_EMAILS } from "@/lib/admin-gate";
@@ -54,6 +56,7 @@ type Section =
   | "preferences"
   | "capture"
   | "tasks"
+  | "templates"
   | "gtd"
   | "integrations"
   | "ai"
@@ -69,6 +72,7 @@ const SECTIONS: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "preferences", label: "Preferences", icon: Sliders },
   { id: "capture", label: "Capture", icon: Inbox },
   { id: "tasks", label: "Tasks", icon: CheckSquare },
+  { id: "templates", label: "Templates", icon: LayoutTemplate },
   { id: "gtd", label: "GTD", icon: Info },
   { id: "integrations", label: "Integrations", icon: Link2 },
   { id: "ai", label: "AI", icon: Cpu },
@@ -2451,7 +2455,7 @@ interface SettingsClientProps {
   driveError?: string;
 }
 
-const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "preferences", "capture", "tasks", "gtd", "integrations", "ai", "backups", "storage", "data", "account", "system"]);
+const VALID_SECTIONS = new Set<Section>(["profile", "appearance", "preferences", "capture", "tasks", "templates", "gtd", "integrations", "ai", "backups", "storage", "data", "account", "system"]);
 
 function resolveSection(raw: string | undefined, fallback: Section): Section {
   if (raw && VALID_SECTIONS.has(raw as Section)) return raw as Section;
@@ -2747,6 +2751,11 @@ export function SettingsClient({
       {section === "preferences" && <PreferencesSection initialUser={user} />}
       {section === "capture" && <CaptureSection userId={user.id} userEmail={user.email} />}
       {section === "tasks" && <TasksSection />}
+      {section === "templates" && (
+        <div className="flex flex-col gap-6">
+          <TemplatesSettingsSection />
+        </div>
+      )}
       {section === "gtd" && <GtdSection />}
       {section === "integrations" && (
         <IntegrationsSection

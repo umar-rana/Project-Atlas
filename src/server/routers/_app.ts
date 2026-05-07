@@ -28,6 +28,7 @@ import { tablesRouter } from "./tables";
 import { tablesFoldersRouter } from "./tablesFolders";
 import { trashRouter } from "./trash";
 import { convertRouter } from "./convert";
+import { taskTemplatesRouter } from "./task-templates";
 
 export const appRouter = router({
   health: healthRouter,
@@ -59,6 +60,7 @@ export const appRouter = router({
   tablesFolders: tablesFoldersRouter,
   trash: trashRouter,
   convert: convertRouter,
+  taskTemplates: taskTemplatesRouter,
 });
 
 export type AppRouter = typeof appRouter;
