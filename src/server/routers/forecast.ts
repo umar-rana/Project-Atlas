@@ -184,10 +184,15 @@ export const forecastRouter = router({
         days.push({ date: key, tasks: dayTasks, event_count: 0 });
       }
 
+      const calendarConnected = await db.googleCalendarOAuthToken.findUnique({
+        where: { user_id: userId },
+        select: { id: true },
+      }).then(Boolean);
+
       return {
         days,
         overdue: filteredOverdue,
-        calendar_connected: false,
+        calendar_connected: calendarConnected,
       };
     }),
 
@@ -250,12 +255,17 @@ export const forecastRouter = router({
         applySequentialFilter(rawOverdue),
       ]);
 
+      const calendarConnected = await db.googleCalendarOAuthToken.findUnique({
+        where: { user_id: userId },
+        select: { id: true },
+      }).then(Boolean);
+
       return {
         date: dateKey(day),
         tasks,
         overdue,
         event_count: 0,
-        calendar_connected: false,
+        calendar_connected: calendarConnected,
       };
     }),
 

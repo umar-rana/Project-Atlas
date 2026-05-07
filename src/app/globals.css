@@ -1,4 +1,5 @@
 @import "../styles/tokens.css";
+@import "react-big-calendar/lib/css/react-big-calendar.css";
 
 @tailwind base;
 @tailwind components;
@@ -228,3 +229,53 @@
     display: none !important;
   }
 }
+
+/* ── react-big-calendar — Stratum token overrides ────────────────────────── */
+/* Override default hardcoded colors with Stratum design tokens.              */
+.atlas-calendar .rbc-calendar {
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: var(--surface-base);
+  height: 100%;
+}
+.atlas-calendar .rbc-toolbar { display: none; }
+.atlas-calendar .rbc-header {
+  background: var(--surface-sunken);
+  border-color: var(--border-subtle);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 4px;
+}
+.atlas-calendar .rbc-time-view,
+.atlas-calendar .rbc-month-view,
+.atlas-calendar .rbc-agenda-view {
+  border-color: var(--border-subtle);
+  background: var(--surface-base);
+}
+.atlas-calendar .rbc-day-bg { background: var(--surface-base); }
+.atlas-calendar .rbc-day-bg.rbc-today { background: var(--accent-primary-subtle); }
+.atlas-calendar .rbc-day-bg.rbc-off-range-bg { background: var(--surface-sunken); }
+.atlas-calendar .rbc-off-range { color: var(--text-disabled); }
+.atlas-calendar .rbc-date-cell { color: var(--text-secondary); font-size: 12px; }
+.atlas-calendar .rbc-date-cell.rbc-now button { color: var(--accent-primary); font-weight: 700; }
+.atlas-calendar .rbc-show-more { color: var(--accent-primary); font-size: 11px; }
+.atlas-calendar .rbc-time-gutter,
+.atlas-calendar .rbc-time-column { border-color: var(--border-subtle); }
+.atlas-calendar .rbc-timeslot-group { border-color: var(--border-subtle); }
+.atlas-calendar .rbc-time-slot { border-color: var(--border-subtle); }
+.atlas-calendar .rbc-current-time-indicator { background: var(--accent-primary); }
+.atlas-calendar .rbc-label { color: var(--text-tertiary); font-size: 11px; }
+.atlas-calendar .rbc-row-segment { padding: 1px 2px; }
+.atlas-calendar .rbc-selected-cell { background: var(--accent-primary-subtle); }
+.atlas-calendar .rbc-slot-selection { background: var(--accent-primary-muted); opacity: 0.4; }
+.atlas-calendar .rbc-event { padding: 1px 2px; }
+.atlas-calendar .rbc-event:focus { outline: 2px solid var(--accent-primary); }
+.atlas-calendar .rbc-event.rbc-selected { background: var(--accent-primary-muted); }
+.atlas-calendar .rbc-month-row { border-color: var(--border-subtle); }
+.atlas-calendar .rbc-day-slot .rbc-time-slot { border-color: var(--border-subtle); }
+.atlas-calendar .rbc-agenda-table { border-color: var(--border-subtle); }
+.atlas-calendar .rbc-agenda-date-cell,
+.atlas-calendar .rbc-agenda-time-cell { color: var(--text-tertiary); font-size: 12px; }

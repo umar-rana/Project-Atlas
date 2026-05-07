@@ -23,6 +23,8 @@ export default async function SettingsPage({
   const autoOpenWizard = params.drive_linked === "1";
   const driveLinked = params.drive_linked === "1";
   const driveError = typeof params.drive_error === "string" ? params.drive_error : undefined;
+  const calLinked = params.cal_linked === "1";
+  const calError = typeof params.cal_error === "string" ? params.cal_error : undefined;
   const section = typeof params.section === "string" ? params.section : undefined;
 
   return (
@@ -31,7 +33,9 @@ export default async function SettingsPage({
       autoOpenWizard={autoOpenWizard}
       driveLinked={driveLinked}
       driveError={driveError}
-      initialSection={section}
+      calLinked={calLinked}
+      calError={calError}
+      initialSection={section ?? (calLinked || calError ? "integrations" : undefined)}
     />
   );
 }

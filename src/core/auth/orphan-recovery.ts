@@ -162,6 +162,23 @@ export async function reattachOrphanData(
         tx.$executeRaw`UPDATE "RateLimitTracker" SET user_id = ${canonicalUser.id}::uuid WHERE user_id = ${orphan.id}::uuid`,
       ]);
 
+      // Calendar: GoogleCalendarOAuthToken is 1:1 unique on user_id — only migrate if canonical has none.
+      await tx.$executeRaw`
+        UPDATE "GoogleCalendarOAuthToken"
+        SET user_id = ${canonicalUser.id}::uuid
+        WHERE user_id = ${orphan.id}::uuid
+          AND NOT EXISTS (SELECT 1 FROM "GoogleCalendarOAuthToken" WHERE user_id = ${canonicalUser.id}::uuid)`;
+      // GoogleCalendar: @@unique([user_id, google_id]) — drop collisions first.
+      await tx.$executeRaw`
+        DELETE FROM "GoogleCalendar"
+        WHERE user_id = ${orphan.id}::uuid
+          AND google_id IN (
+            SELECT google_id FROM "GoogleCalendar" WHERE user_id = ${canonicalUser.id}::uuid
+          )`;
+      await tx.$executeRaw`UPDATE "GoogleCalendar" SET user_id = ${canonicalUser.id}::uuid WHERE user_id = ${orphan.id}::uuid`;
+      // CalendarEvent: migrate all owned events
+      await tx.$executeRaw`UPDATE "CalendarEvent" SET user_id = ${canonicalUser.id}::uuid WHERE user_id = ${orphan.id}::uuid`;
+
       await tx.user.update({
         where: { id: orphan.id },
         data: { deleted_at: new Date() },

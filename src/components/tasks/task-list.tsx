@@ -304,8 +304,9 @@ export function TaskList({
 
     let list: TaskRow[];
     if (perspective === "inbox") {
-      // @ts-expect-error TS2589: tRPC type inference exceeds depth limit; runtime types are correct
-      const captureRows: TaskRow[] = (inboxCapturesQuery.data ?? []).map((c) => ({
+      type RawCapture = { id: string; title: string | null; raw_text: string | null; due_date: string | null; state: string; created_at: string };
+      const captureData = (inboxCapturesQuery.data ?? []) as unknown as RawCapture[];
+      const captureRows: TaskRow[] = captureData.map((c) => ({
         id: c.id,
         title: c.title ?? c.raw_text ?? "(untitled capture)",
         notes: null,

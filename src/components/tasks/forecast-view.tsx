@@ -115,16 +115,33 @@ function TaskCard({
   );
 }
 
+type CalEvent = {
+  id: string;
+  title: string;
+  start_at: string | Date;
+  end_at: string | Date;
+  status?: string | null;
+};
+
+function formatEventTime(dt: string | Date): string {
+  const d = new Date(dt);
+  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 function DayColumn({
   date,
   tasks,
   onComplete,
   onDrop,
+  events,
+  showCalendar,
 }: {
   date: string;
   tasks: ForecastTask[];
   onComplete: (id: string) => void;
   onDrop: (taskId: string, date: string) => void;
+  events: CalEvent[];
+  showCalendar: boolean;
 }) {
   const locale = useLocale();
   const d = new Date(date + "T00:00:00");
@@ -184,6 +201,27 @@ function DayColumn({
         })()}
       </div>
       <div className="flex flex-col gap-1 overflow-y-auto p-1.5">
+        {showCalendar && events.length > 0 && (
+          <div className="mb-1 flex flex-col gap-0.5">
+            {events.map((ev) => (
+              <a
+                key={ev.id}
+                href={`/calendar?view=day&date=${date}`}
+                className={cn(
+                  "flex items-center gap-1 rounded px-1.5 py-1 font-ui text-2xs",
+                  ev.status === "cancelled"
+                    ? "text-text-disabled line-through"
+                    : "bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20",
+                )}
+                title={ev.title}
+              >
+                <span className="flex-shrink-0 font-mono text-3xs tabular-nums">{formatEventTime(ev.start_at)}</span>
+                <span className="truncate">{ev.title}</span>
+              </a>
+            ))}
+            <div className="mt-0.5 border-t border-border-subtle" />
+          </div>
+        )}
         {tasks.length === 0 ? (
           <p className="py-2 text-center font-ui text-2xs text-text-disabled">—</p>
         ) : (
@@ -263,10 +301,38 @@ export function ForecastView(): React.ReactElement {
     setDays(n);
   }
 
+  const CAL_PREF_KEY = "forecast.showCalendar";
+
+  function readStoredShowCalendar(): boolean {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem(CAL_PREF_KEY) : null;
+      if (raw === "false") return false;
+    } catch {
+    }
+    return true;
+  }
+
+  const [showCalendar, setShowCalendar] = React.useState<boolean>(() => readStoredShowCalendar());
+
+  function toggleShowCalendar() {
+    setShowCalendar((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(CAL_PREF_KEY, String(next)); } catch { }
+      return next;
+    });
+  }
+
   const isPastRange = isBefore(addDays(startDate, days - 1), startOfDay(new Date()));
   const query = trpc.forecast.week.useQuery(
     { start_date: startDate, days },
     { staleTime: isPastRange ? 30 * 60_000 : 5 * 60_000 },
+  );
+
+  const calStart = startDate;
+  const calEnd = addDays(startDate, days);
+  const { data: calEvents = [] } = trpc.calendar.events.list.useQuery(
+    { start: calStart, end: calEnd },
+    { staleTime: 5 * 60_000, enabled: showCalendar },
   );
 
   const complete = trpc.tasks.complete.useMutation({
@@ -320,6 +386,20 @@ export function ForecastView(): React.ReactElement {
           <h1 className="font-ui text-base font-semibold text-text-primary">Forecast</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleShowCalendar}
+            title={showCalendar ? "Hide calendar events" : "Show calendar events"}
+            className={cn(
+              "flex items-center gap-1 rounded-sm border px-2 py-1 font-ui text-2xs transition-colors",
+              showCalendar
+                ? "border-accent-primary text-accent-primary bg-accent-primary/10"
+                : "border-border-subtle text-text-tertiary hover:bg-surface-hover",
+            )}
+          >
+            <Calendar size={11} />
+            Calendar
+          </button>
           <div className="flex items-center rounded-sm border border-border-subtle">
             <button
               type="button"
@@ -426,15 +506,23 @@ export function ForecastView(): React.ReactElement {
             )}
 
             <div data-testid="forecast-day-grid" className="flex flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
-              {(data?.days ?? []).map((day) => (
-                <DayColumn
-                  key={day.date}
-                  date={day.date}
-                  tasks={day.tasks as ForecastTask[]}
-                  onComplete={handleComplete}
-                  onDrop={handleDrop}
-                />
-              ))}
+              {(data?.days ?? []).map((day) => {
+                const dayEvents = (calEvents as CalEvent[]).filter((ev) => {
+                  const evDay = new Date(ev.start_at).toISOString().slice(0, 10);
+                  return evDay === day.date;
+                });
+                return (
+                  <DayColumn
+                    key={day.date}
+                    date={day.date}
+                    tasks={day.tasks as ForecastTask[]}
+                    onComplete={handleComplete}
+                    onDrop={handleDrop}
+                    events={dayEvents}
+                    showCalendar={showCalendar}
+                  />
+                );
+              })}
             </div>
           </div>
         )}

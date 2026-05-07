@@ -4,7 +4,7 @@ import * as React from "react";
 import { format } from "date-fns";
 import { useLocale } from "@/core/locale/hooks";
 import { formatDate as localeFormatDate } from "@/core/locale/formatters";
-import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock, Palette } from "lucide-react";
+import { Flag, X, Trash2, RotateCcw, ChevronLeft, AlertCircle, Clock, Palette, CalendarDays, Plus } from "lucide-react";
 import { Hint } from "@/components/ui/hint";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tag } from "@/components/ui/tag";
@@ -19,6 +19,12 @@ import { TaskInspectorActivityTab } from "./task-inspector-activity-tab";
 import { ChecklistSection } from "./checklist-section";
 import { SubtaskSection } from "./subtask-section";
 import { RecurrenceForm } from "./recurrence-form";
+import dynamic from "next/dynamic";
+
+const BlockTimeForm = dynamic(
+  () => import("@/components/calendar/block-time-form").then((m) => m.BlockTimeForm),
+  { ssr: false },
+);
 
 interface InspectorContextLink {
   context: { id: string; name: string };
@@ -93,6 +99,80 @@ function fmtDateForInput(d: Date | string | null | undefined): string {
   if (!d) return "";
   const date = typeof d === "string" ? new Date(d) : d;
   return format(date, "yyyy-MM-dd");
+}
+
+function fmtEventTime(date: Date | string): string {
+  const d = new Date(date);
+  return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function ScheduledSection({ taskId, taskTitle, taskNotes, inTrash }: { taskId: string; taskTitle?: string; taskNotes?: string | null; inTrash?: boolean }) {
+  const [blockOpen, setBlockOpen] = React.useState(false);
+  const { data: events = [], isLoading } = trpc.calendar.tasks.scheduled.useQuery(
+    { task_id: taskId },
+    { staleTime: 60_000, enabled: !inTrash },
+  );
+
+  if (inTrash) return null;
+
+  return (
+    <section className="mt-4">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-ui text-3xs font-semibold uppercase tracking-caps text-text-tertiary flex items-center gap-1">
+          <CalendarDays size={10} />
+          Scheduled
+        </h3>
+        <button
+          type="button"
+          onClick={() => setBlockOpen(true)}
+          className="flex items-center gap-0.5 font-ui text-2xs text-text-tertiary hover:text-text-secondary"
+          title="Block time for this task"
+        >
+          <Plus size={10} />
+          Block time
+        </button>
+      </div>
+      {isLoading ? (
+        <p className="font-ui text-2xs text-text-disabled">Loading…</p>
+      ) : events.length === 0 ? null : (
+        <ul className="flex flex-col gap-1">
+          {events.map((ev) => {
+            const dayStr = new Date(ev.start_at).toISOString().slice(0, 10);
+            return (
+              <li key={ev.id} className="flex items-center gap-2 rounded border border-border-subtle px-2 py-1">
+                <span
+                  className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+                  style={{ background: `var(--cal-1-fill)` }}
+                />
+                <span className="font-ui text-2xs text-text-secondary truncate flex-1">
+                  {fmtEventTime(ev.start_at)}
+                </span>
+                {ev.calendar && (
+                  <span className="font-ui text-3xs text-text-tertiary truncate">{ev.calendar.name}</span>
+                )}
+                <a
+                  href={`/calendar?view=day&date=${dayStr}`}
+                  className="flex-shrink-0 font-ui text-3xs text-accent-primary hover:underline"
+                  title="View on calendar"
+                >
+                  View
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {blockOpen && (
+        <BlockTimeForm
+          open={blockOpen}
+          onClose={() => setBlockOpen(false)}
+          defaultTaskId={taskId}
+          defaultTitle={taskTitle}
+          defaultDescription={taskNotes ?? undefined}
+        />
+      )}
+    </section>
+  );
 }
 
 export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.ReactElement {
@@ -728,6 +808,8 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
           })()}
 
           <TaskInspectorAttachments taskId={taskData.id} inTrash={inTrash} />
+
+          <ScheduledSection taskId={taskData.id} taskTitle={taskData.title} taskNotes={taskData.notes} inTrash={inTrash} />
 
           <footer className="mt-6 flex items-center justify-end gap-2 border-t border-border-subtle pt-3">
             {inTrash ? (

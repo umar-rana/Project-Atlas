@@ -41,29 +41,32 @@ model User {
   updated_at              DateTime  @updatedAt @db.Timestamptz
   deleted_at              DateTime? @db.Timestamptz
 
-  audit_logs         AuditLog[]
-  integration_tokens IntegrationToken[]
-  sync_states        SyncState[]
-  ai_call_logs       AICallLog[]
-  attachments        Attachment[]
-  drive_config       DriveConfig?
-  captures           Capture[]
-  email_captures     EmailCapture[]
-  capture_parse_logs CaptureParseLog[]
-  tasks              Task[]
-  projects           Project[]
-  project_folders    ProjectFolder[]
-  contexts           Context[]
-  tags               Tag[]
-  people             Person[]
-  checklist_items    ChecklistItem[]
-  work_logs          TaskWorkLog[]
-  notes              Note[]
-  notes_folders      NotesFolder[]
-  links              Link[]
-  tables             Table[]
-  tables_folders     TablesFolder[]
-  task_templates     TaskTemplate[]
+  audit_logs              AuditLog[]
+  integration_tokens      IntegrationToken[]
+  sync_states             SyncState[]
+  ai_call_logs            AICallLog[]
+  attachments             Attachment[]
+  drive_config            DriveConfig?
+  captures                Capture[]
+  email_captures          EmailCapture[]
+  capture_parse_logs      CaptureParseLog[]
+  tasks                   Task[]
+  projects                Project[]
+  project_folders         ProjectFolder[]
+  contexts                Context[]
+  tags                    Tag[]
+  people                  Person[]
+  checklist_items         ChecklistItem[]
+  work_logs               TaskWorkLog[]
+  notes                   Note[]
+  notes_folders           NotesFolder[]
+  links                   Link[]
+  tables                  Table[]
+  tables_folders          TablesFolder[]
+  task_templates          TaskTemplate[]
+  google_calendar_token   GoogleCalendarOAuthToken?
+  google_calendars        GoogleCalendar[]
+  calendar_events         CalendarEvent[]
 
   @@index([clerk_id])
   @@index([email])
@@ -298,6 +301,7 @@ model Person {
   interests           PersonInterest[]
   tags                TagOnPerson[]
   interactions        PersonInteraction[]
+  calendar_attendees  CalendarEventAttendee[]
 
   @@unique([user_id, handle])
   @@index([user_id])
@@ -664,14 +668,15 @@ model Project {
   created_at           DateTime  @default(now()) @db.Timestamptz
   updated_at           DateTime  @updatedAt @db.Timestamptz
 
-  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  folder         ProjectFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
-  tracker_table  Table?         @relation("ProjectTrackerTable", fields: [tracker_table_id], references: [id], onDelete: SetNull)
-  tracker_column TableColumn?   @relation("ProjectTrackerColumn", fields: [tracker_column_id], references: [id], onDelete: SetNull)
-  tasks          Task[]
-  note_refs      Note[]
-  tables         Table[]        @relation("TableProject")
-  task_templates TaskTemplate[] @relation("TaskTemplateDefaultProject")
+  user             User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  folder           ProjectFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
+  tracker_table    Table?         @relation("ProjectTrackerTable", fields: [tracker_table_id], references: [id], onDelete: SetNull)
+  tracker_column   TableColumn?   @relation("ProjectTrackerColumn", fields: [tracker_column_id], references: [id], onDelete: SetNull)
+  tasks            Task[]
+  note_refs        Note[]
+  tables           Table[]        @relation("TableProject")
+  task_templates   TaskTemplate[] @relation("TaskTemplateDefaultProject")
+  calendar_events  CalendarEvent[] @relation("CalendarEventProject")
 
   @@index([user_id])
   @@index([user_id, type])
@@ -731,6 +736,7 @@ model Task {
   checklist_items  ChecklistItem[]
   work_logs        TaskWorkLog[]
   attachments      Attachment[] @relation("TaskAttachments")
+  calendar_events  CalendarEvent[] @relation("CalendarEventTask")
 
   @@index([user_id])
   @@index([user_id, project_id])
@@ -965,6 +971,7 @@ model Note {
   project           Project?     @relation(fields: [project_id], references: [id], onDelete: SetNull)
   tag_on_notes      TagOnNote[]
   versions          NoteVersion[]
+  calendar_events   CalendarEvent[] @relation("CalendarEventNote")
 
   // Partial unique index (only one brief per project) is enforced via raw SQL:
   // CREATE UNIQUE INDEX note_project_brief_unique ON "Note" (project_id) WHERE is_project_brief = true;
@@ -1220,4 +1227,125 @@ model TagOnTaskTemplate {
 
   @@id([template_id, tag_id])
   @@index([tag_id])
+}
+
+// ─── Calendar: Wave 6a ───────────────────────────────────────────────────────
+// MAINTENANCE NOTE: GoogleCalendarOAuthToken, GoogleCalendar, and CalendarEvent
+// have user_id columns and are included in reattachOrphanData() in
+// src/core/auth/orphan-recovery.ts. CalendarEventAttendee cascades through
+// CalendarEvent and does not need explicit handling.
+
+// ─── GoogleCalendarOAuthToken ─────────────────────────────────────────────────
+
+model GoogleCalendarOAuthToken {
+  id             String    @id @db.Uuid
+  user_id        String    @unique @db.Uuid
+  encrypted_data String
+  scopes         String[]
+  email          String?
+  expires_at     DateTime? @db.Timestamptz
+  created_at     DateTime  @default(now()) @db.Timestamptz
+  updated_at     DateTime  @updatedAt @db.Timestamptz
+
+  user           User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+// ─── GoogleCalendar ───────────────────────────────────────────────────────────
+
+model GoogleCalendar {
+  id               String    @id @db.Uuid
+  user_id          String    @db.Uuid
+  google_id        String
+  name             String
+  description      String?
+  time_zone        String?
+  is_primary       Boolean   @default(false)
+  access_role      String    @default("reader")
+  google_color_id  String?
+  color_override   String?
+  is_visible       Boolean   @default(true)
+  is_synced        Boolean   @default(true)
+  next_sync_token  String?
+  last_synced_at   DateTime? @db.Timestamptz
+  deleted_at       DateTime? @db.Timestamptz
+  created_at       DateTime  @default(now()) @db.Timestamptz
+  updated_at       DateTime  @updatedAt @db.Timestamptz
+
+  user             User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  events           CalendarEvent[]
+
+  @@unique([user_id, google_id])
+  @@index([user_id])
+  @@index([deleted_at])
+}
+
+// ─── CalendarEvent ────────────────────────────────────────────────────────────
+
+model CalendarEvent {
+  id                   String    @id @db.Uuid
+  user_id              String    @db.Uuid
+  calendar_id          String?   @db.Uuid
+  source               String    @default("atlas") // atlas | google
+  google_event_id      String?
+  title                String    @default("")
+  description          String?
+  location             String?
+  start_at             DateTime  @db.Timestamptz
+  end_at               DateTime  @db.Timestamptz
+  all_day              Boolean   @default(false)
+  status               String    @default("confirmed") // confirmed | tentative | cancelled
+  recurrence_rule      String?
+  recurrence_master_id String?   @db.Uuid
+  external_url         String?
+  linked_task_id       String?   @db.Uuid
+  linked_project_id    String?   @db.Uuid
+  linked_note_id       String?   @db.Uuid
+  organizer_email      String?
+  organizer_name       String?
+  deleted_at           DateTime? @db.Timestamptz
+  created_at           DateTime  @default(now()) @db.Timestamptz
+  updated_at           DateTime  @updatedAt @db.Timestamptz
+
+  user                 User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  calendar             GoogleCalendar? @relation(fields: [calendar_id], references: [id], onDelete: SetNull)
+  linked_task          Task?           @relation("CalendarEventTask", fields: [linked_task_id], references: [id], onDelete: SetNull)
+  linked_project       Project?        @relation("CalendarEventProject", fields: [linked_project_id], references: [id], onDelete: SetNull)
+  linked_note          Note?           @relation("CalendarEventNote", fields: [linked_note_id], references: [id], onDelete: SetNull)
+  recurrence_master    CalendarEvent?  @relation("CalendarEventOverrides", fields: [recurrence_master_id], references: [id], onDelete: SetNull)
+  overrides            CalendarEvent[] @relation("CalendarEventOverrides")
+  attendees            CalendarEventAttendee[]
+
+  @@unique([user_id, google_event_id, calendar_id])
+  @@index([user_id])
+  @@index([user_id, calendar_id])
+  @@index([user_id, start_at, end_at])
+  @@index([linked_task_id])
+  @@index([linked_project_id])
+  @@index([linked_note_id])
+  @@index([recurrence_master_id])
+  @@index([deleted_at])
+}
+
+// ─── CalendarEventAttendee ────────────────────────────────────────────────────
+
+model CalendarEventAttendee {
+  id              String        @id @db.Uuid
+  event_id        String        @db.Uuid
+  email           String
+  display_name    String?
+  response_status String        @default("needsAction") // accepted | declined | tentative | needsAction
+  is_organizer    Boolean       @default(false)
+  is_self         Boolean       @default(false)
+  person_id       String?       @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamptz
+  updated_at      DateTime      @updatedAt @db.Timestamptz
+
+  event           CalendarEvent @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  person          Person?       @relation(fields: [person_id], references: [id], onDelete: SetNull)
+
+  @@unique([event_id, email])
+  @@index([event_id])
+  @@index([person_id])
 }

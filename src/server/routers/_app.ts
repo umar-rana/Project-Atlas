@@ -30,6 +30,7 @@ import { trashRouter } from "./trash";
 import { convertRouter } from "./convert";
 import { taskTemplatesRouter } from "./task-templates";
 import { peopleRouter } from "./people";
+import { calendarRouter } from "./calendar";
 
 export const appRouter = router({
   health: healthRouter,
@@ -63,6 +64,7 @@ export const appRouter = router({
   convert: convertRouter,
   taskTemplates: taskTemplatesRouter,
   people: peopleRouter,
+  calendar: calendarRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -6,6 +6,7 @@ import { handleAttachmentCleanup } from "./handlers/attachment-cleanup";
 import { handleImportCleanup } from "./handlers/import-cleanup-job";
 import { handleProcessedCapturesCleanup } from "./handlers/processed-captures-cleanup";
 import { handleJobRecordsCleanup } from "./handlers/job-records-cleanup";
+import { handleGoogleCalendarSync } from "./handlers/google-calendar-sync";
 
 export interface JobDefinition {
   name: string;
@@ -62,5 +63,11 @@ export const JOB_REGISTRY: JobDefinition[] = [
     cron: "0 4 * * 0",
     description: "Weekly pruning of job audit log entries, keeping the 100 most recent per job (Sunday 04:00 UTC)",
     handler: handleJobRecordsCleanup,
+  },
+  {
+    name: "google-calendar-sync",
+    cron: "30 2 * * *",
+    description: "Daily sync of Google Calendar events at 02:30 UTC",
+    handler: handleGoogleCalendarSync,
   },
 ];
