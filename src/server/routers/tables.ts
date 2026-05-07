@@ -6,9 +6,18 @@ import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { validateCellValue } from "@/core/tables/validators";
 import type { ColumnType } from "@/core/tables/types";
+import { createLogger } from "@/core/logging";
+import {
+  checkCsvImportRateLimit,
+  RATE_LIMIT_ERROR_MESSAGE,
+  runTableImport,
+} from "@/core/tables/csv-import-service";
+
+const log = createLogger({ module: "tables" });
 
 const COLUMN_TYPES = ["text", "number", "date", "checkbox", "single_select", "currency", "multi_select"] as const;
 const AGGREGATION_TYPES = ["sum", "average", "count", "min", "max", "checked_ratio", "none"] as const;
+
 
 function toNumber(d: Prisma.Decimal | null): number {
   return d ? parseFloat(d.toString()) : 0;
@@ -609,6 +618,58 @@ export const tablesRouter = router({
         orderBy: { updated_at: "desc" },
         take: input.limit,
         select: { id: true, name: true, description: true, updated_at: true },
+      });
+    }),
+
+  importFromCsv: protectedProcedure
+    .input(
+      z.object({
+        table_name: z.string().min(1).max(500),
+        folder_id: z.string().uuid().nullable().optional(),
+        project_id: z.string().uuid().nullable().optional(),
+        columns: z
+          .array(
+            z.object({
+              name: z.string().min(1).max(200),
+              type: z.enum(COLUMN_TYPES),
+            }),
+          )
+          .min(1)
+          .max(50),
+        rows: z.array(z.array(z.string())).max(10_000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!checkCsvImportRateLimit(ctx.user.id)) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: RATE_LIMIT_ERROR_MESSAGE });
+      }
+
+      if (input.rows.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The CSV file has no data rows." });
+      }
+
+      if (input.folder_id) {
+        const folder = await db.tablesFolder.findFirst({
+          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!folder) throw new TRPCError({ code: "NOT_FOUND", message: "Folder not found" });
+      }
+      if (input.project_id) {
+        const project = await db.project.findFirst({
+          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      }
+
+      return runTableImport({
+        user_id: ctx.user.id,
+        table_name: input.table_name,
+        folder_id: input.folder_id,
+        project_id: input.project_id,
+        columns: input.columns,
+        rows: input.rows,
       });
     }),
 });

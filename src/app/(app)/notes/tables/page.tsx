@@ -2,16 +2,19 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Table2, Plus, Search, Folder } from "lucide-react";
+import { Table2, Plus, Search, Folder, Upload } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { NotesShell } from "@/components/notes/notes-shell";
 import { NewTableDialog } from "@/components/tables/new-table-dialog";
+import { CsvImportWizard } from "@/components/tables/csv-import-wizard";
+import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 
 export default function AllTablesPage() {
   const router = useRouter();
   const [search, setSearch] = React.useState("");
   const [showDialog, setShowDialog] = React.useState(false);
+  const [showImportWizard, setShowImportWizard] = React.useState(false);
 
   const tablesQuery = trpc.tables.list.useQuery({ limit: 200 });
   const tables = tablesQuery.data ?? [];
@@ -38,6 +41,16 @@ export default function AllTablesPage() {
                 className="h-7 rounded-md border border-border-default bg-surface-base pl-7 pr-3 font-ui text-xs text-text-primary placeholder:text-text-disabled focus:border-border-focus focus:outline-none"
               />
             </div>
+            <Hint label="Import a CSV file as a new table">
+              <button
+                type="button"
+                onClick={() => setShowImportWizard(true)}
+                className="flex items-center gap-1.5 rounded-md border border-border-default px-3 py-1.5 font-ui text-xs font-medium text-text-secondary hover:bg-surface-hover"
+              >
+                <Upload size={13} />
+                Import CSV
+              </button>
+            </Hint>
             <button
               type="button"
               onClick={() => setShowDialog(true)}
@@ -60,13 +73,23 @@ export default function AllTablesPage() {
                 {search ? `No tables matching "${search}"` : "No tables yet"}
               </p>
               {!search && (
-                <button
-                  type="button"
-                  onClick={() => setShowDialog(true)}
-                  className="font-ui text-xs text-accent-primary hover:underline"
-                >
-                  Create your first table
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDialog(true)}
+                    className="font-ui text-xs text-accent-primary hover:underline"
+                  >
+                    Create your first table
+                  </button>
+                  <span className="font-ui text-xs text-text-disabled">or</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowImportWizard(true)}
+                    className="font-ui text-xs text-accent-primary hover:underline"
+                  >
+                    import from CSV
+                  </button>
+                </div>
               )}
             </div>
           ) : (
@@ -117,6 +140,17 @@ export default function AllTablesPage() {
           onClose={() => setShowDialog(false)}
           onCreated={(id) => {
             setShowDialog(false);
+            router.push(`/notes/tables/${id}`);
+          }}
+        />
+      )}
+
+      {showImportWizard && (
+        <CsvImportWizard
+          onClose={() => setShowImportWizard(false)}
+          onImported={(id) => {
+            setShowImportWizard(false);
+            tablesQuery.refetch();
             router.push(`/notes/tables/${id}`);
           }}
         />
