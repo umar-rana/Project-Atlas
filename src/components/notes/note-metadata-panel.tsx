@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File, Download, FileDown, Loader2 } from "lucide-react";
+import { Star, Link2, Paperclip, ChevronDown, ChevronRight, FileText, Image, Film, Music, Archive, File, Download, FileDown, Loader2, Tag, Plus } from "lucide-react";
 import { Hint } from "@/components/ui/hint";
 import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
@@ -83,6 +83,121 @@ function AttachmentThumbnail({
     );
   }
   return <div className="flex h-8 w-8 shrink-0 items-center justify-center">{fileTypeIcon(filename, mimeType)}</div>;
+}
+
+function NoteTagsSection({ noteId }: { noteId: string }) {
+  const utils = trpc.useUtils();
+  const noteQuery = trpc.notes.get.useQuery({ id: noteId });
+  const tagsQuery = trpc.tags.list.useQuery();
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const [removingTagId, setRemovingTagId] = React.useState<string | null>(null);
+  const pickerRef = React.useRef<HTMLDivElement>(null);
+
+  const addTag = trpc.notes.addTag.useMutation({
+    onSuccess: () => {
+      void utils.notes.get.invalidate({ id: noteId });
+      void utils.notes.list.invalidate();
+      setPickerOpen(false);
+    },
+    onError: () => toast.error("Failed to add tag"),
+  });
+
+  const removeTag = trpc.notes.removeTag.useMutation({
+    onSuccess: () => {
+      void utils.notes.get.invalidate({ id: noteId });
+      void utils.notes.list.invalidate();
+      setRemovingTagId(null);
+    },
+    onError: () => toast.error("Failed to remove tag"),
+  });
+
+  React.useEffect(() => {
+    if (!pickerOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [pickerOpen]);
+
+  const note = noteQuery.data;
+  const currentTags = (note as { tag_on_notes?: { tag: { id: string; name: string; color: string | null } }[] } | null | undefined)?.tag_on_notes ?? [];
+  const currentTagIds = new Set(currentTags.map((t) => t.tag.id));
+  const allTags = tagsQuery.data ?? [];
+  const availableTags = allTags.filter((t) => !currentTagIds.has(t.id));
+
+  return (
+    <CollapsibleSection label="Tags" icon={<Tag size={11} className="text-text-tertiary" />} defaultOpen>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex flex-wrap gap-1">
+          {currentTags.map(({ tag }) => (
+            <Hint key={tag.id} label={`Remove "${tag.name}"`} side="top" delayDuration={600}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (removingTagId === tag.id) {
+                    removeTag.mutate({ note_id: noteId, tag_id: tag.id });
+                  } else {
+                    setRemovingTagId(tag.id);
+                    setTimeout(() => setRemovingTagId(null), 3000);
+                  }
+                }}
+                disabled={removeTag.isPending}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-2xs font-medium transition-colors",
+                  removingTagId === tag.id
+                    ? "bg-accent-danger-muted text-accent-danger"
+                    : "bg-accent-primary-muted text-accent-primary hover:bg-accent-danger-muted hover:text-accent-danger",
+                )}
+              >
+                <span>#</span>
+                <span>{tag.name}</span>
+                {removingTagId === tag.id && <span className="ml-0.5">×</span>}
+              </button>
+            </Hint>
+          ))}
+          <div className="relative" ref={pickerRef}>
+            <Hint label="Add tag" side="top">
+              <button
+                type="button"
+                onClick={() => setPickerOpen((o) => !o)}
+                className="inline-flex items-center gap-1 rounded-full border border-dashed border-border-default px-2 py-0.5 font-ui text-2xs text-text-disabled hover:border-border-focus hover:text-accent-primary"
+              >
+                <Plus size={10} />
+                Tag
+              </button>
+            </Hint>
+            {pickerOpen && (
+              <div className="absolute left-0 top-full z-overlay mt-1 w-48 rounded-md border border-border-default bg-surface-raised shadow-2">
+                <div className="max-h-40 overflow-y-auto py-1">
+                  {availableTags.length === 0 ? (
+                    <p className="px-3 py-2 font-ui text-2xs text-text-disabled">
+                      {allTags.length === 0 ? "No tags yet" : "All tags added"}
+                    </p>
+                  ) : (
+                    availableTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => addTag.mutate({ note_id: noteId, tag_id: tag.id })}
+                        disabled={addTag.isPending}
+                        className="flex w-full items-center gap-2 px-3 py-1.5 font-ui text-xs text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                      >
+                        <span className="text-text-tertiary">#</span>
+                        {tag.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </CollapsibleSection>
+  );
 }
 
 function CollapsibleSection({
@@ -331,13 +446,7 @@ export function NoteMetadataPanel({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection label="Tags" defaultOpen={false}>
-        <div className="flex flex-wrap gap-1">
-          <p className="font-ui text-2xs text-text-disabled">
-            Note tagging is planned for a future update.
-          </p>
-        </div>
-      </CollapsibleSection>
+      <NoteTagsSection noteId={noteId} />
 
       <CollapsibleSection
         label={`Backlinks${backlinks.length > 0 ? ` (${backlinks.length})` : ""}`}

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Search, Plus, ChevronDown, FileText, File } from "lucide-react";
+import { Search, Plus, ChevronDown, FileText, File, X } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { NoteCard } from "./note-card";
 import { PurposeTemplatePicker } from "./purpose-template-picker";
@@ -19,6 +20,10 @@ interface NoteListViewProps {
 }
 
 export function NoteListView({ title, folderId, purpose, projectId }: NoteListViewProps): React.ReactElement {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [search, setSearch] = React.useState("");
   const [showPicker, setShowPicker] = React.useState(false);
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
@@ -26,11 +31,38 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
 
   const [importFormat, setImportFormat] = React.useState<"md" | "docx" | null>(null);
 
+  const activeTagIds = React.useMemo(
+    () => searchParams.getAll("tag"),
+    [searchParams],
+  );
+
+  const tagsQuery = trpc.tags.list.useQuery();
+  const allTags = tagsQuery.data ?? [];
+
+  function toggleTag(tagId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    const current = params.getAll("tag");
+    if (current.includes(tagId)) {
+      params.delete("tag");
+      current.filter((id) => id !== tagId).forEach((id) => params.append("tag", id));
+    } else {
+      params.append("tag", tagId);
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  function clearTagFilter() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("tag");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   const notesQuery = trpc.notes.list.useQuery(
     {
       folder_id: folderId ?? undefined,
       project_id: projectId ?? undefined,
       purpose: purpose ?? undefined,
+      tag_ids: activeTagIds.length > 0 ? activeTagIds : undefined,
       limit: 100,
     },
     { enabled: !search },
@@ -87,6 +119,8 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
       />
     );
   }
+
+  const hasTagFilter = activeTagIds.length > 0;
 
   return (
     <div className="flex h-full flex-col">
@@ -165,6 +199,39 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
         </div>
       </div>
 
+      {/* Tag filter bar */}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border-subtle px-4 py-2">
+          <span className="font-ui text-2xs text-text-disabled">Filter by tag:</span>
+          {allTags.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() => toggleTag(tag.id)}
+              className={cn(
+                "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-ui text-2xs font-medium transition-colors",
+                activeTagIds.includes(tag.id)
+                  ? "bg-accent-primary text-text-on-accent"
+                  : "bg-surface-raised text-text-secondary hover:bg-accent-primary-muted hover:text-accent-primary",
+              )}
+            >
+              <span>#</span>
+              <span>{tag.name}</span>
+            </button>
+          ))}
+          {hasTagFilter && (
+            <button
+              type="button"
+              onClick={clearTagFilter}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-ui text-2xs text-text-disabled hover:text-accent-danger"
+            >
+              <X size={10} />
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
@@ -173,9 +240,13 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
         ) : notes.length === 0 ? (
           <div className="mx-auto flex max-w-empty-state flex-col items-center justify-center gap-2 py-20 text-center">
             <p className="font-ui text-sm text-text-tertiary">
-              {search.length >= 2 ? `No results for "${search}"` : "No notes yet"}
+              {search.length >= 2
+                ? `No results for "${search}"`
+                : hasTagFilter
+                  ? "No notes with these tags"
+                  : "No notes yet"}
             </p>
-            {search.length < 2 && (
+            {search.length < 2 && !hasTagFilter && (
               <p className="font-ui text-2xs text-text-disabled">
                 Use the <strong className="text-text-tertiary">+ New note</strong> button above to create one.
               </p>
@@ -183,20 +254,24 @@ export function NoteListView({ title, folderId, purpose, projectId }: NoteListVi
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {notes.map((note) => (
-              <NoteCard
-                key={note.id}
-                id={note.id}
-                title={note.title}
-                purpose={note.purpose}
-                is_project_brief={Boolean(note.is_project_brief)}
-                body_text={note.body_text ?? ""}
-                project_id={note.project_id ?? null}
-                projectTitle={note.project_id ? (projectMap.get(note.project_id) ?? null) : null}
-                updated_at={note.updated_at}
-                folderId={note.folder_id ?? null}
-              />
-            ))}
+            {notes.map((note) => {
+              const noteTags = "tag_on_notes" in note ? (note as { tag_on_notes: { tag: { id: string; name: string; color: string | null } }[] }).tag_on_notes : undefined;
+              return (
+                <NoteCard
+                  key={note.id}
+                  id={note.id}
+                  title={note.title}
+                  purpose={note.purpose}
+                  is_project_brief={Boolean(note.is_project_brief)}
+                  body_text={note.body_text ?? ""}
+                  project_id={note.project_id ?? null}
+                  projectTitle={note.project_id ? (projectMap.get(note.project_id) ?? null) : null}
+                  updated_at={note.updated_at}
+                  folderId={note.folder_id ?? null}
+                  tags={noteTags}
+                />
+              );
+            })}
           </div>
         )}
       </div>

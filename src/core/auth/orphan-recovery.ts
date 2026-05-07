@@ -1,5 +1,6 @@
 // IMPORTANT: When adding a new table with a user_id column, update reattachOrphanData below
 // to include that table in the reattachment transaction.
+// TagOnNote: no direct user_id — cascades through Note (which is reattached above). No explicit handling needed.
 
 import { db, newId } from "@/core/db";
 import { withDeleted } from "@/core/db/soft-delete";

@@ -46,6 +46,7 @@ interface NoteCardProps {
   updated_at: Date | string;
   folderId?: string | null;
   onDeleted?: () => void;
+  tags?: { tag: { id: string; name: string; color: string | null } }[];
 }
 
 export function NoteCard({
@@ -59,6 +60,7 @@ export function NoteCard({
   updated_at,
   folderId,
   onDeleted,
+  tags,
 }: NoteCardProps): React.ReactElement {
   const utils = trpc.useUtils();
   const [inspectorOpen, setInspectorOpen] = React.useState(false);
@@ -243,6 +245,19 @@ export function NoteCard({
           </div>
         </div>
 
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tags.map(({ tag }) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center gap-0.5 rounded-full bg-accent-primary-muted px-1.5 py-0.5 font-ui text-2xs font-medium text-accent-primary"
+              >
+                <span>#</span>
+                <span>{tag.name}</span>
+              </span>
+            ))}
+          </div>
+        )}
         {preview ? (
           <p className="line-clamp-2 font-ui text-xs text-text-tertiary">{preview}</p>
         ) : null}

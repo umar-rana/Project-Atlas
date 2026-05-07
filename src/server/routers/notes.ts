@@ -20,6 +20,7 @@ export const notesRouter = router({
           .enum(["note", "meeting_note", "project_brief", "reading_note"])
           .optional(),
         is_project_brief: z.boolean().optional(),
+        tag_ids: z.array(z.string().uuid()).optional(),
         limit: z.number().int().min(1).max(200).default(50),
         cursor: z.string().uuid().optional(),
       }),
@@ -32,6 +33,13 @@ export const notesRouter = router({
         ...(input.project_id !== undefined ? { project_id: input.project_id } : {}),
         ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
         ...(input.is_project_brief !== undefined ? { is_project_brief: input.is_project_brief } : {}),
+        ...(input.tag_ids?.length
+          ? {
+              AND: input.tag_ids.map((tag_id) => ({
+                tag_on_notes: { some: { tag_id } },
+              })),
+            }
+          : {}),
       };
 
       const notes = await db.note.findMany({
@@ -51,6 +59,11 @@ export const notesRouter = router({
           created_at: true,
           updated_at: true,
           body_text: true,
+          tag_on_notes: {
+            select: {
+              tag: { select: { id: true, name: true, color: true } },
+            },
+          },
         },
       });
 
@@ -67,6 +80,13 @@ export const notesRouter = router({
     .query(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
         where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        include: {
+          tag_on_notes: {
+            select: {
+              tag: { select: { id: true, name: true, color: true } },
+            },
+          },
+        },
       });
       if (!note) throw new TRPCError({ code: "NOT_FOUND" });
       return note;
@@ -454,5 +474,165 @@ export const notesRouter = router({
         take: input.limit,
         select: { id: true, title: true, body_text: true, purpose: true, updated_at: true },
       });
+    }),
+
+  addTag: protectedProcedure
+    .input(z.object({ note_id: z.string().uuid(), tag_id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const note = await db.note.findFirst({
+        where: { id: input.note_id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true },
+      });
+      if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const tag = await db.tag.findFirst({
+        where: { id: input.tag_id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true, name: true },
+      });
+      if (!tag) throw new TRPCError({ code: "NOT_FOUND", message: "Tag not found" });
+
+      const existing = await db.tagOnNote.findUnique({
+        where: { tag_id_note_id: { tag_id: input.tag_id, note_id: input.note_id } },
+        select: { tag_id: true },
+      });
+
+      if (!existing) {
+        await db.$transaction([
+          db.tagOnNote.create({ data: { tag_id: input.tag_id, note_id: input.note_id } }),
+          db.tag.update({ where: { id: input.tag_id }, data: { usage_count: { increment: 1 } } }),
+        ]);
+        try {
+          await logActivity({
+            user_id: ctx.user.id,
+            entity_type: "Note",
+            entity_id: input.note_id,
+            action: "note_tag_added",
+            meta: { tag_id: input.tag_id, tag_name: tag.name },
+          });
+        } catch (err) {
+          log.warn({ err, note_id: input.note_id }, "Non-fatal: audit log failed for note addTag");
+        }
+      }
+
+      return { ok: true };
+    }),
+
+  removeTag: protectedProcedure
+    .input(z.object({ note_id: z.string().uuid(), tag_id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const note = await db.note.findFirst({
+        where: { id: input.note_id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true },
+      });
+      if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const tag = await db.tag.findFirst({
+        where: { id: input.tag_id, user_id: ctx.user.id },
+        select: { id: true, name: true },
+      });
+      if (!tag) throw new TRPCError({ code: "NOT_FOUND", message: "Tag not found" });
+
+      const existing = await db.tagOnNote.findUnique({
+        where: { tag_id_note_id: { tag_id: input.tag_id, note_id: input.note_id } },
+        select: { tag_id: true },
+      });
+
+      if (existing) {
+        await db.$transaction([
+          db.tagOnNote.delete({ where: { tag_id_note_id: { tag_id: input.tag_id, note_id: input.note_id } } }),
+          db.tag.update({ where: { id: input.tag_id }, data: { usage_count: { decrement: 1 } } }),
+        ]);
+        try {
+          await logActivity({
+            user_id: ctx.user.id,
+            entity_type: "Note",
+            entity_id: input.note_id,
+            action: "note_tag_removed",
+            meta: { tag_id: input.tag_id, tag_name: tag.name },
+          });
+        } catch (err) {
+          log.warn({ err, note_id: input.note_id }, "Non-fatal: audit log failed for note removeTag");
+        }
+      }
+
+      return { ok: true };
+    }),
+
+  setTags: protectedProcedure
+    .input(z.object({ note_id: z.string().uuid(), tag_ids: z.array(z.string().uuid()) }))
+    .mutation(async ({ ctx, input }) => {
+      const note = await db.note.findFirst({
+        where: { id: input.note_id, user_id: ctx.user.id, deleted_at: null },
+        select: { id: true },
+      });
+      if (!note) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (input.tag_ids.length > 0) {
+        const owned = await db.tag.findMany({
+          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (owned.length !== input.tag_ids.length) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Unknown tag id" });
+        }
+      }
+
+      await db.$transaction(async (tx) => {
+        const existing = await tx.tagOnNote.findMany({
+          where: { note_id: input.note_id },
+          select: { tag_id: true },
+        });
+        const prev = new Set(existing.map((e) => e.tag_id));
+        const next = new Set(input.tag_ids);
+
+        const toAdd = input.tag_ids.filter((id) => !prev.has(id));
+        const toRemove = [...prev].filter((id) => !next.has(id));
+
+        if (toRemove.length > 0) {
+          await tx.tagOnNote.deleteMany({
+            where: { note_id: input.note_id, tag_id: { in: toRemove } },
+          });
+          await tx.tag.updateMany({
+            where: { id: { in: toRemove } },
+            data: { usage_count: { decrement: 1 } },
+          });
+        }
+
+        if (toAdd.length > 0) {
+          await tx.tagOnNote.createMany({
+            data: toAdd.map((tag_id) => ({ tag_id, note_id: input.note_id })),
+            skipDuplicates: true,
+          });
+          await tx.tag.updateMany({
+            where: { id: { in: toAdd } },
+            data: { usage_count: { increment: 1 } },
+          });
+        }
+
+        for (const tag_id of toAdd) {
+          try {
+            await logActivity({
+              user_id: ctx.user.id,
+              entity_type: "Note",
+              entity_id: input.note_id,
+              action: "note_tag_added",
+              meta: { tag_id },
+            });
+          } catch { /* non-fatal */ }
+        }
+        for (const tag_id of toRemove) {
+          try {
+            await logActivity({
+              user_id: ctx.user.id,
+              entity_type: "Note",
+              entity_id: input.note_id,
+              action: "note_tag_removed",
+              meta: { tag_id },
+            });
+          } catch { /* non-fatal */ }
+        }
+      });
+
+      return { ok: true };
     }),
 });

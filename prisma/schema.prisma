@@ -277,6 +277,7 @@ model Tag {
   user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   tasks       TagOnTask[]
   attachments TagOnAttachment[]
+  tag_on_notes TagOnNote[]
 
   @@unique([user_id, name])
   @@index([user_id])
@@ -646,6 +647,7 @@ model Note {
   user              User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   folder            NotesFolder? @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   project           Project?     @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  tag_on_notes      TagOnNote[]
 
   // Partial unique index (only one brief per project) is enforced via raw SQL:
   // CREATE UNIQUE INDEX note_project_brief_unique ON "Note" (project_id) WHERE is_project_brief = true;
@@ -655,6 +657,21 @@ model Note {
   @@index([user_id, purpose])
   @@index([user_id, pinned])
   @@index([deleted_at])
+}
+
+// ─── TagOnNote (join) ────────────────────────────────────────────────────────
+
+model TagOnNote {
+  tag_id     String   @db.Uuid
+  note_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  tag        Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  note       Note     @relation(fields: [note_id], references: [id], onDelete: Cascade)
+
+  @@id([tag_id, note_id])
+  @@index([note_id])
+  @@index([tag_id])
 }
 
 // ─── Link ────────────────────────────────────────────────────────────────────
