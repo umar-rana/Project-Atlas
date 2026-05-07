@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": [
+    "before 6am on Monday"
+  ],
+  "timezone": "Asia/Karachi",
+  "automergeType": "branch",
+  "vulnerabilityAlerts": {
+    "automerge": false,
+    "labels": ["security"]
+  },
+  "packageRules": [
+    {
+      "description": "Automerge patch and minor updates for stable (>=1.0.0) packages",
+      "matchCurrentVersion": ">=1.0.0",
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "description": "Do not automerge 0.x packages (pre-release stability not guaranteed)",
+      "matchCurrentVersion": "<1.0.0",
+      "automerge": false
+    },
+    {
+      "description": "Do not automerge major version upgrades — require human review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "Do not automerge high-impact packages even for minor/patch — require human review",
+      "matchPackageNames": [
+        "next",
+        "prisma",
+        "@prisma/client",
+        "tailwindcss",
+        "vitest",
+        "typescript",
+        "react",
+        "react-dom"
+      ],
+      "automerge": false
+    }
+  ]
+}
