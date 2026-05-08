@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/kill-stale-next.mjs",
     "dev": "next dev -H 0.0.0.0 -p 5000",
     "build": "next build",
     "analyze": "ANALYZE=true next build",
