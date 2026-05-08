@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned } from "@/server/trpc";
 import { db } from "@/core/db";
 
 export const linksRouter = router({
@@ -12,11 +12,10 @@ export const linksRouter = router({
     )
     .query(async ({ ctx, input }) => {
       return db.link.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           source_type: input.source_type,
           source_id: input.source_id,
-        },
+        }),
         select: {
           id: true,
           target_type: true,
@@ -38,11 +37,10 @@ export const linksRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const links = await db.link.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           target_type: input.target_type,
           target_id: input.target_id,
-        },
+        }),
         select: {
           id: true,
           source_type: true,
@@ -60,13 +58,13 @@ export const linksRouter = router({
       const [sourceNotes, sourceTasks] = await Promise.all([
         noteIds.length
           ? db.note.findMany({
-              where: { id: { in: noteIds }, user_id: ctx.user.id },
+              where: userOwned(ctx.user, { id: { in: noteIds } }),
               select: { id: true, title: true },
             })
           : [],
         taskIds.length
           ? db.task.findMany({
-              where: { id: { in: taskIds }, user_id: ctx.user.id },
+              where: userOwned(ctx.user, { id: { in: taskIds } }),
               select: { id: true, title: true },
             })
           : [],
