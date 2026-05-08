@@ -1,7 +1,24 @@
 import { PrismaClient } from '@prisma/client'
 import { uuidv7 } from 'uuidv7'
 
-const prisma = new PrismaClient()
+// Resolve the correct database URL.
+// In the Replit dev environment DATABASE_URL points to the local Replit
+// PostgreSQL ("helium"), not Neon. The production deployment uses Neon via
+// DATABASE_URL_NEON. Always prefer DATABASE_URL_NEON so the seed targets
+// the same database as production.
+function resolveDbUrl(): string | undefined {
+  const neon = process.env.DATABASE_URL_NEON
+  if (neon) {
+    // Strip optional surrounding single-quotes (added by some secret managers)
+    return neon.replace(/^'|'$/g, '')
+  }
+  return process.env.DATABASE_URL
+}
+
+const dbUrl = resolveDbUrl()
+const prisma = new PrismaClient(
+  dbUrl ? { datasources: { db: { url: dbUrl } } } : undefined,
+)
 
 const DEMO_EMAIL = 'umar.rana@devsinc.com'
 

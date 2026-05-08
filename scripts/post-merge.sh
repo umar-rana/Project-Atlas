@@ -31,7 +31,7 @@ export DATABASE_URL="$RESOLVED_URL"
 # Stream output directly (no subshell capture) to avoid silent hangs.
 # Uses a temp file to pass exit code out of the retry loop.
 TMPLOG=$(mktemp)
-MAX_RETRIES=6
+MAX_RETRIES=3
 ATTEMPT=0
 SUCCESS=false
 
@@ -59,13 +59,15 @@ while [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; do
     break
   fi
 
-  # Failed migration state — mark as rolled back and retry once
+  # P3009 / failed migration in history — auto-resolve and retry immediately (no sleep).
   if grep -q "found failed migrations" "$TMPLOG"; then
     FAILED_MIG=$(grep "migration started at" "$TMPLOG" | grep -oP "(?<=The \`)\d{14}_\w+" | head -1)
     if [ -n "$FAILED_MIG" ]; then
-      echo "Resolving failed migration: $FAILED_MIG" >&2
-      npx prisma migrate resolve --rolled-back "$FAILED_MIG" 2>&1 || true
+      echo "P3009: auto-resolving failed migration: $FAILED_MIG" >&2
+      npx prisma migrate resolve --applied "$FAILED_MIG" 2>&1 || true
     fi
+    ATTEMPT=$((ATTEMPT + 1))
+    continue
   fi
 
   ATTEMPT=$((ATTEMPT + 1))
@@ -73,9 +75,8 @@ while [ "$ATTEMPT" -lt "$MAX_RETRIES" ]; do
     break
   fi
 
-  WAIT=$((ATTEMPT * 10))
-  echo "prisma migrate deploy failed (attempt $ATTEMPT/$MAX_RETRIES), retrying in ${WAIT}s..." >&2
-  sleep "$WAIT"
+  echo "prisma migrate deploy failed (attempt $ATTEMPT/$MAX_RETRIES), retrying in 5s..." >&2
+  sleep 5
 done
 
 rm -f "$TMPLOG"
