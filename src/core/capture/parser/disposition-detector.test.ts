@@ -78,3 +78,28 @@ describe("detectDisposition — single word or empty → unclear", () => {
     expect(detectDisposition("")).toBe("unclear");
   });
 });
+
+describe("detectDisposition — someday/maybe patterns → unclear", () => {
+  it.each([
+    "someday I want to learn Spanish",
+    "maybe pick up woodworking",
+    "one day visit Japan",
+    "eventually learn to cook",
+    "when I have time clean the garage",
+    "if I get a chance read that book",
+  ])('detects "%s" as unclear', (text) => {
+    expect(detectDisposition(text)).toBe("unclear");
+  });
+});
+
+describe("detectDisposition — waiting/delegated patterns → unclear", () => {
+  it.each([
+    "waiting for Alice to send the contract",
+    "waiting on the design team",
+    "delegated to Bob",
+    "asked John to review the PR",
+    "follow up with the vendor",
+  ])('detects "%s" as unclear', (text) => {
+    expect(detectDisposition(text)).toBe("unclear");
+  });
+});

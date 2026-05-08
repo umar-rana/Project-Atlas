@@ -293,3 +293,508 @@ describe("runTier2 — successful parse merges with Tier 1", () => {
     expect(result.parsed!.flagged).toBe(true);
   });
 });
+
+describe("runTier2 — context_name field mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCheckCaptureParseLimits.mockResolvedValue(ALLOWED);
+    mockBuildCaptureParseUserMessage.mockReturnValue(SHORT_USER_MESSAGE);
+  });
+
+  it("adds AI context_name when it matches an available context (case-insensitive)", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Call dentist", context_name: "calls" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("call dentist", makePartial(), "user-id", {
+      contextNames: ["Calls", "Email", "Errands"],
+    });
+
+    expect(result.parsed).not.toBeNull();
+    expect(result.parsed!.contexts).toContain("Calls");
+  });
+
+  it("preserves original casing of the matched context name", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Call dentist", context_name: "CALLS" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("call dentist", makePartial(), "user-id", {
+      contextNames: ["Calls"],
+    });
+
+    expect(result.parsed!.contexts).toContain("Calls");
+    expect(result.parsed!.contexts).not.toContain("CALLS");
+  });
+
+  it("ignores context_name when it does not match any available context", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Call dentist", context_name: "UnknownContext" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("call dentist", makePartial(), "user-id", {
+      contextNames: ["Calls", "Email"],
+    });
+
+    expect(result.parsed).not.toBeNull();
+    expect(result.parsed!.contexts).toEqual([]);
+  });
+
+  it("ignores context_name when no contextNames list is provided", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Call dentist", context_name: "Calls" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("call dentist", makePartial(), "user-id");
+
+    expect(result.parsed).not.toBeNull();
+    expect(result.parsed!.contexts).toEqual([]);
+  });
+
+  it("merges AI context with existing Tier 1 contexts", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Call and email dentist", context_name: "Email" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const tier1 = makePartial({ contexts: ["Calls"] });
+    const result = await runTier2("call and email dentist", tier1, "user-id", {
+      contextNames: ["Calls", "Email"],
+    });
+
+    expect(result.parsed!.contexts).toContain("Calls");
+    expect(result.parsed!.contexts).toContain("Email");
+  });
+});
+
+describe("runTier2 — project_name field mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCheckCaptureParseLimits.mockResolvedValue(ALLOWED);
+    mockBuildCaptureParseUserMessage.mockReturnValue(SHORT_USER_MESSAGE);
+  });
+
+  it("sets project_hint when AI project_name matches an available project (case-insensitive)", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Fix bug", project_name: "website redesign" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("fix bug", makePartial(), "user-id", {
+      projectNames: ["Website Redesign", "Mobile App"],
+    });
+
+    expect(result.parsed).not.toBeNull();
+    expect(result.parsed!.project_hint).toBe("Website Redesign");
+  });
+
+  it("ignores project_name when it does not match any available project", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Fix bug", project_name: "NonExistentProject" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("fix bug", makePartial(), "user-id", {
+      projectNames: ["Website Redesign", "Mobile App"],
+    });
+
+    expect(result.parsed).not.toBeNull();
+    expect(result.parsed!.project_hint).toBeUndefined();
+  });
+
+  it("AI project_name overrides Tier 1 project_hint when a match is found", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Fix bug", project_name: "mobile app" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const tier1 = makePartial({ project_hint: "Website Redesign" });
+    const result = await runTier2("fix bug", tier1, "user-id", {
+      projectNames: ["Website Redesign", "Mobile App"],
+    });
+
+    expect(result.parsed!.project_hint).toBe("Mobile App");
+  });
+
+  it("keeps Tier 1 project_hint when AI project_name is unknown", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Fix bug", project_name: "Unknown" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const tier1 = makePartial({ project_hint: "Website Redesign" });
+    const result = await runTier2("fix bug", tier1, "user-id", {
+      projectNames: ["Website Redesign"],
+    });
+
+    expect(result.parsed!.project_hint).toBe("Website Redesign");
+  });
+});
+
+describe("runTier2 — proposed_body field mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCheckCaptureParseLimits.mockResolvedValue(ALLOWED);
+    mockBuildCaptureParseUserMessage.mockReturnValue(SHORT_USER_MESSAGE);
+  });
+
+  it("uses proposed_body when AI provides it", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Plan sprint", proposed_body: "Discuss scope and assign tickets" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("plan sprint", makePartial(), "user-id");
+
+    expect(result.parsed!.proposed_body).toBe("Discuss scope and assign tickets");
+    expect(result.parsed!.notes).toBe("Discuss scope and assign tickets");
+  });
+
+  it("falls back to notes field when proposed_body is absent", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Plan sprint", notes: "Use the notes field as fallback" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("plan sprint", makePartial(), "user-id");
+
+    expect(result.parsed!.proposed_body).toBe("Use the notes field as fallback");
+  });
+
+  it("proposed_body takes priority over notes when both are present", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({
+        title: "Plan sprint",
+        proposed_body: "Primary body text",
+        notes: "Secondary notes",
+      }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("plan sprint", makePartial(), "user-id");
+
+    expect(result.parsed!.proposed_body).toBe("Primary body text");
+  });
+
+  it("leaves proposed_body undefined when neither proposed_body nor notes is present", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Plan sprint" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("plan sprint", makePartial(), "user-id");
+
+    expect(result.parsed!.proposed_body).toBeUndefined();
+  });
+
+  it("leaves proposed_body undefined when proposed_body is an empty string", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Plan sprint", proposed_body: "" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("plan sprint", makePartial(), "user-id");
+
+    expect(result.parsed!.proposed_body).toBeUndefined();
+  });
+});
+
+describe("runTier2 — estimated_minutes field mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCheckCaptureParseLimits.mockResolvedValue(ALLOWED);
+    mockBuildCaptureParseUserMessage.mockReturnValue(SHORT_USER_MESSAGE);
+  });
+
+  it("uses AI estimated_minutes when it is a positive number", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Code review", estimated_minutes: 45 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("code review", makePartial(), "user-id");
+
+    expect(result.parsed!.estimated_minutes).toBe(45);
+  });
+
+  it("ignores AI estimated_minutes of 0 and falls back to Tier 1", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Code review", estimated_minutes: 0 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const tier1 = makePartial({ estimated_minutes: 30 });
+    const result = await runTier2("code review", tier1, "user-id");
+
+    expect(result.parsed!.estimated_minutes).toBe(30);
+  });
+
+  it("ignores negative AI estimated_minutes and falls back to Tier 1", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Code review", estimated_minutes: -5 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const tier1 = makePartial({ estimated_minutes: 20 });
+    const result = await runTier2("code review", tier1, "user-id");
+
+    expect(result.parsed!.estimated_minutes).toBe(20);
+  });
+
+  it("leaves estimated_minutes undefined when AI omits it and Tier 1 has none", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Code review" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("code review", makePartial(), "user-id");
+
+    expect(result.parsed!.estimated_minutes).toBeUndefined();
+  });
+});
+
+describe("runTier2 — proposed_disposition field mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCheckCaptureParseLimits.mockResolvedValue(ALLOWED);
+    mockBuildCaptureParseUserMessage.mockReturnValue(SHORT_USER_MESSAGE);
+  });
+
+  it.each(["task", "note", "reference", "unclear"] as const)(
+    'accepts valid disposition "%s" from AI',
+    async (disposition) => {
+      mockComplete.mockResolvedValue({
+        content: JSON.stringify({ title: "Do something", proposed_disposition: disposition }),
+        model: "claude-test",
+        inputTokens: 10,
+        outputTokens: 5,
+        costUsd: 0.001,
+      });
+
+      const { runTier2 } = await import("./tier-2-ai");
+      const result = await runTier2("do something", makePartial(), "user-id");
+
+      expect(result.parsed!.proposed_disposition).toBe(disposition);
+    },
+  );
+
+  it("falls back to Tier 1 disposition when AI returns an invalid value", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", proposed_disposition: "invalid_value" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const tier1 = makePartial({ proposed_disposition: "task" });
+    const result = await runTier2("do something", tier1, "user-id");
+
+    expect(result.parsed!.proposed_disposition).toBe("task");
+  });
+
+  it("leaves proposed_disposition undefined when AI omits it and Tier 1 has none", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.proposed_disposition).toBeUndefined();
+  });
+});
+
+describe("runTier2 — confidence field mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCheckCaptureParseLimits.mockResolvedValue(ALLOWED);
+    mockBuildCaptureParseUserMessage.mockReturnValue(SHORT_USER_MESSAGE);
+  });
+
+  it("uses AI confidence when it is a valid number between 0 and 1", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", confidence: 0.85 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBe(0.85);
+  });
+
+  it("clamps confidence above 1 to 1", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", confidence: 1.5 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBe(1);
+  });
+
+  it("clamps confidence below 0 to 0", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", confidence: -0.3 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBe(0);
+  });
+
+  it("leaves confidence undefined when AI returns null", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", confidence: null }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBeUndefined();
+  });
+
+  it("leaves confidence undefined when AI omits the field", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something" }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBeUndefined();
+  });
+
+  it("accepts confidence of exactly 0", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", confidence: 0 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBe(0);
+  });
+
+  it("accepts confidence of exactly 1", async () => {
+    mockComplete.mockResolvedValue({
+      content: JSON.stringify({ title: "Do something", confidence: 1 }),
+      model: "claude-test",
+      inputTokens: 10,
+      outputTokens: 5,
+      costUsd: 0.001,
+    });
+
+    const { runTier2 } = await import("./tier-2-ai");
+    const result = await runTier2("do something", makePartial(), "user-id");
+
+    expect(result.parsed!.confidence).toBe(1);
+  });
+});
