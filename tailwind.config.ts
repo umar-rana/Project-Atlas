@@ -83,7 +83,6 @@ const config: Config = {
   darkMode: ["selector", '[data-theme="dark"]'],
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    "./.storybook/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     screens: {

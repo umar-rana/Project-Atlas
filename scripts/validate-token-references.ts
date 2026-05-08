@@ -114,7 +114,7 @@ const FORBIDDEN: Array<{ pattern: RegExp; replacement: string }> = [
 // Use ripgrep's --type flag rather than shell-glob expansion so discovery is
 // environment-independent.  --type ts covers both .ts and .tsx.
 const INCLUDE_SCOPE = "src/";
-const EXCLUDE_DIRS  = ["node_modules", ".next", "storybook-static"];
+const EXCLUDE_DIRS  = ["node_modules", ".next"];
 
 // ─── rg helper (no shell interpolation) ──────────────────────────────────────
 // Runs ripgrep via spawnSync so that patterns containing `"` or `'` are passed
