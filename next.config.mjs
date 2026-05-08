@@ -14,15 +14,92 @@ const devOrigins = (() => {
   return Array.from(origins);
 })();
 
-// Baseline security headers applied on all routes.
-// Intentionally deferred (separate sprints):
-//   - Strict-Transport-Security (HSTS): add after HTTPS deployment is confirmed
-//   - Content-Security-Policy script-src: requires nonce-based middleware
-//   - Permissions-Policy: not in this baseline
+// Content-Security-Policy directives. Uses 'unsafe-inline' for script/style
+// because Next.js App Router injects inline hydration scripts and runtime style
+// tags; tightening to nonces requires a middleware-based nonce pipeline.
+// 'unsafe-eval' is added in development only (Next.js dev runtime / React
+// Refresh require it).
+const CSP_DIRECTIVES = {
+  "default-src": ["'self'"],
+  "script-src": [
+    "'self'",
+    "'unsafe-inline'",
+    ...(isProd ? [] : ["'unsafe-eval'"]),
+    "https://*.clerk.accounts.dev",
+    "https://*.clerk.com",
+    "https://challenges.cloudflare.com",
+  ],
+  "style-src": ["'self'", "'unsafe-inline'"],
+  "img-src": ["'self'", "data:", "blob:", "https:"],
+  "font-src": ["'self'", "data:"],
+  "connect-src": [
+    "'self'",
+    "https://*.clerk.accounts.dev",
+    "https://*.clerk.com",
+    "https://clerk-telemetry.com",
+    "https://api.anthropic.com",
+    "https://*.r2.cloudflarestorage.com",
+    "https://accounts.google.com",
+    "https://oauth2.googleapis.com",
+    "https://www.googleapis.com",
+    "https://api.resend.com",
+    ...(isProd ? [] : ["ws:", "wss:"]),
+  ],
+  "frame-src": [
+    "'self'",
+    "https://challenges.cloudflare.com",
+    "https://*.clerk.com",
+    "https://*.clerk.accounts.dev",
+  ],
+  "worker-src": ["'self'", "blob:"],
+  "object-src": ["'none'"],
+  "base-uri": ["'self'"],
+  "form-action": ["'self'"],
+  "frame-ancestors": ["'self'"],
+  ...(isProd ? { "upgrade-insecure-requests": [] } : {}),
+};
+
+const CSP_VALUE = Object.entries(CSP_DIRECTIVES)
+  .map(([directive, sources]) =>
+    sources.length === 0 ? directive : `${directive} ${sources.join(" ")}`,
+  )
+  .join("; ");
+
+const PERMISSIONS_POLICY = [
+  "accelerometer=()",
+  "autoplay=()",
+  "camera=()",
+  "display-capture=()",
+  "encrypted-media=()",
+  "fullscreen=(self)",
+  "geolocation=()",
+  "gyroscope=()",
+  "magnetometer=()",
+  "microphone=()",
+  "midi=()",
+  "payment=()",
+  "picture-in-picture=()",
+  "publickey-credentials-get=()",
+  "screen-wake-lock=()",
+  "sync-xhr=()",
+  "usb=()",
+  "xr-spatial-tracking=()",
+].join(", ");
+
 const SECURITY_HEADERS = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Content-Security-Policy", value: CSP_VALUE },
+  { key: "Permissions-Policy", value: PERMISSIONS_POLICY },
+  ...(isProd
+    ? [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=31536000; includeSubDomains; preload",
+        },
+      ]
+    : []),
 ];
 
 const nextConfig = {
