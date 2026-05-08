@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
@@ -82,7 +82,7 @@ export const taskTemplatesRouter = router({
     )
     .query(async ({ ctx, input }) => {
       return db.taskTemplate.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user),
         orderBy: [{ usage_count: "desc" }, { name: "asc" }],
         take: input.topN ?? input.limit,
         include: TEMPLATE_INCLUDE,
@@ -93,7 +93,7 @@ export const taskTemplatesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const template = await db.taskTemplate.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         include: TEMPLATE_INCLUDE,
       });
       if (!template) throw new TRPCError({ code: "NOT_FOUND" });

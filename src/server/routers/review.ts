@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db } from "@/core/db";
 import { logActivity } from "@/core/audit";
 
@@ -66,7 +66,7 @@ export const reviewRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const project = await db.project.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 

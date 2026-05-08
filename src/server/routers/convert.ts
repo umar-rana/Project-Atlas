@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@/core/db";
@@ -104,7 +104,7 @@ export const convertRouter = router({
       }
 
       const note = await db.note.findFirst({
-        where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.noteId }),
         select: { id: true, title: true, body_json: true },
       });
 
@@ -113,12 +113,10 @@ export const convertRouter = router({
       }
 
       const attachments = await db.attachment.findMany({
-        where: {
+        where: userOwnedActive(ctx.user, {
           parent_type: "Note",
           parent_id: input.noteId,
-          user_id: ctx.user.id,
-          deleted_at: null,
-        },
+        }),
         select: { filename: true },
       });
 
@@ -168,7 +166,7 @@ export const convertRouter = router({
     .input(z.object({ noteId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.noteId }),
         select: {
           id: true,
           title: true,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db } from "@/core/db";
 import type { Prisma } from "@prisma/client";
 
@@ -320,11 +320,7 @@ export const forecastRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const result = await db.task.updateMany({
-        where: {
-          id: input.task_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
-        },
+        where: userOwnedActive(ctx.user, { id: input.task_id }),
         data: { due_date: input.due_date },
       });
 

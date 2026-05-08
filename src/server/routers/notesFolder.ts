@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 
@@ -84,13 +84,13 @@ function getDescendantIds(
 export const notesFolderRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const folders = await db.notesFolder.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       select: { id: true, name: true, parent_id: true, position: true },
     });
 
     const noteCounts = await db.note.groupBy({
       by: ["folder_id"],
-      where: { user_id: ctx.user.id, deleted_at: null, folder_id: { not: null } },
+      where: userOwnedActive(ctx.user, { folder_id: { not: null } }),
       _count: { id: true },
     });
     const countMap = new Map(
@@ -111,7 +111,7 @@ export const notesFolderRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const allFolders = await db.notesFolder.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user),
         select: { id: true, parent_id: true },
       });
 
@@ -130,11 +130,9 @@ export const notesFolderRouter = router({
       }
 
       const siblings = await db.notesFolder.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwnedActive(ctx.user, {
           parent_id: input.parent_id ?? null,
-          deleted_at: null,
-        },
+        }),
         select: { position: true },
         orderBy: { position: "desc" },
         take: 1,
@@ -168,7 +166,7 @@ export const notesFolderRouter = router({
     .input(z.object({ id: z.string().uuid(), name: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.notesFolder.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, name: true },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -199,7 +197,7 @@ export const notesFolderRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const allFolders = await db.notesFolder.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user),
         select: { id: true, parent_id: true },
       });
 
@@ -232,12 +230,10 @@ export const notesFolderRouter = router({
       }
 
       const newSiblings = await db.notesFolder.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwnedActive(ctx.user, {
           parent_id: input.parent_id ?? null,
           id: { not: input.id },
-          deleted_at: null,
-        },
+        }),
         select: { position: true },
         orderBy: { position: "desc" },
         take: 1,
@@ -272,7 +268,7 @@ export const notesFolderRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const allFolders = await db.notesFolder.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user),
         select: { id: true, parent_id: true, position: true, name: true },
       });
 
@@ -365,7 +361,7 @@ export const notesFolderRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const allFolders = await db.notesFolder.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user),
         select: { id: true, name: true, parent_id: true },
       });
 
@@ -377,12 +373,12 @@ export const notesFolderRouter = router({
 
       const now = new Date();
       await db.notesFolder.updateMany({
-        where: { id: { in: allIds }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: allIds } }),
         data: { deleted_at: now },
       });
 
       await db.note.updateMany({
-        where: { folder_id: { in: allIds }, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { folder_id: { in: allIds } }),
         data: { deleted_at: now },
       });
 

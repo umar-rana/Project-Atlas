@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db } from "@/core/db";
 import { z } from "zod";
 import { classifyContentType } from "@/core/attachments/validators";
@@ -95,10 +95,7 @@ export const mediaRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Prisma.AttachmentWhereInput = {
-        user_id: ctx.user.id,
-        deleted_at: null,
-      };
+      const where: Prisma.AttachmentWhereInput = userOwnedActive(ctx.user);
 
       if (input.source === "orphaned") {
         where.parent_type = null;
@@ -221,7 +218,7 @@ export const mediaRouter = router({
     }),
 
   stats: protectedProcedure.query(async ({ ctx }) => {
-    const baseWhere = { user_id: ctx.user.id, deleted_at: null };
+    const baseWhere = userOwnedActive(ctx.user);
 
     const FILE_TYPES: FileTypeCategory[] = ["image", "pdf", "video", "audio", "doc", "other"];
 

@@ -1,18 +1,18 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 
 export const contextsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const contexts = await db.context.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       orderBy: [{ position: "asc" }, { name: "asc" }],
     });
     const counts = await db.contextOnTask.groupBy({
       by: ["context_id"],
-      where: { context: { user_id: ctx.user.id, deleted_at: null } },
+      where: { context: userOwnedActive(ctx.user) },
       _count: { _all: true },
     });
     const map = new Map(counts.map((c) => [c.context_id, c._count._all]));
@@ -23,7 +23,7 @@ export const contextsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const c = await db.context.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
       return c;
@@ -40,7 +40,7 @@ export const contextsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const max = await db.context.aggregate({
         _max: { position: true },
-        where: { user_id: ctx.user.id },
+        where: userOwned(ctx.user),
       });
       const position = (
         max._max.position
@@ -74,11 +74,11 @@ export const contextsRouter = router({
     .input(z.object({ id: z.string().uuid(), new_name: z.string().min(1).max(80) }))
     .mutation(async ({ ctx, input }) => {
       const before = await db.context.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       const conflict = await db.context.findFirst({
-        where: { user_id: ctx.user.id, name: input.new_name, id: { not: input.id } },
+        where: userOwned(ctx.user, { name: input.new_name, id: { not: input.id } }),
       });
       if (conflict) {
         throw new TRPCError({
@@ -100,7 +100,7 @@ export const contextsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const before = await db.context.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       const data: Prisma.ContextUpdateInput = {};
@@ -114,7 +114,7 @@ export const contextsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const before = await db.context.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       await db.$transaction([

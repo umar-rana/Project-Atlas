@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { analyseCleanupCandidates } from "@/core/tags/cleanup";
 
@@ -16,7 +16,7 @@ export const tagsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       return db.tag.findMany({
-        where: { user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user),
         orderBy: [{ usage_count: "desc" }, { name: "asc" }],
         take: input.limit,
       });
@@ -28,17 +28,15 @@ export const tagsRouter = router({
       const q = input.query.toLowerCase().trim();
       if (!q) {
         return db.tag.findMany({
-          where: { user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user),
           orderBy: [{ usage_count: "desc" }, { name: "asc" }],
           take: input.limit,
         });
       }
       return db.tag.findMany({
-        where: {
-          user_id: ctx.user.id,
-          deleted_at: null,
+        where: userOwnedActive(ctx.user, {
           name: { contains: q, mode: "insensitive" },
-        },
+        }),
         orderBy: [{ usage_count: "desc" }, { name: "asc" }],
         take: input.limit,
       });
@@ -48,7 +46,7 @@ export const tagsRouter = router({
     .input(z.object({ name: z.string() }))
     .query(async ({ ctx, input }) => {
       const tag = await db.tag.findFirst({
-        where: { user_id: ctx.user.id, name: input.name.toLowerCase() },
+        where: userOwned(ctx.user, { name: input.name.toLowerCase() }),
       });
       if (!tag) throw new TRPCError({ code: "NOT_FOUND" });
       return tag;
@@ -76,7 +74,7 @@ export const tagsRouter = router({
       } catch (err) {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
           const existing = await db.tag.findFirst({
-            where: { user_id: ctx.user.id, name: lower },
+            where: userOwned(ctx.user, { name: lower }),
           });
           if (existing) return existing;
         }
@@ -94,7 +92,7 @@ export const tagsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const before = await db.tag.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       const data: Prisma.TagUpdateInput = {};
@@ -107,12 +105,12 @@ export const tagsRouter = router({
     .input(z.object({ id: z.string().uuid(), new_name: z.string().min(1).max(80) }))
     .mutation(async ({ ctx, input }) => {
       const before = await db.tag.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       const lower = input.new_name.toLowerCase().trim();
       const conflict = await db.tag.findFirst({
-        where: { user_id: ctx.user.id, name: lower, id: { not: input.id } },
+        where: userOwned(ctx.user, { name: lower, id: { not: input.id } }),
       });
       if (conflict) {
         throw new TRPCError({ code: "CONFLICT", message: "A tag with that name already exists" });
@@ -127,8 +125,8 @@ export const tagsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot merge a tag into itself" });
       }
       const [fromTag, intoTag] = await Promise.all([
-        db.tag.findFirst({ where: { id: input.from_id, user_id: ctx.user.id } }),
-        db.tag.findFirst({ where: { id: input.into_id, user_id: ctx.user.id } }),
+        db.tag.findFirst({ where: userOwned(ctx.user, { id: input.from_id }) }),
+        db.tag.findFirst({ where: userOwned(ctx.user, { id: input.into_id }) }),
       ]);
       if (!fromTag || !intoTag) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -167,7 +165,7 @@ export const tagsRouter = router({
     .input(z.object({ ids: z.array(z.string().uuid()).min(1) }))
     .mutation(async ({ ctx, input }) => {
       const tags = await db.tag.findMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: input.ids } }),
         select: { id: true },
       });
       const validIds = tags.map((t) => t.id);
@@ -186,14 +184,14 @@ export const tagsRouter = router({
 
   usageStats: protectedProcedure.query(async ({ ctx }) => {
     const tags = await db.tag.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       orderBy: [{ usage_count: "desc" }, { name: "asc" }],
       take: 500,
     });
 
     const latestUse = await db.tagOnTask.groupBy({
       by: ["tag_id"],
-      where: { tag: { user_id: ctx.user.id, deleted_at: null } },
+      where: { tag: userOwnedActive(ctx.user) },
       _max: { created_at: true },
     });
 
@@ -209,7 +207,7 @@ export const tagsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const before = await db.tag.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       await db.$transaction([
@@ -224,7 +222,7 @@ export const tagsRouter = router({
 
   count: protectedProcedure.query(async ({ ctx }) => {
     const count = await db.tag.count({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
     });
     return { count };
   }),

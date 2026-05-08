@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db } from "@/core/db";
 
 interface TableSearchHit {
@@ -87,7 +87,7 @@ export const searchRouter = router({
       const q = input.query.trim();
       if (!q) {
         return db.note.findMany({
-          where: { user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user),
           orderBy: { updated_at: "desc" },
           take: input.limit,
           select: {
