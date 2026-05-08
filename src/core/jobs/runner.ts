@@ -83,6 +83,18 @@ export async function startJobRunner(): Promise<void> {
   log.info({ count: JOB_REGISTRY.length }, "all jobs registered");
 }
 
+export async function stopJobRunner(): Promise<void> {
+  const boss = globalThis.__atlasJobRunner;
+  if (!boss) return;
+  globalThis.__atlasJobRunner = undefined;
+  try {
+    await boss.stop({ graceful: true, timeout: 2000, close: true });
+    log.info("pg-boss stopped");
+  } catch (err) {
+    log.warn({ err }, "pg-boss stop failed — continuing");
+  }
+}
+
 export async function runJobNow(jobName: string): Promise<void> {
   const job = JOB_REGISTRY.find((j) => j.name === jobName);
   if (!job) {

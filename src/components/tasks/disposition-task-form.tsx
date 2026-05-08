@@ -190,10 +190,23 @@ export function DispositionTaskForm({
     "w-full rounded-md border border-border-default bg-surface-base px-3 py-1.5 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus";
   const labelCls = "mb-1 block font-ui text-2xs font-medium text-text-secondary";
 
+  const estimatedMinutesNum = estimatedMinutes ? parseInt(estimatedMinutes, 10) : null;
+  const timeHint =
+    estimatedMinutesNum != null && !isNaN(estimatedMinutesNum)
+      ? estimatedMinutesNum >= 60
+        ? `~${Math.round(estimatedMinutesNum / 60 * 10) / 10} hr`
+        : `~${estimatedMinutesNum} min`
+      : null;
+
   return (
     <div className="flex flex-col gap-3" onKeyDown={handleKey}>
       <div>
-        <label className={labelCls}>Title</label>
+        <div className="flex items-center justify-between">
+          <label className={labelCls}>Title</label>
+          {timeHint && (
+            <span className="font-ui text-2xs text-text-tertiary">{timeHint}</span>
+          )}
+        </div>
         <input
           autoFocus
           value={title}

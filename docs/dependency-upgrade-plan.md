@@ -12,7 +12,6 @@ This document sequences the major-version upgrades that are planned but not yet 
 | Package | Current | Target | Sprint | Risk |
 |---|---|---|---|---|
 | `vitest` | 2.1.9 | 4.x | Sprint 1 | Medium — test API changes |
-| `@storybook/*` | 9.1.x | 10.x | Sprint 1 | Medium — also resolves `elliptic` advisory |
 | `prisma` / `@prisma/client` | 5.22.0 | 7.x | Sprint 2 | High — migration engine rewrite |
 | `tailwindcss` | 3.4.19 | 4.x | Sprint 3 | High — config format changed |
 | `next` | 15.5.x | 16.x | Sprint 4 | High — RSC / bundler changes |
@@ -25,22 +24,21 @@ This document sequences the major-version upgrades that are planned but not yet 
 
 ---
 
-## Sprint 1 — Vitest 4 + Storybook 10
+## Sprint 1 — Vitest 4
 
-**Rationale:** Vitest 4 resolves the `esbuild <0.25` vulnerability (GHSA-67mh-4wv8-2f99). Storybook 10 resolves the `elliptic` advisory (GHSA-848j-6mx2-7j84). Both are in the dev toolchain only — no production impact. Batching them in one sprint reduces churn.
+**Rationale:** Vitest 4 resolves the `esbuild <0.25` vulnerability (GHSA-67mh-4wv8-2f99). Dev toolchain only — no production impact.
 
 **Steps:**
 1. Read Vitest 3 and 4 migration guides; identify breaking changes in test APIs.
 2. Update `vitest` to `^4.x` and `@vitejs/plugin-react` to a compatible version.
 3. Fix any broken test helpers or `vi.*` API call sites.
 4. Run `npm test` — all 318+ passing tests must still pass.
-5. Update `storybook`, `@storybook/*` packages, and `@chromatic-com/storybook` to 10.x.
-6. Verify Storybook starts and key stories render (`npm run storybook`).
-7. Confirm `npm audit --omit=dev` no longer reports `esbuild` or `elliptic` advisories.
+5. Confirm `npm audit --omit=dev` no longer reports the `esbuild` advisory.
 
 **Risk notes:**
 - Vitest 4 removed the `globals` option; explicit imports of `describe`, `it`, `expect` may be required.
-- Storybook 10 changes the addon API; custom addons may need updates.
+
+> Note: The previous version of this plan had a Sprint 1 entry covering Storybook 10 (which would have resolved the `elliptic` advisory). Storybook has since been removed from the project; that advisory is no longer present.
 
 ---
 

@@ -21,12 +21,10 @@ export default defineConfig([
         ignores: [
             ".next/**",
             "node_modules/**",
-            "storybook-static/**",
             "public/**",
             "scripts/**",
             ".local/**",
             ".replit_integration_files/**",
-            ".storybook/**",
             "next-env.d.ts",
         ],
     },
@@ -36,7 +34,6 @@ export default defineConfig([
         extends: [
             ...compat.extends("next/core-web-vitals"),
             ...compat.extends("prettier"),
-            ...compat.extends("plugin:storybook/recommended"),
         ],
 
         plugins: {
