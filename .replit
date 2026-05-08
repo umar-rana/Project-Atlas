@@ -86,6 +86,7 @@ STORAGE_PROVIDER = "r2"
 
 [userenv.development]
 APP_URL = "https://589c0f2c-f9be-408b-abb6-984853e85b49-00-2yh90adfura7a.sisko.replit.dev"
+E2E_AUTH_SECRET = "atlas-e2e-smoke-test-secret-key-dev-only-2026"
 
 [userenv.production]
 APP_URL = "https://atlas.insightive.io"
