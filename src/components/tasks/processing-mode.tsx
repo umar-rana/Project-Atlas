@@ -48,6 +48,27 @@ interface ParserProposal {
   notes?: string | null;
 }
 
+type ConfidenceLevel = "high" | "medium" | "low";
+
+function getConfidenceLevel(score: number | null | undefined): ConfidenceLevel | null {
+  if (score == null) return null;
+  if (score >= 0.7) return "high";
+  if (score >= 0.4) return "medium";
+  return "low";
+}
+
+const CONFIDENCE_LABEL: Record<ConfidenceLevel, string> = {
+  high: "High confidence",
+  medium: "Medium confidence",
+  low: "Low confidence",
+};
+
+const CONFIDENCE_CLASS: Record<ConfidenceLevel, string> = {
+  high: "border-accent-success/40 bg-accent-success/10 text-accent-success",
+  medium: "border-accent-warning/40 bg-accent-warning/10 text-accent-warning",
+  low: "border-border-default bg-surface-raised text-text-tertiary",
+};
+
 function proposedDispositionToTab(
   p: ParserProposal,
   rawText: string,
@@ -244,6 +265,12 @@ function ProcessingModeInner({
 
   const currentIndex = captures.findIndex((c) => c.id === currentCapture?.id);
 
+  const suggestedTab = proposal
+    ? proposedDispositionToTab(proposal, currentCapture?.raw_text ?? "")
+    : null;
+  const confidenceLevel = getConfidenceLevel(proposal?.local_confidence);
+  const suggestedLabel = suggestedTab ? DISPOSITION_LABELS[suggestedTab] : null;
+
   if (!currentCapture) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
@@ -299,6 +326,27 @@ function ProcessingModeInner({
             queuePosition={currentIndex + 1}
             queueTotal={captures.length}
           />
+
+          {(confidenceLevel || suggestedLabel) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {confidenceLevel && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-ui text-2xs font-medium",
+                    CONFIDENCE_CLASS[confidenceLevel],
+                  )}
+                >
+                  {CONFIDENCE_LABEL[confidenceLevel]}
+                </span>
+              )}
+              {suggestedLabel && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-accent-info/40 bg-accent-info/10 px-2.5 py-0.5 font-ui text-2xs font-medium text-accent-info">
+                  <Sparkles size={9} aria-hidden />
+                  Suggested: {suggestedLabel}
+                </span>
+              )}
+            </div>
+          )}
 
           {disposition ? (
             <div
@@ -412,26 +460,36 @@ function ProcessingModeInner({
                     { key: "1", disp: "two_min" as Disposition, label: "2-Min Done" },
                     { key: "X", disp: "trash" as Disposition, label: "Trash" },
                   ] as const
-                ).map(({ key, disp, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleManualDisposition(disp)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-md border px-3 py-2 font-ui text-sm transition-colors hover:bg-surface-hover",
-                      disp === "trash"
-                        ? "border-accent-danger/30 hover:bg-accent-danger/8 text-accent-danger"
-                        : disp === "two_min"
-                          ? "border-accent-success/30 hover:bg-accent-success/8 text-accent-success"
-                          : "border-border-default text-text-primary",
-                    )}
-                  >
-                    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface-raised px-1 font-mono text-xs font-bold text-text-secondary">
-                      {key}
-                    </kbd>
-                    {label}
-                  </button>
-                ))}
+                ).map(({ key, disp, label }) => {
+                  const isSuggested = disp === suggestedTab;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleManualDisposition(disp)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-3 py-2 font-ui text-sm transition-colors hover:bg-surface-hover",
+                        disp === "trash"
+                          ? "border-accent-danger/30 hover:bg-accent-danger/8 text-accent-danger"
+                          : disp === "two_min"
+                            ? "border-accent-success/30 hover:bg-accent-success/8 text-accent-success"
+                            : isSuggested
+                              ? "border-accent-info/50 bg-accent-info/8 text-text-primary ring-1 ring-accent-info/30"
+                              : "border-border-default text-text-primary",
+                      )}
+                    >
+                      <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface-raised px-1 font-mono text-xs font-bold text-text-secondary">
+                        {key}
+                      </kbd>
+                      {label}
+                      {isSuggested && (
+                        <span className="font-ui text-2xs font-medium text-accent-info">
+                          suggested
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
