@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { validateCellValue } from "@/core/tables/validators";
@@ -48,12 +48,10 @@ export const tablesRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Prisma.TableWhereInput = {
-        user_id: ctx.user.id,
-        deleted_at: null,
+      const where: Prisma.TableWhereInput = userOwnedActive(ctx.user, {
         ...(input.folder_id !== undefined ? { folder_id: input.folder_id } : {}),
         ...(input.project_id !== undefined ? { project_id: input.project_id } : {}),
-      };
+      });
 
       const tables = await db.table.findMany({
         where,
@@ -86,7 +84,7 @@ export const tablesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const table = await db.table.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         include: {
           folder: { select: { id: true, name: true } },
           project: { select: { id: true, title: true } },
@@ -163,14 +161,14 @@ export const tablesRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (input.folder_id) {
         const folder = await db.tablesFolder.findFirst({
-          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.folder_id }),
           select: { id: true },
         });
         if (!folder) throw new TRPCError({ code: "NOT_FOUND", message: "Folder not found" });
       }
       if (input.project_id) {
         const project = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -233,7 +231,7 @@ export const tablesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.table.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, name: true },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -267,7 +265,7 @@ export const tablesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.table.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, name: true },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -299,7 +297,7 @@ export const tablesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const table = await db.table.findFirst({
-        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.table_id }),
         select: { id: true },
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });
@@ -439,7 +437,7 @@ export const tablesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const table = await db.table.findFirst({
-        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.table_id }),
         select: { id: true },
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });
@@ -513,7 +511,7 @@ export const tablesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const table = await db.table.findFirst({
-        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.table_id }),
         select: { id: true },
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });
@@ -617,7 +615,7 @@ export const tablesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const table = await db.table.findFirst({
-        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.table_id }),
         select: { id: true },
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });
@@ -720,21 +718,19 @@ export const tablesRouter = router({
       const q = input.query.trim();
       if (!q) {
         return db.table.findMany({
-          where: { user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user),
           orderBy: { updated_at: "desc" },
           take: input.limit,
           select: { id: true, name: true, description: true, updated_at: true },
         });
       }
       return db.table.findMany({
-        where: {
-          user_id: ctx.user.id,
-          deleted_at: null,
+        where: userOwnedActive(ctx.user, {
           OR: [
             { name: { contains: q, mode: "insensitive" } },
             { description: { contains: q, mode: "insensitive" } },
           ],
-        },
+        }),
         orderBy: { updated_at: "desc" },
         take: input.limit,
         select: { id: true, name: true, description: true, updated_at: true },
@@ -770,14 +766,14 @@ export const tablesRouter = router({
 
       if (input.folder_id) {
         const folder = await db.tablesFolder.findFirst({
-          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.folder_id }),
           select: { id: true },
         });
         if (!folder) throw new TRPCError({ code: "NOT_FOUND", message: "Folder not found" });
       }
       if (input.project_id) {
         const project = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -797,7 +793,7 @@ export const tablesRouter = router({
     .input(z.object({ table_id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const table = await db.table.findFirst({
-        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.table_id }),
         select: { id: true },
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND" });

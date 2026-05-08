@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { normalizeProjectType, validateProjectType } from "@/core/projects/type-validation";
@@ -257,10 +257,7 @@ export const projectsRouter = router({
         .default({}),
     )
     .query(async ({ ctx, input }) => {
-      const where: Prisma.ProjectWhereInput = {
-        user_id: ctx.user.id,
-        deleted_at: null,
-      };
+      const where: Prisma.ProjectWhereInput = userOwnedActive(ctx.user);
 
       if (!input.include_all_statuses) {
         if (input.status) {
@@ -284,12 +281,10 @@ export const projectsRouter = router({
       // Get task counts per project (active only).
       const counts = await db.task.groupBy({
         by: ["project_id"],
-        where: {
-          user_id: ctx.user.id,
+        where: userOwnedActive(ctx.user, {
           status: "active",
           project_id: { in: projects.map((p) => p.id) },
-          deleted_at: null,
-        },
+        }),
         _count: { _all: true },
       });
       const countMap = new Map(counts.map((c) => [c.project_id, c._count._all]));
@@ -303,10 +298,7 @@ export const projectsRouter = router({
   distinctTypes: protectedProcedure.query(async ({ ctx }) => {
     const result = await db.project.groupBy({
       by: ["type"],
-      where: {
-        user_id: ctx.user.id,
-        deleted_at: null,
-      },
+      where: userOwnedActive(ctx.user),
       _count: { _all: true },
     });
     return result
@@ -376,41 +368,35 @@ export const projectsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const project = await db.project.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
       const now = new Date();
       const [activeTasks, totalTasks, completedTasks, lastActivity] = await Promise.all([
         db.task.count({
-          where: {
+          where: userOwnedActive(ctx.user, {
             project_id: project.id,
-            user_id: ctx.user.id,
             status: "active",
             parent_id: null,
-            deleted_at: null,
             OR: [{ defer_date: null }, { defer_date: { lte: now } }],
-          },
+          }),
         }),
         db.task.count({
-          where: {
+          where: userOwnedActive(ctx.user, {
             project_id: project.id,
-            user_id: ctx.user.id,
-            deleted_at: null,
             parent_id: null,
-          },
+          }),
         }),
         db.task.count({
-          where: {
+          where: userOwnedActive(ctx.user, {
             project_id: project.id,
-            user_id: ctx.user.id,
             status: "completed",
-            deleted_at: null,
             parent_id: null,
-          },
+          }),
         }),
         db.task.findFirst({
-          where: { project_id: project.id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { project_id: project.id }),
           orderBy: { updated_at: "desc" },
           select: { updated_at: true },
         }),
@@ -453,12 +439,12 @@ export const projectsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const project = await db.project.findFirst({
-        where: { id: input.project_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.project_id }),
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
       const table = await db.table.findFirst({
-        where: { id: input.table_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.table_id }),
       });
       if (!table) throw new TRPCError({ code: "NOT_FOUND", message: "Table not found" });
 
@@ -516,7 +502,7 @@ export const projectsRouter = router({
     .input(z.object({ project_id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const project = await db.project.findFirst({
-        where: { id: input.project_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.project_id }),
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -566,7 +552,7 @@ export const projectsRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (input.folder_id) {
         const folder = await db.projectFolder.findFirst({
-          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.folder_id }),
         });
         if (!folder) throw new TRPCError({ code: "FORBIDDEN", message: "Folder not found" });
       }
@@ -574,7 +560,7 @@ export const projectsRouter = router({
       const [maxAgg, userRow] = await Promise.all([
         db.project.aggregate({
           _max: { position: true },
-          where: { user_id: ctx.user.id },
+          where: userOwned(ctx.user),
         }),
         db.user.findUnique({
           where: { id: ctx.user.id },
@@ -650,7 +636,7 @@ export const projectsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const before = await db.project.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -662,7 +648,7 @@ export const projectsRouter = router({
       if (input.folder_id !== undefined) {
         if (input.folder_id) {
           const folder = await db.projectFolder.findFirst({
-            where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+            where: userOwnedActive(ctx.user, { id: input.folder_id }),
           });
           if (!folder) throw new TRPCError({ code: "FORBIDDEN", message: "Folder not found" });
         }
@@ -715,19 +701,19 @@ export const projectsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const project = await db.project.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
 
       await db.$transaction(async (tx) => {
         if (input.moveTasksToInbox) {
           await tx.task.updateMany({
-            where: { project_id: project.id, user_id: ctx.user.id },
+            where: userOwned(ctx.user, { project_id: project.id }),
             data: { project_id: null },
           });
         } else {
           await tx.task.updateMany({
-            where: { project_id: project.id, user_id: ctx.user.id },
+            where: userOwned(ctx.user, { project_id: project.id }),
             data: { deleted_at: new Date() },
           });
         }
@@ -765,14 +751,14 @@ export const projectsRouter = router({
       }
 
       const projects = await db.project.findMany({
-        where: { user_id: ctx.user.id, type: input.from, deleted_at: null },
+        where: userOwnedActive(ctx.user, { type: input.from }),
         select: { id: true, type: true },
       });
 
       if (projects.length === 0) return { count: 0 };
 
       await db.project.updateMany({
-        where: { user_id: ctx.user.id, type: input.from, deleted_at: null },
+        where: userOwnedActive(ctx.user, { type: input.from }),
         data: { type: input.to },
       });
 
@@ -812,14 +798,14 @@ export const projectsRouter = router({
       }
 
       const projects = await db.project.findMany({
-        where: { user_id: ctx.user.id, type: input.source, deleted_at: null },
+        where: userOwnedActive(ctx.user, { type: input.source }),
         select: { id: true, type: true },
       });
 
       if (projects.length === 0) return { count: 0 };
 
       await db.project.updateMany({
-        where: { user_id: ctx.user.id, type: input.source, deleted_at: null },
+        where: userOwnedActive(ctx.user, { type: input.source }),
         data: { type: input.target },
       });
 
@@ -844,15 +830,14 @@ export const projectsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const project = await db.project.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
       });
       if (!project) throw new TRPCError({ code: "NOT_FOUND" });
       const result = await db.task.updateMany({
-        where: {
+        where: userOwned(ctx.user, {
           project_id: project.id,
-          user_id: ctx.user.id,
           status: "active",
-        },
+        }),
         data: { status: "completed", completed_at: new Date() },
       });
       return { ok: true, count: result.count };

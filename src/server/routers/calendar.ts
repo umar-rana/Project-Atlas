@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -143,12 +143,10 @@ const eventsRouter = router({
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const events = await db.calendarEvent.findMany({
-      where: {
-        user_id: ctx.user.id,
-        deleted_at: null,
+      where: userOwnedActive(ctx.user, {
         status: { not: "cancelled" },
         start_at: { gte: today, lt: tomorrow },
-      },
+      }),
       include: {
         calendar: { select: { id: true, name: true, google_color_id: true, color_override: true } },
       },
@@ -196,7 +194,7 @@ const eventsRouter = router({
 
   update: protectedProcedure.input(calendarEventUpdateSchema).mutation(async ({ ctx, input }) => {
     const existing = await db.calendarEvent.findFirst({
-      where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user, { id: input.id }),
     });
 
     if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -238,7 +236,7 @@ const eventsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.calendarEvent.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
       if (existing.source !== "atlas") {
@@ -272,7 +270,7 @@ const eventsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.calendarEvent.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -312,7 +310,7 @@ const eventsRouter = router({
 const calendarsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const calendars = await db.googleCalendar.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       orderBy: [{ is_primary: "desc" }, { name: "asc" }],
     });
 
@@ -338,7 +336,7 @@ const calendarsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.googleCalendar.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -376,12 +374,12 @@ const calendarsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.googleCalendar.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
       const { count } = await db.calendarEvent.updateMany({
-        where: { calendar_id: input.id, user_id: ctx.user.id, source: "google" },
+        where: userOwned(ctx.user, { calendar_id: input.id, source: "google" }),
         data: { deleted_at: new Date(), updated_at: new Date() },
       });
 
@@ -402,18 +400,16 @@ const calendarTasksRouter = router({
     .input(z.object({ task_id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.task_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.task_id }),
         select: { id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
 
       return db.calendarEvent.findMany({
-        where: {
+        where: userOwnedActive(ctx.user, {
           linked_task_id: input.task_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           status: { not: "cancelled" },
-        },
+        }),
         include: {
           calendar: {
             select: { id: true, name: true, color_override: true, google_color_id: true },
@@ -431,9 +427,9 @@ export const calendarRouter = router({
       return { connected: false, email: null, calendarCount: 0, eventCount: 0, lastSynced: null };
 
     const [calCount, evtCount, token] = await Promise.all([
-      db.googleCalendar.count({ where: { user_id: ctx.user.id, deleted_at: null } }),
+      db.googleCalendar.count({ where: userOwnedActive(ctx.user) }),
       db.calendarEvent.count({
-        where: { user_id: ctx.user.id, source: "google", deleted_at: null },
+        where: userOwnedActive(ctx.user, { source: "google" }),
       }),
       db.googleCalendarOAuthToken.findUnique({
         where: { user_id: ctx.user.id },
@@ -442,7 +438,7 @@ export const calendarRouter = router({
     ]);
 
     const lastSynced = await db.googleCalendar.findFirst({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       orderBy: { last_synced_at: "desc" },
       select: { last_synced_at: true },
     });
@@ -461,12 +457,12 @@ export const calendarRouter = router({
     await revokeCalendarToken(ctx.user.id);
 
     await db.googleCalendar.updateMany({
-      where: { user_id: ctx.user.id },
+      where: userOwned(ctx.user),
       data: { deleted_at: new Date(), updated_at: new Date() },
     });
 
     await db.calendarEvent.updateMany({
-      where: { user_id: ctx.user.id, source: "google" },
+      where: userOwned(ctx.user, { source: "google" }),
       data: { deleted_at: new Date(), updated_at: new Date() },
     });
 
