@@ -1,4 +1,4 @@
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned } from "@/server/trpc";
 import { db } from "@/core/db";
 import { linkDrive, unlinkDrive, verifyDriveConfig } from "@/core/drive/linking";
 import { listSharedDrives, browseFolder, createFolder } from "@/core/drive/primitives";
@@ -10,7 +10,7 @@ type DriveResourceType = (typeof DRIVE_RESOURCE_TYPES)[number];
 export const driveRouter = router({
   linkStatus: protectedProcedure.query(async ({ ctx }) => {
     const [config, tokenExists] = await Promise.all([
-      db.driveConfig.findUnique({ where: { user_id: ctx.user.id } }),
+      db.driveConfig.findUnique({ where: userOwned(ctx.user) }),
       db.integrationToken.findUnique({
         where: { user_id_provider: { user_id: ctx.user.id, provider: "google_drive" } },
         select: { id: true },
@@ -79,11 +79,10 @@ export const driveRouter = router({
 
   syncStatus: protectedProcedure.query(async ({ ctx }) => {
     const states = await db.syncState.findMany({
-      where: {
-        user_id: ctx.user.id,
+      where: userOwned(ctx.user, {
         provider: "google_drive",
         resource_type: { in: [...DRIVE_RESOURCE_TYPES] },
-      },
+      }),
       select: { resource_type: true, last_synced: true },
     });
 

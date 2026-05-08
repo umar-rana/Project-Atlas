@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 
@@ -94,17 +94,15 @@ function getDescendantIds(
 export const foldersRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const folders = await db.projectFolder.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       orderBy: [{ position: "asc" }, { name: "asc" }],
     });
 
     const projectCounts = await db.project.groupBy({
       by: ["folder_id"],
-      where: {
-        user_id: ctx.user.id,
+      where: userOwnedActive(ctx.user, {
         folder_id: { in: folders.map((f) => f.id) },
-        deleted_at: null,
-      },
+      }),
       _count: { _all: true },
     });
     const countMap = new Map(
@@ -121,7 +119,7 @@ export const foldersRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const folder = await db.projectFolder.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         include: {
           children: {
             where: { deleted_at: null },
@@ -259,7 +257,7 @@ export const foldersRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const folder = await db.projectFolder.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!folder) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -288,7 +286,7 @@ export const foldersRouter = router({
     .input(z.object({ id: z.string().uuid(), collapsed: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const folder = await db.projectFolder.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!folder) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -304,19 +302,19 @@ export const foldersRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const folder = await db.projectFolder.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!folder) throw new TRPCError({ code: "NOT_FOUND" });
 
       await db.$transaction(async (tx) => {
         // Move projects in this folder to root (null folder)
         await tx.project.updateMany({
-          where: { folder_id: input.id, user_id: ctx.user.id },
+          where: userOwned(ctx.user, { folder_id: input.id }),
           data: { folder_id: null },
         });
         // Move child folders to root
         await tx.projectFolder.updateMany({
-          where: { parent_id: input.id, user_id: ctx.user.id },
+          where: userOwned(ctx.user, { parent_id: input.id }),
           data: { parent_id: null },
         });
         // Soft-delete the folder

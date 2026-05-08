@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { renderAuditEntry } from "@/core/audit/render";
 
@@ -15,11 +15,7 @@ export const worklogsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const items = await db.taskWorkLog.findMany({
-        where: {
-          task_id: input.task_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
-        },
+        where: userOwnedActive(ctx.user, { task_id: input.task_id }),
         orderBy: { created_at: "desc" },
         take: input.limit,
         ...(input.cursor
@@ -48,7 +44,7 @@ export const worklogsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.task_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.task_id }),
         select: { id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -81,7 +77,7 @@ export const worklogsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.taskWorkLog.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -101,7 +97,7 @@ export const worklogsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.taskWorkLog.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -122,20 +118,15 @@ export const worklogsRouter = router({
     .query(async ({ ctx, input }) => {
       const [auditLogs, workLogs] = await Promise.all([
         db.auditLog.findMany({
-          where: {
-            user_id: ctx.user.id,
+          where: userOwned(ctx.user, {
             entity_type: "Task",
             entity_id: input.task_id,
-          },
+          }),
           orderBy: { created_at: "desc" },
           take: input.limit,
         }),
         db.taskWorkLog.findMany({
-          where: {
-            task_id: input.task_id,
-            user_id: ctx.user.id,
-            deleted_at: null,
-          },
+          where: userOwnedActive(ctx.user, { task_id: input.task_id }),
           orderBy: { created_at: "desc" },
           take: input.limit,
         }),

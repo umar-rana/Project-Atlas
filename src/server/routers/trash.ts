@@ -10,7 +10,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned } from "@/server/trpc";
 import { db } from "@/core/db";
 import { withDeleted } from "@/core/db/soft-delete";
 
@@ -22,28 +22,24 @@ export const trashRouter = router({
   preview: protectedProcedure.query(async ({ ctx }) => {
     const [tasks, notes, projects, attachments] = await Promise.all([
       db.task.count({
-        where: withDeleted<Prisma.TaskWhereInput>({
-          user_id: ctx.user.id,
-          NOT: { deleted_at: null },
-        }),
+        where: withDeleted<Prisma.TaskWhereInput>(
+          userOwned(ctx.user, { NOT: { deleted_at: null } }),
+        ),
       }),
       db.note.count({
-        where: withDeleted<Prisma.NoteWhereInput>({
-          user_id: ctx.user.id,
-          NOT: { deleted_at: null },
-        }),
+        where: withDeleted<Prisma.NoteWhereInput>(
+          userOwned(ctx.user, { NOT: { deleted_at: null } }),
+        ),
       }),
       db.project.count({
-        where: withDeleted<Prisma.ProjectWhereInput>({
-          user_id: ctx.user.id,
-          NOT: { deleted_at: null },
-        }),
+        where: withDeleted<Prisma.ProjectWhereInput>(
+          userOwned(ctx.user, { NOT: { deleted_at: null } }),
+        ),
       }),
       db.attachment.count({
-        where: withDeleted<Prisma.AttachmentWhereInput>({
-          user_id: ctx.user.id,
-          NOT: { deleted_at: null },
-        }),
+        where: withDeleted<Prisma.AttachmentWhereInput>(
+          userOwned(ctx.user, { NOT: { deleted_at: null } }),
+        ),
       }),
     ]);
     return { tasks, notes, projects, attachments };
@@ -65,32 +61,28 @@ export const trashRouter = router({
       }
 
       const tasks = await db.task.findMany({
-        where: withDeleted<Prisma.TaskWhereInput>({
-          user_id: ctx.user.id,
-          NOT: { deleted_at: null },
-        }),
+        where: withDeleted<Prisma.TaskWhereInput>(
+          userOwned(ctx.user, { NOT: { deleted_at: null } }),
+        ),
         select: { id: true, referenced_tag_ids: true },
       });
       const ids = tasks.map((t) => t.id);
 
       const [noteCount, projectCount, attachmentCount] = await Promise.all([
         db.note.count({
-          where: withDeleted<Prisma.NoteWhereInput>({
-            user_id: ctx.user.id,
-            NOT: { deleted_at: null },
-          }),
+          where: withDeleted<Prisma.NoteWhereInput>(
+            userOwned(ctx.user, { NOT: { deleted_at: null } }),
+          ),
         }),
         db.project.count({
-          where: withDeleted<Prisma.ProjectWhereInput>({
-            user_id: ctx.user.id,
-            NOT: { deleted_at: null },
-          }),
+          where: withDeleted<Prisma.ProjectWhereInput>(
+            userOwned(ctx.user, { NOT: { deleted_at: null } }),
+          ),
         }),
         db.attachment.count({
-          where: withDeleted<Prisma.AttachmentWhereInput>({
-            user_id: ctx.user.id,
-            NOT: { deleted_at: null },
-          }),
+          where: withDeleted<Prisma.AttachmentWhereInput>(
+            userOwned(ctx.user, { NOT: { deleted_at: null } }),
+          ),
         }),
       ]);
 

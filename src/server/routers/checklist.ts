@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 
 function nextPosition(maxPos: Prisma.Decimal | null): string {
@@ -14,7 +14,7 @@ export const checklistRouter = router({
     .input(z.object({ task_id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.task_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.task_id }),
         select: { id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -34,7 +34,7 @@ export const checklistRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.task_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.task_id }),
         select: { id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -66,7 +66,7 @@ export const checklistRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const item = await db.checklistItem.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -83,7 +83,7 @@ export const checklistRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const result = await db.checklistItem.updateMany({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         data: { deleted_at: new Date() },
       });
       if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
@@ -100,15 +100,15 @@ export const checklistRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const item = await db.checklistItem.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!item) throw new TRPCError({ code: "NOT_FOUND" });
 
       const beforeRow = input.before_id
-        ? await db.checklistItem.findFirst({ where: { id: input.before_id, user_id: ctx.user.id } })
+        ? await db.checklistItem.findFirst({ where: userOwned(ctx.user, { id: input.before_id }) })
         : null;
       const afterRow = input.after_id
-        ? await db.checklistItem.findFirst({ where: { id: input.after_id, user_id: ctx.user.id } })
+        ? await db.checklistItem.findFirst({ where: userOwned(ctx.user, { id: input.after_id }) })
         : null;
 
       let newPos: Prisma.Decimal;
