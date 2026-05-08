@@ -122,7 +122,7 @@ export const searchRouter = router({
         SELECT n.id, n.title, n.purpose, n.body_text, n.is_project_brief,
                n.project_id, n.folder_id, n.updated_at
         FROM "Note" n
-        WHERE n.user_id = ${userId}
+        WHERE n.user_id = ${userId}::uuid
           AND n.deleted_at IS NULL
           AND n.search_vector @@ websearch_to_tsquery('english', ${q})
         ORDER BY ts_rank(n.search_vector, websearch_to_tsquery('english', ${q})) DESC,
@@ -140,7 +140,7 @@ export const searchRouter = router({
                 SELECT n.id, n.title, n.purpose, n.body_text, n.is_project_brief,
                        n.project_id, n.folder_id, n.updated_at
                 FROM "Note" n
-                WHERE n.user_id = ${userId}
+                WHERE n.user_id = ${userId}::uuid
                   AND n.deleted_at IS NULL
                   AND n.id != ALL(${ftsIds}::uuid[])
                   AND (n.title ILIKE ${ilike} OR n.body_text ILIKE ${ilike})
@@ -151,7 +151,7 @@ export const searchRouter = router({
                 SELECT n.id, n.title, n.purpose, n.body_text, n.is_project_brief,
                        n.project_id, n.folder_id, n.updated_at
                 FROM "Note" n
-                WHERE n.user_id = ${userId}
+                WHERE n.user_id = ${userId}::uuid
                   AND n.deleted_at IS NULL
                   AND (n.title ILIKE ${ilike} OR n.body_text ILIKE ${ilike})
                 ORDER BY n.updated_at DESC
@@ -191,7 +191,7 @@ export const searchRouter = router({
         SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
                t.due_date, t.defer_date
         FROM "Task" t
-        WHERE t.user_id = ${userId}
+        WHERE t.user_id = ${userId}::uuid
           AND t.deleted_at IS NULL
           AND to_tsvector('english', t.search_vector)
                 @@ websearch_to_tsquery('english', ${q})
@@ -216,7 +216,7 @@ export const searchRouter = router({
                 SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
                        t.due_date, t.defer_date
                 FROM "Task" t
-                WHERE t.user_id = ${userId}
+                WHERE t.user_id = ${userId}::uuid
                   AND t.deleted_at IS NULL
                   AND t.id != ALL(${ftsIds}::uuid[])
                   AND (t.title ILIKE ${ilike} OR t.notes ILIKE ${ilike})
@@ -227,7 +227,7 @@ export const searchRouter = router({
                 SELECT t.id, t.title, t.notes, t.project_id, t.flagged,
                        t.due_date, t.defer_date
                 FROM "Task" t
-                WHERE t.user_id = ${userId}
+                WHERE t.user_id = ${userId}::uuid
                   AND t.deleted_at IS NULL
                   AND (t.title ILIKE ${ilike} OR t.notes ILIKE ${ilike})
                 ORDER BY t.flagged DESC, t.updated_at DESC

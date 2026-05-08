@@ -23,7 +23,7 @@ import { createLogger } from "@/core/logging";
 
 const log = createLogger({ module: "auth/test-login" });
 
-const TEST_USER_EMAIL = "e2e@atlas.test";
+const TEST_USER_EMAIL = "e2e.atlas@example.com";
 const TEST_USER_NAME = "Atlas E2E";
 
 function getConfiguredSecret(): string | null {
