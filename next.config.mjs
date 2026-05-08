@@ -110,6 +110,7 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   ...(devOrigins ? { allowedDevOrigins: devOrigins } : {}),
   experimental: {
+    webpackMemoryOptimizations: true,
     optimizePackageImports: [
       '@radix-ui/react-alert-dialog',
       '@radix-ui/react-avatar',
