@@ -727,8 +727,8 @@ export const tablesRouter = router({
       return db.table.findMany({
         where: userOwnedActive(ctx.user, {
           OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { description: { contains: q, mode: "insensitive" } },
+            { name: { contains: q, mode: "insensitive" as const } },
+            { description: { contains: q, mode: "insensitive" as const } },
           ],
         }),
         orderBy: { updated_at: "desc" },

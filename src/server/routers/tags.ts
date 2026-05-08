@@ -35,7 +35,7 @@ export const tagsRouter = router({
       }
       return db.tag.findMany({
         where: userOwnedActive(ctx.user, {
-          name: { contains: q, mode: "insensitive" },
+          name: { contains: q, mode: "insensitive" as const },
         }),
         orderBy: [{ usage_count: "desc" }, { name: "asc" }],
         take: input.limit,

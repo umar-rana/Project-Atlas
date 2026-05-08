@@ -502,8 +502,8 @@ export const notesRouter = router({
       return db.note.findMany({
         where: userOwnedActive(ctx.user, {
           OR: [
-            { title: { contains: q, mode: "insensitive" } },
-            { body_text: { contains: q, mode: "insensitive" } },
+            { title: { contains: q, mode: "insensitive" as const } },
+            { body_text: { contains: q, mode: "insensitive" as const } },
           ],
         }),
         orderBy: { updated_at: "desc" },
