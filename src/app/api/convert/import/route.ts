@@ -13,27 +13,16 @@ import {
 } from "@/core/conversion/md-import-claude";
 import { checkTitleConflict } from "@/core/conversion/conflict-resolver";
 import { createLogger } from "@/core/logging";
+import { checkPersistentRateLimit } from "@/core/rate-limit/persistent";
 import { markdownToTiptap, tiptapToPlainText } from "@/core/conversion/tiptap-converter";
 
 const log = createLogger({ module: "api/convert/import" });
 
+// Postgres-backed rate limit: 10 imports/minute/user. Was in-memory before
+// (audit M-RATE-1).
 const MD_RATE_LIMIT = 10;
-
-// Simple in-memory rate limiter per user per minute
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(userId: string, limit: number): boolean {
-  const now = Date.now();
-  const key = `import:${userId}`;
-  const entry = rateLimitMap.get(key);
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  if (entry.count >= limit) return false;
-  entry.count++;
-  return true;
-}
+const MD_RATE_BUCKET = "api:convert_import";
+const MD_RATE_WINDOW_MS = 60_000;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const { userId: clerkId } = await auth();
@@ -46,10 +35,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!checkRateLimit(user.id, MD_RATE_LIMIT)) {
+  const { allowed, retryAfterSec } = await checkPersistentRateLimit({
+    userId: user.id,
+    bucket: MD_RATE_BUCKET,
+    maxRequests: MD_RATE_LIMIT,
+    windowMs: MD_RATE_WINDOW_MS,
+  });
+  if (!allowed) {
     return NextResponse.json(
       { error: "Rate limit exceeded. Maximum 10 imports per minute." },
-      { status: 429 },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
     );
   }
 
