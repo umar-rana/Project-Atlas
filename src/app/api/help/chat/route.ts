@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { HELP_DOCS_CORPUS } from "@/lib/help/docs";
 import { completeStream } from "@/core/ai";
 import { checkHelpChatLimits } from "@/core/ai/limits";
+import { checkPersistentRateLimit } from "@/core/rate-limit/persistent";
 import { logActivity } from "@/core/audit";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
@@ -28,27 +29,12 @@ ${HELP_DOCS_CORPUS}
 
 --- END DOCUMENTATION ---`;
 
-// In-memory rate limiter: 20 requests per minute per user.
-// Known limitation: does not survive process restarts; tracked for a future
-// Redis-backed rate limiting sprint (audit SO-3).
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 20;
-const RATE_WINDOW_MS = 60_000;
-
-function checkRateLimit(key: string): { allowed: boolean; retryAfterSec: number } {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return { allowed: true, retryAfterSec: 0 };
-  }
-  if (entry.count >= RATE_LIMIT) {
-    const retryAfterSec = Math.ceil((entry.resetAt - now) / 1000);
-    return { allowed: false, retryAfterSec };
-  }
-  entry.count++;
-  return { allowed: true, retryAfterSec: 0 };
-}
+// Burst limit: 20 requests per minute per user. Backed by RateLimitTracker
+// in Postgres so it survives process restarts and works across instances
+// (audit M-RATE-1). The daily cost cap lives in checkHelpChatLimits().
+const HELP_CHAT_BURST_BUCKET = "api:help_chat";
+const HELP_CHAT_BURST_LIMIT = 20;
+const HELP_CHAT_BURST_WINDOW_MS = 60_000;
 
 // Maximum number of conversation turns sent to Anthropic.
 // Truncating to the last 20 entries prevents replay-style cost amplification
@@ -61,8 +47,26 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  // Rate-limit by Clerk ID (available before the DB lookup)
-  const { allowed, retryAfterSec } = checkRateLimit(`help_chat:${clerkId}`);
+  // Resolve Clerk ID to internal User.id (UUID) so AICallLog and AuditLog
+  // foreign keys are correct, and so the persistent burst limiter is keyed by
+  // the same UUID as the daily cost cap.
+  const user = await db.user.findUnique({
+    where: { clerk_id: clerkId },
+    select: { id: true },
+  });
+  if (!user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
+  const internalUserId = user.id;
+
+  // Burst limit (20/min). Postgres-backed so it survives restarts and works
+  // across instances; was an in-memory Map before (audit M-RATE-1).
+  const { allowed, retryAfterSec } = await checkPersistentRateLimit({
+    userId: internalUserId,
+    bucket: HELP_CHAT_BURST_BUCKET,
+    maxRequests: HELP_CHAT_BURST_LIMIT,
+    windowMs: HELP_CHAT_BURST_WINDOW_MS,
+  });
   if (!allowed) {
     return new Response(
       JSON.stringify({ error: "Rate limit exceeded. Maximum 20 requests per minute." }),
@@ -75,17 +79,6 @@ export async function POST(req: NextRequest) {
       },
     );
   }
-
-  // Resolve Clerk ID to internal User.id (UUID) so AICallLog and AuditLog
-  // foreign keys are correct and usage queries work as expected.
-  const user = await db.user.findUnique({
-    where: { clerk_id: clerkId },
-    select: { id: true },
-  });
-  if (!user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-  }
-  const internalUserId = user.id;
 
   // Per-user daily/hourly call + cost cap. Persistent across process restarts
   // since it queries AICallLog. The 20/min in-memory limiter above guards
