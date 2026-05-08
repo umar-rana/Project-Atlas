@@ -12,6 +12,7 @@ interface ParserProposal {
 
 interface DispositionSomedayFormProps {
   captureId: string;
+  rawText: string;
   proposal?: ParserProposal | null;
   onConfirm: () => void;
   onCancel: () => void;
@@ -31,8 +32,16 @@ function addDays(n: number): string {
   return d.toISOString().split("T")[0] ?? "";
 }
 
+function deriveTitle(proposal: ParserProposal | null | undefined, rawText: string): string {
+  if (proposal?.title?.trim()) return proposal.title.trim();
+  const firstLine = rawText.split("\n")[0]?.trim() ?? "";
+  if (firstLine.length > 0 && firstLine.length <= 80) return firstLine;
+  return rawText.slice(0, 80).trim();
+}
+
 export function DispositionSomedayForm({
   captureId,
+  rawText,
   proposal,
   onConfirm,
   onCancel,
@@ -48,22 +57,22 @@ export function DispositionSomedayForm({
   const somedayCadence = (tasksPrefs.gtd_someday_review_cadence as string | undefined) ?? "weekly";
   const nextCycleDays = somedayCadence === "monthly" ? 30 : somedayCadence === "biweekly" ? 14 : 7;
 
-  const [title, setTitle] = React.useState(proposal?.title ?? "");
+  const [title, setTitle] = React.useState(() => deriveTitle(proposal, rawText));
   const [tagIds, setTagIds] = React.useState<string[]>([]);
   const [reviewOption, setReviewOption] = React.useState<ReviewOption>("next_cycle");
   const [specificDate, setSpecificDate] = React.useState("");
   const [notes, setNotes] = React.useState("");
 
   React.useEffect(() => {
-    if (!proposal) return;
-    if (proposal.title) setTitle(proposal.title);
-    if (proposal.tags && tags.data) {
+    const derived = deriveTitle(proposal, rawText);
+    if (derived) setTitle(derived);
+    if (proposal?.tags && tags.data) {
       const ids = proposal.tags
         .map((tName) => tags.data.find((t) => t.name === tName.toLowerCase())?.id)
         .filter((id): id is string => !!id);
       setTagIds(ids);
     }
-  }, [proposal, tags.data]);
+  }, [proposal, rawText, tags.data]);
 
   function getReviewDate(): string | undefined {
     if (reviewOption === "none") return undefined;
@@ -80,13 +89,18 @@ export function DispositionSomedayForm({
       utils.tasks.counts.invalidate();
       onConfirm();
     },
+    onError: (err) => {
+      const msg = err.message || "Failed to add to Someday. Please try again.";
+      import("@/lib/toast").then(({ toast }) => toast.error(msg));
+    },
   });
 
   function submit() {
-    if (!title.trim()) return;
+    const trimmed = title.trim() || deriveTitle(proposal, rawText);
+    if (!trimmed) return;
     mut.mutate({
       capture_id: captureId,
-      title: title.trim(),
+      title: trimmed,
       notes: notes || undefined,
       tag_ids: tagIds,
       someday_review_date: getReviewDate(),
@@ -94,8 +108,7 @@ export function DispositionSomedayForm({
   }
 
   function submitDefaults() {
-    const defaultTitle = proposal?.title?.trim() ?? title.trim();
-    if (!defaultTitle) return;
+    const defaultTitle = deriveTitle(proposal, rawText);
     mut.mutate({
       capture_id: captureId,
       title: defaultTitle,

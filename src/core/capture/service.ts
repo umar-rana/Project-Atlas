@@ -70,6 +70,33 @@ async function getUserProjects(userId: string): Promise<string[]> {
   }
 }
 
+async function getUserContextNames(userId: string): Promise<string[]> {
+  try {
+    const contexts = await db.context.findMany({
+      where: { user_id: userId, deleted_at: null },
+      select: { name: true },
+      take: 100,
+    });
+    return contexts.map((c) => c.name);
+  } catch {
+    return [];
+  }
+}
+
+async function getUserTagNames(userId: string): Promise<string[]> {
+  try {
+    const tags = await db.tag.findMany({
+      where: { user_id: userId, deleted_at: null },
+      select: { name: true },
+      orderBy: { usage_count: "desc" },
+      take: 100,
+    });
+    return tags.map((t) => t.name);
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Given all parsed tag names (from Tier1 + AI), the set of explicit #tag names
  * (Tier1 only), and the set of tag names that already exist in the user's library,
@@ -216,14 +243,17 @@ export async function captureAndCreate(input: CaptureCreateInput): Promise<Captu
     input.tagIdOverrides,
   );
 
-  const [userCtx, projectTitles] = await Promise.all([
+  const [userCtx, projectTitles, contextNames, tagNames] = await Promise.all([
     getUserContext(userId),
     getUserProjects(userId),
+    getUserContextNames(userId),
+    getUserTagNames(userId),
   ]);
 
   const tier1 = runTier1(rawText, {
     userTimezone: userCtx.timezone,
     projectTitles,
+    contextNames,
   });
 
   const confidence = scoreConfidence(rawText, tier1);
@@ -273,7 +303,11 @@ export async function captureAndCreate(input: CaptureCreateInput): Promise<Captu
       flagged: tier1.flagged,
       parse_tier: "local_only",
       local_confidence: confidence.score,
+      confidence: confidence.score,
       basic_parse: false,
+      proposed_disposition: tier1.proposed_disposition,
+      estimated_minutes: tier1.estimated_minutes,
+      proposed_body: tier1.proposed_body,
     };
 
     const durationMs = Date.now() - start;
@@ -311,12 +345,18 @@ export async function captureAndCreate(input: CaptureCreateInput): Promise<Captu
   enqueueEnrichment(async () => {
     const enrichStart = Date.now();
     try {
-      const tier2Result = await runTier2(rawText, tier1, userId);
+      const tier2Result = await runTier2(rawText, tier1, userId, {
+        contextNames,
+        projectNames: projectTitles,
+        tagNames,
+      });
       const parsed: ParsedCapture = tier2Result.parsed
         ? {
             ...tier2Result.parsed,
+            proposed_body: tier2Result.parsed.proposed_body ?? tier1.proposed_body,
             parse_tier: "local_plus_ai",
             local_confidence: confidence.score,
+            confidence: tier2Result.parsed.confidence ?? confidence.score,
             basic_parse: false,
           }
         : {
@@ -331,7 +371,11 @@ export async function captureAndCreate(input: CaptureCreateInput): Promise<Captu
             flagged: tier1.flagged,
             parse_tier: "local_only",
             local_confidence: confidence.score,
+            confidence: confidence.score,
             basic_parse: false,
+            proposed_disposition: tier1.proposed_disposition,
+            estimated_minutes: tier1.estimated_minutes,
+            proposed_body: tier1.proposed_body,
           };
 
       const explicitTagNames = new Set(tier1.tags.map((t) => t.toLowerCase()));
@@ -432,9 +476,11 @@ export async function previewParse(
   userId: string,
 ): Promise<{ parsed: ParsedCapture; durationMs: number }> {
   try {
-    const [userCtx, projectTitles] = await Promise.all([
+    const [userCtx, projectTitles, contextNames, tagNames] = await Promise.all([
       getUserContext(userId),
       getUserProjects(userId),
+      getUserContextNames(userId),
+      getUserTagNames(userId),
     ]);
 
     const { parsed, durationMs } = await runPipeline(
@@ -446,6 +492,8 @@ export async function previewParse(
         confidenceThreshold: userCtx.confidenceThreshold,
         aiEnabled: userCtx.aiEnabled,
         projectTitles,
+        contextNames,
+        tagNames,
         source: "modal",
       },
       false,

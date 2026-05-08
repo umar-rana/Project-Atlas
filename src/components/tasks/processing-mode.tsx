@@ -43,14 +43,26 @@ interface ParserProposal {
   estimated_minutes?: number | null;
   parse_tier?: string;
   local_confidence?: number;
+  proposed_disposition?: string;
+  proposed_body?: string | null;
+  notes?: string | null;
 }
 
-function deriveProposedDisposition(p: ParserProposal): Disposition | null {
+function proposedDispositionToTab(
+  p: ParserProposal,
+  rawText: string,
+): Disposition | null {
+  if (p.proposed_disposition === "task") return "task";
+  if (p.proposed_disposition === "note") return "note";
+  if (p.proposed_disposition === "reference") return "note";
+  if (p.proposed_disposition === "unclear") return null;
+
   if (p.project_hint) return "project";
   if (p.person_refs && p.person_refs.length > 0) return "waiting";
   const lowerTags = (p.tags ?? []).map((t) => t.toLowerCase());
   if (lowerTags.some((t) => t === "someday" || t === "maybe")) return "someday";
   if (p.title || p.due_date || p.flagged) return "task";
+  if (rawText.length > 100) return "note";
   return null;
 }
 
@@ -132,7 +144,7 @@ function ProcessingModeInner({
       setIsAiSuggested(false);
       return;
     }
-    const suggested = deriveProposedDisposition(proposal);
+    const suggested = proposedDispositionToTab(proposal, currentCapture?.raw_text ?? "");
     if (suggested) {
       setDisposition(suggested);
       setIsAiSuggested(true);
@@ -140,7 +152,7 @@ function ProcessingModeInner({
       setDisposition(null);
       setIsAiSuggested(false);
     }
-  }, [currentCaptureId, proposal]);
+  }, [currentCaptureId, proposal, currentCapture?.raw_text]);
 
   function advance() {
     setDisposition(null);
@@ -318,6 +330,7 @@ function ProcessingModeInner({
               {disposition === "task" && (
                 <DispositionTaskForm
                   captureId={currentCapture.id}
+                  rawText={currentCapture.raw_text}
                   proposal={proposal}
                   onConfirm={handleDispositionConfirm}
                   onCancel={handleCancel}
@@ -344,6 +357,7 @@ function ProcessingModeInner({
               {disposition === "someday" && (
                 <DispositionSomedayForm
                   captureId={currentCapture.id}
+                  rawText={currentCapture.raw_text}
                   proposal={proposal}
                   onConfirm={handleDispositionConfirm}
                   onCancel={handleCancel}
@@ -352,6 +366,7 @@ function ProcessingModeInner({
               {disposition === "waiting" && (
                 <DispositionWaitingForForm
                   captureId={currentCapture.id}
+                  rawText={currentCapture.raw_text}
                   proposal={proposal}
                   onConfirm={handleDispositionConfirm}
                   onCancel={handleCancel}

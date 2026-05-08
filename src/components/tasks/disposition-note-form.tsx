@@ -8,6 +8,8 @@ import { Hint } from "@/components/ui/hint";
 interface ParserProposal {
   title?: string;
   project_hint?: string | null;
+  proposed_body?: string | null;
+  notes?: string | null;
 }
 
 interface DispositionNoteFormProps {
@@ -27,6 +29,13 @@ const PURPOSE_OPTIONS = [
 
 type Purpose = (typeof PURPOSE_OPTIONS)[number]["value"];
 
+function deriveTitle(proposal: ParserProposal | null | undefined, rawText: string): string {
+  if (proposal?.title?.trim()) return proposal.title.trim();
+  const firstLine = rawText.split("\n")[0]?.trim() ?? "";
+  if (firstLine.length > 0 && firstLine.length <= 80) return firstLine;
+  return rawText.slice(0, 80).trim();
+}
+
 export function DispositionNoteForm({
   captureId,
   rawText,
@@ -37,20 +46,20 @@ export function DispositionNoteForm({
   const utils = trpc.useUtils();
   const projects = trpc.projects.list.useQuery({ status: "active" }, { staleTime: 60_000 });
 
-  const [title, setTitle] = React.useState(proposal?.title ?? rawText.slice(0, 80));
+  const [title, setTitle] = React.useState(() => deriveTitle(proposal, rawText));
   const [purpose, setPurpose] = React.useState<Purpose>("note");
   const [projectId, setProjectId] = React.useState("");
 
   React.useEffect(() => {
-    if (!proposal) return;
-    if (proposal.title) setTitle(proposal.title);
-    if (proposal.project_hint && projects.data) {
+    const derived = deriveTitle(proposal, rawText);
+    if (derived) setTitle(derived);
+    if (proposal?.project_hint && projects.data) {
       const match = projects.data.find(
         (p) => p.title.toLowerCase() === (proposal.project_hint ?? "").toLowerCase(),
       );
       if (match) setProjectId(match.id);
     }
-  }, [proposal, projects.data]);
+  }, [proposal, rawText, projects.data]);
 
   const mut = trpc.capture.processToNote.useMutation({
     onSuccess: () => {
@@ -58,20 +67,27 @@ export function DispositionNoteForm({
       utils.tasks.counts.invalidate();
       onConfirm();
     },
+    onError: (err) => {
+      const msg = err.message || "Failed to create note. Please try again.";
+      import("@/lib/toast").then(({ toast }) => toast.error(msg));
+    },
   });
 
+  const bodyText = proposal?.proposed_body ?? proposal?.notes ?? rawText;
+
   function submit() {
-    if (!title.trim()) return;
+    const trimmed = title.trim() || deriveTitle(proposal, rawText);
+    if (!trimmed) return;
     mut.mutate({
       capture_id: captureId,
-      title: title.trim(),
+      title: trimmed,
       purpose,
       project_id: projectId || undefined,
     });
   }
 
   function submitDefaults() {
-    const defaultTitle = proposal?.title?.trim() ?? rawText.slice(0, 80);
+    const defaultTitle = deriveTitle(proposal, rawText);
     mut.mutate({
       capture_id: captureId,
       title: defaultTitle,
@@ -153,7 +169,7 @@ export function DispositionNoteForm({
       <div className="rounded-md border border-border-subtle bg-surface-raised px-3 py-2">
         <p className="mb-1 font-ui text-2xs text-text-tertiary">Note body (from capture)</p>
         <p className="line-clamp-4 whitespace-pre-wrap font-ui text-xs text-text-secondary">
-          {rawText}
+          {bodyText}
         </p>
       </div>
 

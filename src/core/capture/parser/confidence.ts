@@ -63,7 +63,19 @@ export function scoreConfidence(raw: string, partial: PartialParse): LocalParseC
     score += 0.1;
   }
 
-  // Signal 5: Vagueness penalty (-0.20 per vague word, max -0.40)
+  // Signal 5: Disposition detected (+0.05)
+  if (partial.proposed_disposition && partial.proposed_disposition !== "unclear") {
+    signals.push({ name: "disposition_detected", contribution: 0.05 });
+    score += 0.05;
+  }
+
+  // Signal 6: Estimated time found (+0.05)
+  if (partial.estimated_minutes != null) {
+    signals.push({ name: "estimated_time_found", contribution: 0.05 });
+    score += 0.05;
+  }
+
+  // Signal 7: Vagueness penalty (-0.20 per vague word, max -0.40)
   const lowerRaw = raw.toLowerCase();
   const words = lowerRaw.split(/\W+/);
   let vagueCount = 0;
@@ -76,7 +88,7 @@ export function scoreConfidence(raw: string, partial: PartialParse): LocalParseC
     score -= penalty;
   }
 
-  // Signal 6: Abstract / ambiguous language penalty (-0.15 per phrase, max -0.30)
+  // Signal 8: Abstract / ambiguous language penalty (-0.15 per phrase, max -0.30)
   let abstractCount = 0;
   for (const phrase of ABSTRACT_WORDS) {
     if (lowerRaw.includes(phrase)) abstractCount++;

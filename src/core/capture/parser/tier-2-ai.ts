@@ -9,21 +9,25 @@ import {
   buildCaptureParseUserMessage,
 } from "@/prompts/capture-parse/v1";
 import { createLogger } from "@/core/logging";
-import type { PartialParse, ParsedCapture } from "./types";
+import type { PartialParse, ParsedCapture, ProposedDisposition } from "./types";
 
 const CHARS_PER_TOKEN_ESTIMATE = 4;
 
 const log = createLogger({ module: "capture-tier2" });
 
 interface AiParseResult {
+  proposed_disposition?: string | null;
   title?: string;
+  proposed_body?: string | null;
   tags?: string[];
-  contexts?: string[];
+  context_name?: string | null;
+  project_name?: string | null;
+  person_refs?: string[];
   due_date?: string | null;
   defer_date?: string | null;
-  project_hint?: string | null;
-  person_refs?: string[];
+  estimated_minutes?: number | null;
   flagged?: boolean;
+  confidence?: number | null;
   notes?: string | null;
 }
 
@@ -43,30 +47,50 @@ function safeParseAiResponse(content: string): AiParseResult | null {
   }
 }
 
+function isValidDisposition(v: unknown): v is ProposedDisposition {
+  return v === "task" || v === "note" || v === "reference" || v === "unclear";
+}
+
 function mergeWithTier1(
   tier1: PartialParse,
   ai: AiParseResult,
+  availableContextNames: string[],
+  availableProjectNames: string[],
+  availableTagNames: string[],
 ): Omit<ParsedCapture, "parse_tier" | "local_confidence" | "basic_parse"> {
   const due_date = ai.due_date ? new Date(ai.due_date) : tier1.due_date;
-
   const defer_date = ai.defer_date ? new Date(ai.defer_date) : tier1.defer_date;
 
-  const tags = Array.from(
-    new Set([
-      ...tier1.tags,
-      ...(Array.isArray(ai.tags) ? ai.tags.filter((t): t is string => typeof t === "string") : []),
-    ]),
-  )
+  const normalizedAvailableTags = new Set(availableTagNames.map((t) => t.toLowerCase()));
+  const normalizedAvailableContexts = availableContextNames.map((c) => ({
+    lower: c.toLowerCase(),
+    original: c,
+  }));
+  const normalizedAvailableProjects = availableProjectNames.map((p) => ({
+    lower: p.toLowerCase(),
+    original: p,
+  }));
+
+  const aiTags = Array.isArray(ai.tags)
+    ? ai.tags
+        .filter((t): t is string => typeof t === "string")
+        .map((t) => t.toLowerCase().trim())
+        .filter((t) => t && normalizedAvailableTags.has(t))
+    : [];
+
+  const tags = Array.from(new Set([...tier1.tags, ...aiTags]))
     .map((t) => t.toLowerCase().trim())
     .filter(Boolean);
 
+  let aiContext: string | undefined;
+  if (typeof ai.context_name === "string" && ai.context_name) {
+    const lowerAiCtx = ai.context_name.toLowerCase();
+    const match = normalizedAvailableContexts.find((c) => c.lower === lowerAiCtx);
+    if (match) aiContext = match.original;
+  }
+
   const contexts = Array.from(
-    new Set([
-      ...tier1.contexts,
-      ...(Array.isArray(ai.contexts)
-        ? ai.contexts.filter((c): c is string => typeof c === "string")
-        : []),
-    ]),
+    new Set([...tier1.contexts, ...(aiContext ? [aiContext] : [])]),
   )
     .map((c) => c.trim())
     .filter(Boolean);
@@ -80,21 +104,52 @@ function mergeWithTier1(
     ]),
   );
 
+  let project_hint: string | undefined = tier1.project_hint;
+  if (typeof ai.project_name === "string" && ai.project_name) {
+    const lowerAiProj = ai.project_name.toLowerCase();
+    const match = normalizedAvailableProjects.find((p) => p.lower === lowerAiProj);
+    if (match) project_hint = match.original;
+  }
+
+  const proposed_disposition: ProposedDisposition | undefined = isValidDisposition(
+    ai.proposed_disposition,
+  )
+    ? ai.proposed_disposition
+    : tier1.proposed_disposition;
+
+  const estimated_minutes =
+    typeof ai.estimated_minutes === "number" && ai.estimated_minutes > 0
+      ? ai.estimated_minutes
+      : tier1.estimated_minutes;
+
+  const proposed_body =
+    typeof ai.proposed_body === "string" && ai.proposed_body
+      ? ai.proposed_body
+      : typeof ai.notes === "string" && ai.notes
+        ? ai.notes
+        : undefined;
+
+  const confidence =
+    typeof ai.confidence === "number" ? Math.max(0, Math.min(1, ai.confidence)) : undefined;
+
   return {
     title: (typeof ai.title === "string" && ai.title.trim()
       ? ai.title.trim().slice(0, 80)
       : (tier1.title ?? "")
     ).slice(0, 80),
-    notes: typeof ai.notes === "string" ? ai.notes : undefined,
+    notes: proposed_body,
+    proposed_body,
     tags,
     contexts,
     due_date: due_date && !isNaN(due_date.getTime()) ? due_date : undefined,
     defer_date: defer_date && !isNaN(defer_date.getTime()) ? defer_date : undefined,
-    project_hint:
-      typeof ai.project_hint === "string" && ai.project_hint ? ai.project_hint : tier1.project_hint,
+    project_hint,
     person_refs,
     entity_refs: tier1.entity_refs,
     flagged: ai.flagged === true || tier1.flagged,
+    proposed_disposition,
+    estimated_minutes,
+    confidence,
   };
 }
 
@@ -111,6 +166,11 @@ export async function runTier2(
   rawText: string,
   tier1: PartialParse,
   userId: string,
+  availableNames?: {
+    contextNames?: string[];
+    projectNames?: string[];
+    tagNames?: string[];
+  },
 ): Promise<Tier2Result> {
   const limitCheck = await checkCaptureParseLimits(userId);
   if (!limitCheck.allowed) {
@@ -125,6 +185,8 @@ export async function runTier2(
     due_date: tier1.due_date?.toISOString(),
     project_hint: tier1.project_hint,
     person_refs: tier1.person_refs.length > 0 ? tier1.person_refs : undefined,
+    proposed_disposition: tier1.proposed_disposition,
+    estimated_minutes: tier1.estimated_minutes,
   };
 
   const cleanHints: Record<string, unknown> = {};
@@ -132,7 +194,7 @@ export async function runTier2(
     if (v !== undefined) cleanHints[k] = v;
   }
 
-  const userMessage = buildCaptureParseUserMessage(rawText, cleanHints);
+  const userMessage = buildCaptureParseUserMessage(rawText, cleanHints, availableNames);
 
   const estimatedInputTokens = Math.ceil(
     (CAPTURE_PARSE_SYSTEM_PROMPT.length + userMessage.length) / CHARS_PER_TOKEN_ESTIMATE,
@@ -155,7 +217,7 @@ export async function runTier2(
       userId,
       options: {
         systemPrompt: CAPTURE_PARSE_SYSTEM_PROMPT,
-        maxTokens: 500,
+        maxTokens: 600,
         model: CAPTURE_PARSE_MODEL,
       },
     });
@@ -173,7 +235,13 @@ export async function runTier2(
       };
     }
 
-    const merged = mergeWithTier1(tier1, aiParsed);
+    const merged = mergeWithTier1(
+      tier1,
+      aiParsed,
+      availableNames?.contextNames ?? [],
+      availableNames?.projectNames ?? [],
+      availableNames?.tagNames ?? [],
+    );
     return {
       parsed: merged,
       aiModel: result.model,

@@ -191,7 +191,9 @@ describe("runTier2 — successful parse merges with Tier 1", () => {
       tags: ["errands"],
       entity_refs: ["store"],
     });
-    const result = await runTier2("buy groceries", tier1, "user-id");
+    const result = await runTier2("buy groceries", tier1, "user-id", {
+      tagNames: ["shopping", "errands", "groceries"],
+    });
 
     expect(result.parsed).not.toBeNull();
     expect(result.parsed!.title).toBe("Buy groceries");
@@ -211,7 +213,9 @@ describe("runTier2 — successful parse merges with Tier 1", () => {
     });
 
     const { runTier2 } = await import("./tier-2-ai");
-    const result = await runTier2("dentist appointment", makePartial(), "user-id");
+    const result = await runTier2("dentist appointment", makePartial(), "user-id", {
+      tagNames: ["health", "personal", "medical"],
+    });
 
     expect(result.parsed).not.toBeNull();
     expect(result.parsed!.title).toBe("Schedule dentist");

@@ -1,5 +1,8 @@
 import * as chrono from "chrono-node";
 import { parseQuickAdd } from "@/lib/tasks/parse-quick-add";
+import { detectDisposition } from "./disposition-detector";
+import { inferContextsFromText } from "./context-mapper";
+import { estimateMinutes } from "./time-hints";
 import type { PartialParse } from "./types";
 
 const EOD_HOUR = 17;
@@ -113,6 +116,7 @@ export function runTier1(
   options: {
     userTimezone: string;
     projectTitles: string[];
+    contextNames?: string[];
   },
 ): PartialParse {
   const personRefs = extractPersonRefs(rawText);
@@ -144,15 +148,30 @@ export function runTier1(
     ["asap", "urgent", "urgently", "critical", "emergency"].includes(s),
   );
 
+  const proposedDisposition = detectDisposition(rawText);
+
+  const nlpContexts = inferContextsFromText(rawText, options.contextNames ?? []);
+  const allContexts = Array.from(new Set([...quick.contexts, ...nlpContexts]));
+
+  const estimatedMinutes = estimateMinutes(rawText);
+
+  // proposed_body: multi-line input → body is everything after first meaningful line
+  const lines = rawText.split("\n");
+  const bodyLines = lines.slice(1).join("\n").trim();
+  const proposedBody = bodyLines.length > 0 ? bodyLines : undefined;
+
   return {
     title: workingText.slice(0, 80) || rawText.slice(0, 80),
     tags: quick.tags,
-    contexts: quick.contexts,
+    contexts: allContexts,
     due_date,
     project_hint: resolvedProject,
     person_refs: personRefs,
     entity_refs: entityRefs,
     flagged,
     urgency_signals: urgencySignals,
+    proposed_disposition: proposedDisposition,
+    estimated_minutes: estimatedMinutes,
+    proposed_body: proposedBody,
   };
 }

@@ -24,6 +24,7 @@ export async function runPipeline(
   const tier1 = runTier1(rawText, {
     userTimezone: ctx.userTimezone,
     projectTitles: ctx.projectTitles,
+    contextNames: ctx.contextNames,
   });
 
   const confidence = scoreConfidence(rawText, tier1);
@@ -43,13 +44,20 @@ export async function runPipeline(
   const needsAi = confidence.score < ctx.confidenceThreshold;
 
   if (needsAi && ctx.aiEnabled) {
-    const tier2 = await runTier2(rawText, tier1, ctx.userId);
+    const tier2 = await runTier2(rawText, tier1, ctx.userId, {
+      contextNames: ctx.contextNames,
+      projectNames: ctx.projectTitles,
+      tagNames: ctx.tagNames,
+    });
 
     if (tier2.parsed) {
       parsed = {
         ...tier2.parsed,
+        // Prefer tier1 proposed_body if tier2 didn't produce one
+        proposed_body: tier2.parsed.proposed_body ?? tier1.proposed_body,
         parse_tier: "local_plus_ai",
         local_confidence: confidence.score,
+        confidence: tier2.parsed.confidence ?? confidence.score,
         basic_parse: false,
       };
       aiModel = tier2.aiModel;
@@ -74,12 +82,14 @@ export async function runPipeline(
         flagged: tier1.flagged,
         parse_tier: "local_only",
         local_confidence: confidence.score,
+        confidence: confidence.score,
         basic_parse: false,
+        proposed_disposition: tier1.proposed_disposition,
+        estimated_minutes: tier1.estimated_minutes,
+        proposed_body: tier1.proposed_body,
       };
     }
   } else {
-    // Either confidence is high enough (no AI needed) or AI is disabled.
-    // Both cases return Tier-1 local parse output — not a degraded fallback.
     parsed = {
       title: tier1.title ?? rawText.slice(0, 80),
       tags: tier1.tags,
@@ -92,7 +102,11 @@ export async function runPipeline(
       flagged: tier1.flagged,
       parse_tier: "local_only",
       local_confidence: confidence.score,
+      confidence: confidence.score,
       basic_parse: false,
+      proposed_disposition: tier1.proposed_disposition,
+      estimated_minutes: tier1.estimated_minutes,
+      proposed_body: tier1.proposed_body,
     };
   }
 

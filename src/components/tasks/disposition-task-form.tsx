@@ -14,10 +14,13 @@ interface ParserProposal {
   contexts?: string[];
   flagged?: boolean;
   estimated_minutes?: number | null;
+  proposed_body?: string | null;
+  notes?: string | null;
 }
 
 interface DispositionTaskFormProps {
   captureId: string;
+  rawText: string;
   proposal?: ParserProposal | null;
   onConfirm: () => void;
   onCancel: () => void;
@@ -37,8 +40,16 @@ function toIso(dateStr: string): string | undefined {
   return new Date(dateStr).toISOString();
 }
 
+function deriveTitle(proposal: ParserProposal | null | undefined, rawText: string): string {
+  if (proposal?.title?.trim()) return proposal.title.trim();
+  const firstLine = rawText.split("\n")[0]?.trim() ?? "";
+  if (firstLine.length > 0 && firstLine.length <= 80) return firstLine;
+  return rawText.slice(0, 80).trim();
+}
+
 export function DispositionTaskForm({
   captureId,
+  rawText,
   proposal,
   onConfirm,
   onCancel,
@@ -48,7 +59,7 @@ export function DispositionTaskForm({
   const contexts = trpc.contexts.list.useQuery(undefined, { staleTime: 60_000 });
   const tags = trpc.tags.list.useQuery({ limit: 200 }, { staleTime: 60_000 });
 
-  const [title, setTitle] = React.useState(proposal?.title ?? "");
+  const [title, setTitle] = React.useState(() => deriveTitle(proposal, rawText));
   const [projectId, setProjectId] = React.useState("");
   const [contextIds, setContextIds] = React.useState<string[]>([]);
   const [tagIds, setTagIds] = React.useState<string[]>([]);
@@ -58,15 +69,20 @@ export function DispositionTaskForm({
     proposal?.estimated_minutes != null ? String(proposal.estimated_minutes) : "",
   );
   const [flagged, setFlagged] = React.useState(proposal?.flagged ?? false);
-  const [notes, setNotes] = React.useState("");
+  const [notes, setNotes] = React.useState(
+    proposal?.proposed_body ?? proposal?.notes ?? "",
+  );
 
   React.useEffect(() => {
+    const derived = deriveTitle(proposal, rawText);
+    if (derived) setTitle(derived);
     if (!proposal) return;
-    if (proposal.title) setTitle(proposal.title);
     if (proposal.due_date) setDueDate(fmtDateInput(proposal.due_date));
     if (proposal.defer_date) setDeferDate(fmtDateInput(proposal.defer_date));
     if (proposal.flagged) setFlagged(true);
     if (proposal.estimated_minutes != null) setEstimatedMinutes(String(proposal.estimated_minutes));
+    const body = proposal.proposed_body ?? proposal.notes ?? "";
+    if (body) setNotes(body);
     if (proposal.project_hint && projects.data) {
       const match = projects.data.find(
         (p) => p.title.toLowerCase() === (proposal.project_hint ?? "").toLowerCase(),
@@ -85,7 +101,7 @@ export function DispositionTaskForm({
         .filter((id): id is string => !!id);
       setContextIds(ids);
     }
-  }, [proposal, projects.data, tags.data, contexts.data]);
+  }, [proposal, rawText, projects.data, tags.data, contexts.data]);
 
   const mut = trpc.capture.processToTask.useMutation({
     onSuccess: () => {
@@ -94,13 +110,18 @@ export function DispositionTaskForm({
       utils.tasks.counts.invalidate();
       onConfirm();
     },
+    onError: (err) => {
+      const msg = err.message || "Failed to create task. Please try again.";
+      import("@/lib/toast").then(({ toast }) => toast.error(msg));
+    },
   });
 
   function submit() {
-    if (!title.trim()) return;
+    const trimmed = title.trim() || deriveTitle(proposal, rawText);
+    if (!trimmed) return;
     mut.mutate({
       capture_id: captureId,
-      title: title.trim(),
+      title: trimmed,
       notes: notes || undefined,
       project_id: projectId || undefined,
       context_ids: contextIds,
@@ -113,7 +134,7 @@ export function DispositionTaskForm({
   }
 
   function submitDefaults() {
-    const defaultTitle = proposal?.title?.trim() ?? title.trim();
+    const defaultTitle = deriveTitle(proposal, rawText);
     if (!defaultTitle) return;
     let defaultProjectId: string | undefined;
     if (proposal?.project_hint && projects.data) {
@@ -137,11 +158,14 @@ export function DispositionTaskForm({
     mut.mutate({
       capture_id: captureId,
       title: defaultTitle,
+      notes: (proposal?.proposed_body ?? proposal?.notes) || undefined,
       project_id: defaultProjectId,
       context_ids: defaultContextIds,
       tag_ids: defaultTagIds,
       due_date: proposal?.due_date ?? undefined,
       defer_date: proposal?.defer_date ?? undefined,
+      estimated_minutes:
+        proposal?.estimated_minutes != null ? proposal.estimated_minutes : undefined,
       flagged: proposal?.flagged ?? false,
     });
   }

@@ -6,17 +6,27 @@ import { cn } from "@/lib/utils";
 
 interface ParserProposal {
   title?: string;
+  person_refs?: string[];
 }
 
 interface DispositionWaitingForFormProps {
   captureId: string;
+  rawText: string;
   proposal?: ParserProposal | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
+function deriveTitle(proposal: ParserProposal | null | undefined, rawText: string): string {
+  if (proposal?.title?.trim()) return proposal.title.trim();
+  const firstLine = rawText.split("\n")[0]?.trim() ?? "";
+  if (firstLine.length > 0 && firstLine.length <= 80) return firstLine;
+  return rawText.slice(0, 80).trim();
+}
+
 export function DispositionWaitingForForm({
   captureId,
+  rawText,
   proposal,
   onConfirm,
   onCancel,
@@ -38,14 +48,18 @@ export function DispositionWaitingForForm({
     return d.toISOString().split("T")[0] ?? "";
   }
 
-  const [title, setTitle] = React.useState(proposal?.title ?? "");
-  const [delegatedTo, setDelegatedTo] = React.useState("");
+  const [title, setTitle] = React.useState(() => deriveTitle(proposal, rawText));
+  const [delegatedTo, setDelegatedTo] = React.useState(
+    () => proposal?.person_refs?.[0] ?? "",
+  );
   const [followUpDate, setFollowUpDate] = React.useState(() => defaultFollowUpDateString());
   const [notes, setNotes] = React.useState("");
 
   React.useEffect(() => {
-    if (proposal?.title) setTitle(proposal.title);
-  }, [proposal]);
+    const derived = deriveTitle(proposal, rawText);
+    if (derived) setTitle(derived);
+    if (proposal?.person_refs?.[0]) setDelegatedTo(proposal.person_refs[0]);
+  }, [proposal, rawText]);
 
   React.useEffect(() => {
     setFollowUpDate(defaultFollowUpDateString());
@@ -58,13 +72,18 @@ export function DispositionWaitingForForm({
       utils.tasks.counts.invalidate();
       onConfirm();
     },
+    onError: (err) => {
+      const msg = err.message || "Failed to add to Waiting For. Please try again.";
+      import("@/lib/toast").then(({ toast }) => toast.error(msg));
+    },
   });
 
   function submit() {
-    if (!title.trim()) return;
+    const trimmed = title.trim() || deriveTitle(proposal, rawText);
+    if (!trimmed) return;
     mut.mutate({
       capture_id: captureId,
-      title: title.trim(),
+      title: trimmed,
       delegated_to_text: delegatedTo || undefined,
       follow_up_date: followUpDate ? new Date(followUpDate).toISOString() : undefined,
       notes: notes || undefined,
@@ -72,8 +91,7 @@ export function DispositionWaitingForForm({
   }
 
   function submitDefaults() {
-    const defaultTitle = proposal?.title?.trim() ?? title.trim();
-    if (!defaultTitle) return;
+    const defaultTitle = deriveTitle(proposal, rawText);
     mut.mutate({
       capture_id: captureId,
       title: defaultTitle,

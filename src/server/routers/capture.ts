@@ -986,37 +986,49 @@ export const captureRouter = router({
       const taskId = newId();
       const now = new Date();
 
-      await db.$transaction([
-        db.task.create({
-          data: {
-            id: taskId,
-            user_id: ctx.user.id,
-            title: input.title,
-            notes: input.notes ?? undefined,
-            project_id: input.project_id ?? undefined,
-            flagged: input.flagged,
-            due_date: input.due_date ? new Date(input.due_date) : undefined,
-            defer_date: input.defer_date ? new Date(input.defer_date) : undefined,
-            estimated_minutes: input.estimated_minutes ?? undefined,
-            status: "active",
-          },
-        }),
-        ...input.context_ids.map((ctxId) =>
-          db.contextOnTask.create({ data: { task_id: taskId, context_id: ctxId } }),
-        ),
-        ...input.tag_ids.map((tagId) =>
-          db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
-        ),
-        db.capture.update({
-          where: { id: input.capture_id },
-          data: {
-            state: "processed",
-            processed_at: now,
-            processed_to_type: "task",
-            processed_to_id: taskId,
-          },
-        }),
-      ]);
+      try {
+        await db.$transaction([
+          db.task.create({
+            data: {
+              id: taskId,
+              user_id: ctx.user.id,
+              title: input.title,
+              notes: input.notes ?? undefined,
+              project_id: input.project_id ?? undefined,
+              flagged: input.flagged,
+              due_date: input.due_date ? new Date(input.due_date) : undefined,
+              defer_date: input.defer_date ? new Date(input.defer_date) : undefined,
+              estimated_minutes: input.estimated_minutes ?? undefined,
+              status: "active",
+            },
+          }),
+          ...input.context_ids.map((ctxId) =>
+            db.contextOnTask.create({ data: { task_id: taskId, context_id: ctxId } }),
+          ),
+          ...input.tag_ids.map((tagId) =>
+            db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
+          ),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "task",
+              processed_to_id: taskId,
+            },
+          }),
+        ]);
+      } catch (err) {
+        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToTask transaction failed");
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("foreign key") || msg.includes("Foreign key")) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "A referenced context, tag, or project no longer exists. Please refresh and try again." });
+        }
+        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
+          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create task. Please try again." });
+      }
 
       await logActivity({
         user_id: ctx.user.id,
@@ -1071,32 +1083,41 @@ export const captureRouter = router({
       const now = new Date();
       const bodyText = capture.raw_text ?? "";
 
-      await db.$transaction([
-        db.note.create({
-          data: {
-            id: noteId,
-            user_id: ctx.user.id,
-            title: input.title,
-            purpose: input.purpose,
-            project_id: input.project_id ?? undefined,
-            body_text: bodyText,
-            body_json: JSON.stringify({
-              type: "doc",
-              content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }],
-            }),
-            body_markdown: bodyText,
-          },
-        }),
-        db.capture.update({
-          where: { id: input.capture_id },
-          data: {
-            state: "processed",
-            processed_at: now,
-            processed_to_type: "note",
-            processed_to_id: noteId,
-          },
-        }),
-      ]);
+      try {
+        await db.$transaction([
+          db.note.create({
+            data: {
+              id: noteId,
+              user_id: ctx.user.id,
+              title: input.title,
+              purpose: input.purpose,
+              project_id: input.project_id ?? undefined,
+              body_text: bodyText,
+              body_json: JSON.stringify({
+                type: "doc",
+                content: [{ type: "paragraph", content: [{ type: "text", text: bodyText }] }],
+              }),
+              body_markdown: bodyText,
+            },
+          }),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "note",
+              processed_to_id: noteId,
+            },
+          }),
+        ]);
+      } catch (err) {
+        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToNote transaction failed");
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
+          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create note. Please try again." });
+      }
 
       await logActivity({
         user_id: ctx.user.id,
@@ -1284,33 +1305,42 @@ export const captureRouter = router({
       const taskId = newId();
       const now = new Date();
 
-      await db.$transaction([
-        db.task.create({
-          data: {
-            id: taskId,
-            user_id: ctx.user.id,
-            title: input.title,
-            notes: input.notes ?? undefined,
-            is_someday: true,
-            someday_review_date: input.someday_review_date
-              ? new Date(input.someday_review_date)
-              : undefined,
-            status: "active",
-          },
-        }),
-        ...input.tag_ids.map((tagId) =>
-          db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
-        ),
-        db.capture.update({
-          where: { id: input.capture_id },
-          data: {
-            state: "processed",
-            processed_at: now,
-            processed_to_type: "someday",
-            processed_to_id: taskId,
-          },
-        }),
-      ]);
+      try {
+        await db.$transaction([
+          db.task.create({
+            data: {
+              id: taskId,
+              user_id: ctx.user.id,
+              title: input.title,
+              notes: input.notes ?? undefined,
+              is_someday: true,
+              someday_review_date: input.someday_review_date
+                ? new Date(input.someday_review_date)
+                : undefined,
+              status: "active",
+            },
+          }),
+          ...input.tag_ids.map((tagId) =>
+            db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
+          ),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "someday",
+              processed_to_id: taskId,
+            },
+          }),
+        ]);
+      } catch (err) {
+        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToSomeday transaction failed");
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
+          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to add to Someday/Maybe. Please try again." });
+      }
 
       await logActivity({
         user_id: ctx.user.id,
@@ -1360,28 +1390,37 @@ export const captureRouter = router({
       const taskId = newId();
       const now = new Date();
 
-      await db.$transaction([
-        db.task.create({
-          data: {
-            id: taskId,
-            user_id: ctx.user.id,
-            title: input.title,
-            notes: input.notes ?? undefined,
-            delegated_to_text: input.delegated_to_text ?? undefined,
-            follow_up_date: input.follow_up_date ? new Date(input.follow_up_date) : undefined,
-            status: "active",
-          },
-        }),
-        db.capture.update({
-          where: { id: input.capture_id },
-          data: {
-            state: "processed",
-            processed_at: now,
-            processed_to_type: "waiting_for",
-            processed_to_id: taskId,
-          },
-        }),
-      ]);
+      try {
+        await db.$transaction([
+          db.task.create({
+            data: {
+              id: taskId,
+              user_id: ctx.user.id,
+              title: input.title,
+              notes: input.notes ?? undefined,
+              delegated_to_text: input.delegated_to_text ?? undefined,
+              follow_up_date: input.follow_up_date ? new Date(input.follow_up_date) : undefined,
+              status: "active",
+            },
+          }),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "waiting_for",
+              processed_to_id: taskId,
+            },
+          }),
+        ]);
+      } catch (err) {
+        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToWaitingFor transaction failed");
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
+          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to add to Waiting For. Please try again." });
+      }
 
       await logActivity({
         user_id: ctx.user.id,
@@ -1414,6 +1453,11 @@ export const captureRouter = router({
       z.object({
         capture_id: z.string().uuid(),
         title: z.string().min(1).max(500),
+        notes: z.string().max(50_000).nullable().optional(),
+        project_id: z.string().uuid().optional(),
+        context_ids: z.array(z.string().uuid()).default([]),
+        tag_ids: z.array(z.string().uuid()).default([]),
+        estimated_minutes: z.number().int().min(1).max(1440).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1433,29 +1477,75 @@ export const captureRouter = router({
           message: "Capture not found or already processed",
         });
 
+      // Validate optional project ownership
+      if (input.project_id) {
+        const proj = await db.project.findFirst({
+          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          select: { id: true },
+        });
+        if (!proj)
+          throw new TRPCError({ code: "FORBIDDEN", message: "Project not found or not owned by user" });
+      }
+
+      // Validate optional tag ownership
+      if (input.tag_ids.length > 0) {
+        const count = await db.tag.count({
+          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+        });
+        if (count !== input.tag_ids.length)
+          throw new TRPCError({ code: "FORBIDDEN", message: "One or more tags not found or not owned by user" });
+      }
+
+      // Validate optional context ownership
+      if (input.context_ids.length > 0) {
+        const count = await db.context.count({
+          where: { id: { in: input.context_ids }, user_id: ctx.user.id, deleted_at: null },
+        });
+        if (count !== input.context_ids.length)
+          throw new TRPCError({ code: "FORBIDDEN", message: "One or more contexts not found or not owned by user" });
+      }
+
       const taskId = newId();
       const now = new Date();
 
-      await db.$transaction([
-        db.task.create({
-          data: {
-            id: taskId,
-            user_id: ctx.user.id,
-            title: input.title,
-            status: "completed",
-            completed_at: now,
-          },
-        }),
-        db.capture.update({
-          where: { id: input.capture_id },
-          data: {
-            state: "processed",
-            processed_at: now,
-            processed_to_type: "two_minute_done",
-            processed_to_id: taskId,
-          },
-        }),
-      ]);
+      try {
+        await db.$transaction([
+          db.task.create({
+            data: {
+              id: taskId,
+              user_id: ctx.user.id,
+              title: input.title,
+              notes: input.notes ?? undefined,
+              project_id: input.project_id ?? undefined,
+              estimated_minutes: input.estimated_minutes ?? undefined,
+              status: "completed",
+              completed_at: now,
+            },
+          }),
+          ...input.context_ids.map((ctxId) =>
+            db.contextOnTask.create({ data: { task_id: taskId, context_id: ctxId } }),
+          ),
+          ...input.tag_ids.map((tagId) =>
+            db.tagOnTask.create({ data: { task_id: taskId, tag_id: tagId } }),
+          ),
+          db.capture.update({
+            where: { id: input.capture_id },
+            data: {
+              state: "processed",
+              processed_at: now,
+              processed_to_type: "two_minute_done",
+              processed_to_id: taskId,
+            },
+          }),
+        ]);
+      } catch (err) {
+        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToTwoMinuteDone transaction failed");
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
+          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to mark capture as done. Please try again." });
+      }
 
       await logActivity({
         user_id: ctx.user.id,
@@ -1496,15 +1586,20 @@ export const captureRouter = router({
         });
 
       const now = new Date();
-      await db.capture.update({
-        where: { id: input.capture_id },
-        data: {
-          state: "processed",
-          processed_at: now,
-          processed_to_type: "trashed",
-          processed_to_id: null,
-        },
-      });
+      try {
+        await db.capture.update({
+          where: { id: input.capture_id },
+          data: {
+            state: "processed",
+            processed_at: now,
+            processed_to_type: "trashed",
+            processed_to_id: null,
+          },
+        });
+      } catch (err) {
+        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToTrash failed");
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to trash capture. Please try again." });
+      }
 
       await logActivity({
         user_id: ctx.user.id,
