@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { extractReferenceNodes } from "@/core/links/resolver";
@@ -26,9 +26,7 @@ export const notesRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Prisma.NoteWhereInput = {
-        user_id: ctx.user.id,
-        deleted_at: null,
+      const where: Prisma.NoteWhereInput = userOwnedActive(ctx.user, {
         ...(input.folder_id !== undefined ? { folder_id: input.folder_id } : {}),
         ...(input.project_id !== undefined ? { project_id: input.project_id } : {}),
         ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
@@ -42,7 +40,7 @@ export const notesRouter = router({
               })),
             }
           : {}),
-      };
+      });
 
       const notes = await db.note.findMany({
         where,
@@ -81,7 +79,7 @@ export const notesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         include: {
           tag_on_notes: {
             select: {
@@ -109,14 +107,14 @@ export const notesRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (input.folder_id) {
         const folder = await db.notesFolder.findFirst({
-          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.folder_id }),
           select: { id: true },
         });
         if (!folder) throw new TRPCError({ code: "NOT_FOUND", message: "Folder not found" });
       }
       if (input.project_id) {
         const project = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -188,21 +186,21 @@ export const notesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.note.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
       if (input.folder_id) {
         const folder = await db.notesFolder.findFirst({
-          where: { id: input.folder_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.folder_id }),
           select: { id: true },
         });
         if (!folder) throw new TRPCError({ code: "NOT_FOUND", message: "Folder not found" });
       }
       if (input.project_id) {
         const project = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -275,7 +273,7 @@ export const notesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.note.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, title: true },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -297,7 +295,7 @@ export const notesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.note.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         select: { id: true, title: true, deleted_at: true },
       });
       if (!existing || !existing.deleted_at) throw new TRPCError({ code: "NOT_FOUND" });
@@ -319,7 +317,7 @@ export const notesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, project_id: true, title: true },
       });
       if (!note) throw new TRPCError({ code: "NOT_FOUND" });
@@ -330,13 +328,11 @@ export const notesRouter = router({
         });
       }
       const existing = await db.note.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           project_id: note.project_id,
           is_project_brief: true,
-          user_id: ctx.user.id,
-          deleted_at: null,
           id: { not: input.id },
-        },
+        }),
         select: { id: true },
       });
       if (existing) {
@@ -363,7 +359,7 @@ export const notesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, is_project_brief: true, project_id: true },
       });
       if (!note) throw new TRPCError({ code: "NOT_FOUND" });
@@ -385,11 +381,10 @@ export const notesRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const links = await db.link.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           target_type: "Note",
           target_id: input.id,
-        },
+        }),
         select: {
           id: true,
           source_type: true,
@@ -406,13 +401,13 @@ export const notesRouter = router({
       const [sourceNotes, sourceTasks] = await Promise.all([
         noteIds.length
           ? db.note.findMany({
-              where: { id: { in: noteIds }, user_id: ctx.user.id },
+              where: userOwned(ctx.user, { id: { in: noteIds } }),
               select: { id: true, title: true },
             })
           : [],
         taskIds.length
           ? db.task.findMany({
-              where: { id: { in: taskIds }, user_id: ctx.user.id },
+              where: userOwned(ctx.user, { id: { in: taskIds } }),
               select: { id: true, title: true },
             })
           : [],
@@ -436,7 +431,7 @@ export const notesRouter = router({
   counts: protectedProcedure.query(async ({ ctx }) => {
     const counts = await db.note.groupBy({
       by: ["purpose"],
-      where: { user_id: ctx.user.id, deleted_at: null },
+      where: userOwnedActive(ctx.user),
       _count: { id: true },
     });
     const result: Record<string, number> = {};
@@ -498,21 +493,19 @@ export const notesRouter = router({
       const q = input.query.trim();
       if (!q) {
         return db.note.findMany({
-          where: { user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user),
           orderBy: { updated_at: "desc" },
           take: input.limit,
           select: { id: true, title: true, body_text: true, purpose: true, updated_at: true },
         });
       }
       return db.note.findMany({
-        where: {
-          user_id: ctx.user.id,
-          deleted_at: null,
+        where: userOwnedActive(ctx.user, {
           OR: [
             { title: { contains: q, mode: "insensitive" } },
             { body_text: { contains: q, mode: "insensitive" } },
           ],
-        },
+        }),
         orderBy: { updated_at: "desc" },
         take: input.limit,
         select: { id: true, title: true, body_text: true, purpose: true, updated_at: true },
@@ -523,13 +516,13 @@ export const notesRouter = router({
     .input(z.object({ note_id: z.string().uuid(), tag_id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.note_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.note_id }),
         select: { id: true },
       });
       if (!note) throw new TRPCError({ code: "NOT_FOUND" });
 
       const tag = await db.tag.findFirst({
-        where: { id: input.tag_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.tag_id }),
         select: { id: true, name: true },
       });
       if (!tag) throw new TRPCError({ code: "NOT_FOUND", message: "Tag not found" });
@@ -564,13 +557,13 @@ export const notesRouter = router({
     .input(z.object({ note_id: z.string().uuid(), tag_id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.note_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.note_id }),
         select: { id: true },
       });
       if (!note) throw new TRPCError({ code: "NOT_FOUND" });
 
       const tag = await db.tag.findFirst({
-        where: { id: input.tag_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.tag_id }),
         select: { id: true, name: true },
       });
       if (!tag) throw new TRPCError({ code: "NOT_FOUND", message: "Tag not found" });
@@ -610,14 +603,14 @@ export const notesRouter = router({
     .input(z.object({ note_id: z.string().uuid(), tag_ids: z.array(z.string().uuid()) }))
     .mutation(async ({ ctx, input }) => {
       const note = await db.note.findFirst({
-        where: { id: input.note_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.note_id }),
         select: { id: true },
       });
       if (!note) throw new TRPCError({ code: "NOT_FOUND" });
 
       if (input.tag_ids.length > 0) {
         const owned = await db.tag.findMany({
-          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: { in: input.tag_ids } }),
           select: { id: true },
         });
         if (owned.length !== input.tag_ids.length) {
@@ -693,7 +686,7 @@ export const notesRouter = router({
       .input(z.object({ noteId: z.string().uuid() }))
       .query(async ({ ctx, input }) => {
         const note = await db.note.findFirst({
-          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.noteId }),
           select: { id: true },
         });
         if (!note) throw new TRPCError({ code: "NOT_FOUND" });
@@ -714,7 +707,7 @@ export const notesRouter = router({
       .input(z.object({ noteId: z.string().uuid(), versionNumber: z.number().int() }))
       .query(async ({ ctx, input }) => {
         const note = await db.note.findFirst({
-          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.noteId }),
           select: { id: true },
         });
         if (!note) throw new TRPCError({ code: "NOT_FOUND" });
@@ -731,7 +724,7 @@ export const notesRouter = router({
       .input(z.object({ noteId: z.string().uuid(), versionNumber: z.number().int() }))
       .mutation(async ({ ctx, input }) => {
         const note = await db.note.findFirst({
-          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.noteId }),
           select: { id: true },
         });
         if (!note) throw new TRPCError({ code: "NOT_FOUND" });
@@ -791,7 +784,7 @@ export const notesRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const note = await db.note.findFirst({
-          where: { id: input.noteId, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.noteId }),
           select: { id: true, body_json: true, body_text: true, body_markdown: true },
         });
         if (!note) throw new TRPCError({ code: "NOT_FOUND" });

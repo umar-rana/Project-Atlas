@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db } from "@/core/db";
 import { storage, deleteFile } from "@/core/storage";
 import { logActivity } from "@/core/audit";
@@ -35,7 +35,7 @@ export const attachmentsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: {
           id: true,
           file_id: true,
@@ -80,7 +80,7 @@ export const attachmentsRouter = router({
     .input(z.object({ task_id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.task_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.task_id }),
         select: { id: true },
       });
       if (!task) {
@@ -88,11 +88,9 @@ export const attachmentsRouter = router({
       }
 
       const attachments = await db.attachment.findMany({
-        where: {
+        where: userOwnedActive(ctx.user, {
           task_id: input.task_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
-        },
+        }),
         orderBy: [{ position: "asc" }, { created_at: "asc" }],
         select: attachmentSelect,
       });
@@ -104,7 +102,7 @@ export const attachmentsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: {
           ...attachmentSelect,
           task_id: true,
@@ -127,7 +125,7 @@ export const attachmentsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, filename: true, task_id: true },
       });
       if (!attachment) {
@@ -176,7 +174,7 @@ export const attachmentsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, filename: true, task_id: true, parent_type: true, parent_id: true },
       });
       if (!attachment) {
@@ -218,14 +216,14 @@ export const attachmentsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, filename: true },
       });
       if (!attachment) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Attachment not found" });
       }
       const task = await db.task.findFirst({
-        where: { id: input.task_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.task_id }),
         select: { id: true },
       });
       if (!task) {
@@ -260,7 +258,7 @@ export const attachmentsRouter = router({
     .input(z.object({ ids: z.array(z.string().uuid()) }))
     .mutation(async ({ ctx, input }) => {
       const attachments = await db.attachment.findMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: { in: input.ids } }),
         select: { id: true, file_id: true, thumbnail_path: true, filename: true },
       });
       for (const att of attachments) {
@@ -289,7 +287,7 @@ export const attachmentsRouter = router({
     .input(z.object({ ids: z.array(z.string().uuid()) }))
     .mutation(async ({ ctx, input }) => {
       await db.attachment.updateMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: { in: input.ids } }),
         data: { task_id: null, parent_type: null, parent_id: null },
       });
       return { detached: input.ids.length };
@@ -299,7 +297,7 @@ export const attachmentsRouter = router({
     .input(z.object({ ids: z.array(z.string().uuid()), reviewed: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       await db.attachment.updateMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: { in: input.ids } }),
         data: { reviewed: input.reviewed },
       });
       return { updated: input.ids.length };
@@ -310,7 +308,7 @@ export const attachmentsRouter = router({
     .mutation(async ({ ctx, input }) => {
       for (const attachmentId of input.ids) {
         const exists = await db.attachment.findFirst({
-          where: { id: attachmentId, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: attachmentId }),
           select: { id: true },
         });
         if (!exists) continue;
@@ -334,12 +332,10 @@ export const attachmentsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       return db.attachment.findMany({
-        where: {
+        where: userOwnedActive(ctx.user, {
           parent_type: input.parent_type,
           parent_id: input.parent_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
-        },
+        }),
         orderBy: [{ position: "asc" }, { created_at: "asc" }],
         select: attachmentSelect,
       });
@@ -349,7 +345,7 @@ export const attachmentsRouter = router({
     .input(z.object({ file_id: z.string() }))
     .query(async ({ ctx, input }) => {
       const attachment = await db.attachment.findFirst({
-        where: { file_id: input.file_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { file_id: input.file_id }),
         select: {
           id: true,
           storage_path: true,
