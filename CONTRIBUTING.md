@@ -15,7 +15,6 @@
 ```bash
 npm install
 npm run dev       # Next.js dev server on :3000
-npm run storybook # Component sandbox on :6006
 ```
 
 Run all checks before opening a PR:
@@ -81,7 +80,6 @@ It will report every file and line that contains a forbidden token, along with t
 | ESLint              | `npm run lint`             | PR, pre-push         |
 | Token validator     | `npm run validate-tokens`  | PR, pre-push         |
 | Integration tests   | `npm run test:integration` | PR                   |
-| Storybook smoke     | `npm run build-storybook`  | PR                   |
 
 ### eslint-plugin-tailwindcss
 

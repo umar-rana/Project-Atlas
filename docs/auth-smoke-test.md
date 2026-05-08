@@ -14,7 +14,7 @@ Authentication is handled entirely by Clerk. There are no manual OIDC state cook
 
 1. **Sign-in / Sign-up** — Clerk's hosted UI is embedded at `/sign-in` and `/sign-up`. All credential handling (password, OAuth, magic link, etc.) happens inside Clerk's component.
 2. **Session management** — Clerk sets its own secure, HttpOnly session cookie after a successful sign-in. The app never touches this cookie directly.
-3. **Middleware protection** — `src/middleware.ts` runs `clerkMiddleware` on every request (excluding `_next/static`, `_next/image`, `favicon.ico`, and `storybook`). For any route that is not in the public allow-list, the middleware calls `auth()` to retrieve the Clerk `userId`. If `userId` is absent, the request is redirected to `/sign-in?from=<original-path>`.
+3. **Middleware protection** — `src/middleware.ts` runs `clerkMiddleware` on every request (excluding `_next/static`, `_next/image`, and `favicon.ico`). For any route that is not in the public allow-list, the middleware calls `auth()` to retrieve the Clerk `userId`. If `userId` is absent, the request is redirected to `/sign-in?from=<original-path>`.
 4. **User record sync** — When a server component or API route needs the app's own `User` row, it calls `getOrCreateUserFromClerk()` (`src/lib/auth.ts`). This function calls Clerk's `currentUser()`, then either finds an existing `User` by `clerk_id`, links an existing `User` by email and stamps `clerk_id` onto it, or creates a new `User` row.
 
 ### Public routes (no auth required)
