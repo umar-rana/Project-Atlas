@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { HELP_DOCS_CORPUS } from "@/lib/help/docs";
 import { completeStream } from "@/core/ai";
+import { checkHelpChatLimits } from "@/core/ai/limits";
 import { logActivity } from "@/core/audit";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
@@ -85,6 +86,21 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
   const internalUserId = user.id;
+
+  // Per-user daily/hourly call + cost cap. Persistent across process restarts
+  // since it queries AICallLog. The 20/min in-memory limiter above guards
+  // bursts; this guards sustained-cost abuse (audit H-SEC-1).
+  const limitCheck = await checkHelpChatLimits(internalUserId);
+  if (!limitCheck.allowed) {
+    log.warn({ userId: internalUserId, reason: limitCheck.reason }, "help_chat limit exceeded");
+    return new Response(
+      JSON.stringify({ error: limitCheck.reason ?? "AI usage limit reached" }),
+      {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 
   let body: { messages?: { role: string; content: string }[]; query?: string };
   try {
