@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { logActivity } from "@/core/audit";
 import { createLogger } from "@/core/logging";
@@ -202,7 +202,7 @@ export const peopleRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const person = await db.person.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         include: {
           emails: {
             where: { deleted_at: null },
@@ -313,7 +313,7 @@ export const peopleRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
       const existing = await db.person.findFirst({
-        where: { id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -377,7 +377,7 @@ export const peopleRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const person = await db.person.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, cadence_days: true },
       });
       if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -417,7 +417,7 @@ export const peopleRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const person = await db.person.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true },
       });
       if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -455,7 +455,7 @@ export const peopleRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const person = await db.person.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true },
       });
       if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -549,7 +549,7 @@ export const peopleRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existing = await db.person.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true },
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -571,7 +571,7 @@ export const peopleRouter = router({
 
   getRelationshipTypes: protectedProcedure.query(async ({ ctx }) => {
     const rows = await db.person.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null, relationship_type: { not: null } },
+      where: userOwnedActive(ctx.user, { relationship_type: { not: null } }),
       select: { relationship_type: true },
     });
     const types = [...new Set(rows.map((r) => r.relationship_type).filter(Boolean) as string[])];
@@ -580,7 +580,7 @@ export const peopleRouter = router({
 
   getSuggestedRelationshipTypes: protectedProcedure.query(async ({ ctx }) => {
     const rows = await db.person.findMany({
-      where: { user_id: ctx.user.id, deleted_at: null, relationship_type: { not: null } },
+      where: userOwnedActive(ctx.user, { relationship_type: { not: null } }),
       select: { relationship_type: true, updated_at: true },
       orderBy: { updated_at: "desc" },
       take: 100,
@@ -606,7 +606,7 @@ export const peopleRouter = router({
       )
       .query(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -656,14 +656,14 @@ export const peopleRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
 
         if (input.source_capture_id) {
           const c = await db.capture.findFirst({
-            where: { id: input.source_capture_id, user_id: ctx.user.id, deleted_at: null },
+            where: userOwnedActive(ctx.user, { id: input.source_capture_id }),
             select: { id: true },
           });
           if (!c)
@@ -671,7 +671,7 @@ export const peopleRouter = router({
         }
         if (input.source_task_id) {
           const t = await db.task.findFirst({
-            where: { id: input.source_task_id, user_id: ctx.user.id, deleted_at: null },
+            where: userOwnedActive(ctx.user, { id: input.source_task_id }),
             select: { id: true },
           });
           if (!t) throw new TRPCError({ code: "BAD_REQUEST", message: "source_task_id not found" });
@@ -820,7 +820,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid() }).merge(PersonEmailSchema))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -948,7 +948,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid() }).merge(PersonPhoneSchema))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1104,7 +1104,7 @@ export const peopleRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1265,7 +1265,7 @@ export const peopleRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1423,7 +1423,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid() }).merge(PersonUrlSchema))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1528,7 +1528,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid() }).merge(PersonEventSchema))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1641,13 +1641,13 @@ export const peopleRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
         if (input.related_person_id) {
           const rp = await db.person.findFirst({
-            where: { id: input.related_person_id, user_id: ctx.user.id, deleted_at: null },
+            where: userOwnedActive(ctx.user, { id: input.related_person_id }),
             select: { id: true },
           });
           if (!rp) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1693,7 +1693,7 @@ export const peopleRouter = router({
         if (!row) throw new TRPCError({ code: "NOT_FOUND" });
         if (input.related_person_id) {
           const rp = await db.person.findFirst({
-            where: { id: input.related_person_id, user_id: ctx.user.id, deleted_at: null },
+            where: userOwnedActive(ctx.user, { id: input.related_person_id }),
             select: { id: true },
           });
           if (!rp) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1754,7 +1754,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid() }).merge(PersonSkillSchema))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1845,7 +1845,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid() }).merge(PersonInterestSchema))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1939,12 +1939,12 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid(), tag_id: z.string().uuid() }))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
         const tag = await db.tag.findFirst({
-          where: { id: input.tag_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.tag_id }),
           select: { id: true },
         });
         if (!tag) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1967,7 +1967,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid(), tag_id: z.string().uuid() }))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1990,7 +1990,7 @@ export const peopleRouter = router({
       .input(z.object({ person_id: z.string().uuid(), tag_ids: z.array(z.string().uuid()) }))
       .mutation(async ({ ctx, input }) => {
         const person = await db.person.findFirst({
-          where: { id: input.person_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.person_id }),
           select: { id: true },
         });
         if (!person) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1998,7 +1998,7 @@ export const peopleRouter = router({
         // Security: verify every requested tag belongs to this user
         if (input.tag_ids.length > 0) {
           const ownedTags = await db.tag.findMany({
-            where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+            where: userOwnedActive(ctx.user, { id: { in: input.tag_ids } }),
             select: { id: true },
           });
           const ownedIds = new Set(ownedTags.map((t) => t.id));
