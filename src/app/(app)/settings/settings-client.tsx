@@ -28,9 +28,22 @@ import {
   Settings2,
   LayoutTemplate,
 } from "lucide-react";
-import { TemplatesSettingsSection } from "@/components/task-templates/templates-settings-section";
-import { JobsManagement } from "@/components/settings/jobs-management";
-import { MigrationSummaryModal } from "@/components/tasks/migration-summary-modal";
+const TemplatesSettingsSection = dynamic(
+  () =>
+    import("@/components/task-templates/templates-settings-section").then(
+      (m) => m.TemplatesSettingsSection,
+    ),
+  { ssr: false },
+);
+const JobsManagement = dynamic(
+  () => import("@/components/settings/jobs-management").then((m) => m.JobsManagement),
+  { ssr: false },
+);
+const MigrationSummaryModal = dynamic(
+  () =>
+    import("@/components/tasks/migration-summary-modal").then((m) => m.MigrationSummaryModal),
+  { ssr: false },
+);
 import { ADMIN_EMAILS } from "@/lib/admin-gate";
 import {
   LOCALE_PRESETS,

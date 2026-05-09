@@ -1,14 +1,31 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, MoreHorizontal, Camera, History } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { NotesShell } from "@/components/notes/notes-shell";
-import { NoteEditor } from "@/components/notes/note-editor";
 import { NoteMetadataPanel } from "@/components/notes/note-metadata-panel";
 import { SaveSnapshotDialog } from "@/components/notes/save-snapshot-dialog";
-import { VersionHistoryPanel } from "@/components/notes/version-history-panel";
+
+const NoteEditor = dynamic(
+  () => import("@/components/notes/note-editor").then((m) => m.NoteEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-1 items-center justify-center">
+        <span className="font-ui text-sm text-text-disabled">Loading editor…</span>
+      </div>
+    ),
+  },
+);
+
+const VersionHistoryPanel = dynamic(
+  () =>
+    import("@/components/notes/version-history-panel").then((m) => m.VersionHistoryPanel),
+  { ssr: false },
+);
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -1,10 +1,15 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/lib/trpc/client";
 import { PersonAvatar } from "./person-avatar";
-import { RelationshipTypePicker } from "./relationship-type-picker";
+
+const RelationshipTypePicker = dynamic(
+  () => import("./relationship-type-picker").then((m) => m.RelationshipTypePicker),
+  { ssr: false },
+);
 import { deriveDisplayName } from "@/core/people/validation";
 import { cn } from "@/lib/utils";
 import { Plus, X, Star, ArrowLeft } from "lucide-react";

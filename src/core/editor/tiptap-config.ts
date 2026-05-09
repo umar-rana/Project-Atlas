@@ -14,24 +14,36 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import { createLowlight } from "lowlight";
-import javascript from "highlight.js/lib/languages/javascript";
-import typescript from "highlight.js/lib/languages/typescript";
-import python from "highlight.js/lib/languages/python";
-import bash from "highlight.js/lib/languages/bash";
-import css from "highlight.js/lib/languages/css";
-import json from "highlight.js/lib/languages/json";
-import sql from "highlight.js/lib/languages/sql";
 
-const lowlight = createLowlight();
-lowlight.register("javascript", javascript);
-lowlight.register("typescript", typescript);
-lowlight.register("python", python);
-lowlight.register("bash", bash);
-lowlight.register("css", css);
-lowlight.register("json", json);
-lowlight.register("sql", sql);
+// `highlight.js` ships ~159KB across many language modules. Defer registration
+// until a code block is actually rendered/inserted to keep it out of the
+// initial editor bundle.
+export const lowlight = createLowlight();
 
-export { lowlight };
+let languagesLoaded: Promise<void> | null = null;
+
+export function ensureLowlightLanguages(): Promise<void> {
+  if (languagesLoaded) return languagesLoaded;
+  languagesLoaded = (async () => {
+    const [javascript, typescript, python, bash, css, json, sql] = await Promise.all([
+      import("highlight.js/lib/languages/javascript").then((m) => m.default),
+      import("highlight.js/lib/languages/typescript").then((m) => m.default),
+      import("highlight.js/lib/languages/python").then((m) => m.default),
+      import("highlight.js/lib/languages/bash").then((m) => m.default),
+      import("highlight.js/lib/languages/css").then((m) => m.default),
+      import("highlight.js/lib/languages/json").then((m) => m.default),
+      import("highlight.js/lib/languages/sql").then((m) => m.default),
+    ]);
+    lowlight.register("javascript", javascript);
+    lowlight.register("typescript", typescript);
+    lowlight.register("python", python);
+    lowlight.register("bash", bash);
+    lowlight.register("css", css);
+    lowlight.register("json", json);
+    lowlight.register("sql", sql);
+  })();
+  return languagesLoaded;
+}
 
 export function buildExtensions(placeholder?: string) {
   return [
@@ -53,7 +65,14 @@ export function buildExtensions(placeholder?: string) {
         target: "_blank",
       },
     }),
-    CodeBlockLowlight.configure({
+    CodeBlockLowlight.extend({
+      onCreate() {
+        // Kick off async language registration the first time an editor with
+        // a code block is created. Existing code blocks will re-render once
+        // languages register because lowlight's registry is shared.
+        void ensureLowlightLanguages();
+      },
+    }).configure({
       lowlight,
       HTMLAttributes: { class: "code-block" },
     }),

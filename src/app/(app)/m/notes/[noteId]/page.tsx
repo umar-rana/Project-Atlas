@@ -1,62 +1,29 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ChevronLeft, Monitor } from "lucide-react";
 import { format } from "date-fns";
-import { useEditor, EditorContent } from "@tiptap/react";
-import type { JSONContent } from "@tiptap/react";
-import { buildExtensions } from "@/core/editor/tiptap-config";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
 import { switchToDesktop } from "@/lib/mobile/switch-to-desktop";
 
-function ReadOnlyNoteContent({ bodyJson, bodyText }: { bodyJson?: string | null; bodyText?: string | null }) {
-  const content = React.useMemo((): JSONContent | null => {
-    if (!bodyJson || bodyJson === "{}" || bodyJson === "") return null;
-    try {
-      const parsed = JSON.parse(bodyJson) as JSONContent;
-      if (parsed.type === "doc" && Array.isArray(parsed.content) && parsed.content.length > 0) {
-        return parsed;
-      }
-    } catch {
-      // fall through to body_text
-    }
-    return null;
-  }, [bodyJson]);
-
-  const editor = useEditor({
-    extensions: buildExtensions(),
-    content: content ?? { type: "doc", content: [{ type: "paragraph" }] },
-    editable: false,
-    immediatelyRender: false,
-  });
-
-  React.useEffect(() => {
-    if (!editor || !content) return;
-    editor.commands.setContent(content);
-  }, [editor, content]);
-
-  if (content && editor) {
-    return (
-      <EditorContent
-        editor={editor}
-        className="note-editor-content prose prose-sm dark:prose-invert max-w-none focus:outline-none"
-      />
-    );
-  }
-
-  if (bodyText) {
-    return (
-      <p className="whitespace-pre-wrap font-ui text-sm leading-relaxed text-text-secondary">
-        {bodyText}
-      </p>
-    );
-  }
-
-  return <p className="font-ui text-sm italic text-text-disabled">No content</p>;
-}
+const ReadOnlyNoteContent = dynamic(() => import("./read-only-note-content"), {
+  ssr: false,
+  loading: () => (
+    <div className="space-y-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-4 animate-pulse rounded bg-surface-raised"
+          style={{ width: `${60 + (i % 4) * 10}%` }}
+        />
+      ))}
+    </div>
+  ),
+});
 
 export default function MobileNoteDetailPage() {
   const { noteId } = useParams<{ noteId: string }>();

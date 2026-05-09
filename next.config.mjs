@@ -129,6 +129,8 @@ const nextConfig = {
       '@radix-ui/react-switch',
       '@radix-ui/react-tooltip',
       'lucide-react',
+      'date-fns',
+      'date-fns/locale',
     ],
   },
   async headers() {
