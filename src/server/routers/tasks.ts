@@ -508,7 +508,7 @@ export const tasksRouter = router({
       // mobile detail view can show a parse-source badge.
       const sourceCapture = await db.capture.findFirst({
         where: userOwnedActive(ctx.user, { processed_to_id: task.id }),
-        select: { id: true, raw_text: true, ai_parsed: true },
+        select: { id: true, raw_text: true, ai_parsed: true, parser_proposal: true },
       });
 
       return { ...task, source_capture: sourceCapture ?? null };

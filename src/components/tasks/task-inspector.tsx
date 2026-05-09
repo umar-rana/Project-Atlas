@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { colorDotClass } from "./folder-tree-node";
 import { toast } from "@/lib/toast";
 import { InboxProcessingSuggestions } from "./inbox-processing-suggestions";
+import { ParserConfidenceBadge } from "./parser-confidence-badge";
 import { TaskInspectorAttachments } from "./task-inspector-attachments";
 import { TaskInspectorActivityTab } from "./task-inspector-activity-tab";
 import { ChecklistSection } from "./checklist-section";
@@ -75,6 +76,12 @@ interface InspectorTask {
   referenced_entity_refs: unknown;
   recurrence_rule?: string | null;
   recurrence_anchor?: string | null;
+  source_capture?: {
+    id: string;
+    raw_text: string;
+    ai_parsed: boolean;
+    parser_proposal?: unknown;
+  } | null;
 }
 type EntityRef = { kind: string; id: string; label: string };
 
@@ -349,6 +356,7 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
   }
 
   const taskData: InspectorTask = data;
+  const sourceCaptureProposal = taskData.source_capture?.parser_proposal ?? null;
   const selectedContextIds = taskData.contexts.map((c) => c.context.id);
   const selectedTagIds = taskData.tags.map((t) => t.tag.id);
   const subtasks = (taskData.subtasks ?? []) as InspectorSubtask[];
@@ -522,6 +530,10 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
               <Flag size={16} fill={taskData.flagged ? "currentColor" : "none"} />
             </button>
           </div>
+
+          {sourceCaptureProposal && (
+            <ParserConfidenceBadge proposal={sourceCaptureProposal} className="mt-2" />
+          )}
 
           {!inTrash && (
             <InboxProcessingSuggestions

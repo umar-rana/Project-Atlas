@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useLocale } from "@/core/locale/hooks";
 import { formatDate as localeFormatDate } from "@/core/locale/formatters";
 import { setDesktopPreference } from "@/lib/mobile/switch-to-desktop";
+import { ParserConfidenceBadge } from "@/components/tasks/parser-confidence-badge";
 
 interface TaskDetailData {
   id: string;
@@ -47,7 +48,12 @@ interface TaskDetailData {
   contexts: { context: { id: string; name: string } }[];
   tags: { tag: { id: string; name: string; color: string | null } }[];
   completed_at?: Date | string | null;
-  source_capture?: { id: string; raw_text: string; ai_parsed: boolean } | null;
+  source_capture?: {
+    id: string;
+    raw_text: string;
+    ai_parsed: boolean;
+    parser_proposal?: unknown;
+  } | null;
 }
 
 function humanizeRecurrence(rule: string | null | undefined): string | null {
@@ -658,6 +664,12 @@ export default function MobileTaskDetailPage() {
                 </Link>
               )}
             </div>
+            {task.source_capture?.parser_proposal != null && (
+              <ParserConfidenceBadge
+                proposal={task.source_capture.parser_proposal}
+                className="mt-2"
+              />
+            )}
           </div>
 
           <div className="border-b border-border-subtle px-4 py-3">
