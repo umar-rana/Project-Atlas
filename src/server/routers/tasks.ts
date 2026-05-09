@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { withDeleted } from "@/core/db/soft-delete";
 import { logActivity, diffObjects } from "@/core/audit";
@@ -189,10 +189,9 @@ export const tasksRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Prisma.TaskWhereInput = {
-        user_id: ctx.user.id,
+      const where: Prisma.TaskWhereInput = userOwned(ctx.user, {
         ...(input.person_id ? { referenced_person_ids: { has: input.person_id } } : {}),
-      };
+      });
 
       if (input.perspective === "trash") {
         const items = await db.task.findMany({
@@ -397,26 +396,22 @@ export const tasksRouter = router({
       const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor] =
         await Promise.all([
           db.task.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwned(ctx.user, {
               status: "active",
               project_id: null,
               parent_id: null,
               is_someday: false,
               delegated_to_text: null,
-            },
+            }),
           }),
           db.capture.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwnedActive(ctx.user, {
               state: { in: ["raw", "proposed"] },
               processed_at: null,
-              deleted_at: null,
-            },
+            }),
           }),
           db.task.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwned(ctx.user, {
               status: "active",
               AND: [
                 notDeferred,
@@ -428,20 +423,19 @@ export const tasksRouter = router({
                   ],
                 },
               ],
-            },
+            }),
           }),
           db.task.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwned(ctx.user, {
               status: "active",
               OR: [
                 { due_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
                 { defer_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
               ],
-            },
+            }),
           }),
           db.task.count({
-            where: { user_id: ctx.user.id, status: "active", flagged: true },
+            where: userOwned(ctx.user, { status: "active", flagged: true }),
           }),
           db.task.count({
             where: withDeleted<Prisma.TaskWhereInput>({
@@ -450,20 +444,16 @@ export const tasksRouter = router({
             }),
           }),
           db.task.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwnedActive(ctx.user, {
               is_someday: true,
               status: "active",
-              deleted_at: null,
-            },
+            }),
           }),
           db.task.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwnedActive(ctx.user, {
               delegated_to_text: { not: null },
               status: "active",
-              deleted_at: null,
-            },
+            }),
           }),
         ]);
 
@@ -483,14 +473,12 @@ export const tasksRouter = router({
     .query(async ({ ctx, input }) => {
       const now = new Date();
       const count = await db.task.count({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwnedActive(ctx.user, {
           project_id: input.project_id,
           parent_id: null,
           status: "active",
-          deleted_at: null,
           defer_date: { gt: now },
-        },
+        }),
       });
       return { count };
     }),
@@ -498,10 +486,9 @@ export const tasksRouter = router({
   get: protectedProcedure
     .input(z.object({ id: z.string().uuid(), includeDeleted: z.boolean().default(false) }))
     .query(async ({ ctx, input }) => {
-      const baseWhere: Prisma.TaskWhereInput = {
+      const baseWhere: Prisma.TaskWhereInput = userOwned(ctx.user, {
         id: input.id,
-        user_id: ctx.user.id,
-      };
+      });
       const task = await db.task.findFirst({
         where: input.includeDeleted ? withDeleted(baseWhere) : baseWhere,
         include: TASK_INCLUDE,
@@ -511,7 +498,7 @@ export const tasksRouter = router({
       // Reverse-lookup: check if this task was created from a capture so the
       // mobile detail view can show a parse-source badge.
       const sourceCapture = await db.capture.findFirst({
-        where: { processed_to_id: task.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { processed_to_id: task.id }),
         select: { id: true, raw_text: true, ai_parsed: true },
       });
 
@@ -901,7 +888,7 @@ export const tasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       const completedAt = new Date();
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         select: {
           id: true,
           title: true,
@@ -948,7 +935,7 @@ export const tasksRouter = router({
 
           const maxAgg = await db.task.aggregate({
             _max: { position: true },
-            where: { user_id: ctx.user.id, project_id: task.project_id, parent_id: null },
+            where: userOwned(ctx.user, { project_id: task.project_id, parent_id: null }),
           });
           position = nextPosition(maxAgg._max.position);
           nextOccurrenceId = newId_;
@@ -1035,7 +1022,7 @@ export const tasksRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         select: { id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1075,7 +1062,7 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         select: { id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1109,7 +1096,7 @@ export const tasksRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         select: { id: true, recurrence_parent_id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1117,10 +1104,9 @@ export const tasksRouter = router({
       const chainAnchorId = task.recurrence_parent_id ?? task.id;
 
       const instances = await db.task.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           OR: [{ id: chainAnchorId }, { recurrence_parent_id: chainAnchorId }],
-        },
+        }),
         orderBy: { due_date: "asc" },
         take: input.limit,
         select: { id: true, title: true, due_date: true, status: true, completed_at: true },
@@ -1133,7 +1119,7 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const result = await db.task.updateMany({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         data: { status: "active", completed_at: null },
       });
       if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1151,7 +1137,7 @@ export const tasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       const now = new Date();
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
         select: { id: true, recurrence_rule: true, recurrence_parent_id: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1163,11 +1149,11 @@ export const tasksRouter = router({
 
       // Cascade soft-delete to child subtasks and checklist items.
       await db.task.updateMany({
-        where: { parent_id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { parent_id: input.id }),
         data: { deleted_at: now },
       });
       await db.checklistItem.updateMany({
-        where: { task_id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { task_id: input.id }),
         data: { deleted_at: now },
       });
 
@@ -1178,11 +1164,9 @@ export const tasksRouter = router({
       // "untouched" in terms of content but no longer linked to the anchor.
       if (task.recurrence_rule && task.recurrence_parent_id === input.id) {
         await db.task.updateMany({
-          where: {
-            user_id: ctx.user.id,
+          where: userOwnedActive(ctx.user, {
             recurrence_parent_id: input.id,
-            deleted_at: null,
-          },
+          }),
           data: { recurrence_parent_id: null },
         });
       }
@@ -1200,21 +1184,20 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const result = await db.task.updateMany({
-        where: {
+        where: userOwned(ctx.user, {
           id: input.id,
-          user_id: ctx.user.id,
           NOT: { deleted_at: null },
-        },
+        }),
         data: { deleted_at: null },
       });
       if (result.count === 0) throw new TRPCError({ code: "NOT_FOUND" });
       // Cascade restore to child subtasks and checklist items.
       await db.task.updateMany({
-        where: { parent_id: input.id, user_id: ctx.user.id, NOT: { deleted_at: null } },
+        where: userOwned(ctx.user, { parent_id: input.id, NOT: { deleted_at: null } }),
         data: { deleted_at: null },
       });
       await db.checklistItem.updateMany({
-        where: { task_id: input.id, user_id: ctx.user.id, NOT: { deleted_at: null } },
+        where: userOwned(ctx.user, { task_id: input.id, NOT: { deleted_at: null } }),
         data: { deleted_at: null },
       });
       await logActivity({
@@ -1445,12 +1428,11 @@ export const tasksRouter = router({
       await db.task.update({ where: { id: input.id }, data: update });
 
       if (rebalanced) {
-        const scope: Prisma.TaskWhereInput = {
-          user_id: ctx.user.id,
+        const scope: Prisma.TaskWhereInput = userOwned(ctx.user, {
           status: "active",
           project_id: input.project_id ?? target.project_id,
           parent_id: input.parent_id ?? target.parent_id,
-        };
+        });
         const all = await db.task.findMany({
           where: scope,
           orderBy: { position: "asc" },
@@ -1476,13 +1458,13 @@ export const tasksRouter = router({
       // updateMany with user_id guards ownership; we only audit ids that
       // were actually owned & touched.
       const owned = await db.task.findMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: input.ids } }),
         select: { id: true },
       });
       if (owned.length === 0) return { ok: true, count: 0 };
       const ownedIds = owned.map((t) => t.id);
       const result = await db.task.updateMany({
-        where: { id: { in: ownedIds }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: ownedIds } }),
         data: { status: "completed", completed_at: new Date() },
       });
       for (const id of ownedIds) {
@@ -1501,7 +1483,7 @@ export const tasksRouter = router({
     .input(z.object({ ids: z.array(z.string().uuid()).min(1) }))
     .mutation(async ({ ctx, input }) => {
       const result = await db.task.updateMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: { in: input.ids } }),
         data: { deleted_at: new Date() },
       });
       return { ok: true, count: result.count };
@@ -1555,13 +1537,13 @@ export const tasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (input.project_id) {
         const owns = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id },
+          where: userOwned(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!owns) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       }
       const result = await db.task.updateMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: input.ids } }),
         data: { project_id: input.project_id, parent_id: null },
       });
       return { ok: true, count: result.count };
@@ -1577,12 +1559,12 @@ export const tasksRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Verify ownership of context AND every task ID.
       const ctxRow = await db.context.findFirst({
-        where: { id: input.context_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.context_id }),
         select: { id: true },
       });
       if (!ctxRow) throw new TRPCError({ code: "NOT_FOUND", message: "Context not found" });
       const ownedTasks = await db.task.findMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: input.ids } }),
         select: { id: true },
       });
       if (ownedTasks.length !== input.ids.length) {
@@ -1607,12 +1589,12 @@ export const tasksRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const tag = await db.tag.findFirst({
-        where: { id: input.tag_id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.tag_id }),
         select: { id: true },
       });
       if (!tag) throw new TRPCError({ code: "NOT_FOUND", message: "Tag not found" });
       const ownedTasks = await db.task.findMany({
-        where: { id: { in: input.ids }, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: { in: input.ids } }),
         select: { id: true },
       });
       if (ownedTasks.length !== input.ids.length) {
@@ -1644,11 +1626,10 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid(), limit: z.number().int().min(1).max(200).default(50) }))
     .query(async ({ ctx, input }) => {
       const events = await db.auditLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           entity_type: "Task",
           entity_id: input.id,
-        },
+        }),
         orderBy: { created_at: "desc" },
         take: input.limit,
       });
@@ -1732,11 +1713,10 @@ export const tasksRouter = router({
     .input(z.object({ ids: z.array(z.string().uuid()).min(1) }))
     .mutation(async ({ ctx, input }) => {
       const result = await db.task.updateMany({
-        where: {
+        where: userOwned(ctx.user, {
           id: { in: input.ids },
-          user_id: ctx.user.id,
           status: "completed",
-        },
+        }),
         data: { status: "active", completed_at: null },
       });
       return { ok: true, count: result.count };
@@ -1874,12 +1854,10 @@ export const tasksRouter = router({
 
   someday: protectedProcedure.query(async ({ ctx }) => {
     const tasks = await db.task.findMany({
-      where: {
-        user_id: ctx.user.id,
+      where: userOwnedActive(ctx.user, {
         is_someday: true,
         status: "active",
-        deleted_at: null,
-      },
+      }),
       orderBy: [{ someday_review_date: { sort: "asc", nulls: "last" } }, { created_at: "asc" }],
       select: {
         id: true,
@@ -1898,12 +1876,10 @@ export const tasksRouter = router({
 
   waitingFor: protectedProcedure.query(async ({ ctx }) => {
     const tasks = await db.task.findMany({
-      where: {
-        user_id: ctx.user.id,
+      where: userOwnedActive(ctx.user, {
         delegated_to_text: { not: null },
         status: "active",
-        deleted_at: null,
-      },
+      }),
       orderBy: [{ delegated_to_text: "asc" }, { follow_up_date: { sort: "asc", nulls: "last" } }],
       select: {
         id: true,
@@ -1924,7 +1900,7 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, is_someday: true },
+        where: userOwned(ctx.user, { id: input.id, is_someday: true }),
         select: { id: true, title: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1949,7 +1925,7 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, delegated_to_text: { not: null } },
+        where: userOwned(ctx.user, { id: input.id, delegated_to_text: { not: null } }),
         select: { id: true, title: true, delegated_to_text: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1981,7 +1957,7 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid(), follow_up_date: z.string().datetime() }))
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, delegated_to_text: { not: null } },
+        where: userOwned(ctx.user, { id: input.id, delegated_to_text: { not: null } }),
         select: { id: true, title: true, delegated_to_text: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });
@@ -2006,7 +1982,7 @@ export const tasksRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, delegated_to_text: { not: null } },
+        where: userOwned(ctx.user, { id: input.id, delegated_to_text: { not: null } }),
         select: { id: true, title: true, delegated_to_text: true },
       });
       if (!task) throw new TRPCError({ code: "NOT_FOUND" });

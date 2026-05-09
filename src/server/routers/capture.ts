@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "@/server/trpc";
+import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server/trpc";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { z } from "zod";
@@ -69,11 +69,9 @@ export const captureRouter = router({
       let projectId: string | null = null;
       if (input.project_hint) {
         const proj = await db.project.findFirst({
-          where: {
+          where: userOwnedActive(ctx.user, {
             title: { equals: input.project_hint, mode: "insensitive" },
-            user_id: ctx.user.id,
-            deleted_at: null,
-          },
+          }),
           select: { id: true },
         });
         projectId = proj?.id ?? null;
@@ -84,7 +82,7 @@ export const captureRouter = router({
         const lower = tagName.toLowerCase().trim();
         if (!lower) continue;
         let tag = await db.tag.findFirst({
-          where: { user_id: ctx.user.id, name: lower, deleted_at: null },
+          where: userOwnedActive(ctx.user, { name: lower }),
           select: { id: true },
         });
         if (!tag) {
@@ -96,7 +94,7 @@ export const captureRouter = router({
           } catch {
             // Concurrent creation race — re-fetch
             tag = await db.tag.findFirst({
-              where: { user_id: ctx.user.id, name: lower, deleted_at: null },
+              where: userOwnedActive(ctx.user, { name: lower }),
               select: { id: true },
             });
           }
@@ -109,11 +107,9 @@ export const captureRouter = router({
         const trimmed = ctxName.trim();
         if (!trimmed) continue;
         let ctxRow = await db.context.findFirst({
-          where: {
-            user_id: ctx.user.id,
+          where: userOwnedActive(ctx.user, {
             name: { equals: trimmed, mode: "insensitive" },
-            deleted_at: null,
-          },
+          }),
           select: { id: true },
         });
         if (!ctxRow) {
@@ -234,7 +230,7 @@ export const captureRouter = router({
       let overriddenTaskIds: string[] | undefined;
       if (input.overrides_only) {
         const overrideEvents = await db.auditLog.findMany({
-          where: { user_id: ctx.user.id, action: "task_user_overrode_parse" },
+          where: userOwned(ctx.user, { action: "task_user_overrode_parse" }),
           select: { entity_id: true },
           distinct: ["entity_id"],
         });
@@ -242,11 +238,10 @@ export const captureRouter = router({
       }
 
       const logs = await db.captureParseLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           ...(input.cursor ? { id: { lt: input.cursor } } : {}),
           ...(overriddenTaskIds !== undefined ? { task_id: { in: overriddenTaskIds } } : {}),
-        },
+        }),
         orderBy: { created_at: "desc" },
         take: input.limit,
         select: {
@@ -278,7 +273,7 @@ export const captureRouter = router({
     .input(z.object({ task_id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const parseLog = await db.captureParseLog.findFirst({
-        where: { user_id: ctx.user.id, task_id: input.task_id },
+        where: userOwned(ctx.user, { task_id: input.task_id }),
         orderBy: { created_at: "desc" },
         select: {
           id: true,
@@ -299,7 +294,7 @@ export const captureRouter = router({
 
   inboxProjectHints: protectedProcedure.query(async ({ ctx }) => {
     const inboxTasks = await db.task.findMany({
-      where: { user_id: ctx.user.id, project_id: null, status: "active", deleted_at: null },
+      where: userOwnedActive(ctx.user, { project_id: null, status: "active" }),
       select: { id: true },
     });
 
@@ -307,7 +302,7 @@ export const captureRouter = router({
     if (taskIds.length === 0) return {};
 
     const logs = await db.captureParseLog.findMany({
-      where: { user_id: ctx.user.id, task_id: { in: taskIds }, project_hint: { not: null } },
+      where: userOwned(ctx.user, { task_id: { in: taskIds }, project_hint: { not: null } }),
       orderBy: { created_at: "desc" },
       select: { task_id: true, project_hint: true },
     });
@@ -428,10 +423,9 @@ export const captureRouter = router({
       const since = sinceDate(input.days);
 
       const logs = await db.captureParseLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           ...(since ? { created_at: { gte: since } } : {}),
-        },
+        }),
         select: {
           parse_tier: true,
           ai_cost_usd: true,
@@ -481,10 +475,9 @@ export const captureRouter = router({
       const since = sinceDate(input.days);
 
       const logs = await db.captureParseLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           ...(since ? { created_at: { gte: since } } : {}),
-        },
+        }),
         select: {
           parse_tier: true,
           local_confidence: true,
@@ -551,11 +544,10 @@ export const captureRouter = router({
       const since = sinceDate(input.days);
 
       const overrideEvents = await db.auditLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           action: "task_user_overrode_parse",
           ...(since ? { created_at: { gte: since } } : {}),
-        },
+        }),
         select: { meta: true, created_at: true, entity_id: true },
       });
 
@@ -569,10 +561,9 @@ export const captureRouter = router({
       const sortedFields = Object.entries(fieldCounts).sort((a, b) => b[1] - a[1]);
 
       const totalCaptures = await db.captureParseLog.count({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           ...(since ? { created_at: { gte: since } } : {}),
-        },
+        }),
       });
 
       // Use distinct task count so one capture with multiple overridden fields counts once
@@ -588,18 +579,16 @@ export const captureRouter = router({
         prevStart.setDate(prevStart.getDate() - input.days);
         const [prevOverrideRows, prevCaptures] = await Promise.all([
           db.auditLog.findMany({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwned(ctx.user, {
               action: "task_user_overrode_parse",
               created_at: { gte: prevStart, lt: prevEnd },
-            },
+            }),
             select: { entity_id: true },
           }),
           db.captureParseLog.count({
-            where: {
-              user_id: ctx.user.id,
+            where: userOwned(ctx.user, {
               created_at: { gte: prevStart, lt: prevEnd },
-            },
+            }),
           }),
         ]);
         const prevDistinct = new Set(prevOverrideRows.map((e) => e.entity_id).filter(Boolean));
@@ -631,10 +620,9 @@ export const captureRouter = router({
       const since = sinceDate(input.days);
 
       const logs = await db.captureParseLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           ...(since ? { created_at: { gte: since } } : {}),
-        },
+        }),
         select: { local_confidence: true, ai_cost_usd: true },
       });
 
@@ -663,9 +651,7 @@ export const captureRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: Prisma.CaptureWhereInput = {
-        user_id: ctx.user.id,
-        deleted_at: null,
+      const where: Prisma.CaptureWhereInput = userOwnedActive(ctx.user, {
         ...(input.search
           ? {
               OR: [
@@ -675,7 +661,7 @@ export const captureRouter = router({
             }
           : {}),
         ...(input.tag ? { tags: { has: input.tag } } : {}),
-      };
+      });
 
       const captures = await db.capture.findMany({
         where,
@@ -714,10 +700,9 @@ export const captureRouter = router({
       const since = sinceDate(input.days);
 
       const logs = await db.captureParseLog.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwned(ctx.user, {
           ...(since ? { created_at: { gte: since } } : {}),
-        },
+        }),
         orderBy: { created_at: "desc" },
         select: {
           id: true,
@@ -775,11 +760,9 @@ export const captureRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.id,
-          user_id: ctx.user.id,
-          deleted_at: null,
-        },
+        }),
       });
       if (!capture) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found" });
       return capture;
@@ -797,7 +780,7 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const existing = await db.capture.findFirst({
-        where: { id: input.id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Capture not found" });
 
@@ -829,7 +812,7 @@ export const captureRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await db.capture.updateMany({
-        where: { id: input.id, user_id: ctx.user.id },
+        where: userOwned(ctx.user, { id: input.id }),
         data: { deleted_at: new Date() },
       });
       return { ok: true };
@@ -893,12 +876,10 @@ export const captureRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const captures = await db.capture.findMany({
-        where: {
-          user_id: ctx.user.id,
+        where: userOwnedActive(ctx.user, {
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-          deleted_at: null,
-        },
+        }),
         orderBy: { created_at: "desc" },
         take: input.limit,
         select: {
@@ -936,13 +917,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true, state: true },
       });
       if (!capture)
@@ -953,7 +932,7 @@ export const captureRouter = router({
 
       if (input.project_id) {
         const proj = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!proj)
@@ -964,7 +943,7 @@ export const captureRouter = router({
       }
       if (input.context_ids.length > 0) {
         const count = await db.context.count({
-          where: { id: { in: input.context_ids }, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: { in: input.context_ids } }),
         });
         if (count !== input.context_ids.length)
           throw new TRPCError({
@@ -974,7 +953,7 @@ export const captureRouter = router({
       }
       if (input.tag_ids.length > 0) {
         const count = await db.tag.count({
-          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: { in: input.tag_ids } }),
         });
         if (count !== input.tag_ids.length)
           throw new TRPCError({
@@ -1052,13 +1031,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true, raw_text: true },
       });
       if (!capture)
@@ -1069,7 +1046,7 @@ export const captureRouter = router({
 
       if (input.project_id) {
         const proj = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!proj)
@@ -1143,13 +1120,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true, raw_text: true },
       });
       if (!capture)
@@ -1161,14 +1136,14 @@ export const captureRouter = router({
       let projectId: string;
       if (input.existing_project_id) {
         const proj = await db.project.findFirst({
-          where: { id: input.existing_project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.existing_project_id }),
           select: { id: true },
         });
         if (!proj) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
         projectId = proj.id;
       } else if (input.new_project_name) {
         const existing = await db.project.findFirst({
-          where: { user_id: ctx.user.id, title: input.new_project_name, deleted_at: null },
+          where: userOwnedActive(ctx.user, { title: input.new_project_name }),
           select: { id: true },
         });
         if (existing) {
@@ -1276,13 +1251,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true },
       });
       if (!capture)
@@ -1293,7 +1266,7 @@ export const captureRouter = router({
 
       if (input.tag_ids.length > 0) {
         const count = await db.tag.count({
-          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: { in: input.tag_ids } }),
         });
         if (count !== input.tag_ids.length)
           throw new TRPCError({
@@ -1372,13 +1345,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true },
       });
       if (!capture)
@@ -1462,13 +1433,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true },
       });
       if (!capture)
@@ -1480,7 +1449,7 @@ export const captureRouter = router({
       // Validate optional project ownership
       if (input.project_id) {
         const proj = await db.project.findFirst({
-          where: { id: input.project_id, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: input.project_id }),
           select: { id: true },
         });
         if (!proj)
@@ -1490,7 +1459,7 @@ export const captureRouter = router({
       // Validate optional tag ownership
       if (input.tag_ids.length > 0) {
         const count = await db.tag.count({
-          where: { id: { in: input.tag_ids }, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: { in: input.tag_ids } }),
         });
         if (count !== input.tag_ids.length)
           throw new TRPCError({ code: "FORBIDDEN", message: "One or more tags not found or not owned by user" });
@@ -1499,7 +1468,7 @@ export const captureRouter = router({
       // Validate optional context ownership
       if (input.context_ids.length > 0) {
         const count = await db.context.count({
-          where: { id: { in: input.context_ids }, user_id: ctx.user.id, deleted_at: null },
+          where: userOwnedActive(ctx.user, { id: { in: input.context_ids } }),
         });
         if (count !== input.context_ids.length)
           throw new TRPCError({ code: "FORBIDDEN", message: "One or more contexts not found or not owned by user" });
@@ -1570,13 +1539,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: input.capture_id,
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true },
       });
       if (!capture)
@@ -1621,13 +1588,11 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const captures = await db.capture.findMany({
-        where: {
+        where: userOwnedActive(ctx.user, {
           id: { in: input.capture_ids },
-          user_id: ctx.user.id,
-          deleted_at: null,
           state: { in: ["raw", "proposed"] },
           processed_at: null,
-        },
+        }),
         select: { id: true, raw_text: true, title: true },
       });
 
@@ -1760,7 +1725,7 @@ export const captureRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const capture = await db.capture.findFirst({
-        where: { id: input.capture_id, user_id: ctx.user.id, deleted_at: null },
+        where: userOwnedActive(ctx.user, { id: input.capture_id }),
         select: {
           id: true,
           state: true,
@@ -1782,7 +1747,7 @@ export const captureRouter = router({
       }
 
       const mostRecentProcessed = await db.capture.findFirst({
-        where: { user_id: ctx.user.id, state: "processed", deleted_at: null },
+        where: userOwnedActive(ctx.user, { state: "processed" }),
         orderBy: { processed_at: "desc" },
         select: { id: true },
       });
@@ -1808,14 +1773,14 @@ export const captureRouter = router({
       ) {
         ops.push(
           db.task.updateMany({
-            where: { id: entityId, user_id: ctx.user.id },
+            where: userOwned(ctx.user, { id: entityId }),
             data: { deleted_at: new Date() },
           }),
         );
       } else if (entityId && (entityType === "note" || entityType === "project_note")) {
         ops.push(
           db.note.updateMany({
-            where: { id: entityId, user_id: ctx.user.id },
+            where: userOwned(ctx.user, { id: entityId }),
             data: { deleted_at: new Date() },
           }),
         );
