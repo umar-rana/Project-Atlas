@@ -1,14 +1,31 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Table2, SlidersHorizontal, Filter } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { NotesShell } from "@/components/notes/notes-shell";
-import { TableGrid } from "@/components/tables/table-grid";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { SortState, FilterState, ColumnType, FilterOperator } from "@/core/tables/types";
 import { getOperatorsForType, OPERATOR_LABELS } from "@/core/tables/types";
+
+// TableGrid is ~78 KB and only used on this route. Dynamic-import keeps
+// it out of the shared client baseline chunk (audit perf-bundle-i).
+const TableGrid = dynamic(
+  () => import("@/components/tables/table-grid").then((m) => m.TableGrid),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-2 p-4">
+        <Skeleton variant="block" />
+        <Skeleton variant="block" />
+        <Skeleton variant="block" />
+      </div>
+    ),
+  },
+);
 
 const SORT_STORAGE_KEY = (id: string) => `table-sort-${id}`;
 const FILTER_STORAGE_KEY = (id: string) => `table-filter-${id}`;
