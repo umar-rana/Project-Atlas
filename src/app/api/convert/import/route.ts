@@ -13,7 +13,7 @@ import {
 } from "@/core/conversion/md-import-claude";
 import { checkTitleConflict } from "@/core/conversion/conflict-resolver";
 import { createLogger } from "@/core/logging";
-import { checkPersistentRateLimit } from "@/core/rate-limit/persistent";
+import { checkHybridRateLimit } from "@/core/rate-limit/hybrid";
 import { markdownToTiptap, tiptapToPlainText } from "@/core/conversion/tiptap-converter";
 
 const log = createLogger({ module: "api/convert/import" });
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { allowed, retryAfterSec } = await checkPersistentRateLimit({
+  const { allowed, retryAfterSec } = await checkHybridRateLimit({
     userId: user.id,
     bucket: MD_RATE_BUCKET,
     maxRequests: MD_RATE_LIMIT,

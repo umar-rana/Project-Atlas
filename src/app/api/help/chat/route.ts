@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { HELP_DOCS_CORPUS } from "@/lib/help/docs";
 import { completeStream } from "@/core/ai";
 import { checkHelpChatLimits } from "@/core/ai/limits";
-import { checkPersistentRateLimit } from "@/core/rate-limit/persistent";
+import { checkHybridRateLimit } from "@/core/rate-limit/hybrid";
 import { logActivity } from "@/core/audit";
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   // Burst limit (20/min). Postgres-backed so it survives restarts and works
   // across instances; was an in-memory Map before (audit M-RATE-1).
-  const { allowed, retryAfterSec } = await checkPersistentRateLimit({
+  const { allowed, retryAfterSec } = await checkHybridRateLimit({
     userId: internalUserId,
     bucket: HELP_CHAT_BURST_BUCKET,
     maxRequests: HELP_CHAT_BURST_LIMIT,
