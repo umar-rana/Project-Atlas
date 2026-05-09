@@ -7,6 +7,7 @@ import { handleImportCleanup } from "./handlers/import-cleanup-job";
 import { handleProcessedCapturesCleanup } from "./handlers/processed-captures-cleanup";
 import { handleJobRecordsCleanup } from "./handlers/job-records-cleanup";
 import { handleGoogleCalendarSync } from "./handlers/google-calendar-sync";
+import { handleRateLimitTrackerCleanup } from "./handlers/rate-limit-tracker-cleanup";
 
 export interface JobDefinition {
   name: string;
@@ -72,5 +73,12 @@ export const JOB_REGISTRY: JobDefinition[] = [
     cron: "30 2 * * *",
     description: "Daily sync of Google Calendar events at 02:30 UTC",
     handler: handleGoogleCalendarSync,
+  },
+  {
+    name: "rate-limit-tracker-cleanup",
+    cron: "15 4 * * *",
+    description:
+      "Daily purge of RateLimitTracker rows older than 7 days at 04:15 UTC (audit perf-1)",
+    handler: handleRateLimitTrackerCleanup,
   },
 ];
