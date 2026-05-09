@@ -105,11 +105,36 @@ const SECURITY_HEADERS = [
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['uuidv7'],
-  serverExternalPackages: ['pino', 'pino-pretty', 'pg-boss', 'pg'],
+  // Packages that should NOT be bundled by webpack on the server. Listing
+  // them here keeps webpack from trying to compile/tree-shake their
+  // (very large) dependency graphs, which dramatically speeds up
+  // `next build` and avoids OOM during the build phase. Each entry must
+  // be a server-only dependency — see the explicit `import "server-only"`
+  // markers in core/drive, core/storage, core/conversion, etc.
+  serverExternalPackages: [
+    "pino",
+    "pino-pretty",
+    "pg-boss",
+    "pg",
+    // ── Heavy server-only deps (audit perf-build-1) ──────────────────
+    "googleapis",
+    "google-auth-library",
+    "@google-cloud/storage",
+    "pdfkit",
+    "mammoth",
+    "mailparser",
+    "sharp",
+    "@aws-sdk/client-s3",
+    "@aws-sdk/s3-request-presigner",
+    "@replit/object-storage",
+  ],
   devIndicators: false,
   eslint: { ignoreDuringBuilds: true },
   ...(devOrigins ? { allowedDevOrigins: devOrigins } : {}),
   experimental: {
+    // Run client and server compilation in parallel webpack workers.
+    // Roughly halves cold `next build` wall-clock on multi-core machines.
+    webpackBuildWorker: true,
     webpackMemoryOptimizations: true,
     optimizePackageImports: [
       '@radix-ui/react-alert-dialog',
