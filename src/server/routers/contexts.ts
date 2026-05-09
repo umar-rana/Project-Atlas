@@ -23,7 +23,7 @@ export const contextsRouter = router({
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const c = await db.context.findFirst({
-        where: userOwned(ctx.user, { id: input.id }),
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
       return c;
@@ -74,9 +74,13 @@ export const contextsRouter = router({
     .input(z.object({ id: z.string().uuid(), new_name: z.string().min(1).max(80) }))
     .mutation(async ({ ctx, input }) => {
       const before = await db.context.findFirst({
-        where: userOwned(ctx.user, { id: input.id }),
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
+      // Conflict check intentionally uses userOwned (no deleted_at filter):
+      // Context has @@unique([user_id, name]) which covers soft-deleted rows
+      // too, so excluding trashed contexts here would let the rename appear
+      // valid then fail downstream with P2002.
       const conflict = await db.context.findFirst({
         where: userOwned(ctx.user, { name: input.new_name, id: { not: input.id } }),
       });
@@ -100,7 +104,7 @@ export const contextsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const before = await db.context.findFirst({
-        where: userOwned(ctx.user, { id: input.id }),
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       const data: Prisma.ContextUpdateInput = {};
@@ -113,8 +117,10 @@ export const contextsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      // userOwnedActive: deleting an already-soft-deleted context returns 404
+      // (no-op), which is the correct idempotent behaviour.
       const before = await db.context.findFirst({
-        where: userOwned(ctx.user, { id: input.id }),
+        where: userOwnedActive(ctx.user, { id: input.id }),
       });
       if (!before) throw new TRPCError({ code: "NOT_FOUND" });
       await db.$transaction([
