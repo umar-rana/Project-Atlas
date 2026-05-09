@@ -142,6 +142,7 @@ model RateLimitTracker {
 
   @@unique([user_id, provider, window_start])
   @@index([user_id, provider])
+  @@index([window_start])
 }
 
 // ─── AICallLog ───────────────────────────────────────────────────────────────
@@ -164,6 +165,9 @@ model AICallLog {
   @@index([user_id])
   @@index([created_at])
   @@index([user_id, created_at])
+  // Cost-cap and rate-limit checks filter on (user_id, task, created_at);
+  // checkHelpChatLimits/checkCaptureParseLimits in core/ai/limits.ts.
+  @@index([user_id, task, created_at])
 }
 
 // ─── Attachment ──────────────────────────────────────────────────────────────

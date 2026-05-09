@@ -132,9 +132,13 @@ const TASK_LIST_SELECT = {
   tags: { select: { tag: { select: { id: true, name: true, color: true } } } },
   project: { select: { id: true, title: true, color: true } },
   parent: { select: { id: true, title: true } },
+  // Cap subtasks per parent task in list views to avoid runaway response
+  // payloads on tasks with deep hierarchies. Detail/inspector views fetch
+  // the full set via the dedicated subtasks query.
   subtasks: {
     where: { deleted_at: null },
     orderBy: { position: "asc" as const },
+    take: 5,
     select: {
       id: true,
       status: true,
@@ -150,7 +154,12 @@ const TASK_LIST_SELECT = {
     select: { id: true, title: true, completed_at: true, position: true },
   },
   _count: {
-    select: { attachments: { where: { deleted_at: null } } },
+    select: {
+      attachments: { where: { deleted_at: null } },
+      // Surfaced so list-view UIs can show e.g. "5 of N subtasks" without
+      // loading them all (TASK_LIST_SELECT.subtasks caps at take: 5).
+      subtasks: { where: { deleted_at: null } },
+    },
   },
 } satisfies Prisma.TaskSelect;
 
