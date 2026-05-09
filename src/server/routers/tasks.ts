@@ -405,7 +405,7 @@ export const tasksRouter = router({
       const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor] =
         await Promise.all([
           db.task.count({
-            where: userOwned(ctx.user, {
+            where: userOwnedActive(ctx.user, {
               status: "active",
               project_id: null,
               parent_id: null,
@@ -420,7 +420,7 @@ export const tasksRouter = router({
             }),
           }),
           db.task.count({
-            where: userOwned(ctx.user, {
+            where: userOwnedActive(ctx.user, {
               status: "active",
               AND: [
                 notDeferred,
@@ -435,7 +435,7 @@ export const tasksRouter = router({
             }),
           }),
           db.task.count({
-            where: userOwned(ctx.user, {
+            where: userOwnedActive(ctx.user, {
               status: "active",
               OR: [
                 { due_date: { gte: tomorrowStart, lt: dayAfterTomorrowStart } },
@@ -444,7 +444,7 @@ export const tasksRouter = router({
             }),
           }),
           db.task.count({
-            where: userOwned(ctx.user, { status: "active", flagged: true }),
+            where: userOwnedActive(ctx.user, { status: "active", flagged: true }),
           }),
           db.task.count({
             where: withDeleted<Prisma.TaskWhereInput>({
