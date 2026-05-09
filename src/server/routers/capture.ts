@@ -70,7 +70,7 @@ export const captureRouter = router({
       if (input.project_hint) {
         const proj = await db.project.findFirst({
           where: userOwnedActive(ctx.user, {
-            title: { equals: input.project_hint, mode: "insensitive" },
+            title: { equals: input.project_hint, mode: "insensitive" as const },
           }),
           select: { id: true },
         });
@@ -108,7 +108,7 @@ export const captureRouter = router({
         if (!trimmed) continue;
         let ctxRow = await db.context.findFirst({
           where: userOwnedActive(ctx.user, {
-            name: { equals: trimmed, mode: "insensitive" },
+            name: { equals: trimmed, mode: "insensitive" as const },
           }),
           select: { id: true },
         });
