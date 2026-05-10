@@ -26,7 +26,6 @@
     "@aws-sdk/s3-request-presigner": "3.1044.0",
     "@clerk/nextjs": "^7.2.7",
     "@google-cloud/storage": "^7.19.0",
-    "@hookform/resolvers": "^3.10.0",
     "@noble/ciphers": "^2.2.0",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
