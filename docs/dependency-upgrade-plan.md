@@ -20,7 +20,6 @@ This document sequences the major-version upgrades that are planned but not yet 
 | `lucide-react` | 0.469.0 | 1.x | Post-Sprint 4 | Low — icon name changes |
 | `pino` | 9.14.0 | 10.x | Post-Sprint 4 | Low — transport API changes |
 | `sonner` | 1.7.4 | 2.x | Post-Sprint 4 | Low — breaking toast API |
-| `@hookform/resolvers` | 3.10.0 | 5.x | Post-Sprint 4 | Low — must match react-hook-form major |
 
 ---
 
@@ -117,7 +116,7 @@ These upgrades have low coupling to each other and can be done in any order afte
 - Run the official codemod if available.
 - Wide surface area: all tRPC routers use Zod schemas. Allocate a full regression pass.
 - `zod-validation-error` must have a Zod v4 compatible release; check before upgrading.
-- `@hookform/resolvers` v5 is required for Zod v4 integration; upgrade together.
+- `@hookform/resolvers` was removed in PR #18 (unused). If RHF + Zod resolvers are adopted in this sprint, install `@hookform/resolvers@^5` at that point.
 
 ### TypeScript 6
 
