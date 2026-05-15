@@ -82,3 +82,37 @@ describe("parseInlineTaskText", () => {
     expect(r.title).toBe(long);
   });
 });
+
+describe("parseInlineTaskText — due_date_has_time flag (CP-8, CR §3.4 / §3.4.9)", () => {
+  it("'tomorrow at 3pm' (quick-add date + chrono time) → has_time=true", () => {
+    const r = parseInlineTaskText("Call dentist tomorrow at 3pm");
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(true);
+    expect(r.due_date!.getHours()).toBe(15);
+  });
+
+  it("'tomorrow' alone (quick-add only) → has_time=false (EOD-anchored)", () => {
+    const r = parseInlineTaskText("Submit timesheet tomorrow");
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(false);
+  });
+
+  it("'in three days' (chrono date-only, second pass) → has_time=false", () => {
+    const r = parseInlineTaskText("Renew passport in three days");
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(false);
+  });
+
+  it("'next Tuesday at noon' (chrono explicit time, second pass) → has_time=true", () => {
+    const r = parseInlineTaskText("Team sync next Tuesday at noon");
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(true);
+    expect(r.due_date!.getHours()).toBe(12);
+  });
+
+  it("no date in input → flag is false (defensive default)", () => {
+    const r = parseInlineTaskText("Investigate flaky test");
+    expect(r.due_date).toBeUndefined();
+    expect(r.due_date_has_time).toBe(false);
+  });
+});

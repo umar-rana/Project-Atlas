@@ -140,6 +140,11 @@ export function TaskQuickAdd({
     // ── View-default due date, parsed phrase wins (CR rule 8.8) ─────────
     const dueDate =
       parsed.due_date ?? (defaultDueDate ? new Date(defaultDueDate) : undefined);
+    // CP-8 — propagate the inline parser's has_time flag through to
+    // tasks.create so direct entry like "Call dentist tomorrow at 3pm"
+    // persists a time-bearing task. The view-default fallback path
+    // (no parser date) is always date-only.
+    const dueHasTime = parsed.due_date ? (parsed.due_date_has_time ?? false) : false;
 
     try {
       const created = await createTask.mutateAsync({
@@ -148,6 +153,7 @@ export function TaskQuickAdd({
         context_ids: resolvedContextIds.length > 0 ? resolvedContextIds : undefined,
         tag_ids: resolvedTagIds.length > 0 ? resolvedTagIds : undefined,
         due_date: dueDate ?? undefined,
+        due_date_has_time: dueDate ? dueHasTime : undefined,
         flagged: defaultFlagged || undefined,
       });
 
