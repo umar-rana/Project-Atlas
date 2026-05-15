@@ -15,12 +15,19 @@ import { parseQuickAdd, type ParsedQuickAdd } from "@/lib/tasks/parse-quick-add"
  *   - contexts — array of trimmed context names (deduped)
  *   - project_title — resolved last-wins from >>project syntax
  *   - due_date — Date, or undefined when nothing parseable
+ *   - due_date_has_time — true iff a time-of-day was explicitly parsed
+ *     (Capture Processing Refinement CR §3.4 / §3.4.9). When the date
+ *     came from a quick-add token alone ("tomorrow"), this is false.
+ *     When chrono confirms `isCertain("hour")`, this is true.
  *
  * Per CR rule 8.4 we never auto-create tags / contexts / projects from
  * inline syntax — callers must look up names against existing entities
  * and drop unknowns silently.
  */
-export type InlineTaskParse = ParsedQuickAdd;
+export interface InlineTaskParse extends ParsedQuickAdd {
+  /** CR rule 8.11 — source of truth for whether display should show time. */
+  due_date_has_time?: boolean;
+}
 
 const EOD_HOUR_FOR_DATE_ONLY = 17;
 
@@ -39,9 +46,11 @@ function isMidnight(d: Date): boolean {
 
 export function parseInlineTaskText(raw: string): InlineTaskParse {
   // First pass: existing quick-add tokens (#tag / ~~context / >>project /
-  // simple NL date words today|tomorrow|next monday). This already strips
-  // its own matched substrings from the title.
-  const base = parseQuickAdd(raw);
+  // simple NL date words today|tomorrow|next monday). Quick-add date
+  // tokens are date-only by definition — has_time stays false unless a
+  // later pass detects an explicit time.
+  const base: InlineTaskParse = parseQuickAdd(raw);
+  base.due_date_has_time = false;
 
   const ref = new Date();
 
@@ -54,7 +63,12 @@ export function parseInlineTaskText(raw: string): InlineTaskParse {
       if (best?.start) {
         const date = best.start.date();
         if (date && !isNaN(date.getTime())) {
-          base.due_date = setEodIfMidnight(date);
+          // Rule 8.10 — only record has_time when chrono is certain about
+          // the hour. Phrases like "tomorrow" alone (no certain hour) get
+          // EOD-anchored but stay date-only for display purposes.
+          const certainHour = best.start.isCertain("hour");
+          base.due_date = certainHour ? date : setEodIfMidnight(date);
+          base.due_date_has_time = certainHour;
           const matchedText = best.text;
           if (matchedText) {
             const idx = base.title.indexOf(matchedText);
@@ -84,6 +98,7 @@ export function parseInlineTaskText(raw: string): InlineTaskParse {
         const upgraded = new Date(base.due_date);
         upgraded.setHours(chronoDate.getHours(), chronoDate.getMinutes(), 0, 0);
         base.due_date = upgraded;
+        base.due_date_has_time = true;
         // Strip the matched time phrase from the title.
         const matchedText = best.text;
         if (matchedText) {
@@ -99,6 +114,7 @@ export function parseInlineTaskText(raw: string): InlineTaskParse {
       }
     } else {
       // No explicit time found — apply EOD fallback to the midnight date.
+      // has_time stays false (the quick-add word was date-only).
       base.due_date = setEodIfMidnight(base.due_date);
     }
   }
