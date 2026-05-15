@@ -10,7 +10,11 @@ Output shape:
   "project_name": "exact name from available projects or null",
   "person_refs": ["person handle or name"],
   "due_date": "ISO 8601 datetime or null",
+  "due_date_has_time": boolean,
   "defer_date": "ISO 8601 datetime or null",
+  "defer_date_has_time": boolean,
+  "follow_up_date": "ISO 8601 datetime or null",
+  "follow_up_date_has_time": boolean,
   "estimated_minutes": number or null,
   "flagged": false,
   "confidence": 0.0-1.0
@@ -23,6 +27,8 @@ Rules:
 - project_name MUST be exactly one name from the available_projects list or null — never invent new projects
 - tags MUST each be from the available_tags list or empty — never invent new tags
 - If a date was already found in hints, do not change it unless you see a conflicting explicit date
+- Date+time handling: if the text mentions an explicit time-of-day ("at 3pm", "noon", "tonight"), produce ISO 8601 datetime AND set the corresponding *_has_time flag to true. If only a date is present ("tomorrow", "Friday", "May 20"), produce the date AND set *_has_time to false. Never invent times that are not in the text — absence of time is meaningful information.
+- follow_up_date: use only for "waiting for" / delegated items where the user expects to chase the other party by a specific date
 - estimated_minutes: use 5 for emails, 15 for quick calls, 30 for meetings/reviews, 60 for long meetings
 - confidence: reflect how certain you are of the parse (0.0-1.0)
 - flagged is true only for explicitly urgent items (ASAP, urgent, critical)`;
@@ -34,6 +40,11 @@ export function buildCaptureParseUserMessage(
     tags?: string[];
     contexts?: string[];
     due_date?: string;
+    due_date_has_time?: boolean;
+    defer_date?: string;
+    defer_date_has_time?: boolean;
+    follow_up_date?: string;
+    follow_up_date_has_time?: boolean;
     project_hint?: string;
     person_refs?: string[];
     proposed_disposition?: string;

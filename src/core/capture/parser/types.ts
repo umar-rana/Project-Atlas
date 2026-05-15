@@ -10,7 +10,15 @@ export interface ParsedCapture {
   tags: string[];
   contexts: string[];
   due_date?: Date;
+  /** True iff the parser was certain the user specified a time-of-day for due_date. CR §3.4 / rule 8.11. */
+  due_date_has_time?: boolean;
   defer_date?: Date;
+  /** True iff time-of-day was explicit for defer_date. */
+  defer_date_has_time?: boolean;
+  /** Follow-up date (used by Waiting For disposition). */
+  follow_up_date?: Date;
+  /** True iff time-of-day was explicit for follow_up_date. */
+  follow_up_date_has_time?: boolean;
   project_hint?: string;
   person_refs: string[];
   entity_refs: string[];
@@ -29,7 +37,11 @@ export interface PartialParse {
   tags: string[];
   contexts: string[];
   due_date?: Date;
+  due_date_has_time?: boolean;
   defer_date?: Date;
+  defer_date_has_time?: boolean;
+  follow_up_date?: Date;
+  follow_up_date_has_time?: boolean;
   project_hint?: string;
   person_refs: string[];
   entity_refs: string[];

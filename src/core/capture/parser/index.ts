@@ -55,6 +55,21 @@ export async function runPipeline(
         ...tier2.parsed,
         // Prefer tier1 proposed_body if tier2 didn't produce one
         proposed_body: tier2.parsed.proposed_body ?? tier1.proposed_body,
+        // CR rule 8.3 — Tier 2 enhances, doesn't replace Tier 1. For each
+        // (date, has_time) pair, prefer Tier 2 only when it produced a
+        // date; otherwise carry Tier 1's value through.
+        due_date: tier2.parsed.due_date ?? tier1.due_date,
+        due_date_has_time: tier2.parsed.due_date
+          ? tier2.parsed.due_date_has_time
+          : tier1.due_date_has_time,
+        defer_date: tier2.parsed.defer_date ?? tier1.defer_date,
+        defer_date_has_time: tier2.parsed.defer_date
+          ? tier2.parsed.defer_date_has_time
+          : tier1.defer_date_has_time,
+        follow_up_date: tier2.parsed.follow_up_date ?? tier1.follow_up_date,
+        follow_up_date_has_time: tier2.parsed.follow_up_date
+          ? tier2.parsed.follow_up_date_has_time
+          : tier1.follow_up_date_has_time,
         parse_tier: "local_plus_ai",
         local_confidence: confidence.score,
         confidence: tier2.parsed.confidence ?? confidence.score,
@@ -75,7 +90,11 @@ export async function runPipeline(
         tags: tier1.tags,
         contexts: tier1.contexts,
         due_date: tier1.due_date,
+        due_date_has_time: tier1.due_date_has_time,
         defer_date: tier1.defer_date,
+        defer_date_has_time: tier1.defer_date_has_time,
+        follow_up_date: tier1.follow_up_date,
+        follow_up_date_has_time: tier1.follow_up_date_has_time,
         project_hint: tier1.project_hint,
         person_refs: tier1.person_refs,
         entity_refs: tier1.entity_refs,
