@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatRelativeDate } from "./formatters";
+import { formatRelativeDate, formatDateWithOptionalTime } from "./formatters";
 import type { LocaleSettings } from "./formatters";
 
 function makeLocale(language: string): LocaleSettings {
@@ -145,5 +145,53 @@ describe("formatRelativeDate", () => {
     it("accepts an ISO string instead of a Date object", () => {
       expect(formatRelativeDate(today.toISOString(), locale)).toBe("Today");
     });
+  });
+});
+
+describe("formatDateWithOptionalTime (CR Capture Processing Refinement §3.4 / rule 8.11)", () => {
+  // Build a fixed local datetime so the formatted output is deterministic
+  // regardless of test-runner timezone. Using local construction here
+  // mirrors the production path (browser parses ISO from the server and
+  // displays in the user's local timezone).
+  const localDateTime = new Date(2026, 4, 20, 15, 0, 0); // May 20 2026, 15:00 local
+
+  it("12h locale: shows date+time when hasTime=true", () => {
+    const locale12h = makeLocale("en");
+    expect(formatDateWithOptionalTime(localDateTime, locale12h, true)).toBe(
+      "20/05/2026 at 3:00 PM",
+    );
+  });
+
+  it("24h locale: shows date+time in 24h when hasTime=true", () => {
+    const locale24h: LocaleSettings = { ...makeLocale("en"), time_format: "24h" };
+    expect(formatDateWithOptionalTime(localDateTime, locale24h, true)).toBe(
+      "20/05/2026 at 15:00",
+    );
+  });
+
+  it("hasTime=false: shows date only, never time", () => {
+    const locale = makeLocale("en");
+    expect(formatDateWithOptionalTime(localDateTime, locale, false)).toBe("20/05/2026");
+  });
+
+  it("hasTime=undefined: treated as date-only (defensive)", () => {
+    const locale = makeLocale("en");
+    expect(formatDateWithOptionalTime(localDateTime, locale, undefined)).toBe("20/05/2026");
+  });
+
+  it("null value: returns empty string", () => {
+    const locale = makeLocale("en");
+    expect(formatDateWithOptionalTime(null, locale, true)).toBe("");
+    expect(formatDateWithOptionalTime(null, locale, false)).toBe("");
+  });
+
+  it("the flag is the source of truth — non-midnight times are still hidden when hasTime=false (rule 8.11)", () => {
+    // Datetime has 15:00 stored but hasTime is false. Per CR rule 8.11,
+    // display must show only the date — never infer from the time
+    // component. This is the canonical default_event_time behavior:
+    // the parser stored 09:00 as the time component for a date-only
+    // task; display still treats it as all-day.
+    const locale = makeLocale("en");
+    expect(formatDateWithOptionalTime(localDateTime, locale, false)).toBe("20/05/2026");
   });
 });

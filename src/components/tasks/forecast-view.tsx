@@ -5,6 +5,7 @@ import { isToday, addDays, startOfDay, isBefore } from "date-fns";
 import { useLocale } from "@/core/locale/hooks";
 import {
   formatDate as localeFormatDate,
+  formatDateWithOptionalTime,
   formatWeekdayAbbrev,
   formatDayOfMonth,
   formatMonthAbbrev,
@@ -516,7 +517,11 @@ export function ForecastView(): React.ReactElement {
                       <span className="font-ui text-2xs text-text-primary">{task.title}</span>
                       {task.due_date && (
                         <span className="font-ui text-2xs text-accent-danger">
-                          {localeFormatDate(task.due_date, locale)}
+                          {formatDateWithOptionalTime(
+                            task.due_date,
+                            locale,
+                            (task as { due_date_has_time?: boolean }).due_date_has_time === true,
+                          )}
                         </span>
                       )}
                     </div>

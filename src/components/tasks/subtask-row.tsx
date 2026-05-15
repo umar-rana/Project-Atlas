@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc/client";
 import type { RouterOutputs } from "@/lib/trpc/types";
 import { useTasksStore } from "@/lib/tasks/store";
 import { useLocale } from "@/core/locale/hooks";
-import { formatDate as localeFormatDate } from "@/core/locale/formatters";
+import { formatDate as localeFormatDate, formatTime as localeFormatTime } from "@/core/locale/formatters";
 import type { LocaleSettings } from "@/core/locale/formatters";
 
 type TaskDetail = NonNullable<RouterOutputs["tasks"]["get"]>;
@@ -19,6 +19,7 @@ interface SubtaskRowSubtask {
   title: string;
   status: string;
   due_date: Date | string | null;
+  due_date_has_time?: boolean;
   flagged: boolean;
   estimated_minutes: number | null;
 }
@@ -38,11 +39,19 @@ function dueColorClass(due: Date | null): string {
   return "text-text-tertiary";
 }
 
-function dueLabel(due: Date | null, locale: LocaleSettings): string | null {
+function dueLabel(
+  due: Date | null,
+  locale: LocaleSettings,
+  hasTime: boolean,
+): string | null {
   if (!due) return null;
-  if (isToday(due)) return "Today";
-  if (isTomorrow(due)) return "Tomorrow";
-  return localeFormatDate(due, locale);
+  let base: string;
+  if (isToday(due)) base = "Today";
+  else if (isTomorrow(due)) base = "Tomorrow";
+  else base = localeFormatDate(due, locale);
+  if (!hasTime) return base;
+  const t = localeFormatTime(due, locale);
+  return t ? `${base} at ${t}` : base;
 }
 
 export function SubtaskRow({
@@ -163,7 +172,7 @@ export function SubtaskRow({
 
       {due && (
         <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
-          {dueLabel(due, locale)}
+          {dueLabel(due, locale, subtask.due_date_has_time === true)}
         </span>
       )}
 

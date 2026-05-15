@@ -157,6 +157,7 @@ const TASK_LIST_SELECT = {
       status: true,
       title: true,
       due_date: true,
+      due_date_has_time: true,
       flagged: true,
       estimated_minutes: true,
     },

@@ -167,6 +167,29 @@ export function formatDateTime(
   }
 }
 
+/**
+ * Format a date that may or may not be time-bearing per the
+ * `_has_time` flag (Capture Processing Refinement CR §3.4 / rule 8.11).
+ *
+ *   hasTime=true  → "20/05/2026 at 3:00 PM"  (12h)  or  "20/05/2026 at 15:00"  (24h)
+ *   hasTime=false → "20/05/2026"               (date-only — never invent a time)
+ *
+ * The flag is the source of truth; this helper never inspects the time
+ * component of the datetime to decide.
+ */
+export function formatDateWithOptionalTime(
+  value: Date | string | null | undefined,
+  locale: LocaleSettings,
+  hasTime: boolean | null | undefined,
+): string {
+  if (!value) return "";
+  const datePart = formatDate(value, locale);
+  if (!hasTime) return datePart;
+  const timePart = formatTime(value, locale);
+  if (!timePart) return datePart;
+  return `${datePart} at ${timePart}`;
+}
+
 function parseNumberFormat(numberFormat: string): { thousands: string; decimal: string } {
   if (numberFormat === "1.234,56") return { thousands: ".", decimal: "," };
   return { thousands: ",", decimal: "." };
