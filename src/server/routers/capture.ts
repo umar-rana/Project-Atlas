@@ -950,7 +950,9 @@ export const captureRouter = router({
         context_ids: z.array(z.string().uuid()).default([]),
         tag_ids: z.array(z.string().uuid()).default([]),
         due_date: z.string().datetime().nullable().optional(),
+        due_date_has_time: z.boolean().optional(),
         defer_date: z.string().datetime().nullable().optional(),
+        defer_date_has_time: z.boolean().optional(),
         estimated_minutes: z.number().int().min(0).nullable().optional(),
         flagged: z.boolean().default(false),
       }),
@@ -1016,7 +1018,9 @@ export const captureRouter = router({
               project_id: input.project_id ?? undefined,
               flagged: input.flagged,
               due_date: input.due_date ? new Date(input.due_date) : undefined,
+              due_date_has_time: input.due_date ? (input.due_date_has_time ?? false) : false,
               defer_date: input.defer_date ? new Date(input.defer_date) : undefined,
+              defer_date_has_time: input.defer_date ? (input.defer_date_has_time ?? false) : false,
               estimated_minutes: input.estimated_minutes ?? undefined,
               status: "active",
             },
@@ -1374,6 +1378,7 @@ export const captureRouter = router({
         title: z.string().min(1).max(500),
         delegated_to_text: z.string().max(500).optional(),
         follow_up_date: z.string().datetime().nullable().optional(),
+        follow_up_date_has_time: z.boolean().optional(),
         notes: z.string().max(50_000).nullable().optional(),
       }),
     )
@@ -1405,6 +1410,9 @@ export const captureRouter = router({
               notes: input.notes ?? undefined,
               delegated_to_text: input.delegated_to_text ?? undefined,
               follow_up_date: input.follow_up_date ? new Date(input.follow_up_date) : undefined,
+              follow_up_date_has_time: input.follow_up_date
+                ? (input.follow_up_date_has_time ?? false)
+                : false,
               status: "active",
             },
           }),
