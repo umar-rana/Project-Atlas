@@ -33,23 +33,58 @@ function setEodIfMidnight(d: Date): Date {
   return d;
 }
 
+function isMidnight(d: Date): boolean {
+  return d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0;
+}
+
 export function parseInlineTaskText(raw: string): InlineTaskParse {
   // First pass: existing quick-add tokens (#tag / ~~context / >>project /
   // simple NL date words today|tomorrow|next monday). This already strips
   // its own matched substrings from the title.
   const base = parseQuickAdd(raw);
 
-  // Second pass: if the simple NL date didn't fire, try chrono-node on
-  // the title remainder for richer phrases.
-  if (!base.due_date && base.title) {
-    const ref = new Date();
+  const ref = new Date();
+
+  if (!base.due_date) {
+    // Second pass (no date yet): try chrono-node on the title remainder for
+    // richer date+time phrases ("in three days", "next Tuesday at 9am", etc.).
+    if (base.title) {
+      const parsed = chrono.parse(base.title, ref, { forwardDate: true });
+      const best = parsed[0];
+      if (best?.start) {
+        const date = best.start.date();
+        if (date && !isNaN(date.getTime())) {
+          base.due_date = setEodIfMidnight(date);
+          const matchedText = best.text;
+          if (matchedText) {
+            const idx = base.title.indexOf(matchedText);
+            if (idx >= 0) {
+              base.title = (
+                base.title.slice(0, idx) + base.title.slice(idx + matchedText.length)
+              )
+                .replace(/\s{2,}/g, " ")
+                .trim();
+            }
+          }
+        }
+      }
+    }
+  } else if (isMidnight(base.due_date) && base.title) {
+    // Third pass: quick-add matched a date-only word (e.g. "tomorrow") and left
+    // a time-of-day phrase in the remaining title (e.g. "at 3pm"). Run chrono
+    // on the title remainder and, if it resolves an explicit time, apply that
+    // time to the already-resolved date rather than falling back to EOD.
     const parsed = chrono.parse(base.title, ref, { forwardDate: true });
     const best = parsed[0];
-    if (best?.start) {
-      const date = best.start.date();
-      if (date && !isNaN(date.getTime())) {
-        base.due_date = setEodIfMidnight(date);
-        // Strip the chrono-matched substring from the title.
+    if (best?.start && best.start.isCertain("hour")) {
+      const chronoDate = best.start.date();
+      if (chronoDate && !isNaN(chronoDate.getTime())) {
+        // Apply chrono's time components to the quick-add date (preserves
+        // the correct calendar day from the quick-add pass).
+        const upgraded = new Date(base.due_date);
+        upgraded.setHours(chronoDate.getHours(), chronoDate.getMinutes(), 0, 0);
+        base.due_date = upgraded;
+        // Strip the matched time phrase from the title.
         const matchedText = best.text;
         if (matchedText) {
           const idx = base.title.indexOf(matchedText);
@@ -62,6 +97,9 @@ export function parseInlineTaskText(raw: string): InlineTaskParse {
           }
         }
       }
+    } else {
+      // No explicit time found — apply EOD fallback to the midnight date.
+      base.due_date = setEodIfMidnight(base.due_date);
     }
   }
 
