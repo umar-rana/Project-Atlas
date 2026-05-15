@@ -44,7 +44,12 @@ const TaskCreateInput = z.object({
   parent_id: z.string().uuid().nullable().optional(),
   flagged: z.boolean().optional(),
   defer_date: z.coerce.date().nullable().optional(),
+  /** CR Capture Processing Refinement §3.4 — true iff the user/parser specified a time. Defaults false (all-day). */
+  defer_date_has_time: z.boolean().optional(),
   due_date: z.coerce.date().nullable().optional(),
+  due_date_has_time: z.boolean().optional(),
+  follow_up_date: z.coerce.date().nullable().optional(),
+  follow_up_date_has_time: z.boolean().optional(),
   estimated_minutes: z
     .number()
     .int()
@@ -65,7 +70,11 @@ const TaskUpdateInput = z.object({
   parent_id: z.string().uuid().nullable().optional(),
   flagged: z.boolean().optional(),
   defer_date: z.coerce.date().nullable().optional(),
+  defer_date_has_time: z.boolean().optional(),
   due_date: z.coerce.date().nullable().optional(),
+  due_date_has_time: z.boolean().optional(),
+  follow_up_date: z.coerce.date().nullable().optional(),
+  follow_up_date_has_time: z.boolean().optional(),
   estimated_minutes: z.number().int().min(0).nullable().optional(),
   context_ids: z.array(z.string().uuid()).optional(),
   tag_ids: z.array(z.string().uuid()).optional(),
@@ -120,7 +129,11 @@ const TASK_LIST_SELECT = {
   project_id: true,
   parent_id: true,
   defer_date: true,
+  defer_date_has_time: true,
   due_date: true,
+  due_date_has_time: true,
+  follow_up_date: true,
+  follow_up_date_has_time: true,
   estimated_minutes: true,
   position: true,
   deleted_at: true,
@@ -632,7 +645,13 @@ export const tasksRouter = router({
           parent_id: input.parent_id ?? null,
           flagged: input.flagged ?? false,
           defer_date: input.defer_date ?? null,
+          defer_date_has_time: input.defer_date ? (input.defer_date_has_time ?? false) : false,
           due_date: input.due_date ?? null,
+          due_date_has_time: input.due_date ? (input.due_date_has_time ?? false) : false,
+          follow_up_date: input.follow_up_date ?? null,
+          follow_up_date_has_time: input.follow_up_date
+            ? (input.follow_up_date_has_time ?? false)
+            : false,
           estimated_minutes: input.estimated_minutes ?? null,
           position: new Prisma.Decimal(position),
         },
@@ -785,8 +804,32 @@ export const tasksRouter = router({
       data.parent = input.parent_id ? { connect: { id: input.parent_id } } : { disconnect: true };
     }
     if (input.flagged !== undefined) data.flagged = input.flagged;
-    if (input.defer_date !== undefined) data.defer_date = input.defer_date;
-    if (input.due_date !== undefined) data.due_date = input.due_date;
+    // Date+flag pairs (CR §3.4). When the date is cleared (null), the
+    // companion flag also resets to false to avoid stale "this date had
+    // a time" state on a now-empty field. When only the flag is sent
+    // (no date update), it still applies — supports the user toggling
+    // "include time" on an existing date.
+    if (input.defer_date !== undefined) {
+      data.defer_date = input.defer_date;
+      if (input.defer_date === null) data.defer_date_has_time = false;
+    }
+    if (input.defer_date_has_time !== undefined) {
+      data.defer_date_has_time = input.defer_date_has_time;
+    }
+    if (input.due_date !== undefined) {
+      data.due_date = input.due_date;
+      if (input.due_date === null) data.due_date_has_time = false;
+    }
+    if (input.due_date_has_time !== undefined) {
+      data.due_date_has_time = input.due_date_has_time;
+    }
+    if (input.follow_up_date !== undefined) {
+      data.follow_up_date = input.follow_up_date;
+      if (input.follow_up_date === null) data.follow_up_date_has_time = false;
+    }
+    if (input.follow_up_date_has_time !== undefined) {
+      data.follow_up_date_has_time = input.follow_up_date_has_time;
+    }
     if (input.estimated_minutes !== undefined) data.estimated_minutes = input.estimated_minutes;
     if (input.is_someday !== undefined) data.is_someday = input.is_someday;
     if (input.delegated_to_text !== undefined) data.delegated_to_text = input.delegated_to_text;
@@ -1965,6 +2008,7 @@ export const tasksRouter = router({
           delegated_to_text: null,
           delegated_to_person_id: null,
           follow_up_date: null,
+          follow_up_date_has_time: false,
           status: "completed",
           completed_at: now,
         },
@@ -1982,7 +2026,13 @@ export const tasksRouter = router({
     }),
 
   recordFollowUp: protectedProcedure
-    .input(z.object({ id: z.string().uuid(), follow_up_date: z.string().datetime() }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        follow_up_date: z.string().datetime(),
+        follow_up_date_has_time: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const task = await db.task.findFirst({
         where: userOwned(ctx.user, { id: input.id, delegated_to_text: { not: null } }),
@@ -1992,7 +2042,10 @@ export const tasksRouter = router({
 
       await db.task.update({
         where: { id: input.id },
-        data: { follow_up_date: new Date(input.follow_up_date) },
+        data: {
+          follow_up_date: new Date(input.follow_up_date),
+          follow_up_date_has_time: input.follow_up_date_has_time ?? false,
+        },
       });
 
       await logActivity({
