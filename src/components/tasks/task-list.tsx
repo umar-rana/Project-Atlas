@@ -623,6 +623,7 @@ export function TaskList({
           defaultContextId={contextId}
           defaultTagName={tagName}
           defaultDueDate={defaultDueDate}
+          defaultFlagged={perspective === "flagged"}
         />
       ) : null}
 
