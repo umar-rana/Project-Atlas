@@ -3,7 +3,7 @@ import { router, protectedProcedure, userOwned, userOwnedActive } from "@/server
 import { db, newId } from "@/core/db";
 import { createLogger } from "@/core/logging";
 import { z } from "zod";
-import { type Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { captureAndCreate, previewParse } from "@/core/capture/service";
 import { logActivity } from "@/core/audit";
 import {
@@ -15,6 +15,46 @@ import {
 } from "@/core/capture/inbox-migration";
 
 const log = createLogger({ module: "capture-router" });
+
+/**
+ * Map a Prisma transaction failure to a friendly TRPCError.
+ *
+ * Uses Prisma error codes (P2002 unique, P2003 FK) rather than string-
+ * sniffing the message — codes are stable, message text isn't. Falls
+ * through to a generic INTERNAL_SERVER_ERROR with the original error as
+ * `cause` so the server log keeps the full stack trace.
+ *
+ * Used by every `processTo*` disposition procedure so they speak the
+ * same language to the client (and so the frontend's mapped error toast
+ * always sees one friendly message instead of "Internal server error").
+ */
+function processingErrorToTRPC(err: unknown, fallback: string): TRPCError {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === "P2003") {
+      return new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "A referenced context, tag, or project no longer exists. Please refresh and try again.",
+        cause: err,
+      });
+    }
+    if (err.code === "P2002") {
+      return new TRPCError({
+        code: "CONFLICT",
+        message: "This capture has already been processed. Please refresh your inbox.",
+        cause: err,
+      });
+    }
+    if (err.code === "P2025") {
+      return new TRPCError({
+        code: "NOT_FOUND",
+        message: "This capture or one of the referenced records was deleted. Please refresh.",
+        cause: err,
+      });
+    }
+  }
+  return new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: fallback, cause: err });
+}
 
 function sinceDate(days: number): Date | undefined {
   if (days === 0) return undefined;
@@ -998,15 +1038,11 @@ export const captureRouter = router({
           }),
         ]);
       } catch (err) {
-        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToTask transaction failed");
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("foreign key") || msg.includes("Foreign key")) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "A referenced context, tag, or project no longer exists. Please refresh and try again." });
-        }
-        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
-          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
-        }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create task. Please try again." });
+        log.error(
+          { err, captureId: input.capture_id, userId: ctx.user.id },
+          "processToTask transaction failed",
+        );
+        throw processingErrorToTRPC(err, "Failed to create task. Please try again.");
       }
 
       await logActivity({
@@ -1088,12 +1124,11 @@ export const captureRouter = router({
           }),
         ]);
       } catch (err) {
-        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToNote transaction failed");
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
-          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
-        }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create note. Please try again." });
+        log.error(
+          { err, captureId: input.capture_id, userId: ctx.user.id },
+          "processToNote transaction failed",
+        );
+        throw processingErrorToTRPC(err, "Failed to create note. Please try again.");
       }
 
       await logActivity({
@@ -1307,12 +1342,11 @@ export const captureRouter = router({
           }),
         ]);
       } catch (err) {
-        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToSomeday transaction failed");
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
-          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
-        }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to add to Someday/Maybe. Please try again." });
+        log.error(
+          { err, captureId: input.capture_id, userId: ctx.user.id },
+          "processToSomeday transaction failed",
+        );
+        throw processingErrorToTRPC(err, "Failed to add to Someday/Maybe. Please try again.");
       }
 
       await logActivity({
@@ -1385,12 +1419,11 @@ export const captureRouter = router({
           }),
         ]);
       } catch (err) {
-        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToWaitingFor transaction failed");
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
-          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
-        }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to add to Waiting For. Please try again." });
+        log.error(
+          { err, captureId: input.capture_id, userId: ctx.user.id },
+          "processToWaitingFor transaction failed",
+        );
+        throw processingErrorToTRPC(err, "Failed to add to Waiting For. Please try again.");
       }
 
       await logActivity({
@@ -1508,12 +1541,11 @@ export const captureRouter = router({
           }),
         ]);
       } catch (err) {
-        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToTwoMinuteDone transaction failed");
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("Unique constraint") || msg.includes("unique constraint")) {
-          throw new TRPCError({ code: "CONFLICT", message: "This capture has already been processed. Please refresh your inbox." });
-        }
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to mark capture as done. Please try again." });
+        log.error(
+          { err, captureId: input.capture_id, userId: ctx.user.id },
+          "processToTwoMinuteDone transaction failed",
+        );
+        throw processingErrorToTRPC(err, "Failed to mark capture as done. Please try again.");
       }
 
       await logActivity({
@@ -1564,8 +1596,11 @@ export const captureRouter = router({
           },
         });
       } catch (err) {
-        log.error({ err, captureId: input.capture_id, userId: ctx.user.id }, "processToTrash failed");
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to trash capture. Please try again." });
+        log.error(
+          { err, captureId: input.capture_id, userId: ctx.user.id },
+          "processToTrash failed",
+        );
+        throw processingErrorToTRPC(err, "Failed to trash capture. Please try again.");
       }
 
       await logActivity({

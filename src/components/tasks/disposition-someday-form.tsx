@@ -83,6 +83,9 @@ export function DispositionSomedayForm({
   }
 
   const mut = trpc.capture.processToSomeday.useMutation({
+    // CP-1: suppress global MutationCache.onError toast — local onError
+    // below is more specific. Avoids stacked toasts on failure.
+    meta: { suppressGlobalError: true },
     onSuccess: () => {
       utils.capture.listInbox.invalidate();
       utils.tasks.counts.invalidate();
