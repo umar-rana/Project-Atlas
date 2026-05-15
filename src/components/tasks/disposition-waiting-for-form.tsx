@@ -3,10 +3,32 @@
 import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { DateTimePicker } from "@/components/shared/date-time-picker";
 
 interface ParserProposal {
   title?: string;
   person_refs?: string[];
+  follow_up_date?: string | null;
+  follow_up_date_has_time?: boolean | null;
+}
+
+function fmtTimeInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  } catch {
+    return "";
+  }
+}
+
+function buildDateTimeIso(date: string, time: string, hasTime: boolean): string | undefined {
+  if (!date) return undefined;
+  const t = hasTime && time ? time : "00:00";
+  return new Date(`${date}T${t}:00`).toISOString();
 }
 
 interface DispositionWaitingForFormProps {
@@ -48,17 +70,36 @@ export function DispositionWaitingForForm({
     return d.toISOString().split("T")[0] ?? "";
   }
 
+  const defaultEventTime = (rawUser as { default_event_time?: string } | undefined)
+    ?.default_event_time ?? "09:00";
+
   const [title, setTitle] = React.useState(() => deriveTitle(proposal, rawText));
   const [delegatedTo, setDelegatedTo] = React.useState(
     () => proposal?.person_refs?.[0] ?? "",
   );
-  const [followUpDate, setFollowUpDate] = React.useState(() => defaultFollowUpDateString());
+  const [followUpDate, setFollowUpDate] = React.useState(() => {
+    if (proposal?.follow_up_date) return proposal.follow_up_date.split("T")[0] ?? "";
+    return defaultFollowUpDateString();
+  });
+  const [followUpTime, setFollowUpTime] = React.useState(() =>
+    proposal?.follow_up_date_has_time ? fmtTimeInput(proposal?.follow_up_date) : "",
+  );
+  const [followUpHasTime, setFollowUpHasTime] = React.useState(
+    proposal?.follow_up_date_has_time === true,
+  );
   const [notes, setNotes] = React.useState("");
 
   React.useEffect(() => {
     const derived = deriveTitle(proposal, rawText);
     if (derived) setTitle(derived);
     if (proposal?.person_refs?.[0]) setDelegatedTo(proposal.person_refs[0]);
+    if (proposal?.follow_up_date) {
+      setFollowUpDate(proposal.follow_up_date.split("T")[0] ?? "");
+      if (proposal.follow_up_date_has_time) {
+        setFollowUpTime(fmtTimeInput(proposal.follow_up_date));
+        setFollowUpHasTime(true);
+      }
+    }
   }, [proposal, rawText]);
 
   React.useEffect(() => {
@@ -88,7 +129,8 @@ export function DispositionWaitingForForm({
       capture_id: captureId,
       title: trimmed,
       delegated_to_text: delegatedTo || undefined,
-      follow_up_date: followUpDate ? new Date(followUpDate).toISOString() : undefined,
+      follow_up_date: buildDateTimeIso(followUpDate, followUpTime, followUpHasTime),
+      follow_up_date_has_time: followUpDate ? followUpHasTime : undefined,
       notes: notes || undefined,
     });
   }
@@ -126,25 +168,29 @@ export function DispositionWaitingForForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelCls}>Waiting on (person)</label>
-          <input
-            value={delegatedTo}
-            onChange={(e) => setDelegatedTo(e.target.value)}
-            className={inputCls}
-            placeholder="Name or description…"
-          />
-        </div>
-        <div>
-          <label className={labelCls}>Follow-up date</label>
-          <input
-            type="date"
-            value={followUpDate}
-            onChange={(e) => setFollowUpDate(e.target.value)}
-            className={inputCls}
-          />
-        </div>
+      <div>
+        <label className={labelCls}>Waiting on (person)</label>
+        <input
+          value={delegatedTo}
+          onChange={(e) => setDelegatedTo(e.target.value)}
+          className={inputCls}
+          placeholder="Name or description…"
+        />
+      </div>
+      <div>
+        <label className={labelCls}>Follow-up date</label>
+        <DateTimePicker
+          dateValue={followUpDate}
+          timeValue={followUpTime}
+          hasTime={followUpHasTime}
+          onDateChange={(d) => {
+            setFollowUpDate(d);
+            if (!d) setFollowUpHasTime(false);
+          }}
+          onTimeChange={setFollowUpTime}
+          onHasTimeChange={setFollowUpHasTime}
+          defaultTime={defaultEventTime}
+        />
       </div>
 
       <div>

@@ -3,11 +3,14 @@
 import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
+import { DateTimePicker } from "@/components/shared/date-time-picker";
 
 interface ParserProposal {
   title?: string;
   due_date?: string | null;
+  due_date_has_time?: boolean | null;
   defer_date?: string | null;
+  defer_date_has_time?: boolean | null;
   project_hint?: string | null;
   tags?: string[];
   contexts?: string[];
@@ -34,9 +37,24 @@ function fmtDateInput(iso: string | null | undefined): string {
   }
 }
 
-function toIso(dateStr: string): string | undefined {
-  if (!dateStr) return undefined;
-  return new Date(dateStr).toISOString();
+function fmtTimeInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  } catch {
+    return "";
+  }
+}
+
+/** Build an ISO datetime from "yyyy-mm-dd" + "HH:MM"; if hasTime is false, time is irrelevant (still encoded so server stores a usable datetime). */
+function buildDateTimeIso(date: string, time: string, hasTime: boolean): string | undefined {
+  if (!date) return undefined;
+  const t = hasTime && time ? time : "00:00";
+  return new Date(`${date}T${t}:00`).toISOString();
 }
 
 function deriveTitle(proposal: ParserProposal | null | undefined, rawText: string): string {
@@ -57,13 +75,23 @@ export function DispositionTaskForm({
   const projects = trpc.projects.list.useQuery({ status: "active" }, { staleTime: 60_000 });
   const contexts = trpc.contexts.list.useQuery(undefined, { staleTime: 60_000 });
   const tags = trpc.tags.list.useQuery({ limit: 200 }, { staleTime: 60_000 });
+  const me = trpc.user.me.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const defaultEventTime = me.data?.default_event_time ?? "09:00";
 
   const [title, setTitle] = React.useState(() => deriveTitle(proposal, rawText));
   const [projectId, setProjectId] = React.useState("");
   const [contextIds, setContextIds] = React.useState<string[]>([]);
   const [tagIds, setTagIds] = React.useState<string[]>([]);
   const [dueDate, setDueDate] = React.useState(fmtDateInput(proposal?.due_date));
+  const [dueTime, setDueTime] = React.useState(
+    proposal?.due_date_has_time ? fmtTimeInput(proposal?.due_date) : "",
+  );
+  const [dueHasTime, setDueHasTime] = React.useState(proposal?.due_date_has_time === true);
   const [deferDate, setDeferDate] = React.useState(fmtDateInput(proposal?.defer_date));
+  const [deferTime, setDeferTime] = React.useState(
+    proposal?.defer_date_has_time ? fmtTimeInput(proposal?.defer_date) : "",
+  );
+  const [deferHasTime, setDeferHasTime] = React.useState(proposal?.defer_date_has_time === true);
   const [estimatedMinutes, setEstimatedMinutes] = React.useState(
     proposal?.estimated_minutes != null ? String(proposal.estimated_minutes) : "",
   );
@@ -76,8 +104,20 @@ export function DispositionTaskForm({
     const derived = deriveTitle(proposal, rawText);
     if (derived) setTitle(derived);
     if (!proposal) return;
-    if (proposal.due_date) setDueDate(fmtDateInput(proposal.due_date));
-    if (proposal.defer_date) setDeferDate(fmtDateInput(proposal.defer_date));
+    if (proposal.due_date) {
+      setDueDate(fmtDateInput(proposal.due_date));
+      if (proposal.due_date_has_time) {
+        setDueTime(fmtTimeInput(proposal.due_date));
+        setDueHasTime(true);
+      }
+    }
+    if (proposal.defer_date) {
+      setDeferDate(fmtDateInput(proposal.defer_date));
+      if (proposal.defer_date_has_time) {
+        setDeferTime(fmtTimeInput(proposal.defer_date));
+        setDeferHasTime(true);
+      }
+    }
     if (proposal.flagged) setFlagged(true);
     if (proposal.estimated_minutes != null) setEstimatedMinutes(String(proposal.estimated_minutes));
     const body = proposal.proposed_body ?? proposal.notes ?? "";
@@ -129,8 +169,10 @@ export function DispositionTaskForm({
       project_id: projectId || undefined,
       context_ids: contextIds,
       tag_ids: tagIds,
-      due_date: toIso(dueDate),
-      defer_date: toIso(deferDate),
+      due_date: buildDateTimeIso(dueDate, dueTime, dueHasTime),
+      due_date_has_time: dueDate ? dueHasTime : undefined,
+      defer_date: buildDateTimeIso(deferDate, deferTime, deferHasTime),
+      defer_date_has_time: deferDate ? deferHasTime : undefined,
       estimated_minutes: estimatedMinutes ? parseInt(estimatedMinutes, 10) : undefined,
       flagged,
     });
@@ -212,25 +254,39 @@ export function DispositionTaskForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelCls}>Due date</label>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <label className={labelCls}>Defer date</label>
-          <input
-            type="date"
-            value={deferDate}
-            onChange={(e) => setDeferDate(e.target.value)}
-            className={inputCls}
-          />
-        </div>
+      <div>
+        <label className={labelCls}>Due date</label>
+        <DateTimePicker
+          dateValue={dueDate}
+          timeValue={dueTime}
+          hasTime={dueHasTime}
+          onDateChange={(d) => {
+            setDueDate(d);
+            if (!d) {
+              setDueHasTime(false);
+            }
+          }}
+          onTimeChange={setDueTime}
+          onHasTimeChange={setDueHasTime}
+          defaultTime={defaultEventTime}
+        />
+      </div>
+      <div>
+        <label className={labelCls}>Defer date</label>
+        <DateTimePicker
+          dateValue={deferDate}
+          timeValue={deferTime}
+          hasTime={deferHasTime}
+          onDateChange={(d) => {
+            setDeferDate(d);
+            if (!d) {
+              setDeferHasTime(false);
+            }
+          }}
+          onTimeChange={setDeferTime}
+          onHasTimeChange={setDeferHasTime}
+          defaultTime={defaultEventTime}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
