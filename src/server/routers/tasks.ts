@@ -227,10 +227,21 @@ export const tasksRouter = router({
       };
 
       if (input.perspective === "inbox") {
+        // Inbox = unclassified tasks only. Per the Inbox View Semantics CR
+        // (§2.2 / rule 8.2), a Task appears in Inbox iff NONE of the
+        // classification dimensions are set: no project, no context,
+        // no tags, no due date, no defer date, not flagged, not someday,
+        // not waiting-for (delegated). The status="active" filter set
+        // above excludes completed and trashed tasks.
         where.project_id = null;
         where.parent_id = null;
+        where.due_date = null;
+        where.defer_date = null;
+        where.flagged = false;
         where.is_someday = false;
         where.delegated_to_text = null;
+        where.contexts = { none: {} };
+        where.tags = { none: {} };
       } else if (input.perspective === "today") {
         where.AND = [
           notDeferred,
@@ -405,12 +416,20 @@ export const tasksRouter = router({
       const [inboxTasks, inboxCaptures, today, tomorrow, flagged, trash, someday, waitingFor] =
         await Promise.all([
           db.task.count({
+            // Inbox View Semantics CR: count only truly unclassified Tasks.
+            // MUST match the list query's inbox filter (see line ~230) so the
+            // sidebar counter never disagrees with the rendered list.
             where: userOwnedActive(ctx.user, {
               status: "active",
               project_id: null,
               parent_id: null,
+              due_date: null,
+              defer_date: null,
+              flagged: false,
               is_someday: false,
               delegated_to_text: null,
+              contexts: { none: {} },
+              tags: { none: {} },
             }),
           }),
           db.capture.count({

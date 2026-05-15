@@ -187,7 +187,7 @@ export function DispositionTaskForm({
             onChange={(e) => setProjectId(e.target.value)}
             className={inputCls}
           >
-            <option value="">Inbox (no project)</option>
+            <option value="">No project</option>
             {(projects.data ?? []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title}

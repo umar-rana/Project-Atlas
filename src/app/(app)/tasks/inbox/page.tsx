@@ -14,9 +14,9 @@ export default function InboxPage() {
       <TaskList
         perspective="inbox"
         title="Inbox"
-        description="Unfiled tasks awaiting triage."
+        description="Captures and unclassified tasks awaiting decisions."
         emptyTitle="Inbox zero"
-        emptyBody="Capture a task with ⌘⇧I or use the quick-add bar above."
+        emptyBody="All items have been processed and classified. Capture something quick with the + button, or use ⌘⇧I."
         highlightId={taskId}
         headerExtra={<ProcessInboxButton />}
       />
