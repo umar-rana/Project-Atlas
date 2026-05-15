@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc/client";
 import { toast } from "@/lib/toast";
 import { TemplatePicker } from "@/components/task-templates/template-picker";
 import type { TemplateFields } from "@/components/task-templates/template-picker";
+import { parseInlineTaskText } from "@/lib/parsing/inline-task-parser";
 
 interface PendingTemplate {
   id: string;
@@ -17,14 +18,26 @@ interface TaskQuickAddProps {
   defaultContextId?: string;
   defaultTagName?: string;
   defaultDueDate?: string;
+  /** Apply `flagged: true` to created tasks (e.g. on the Flagged view). */
+  defaultFlagged?: boolean;
   placeholder?: string;
 }
 
+/**
+ * "Add a task" input for /tasks/* views. Per the Direct Entity Creation
+ * Routing CR (§3.2) this calls `tasks.create` DIRECTLY — no Capture entity
+ * is created. Inline parsing (chrono-node + #tag / ~~ctx / >>project) is
+ * applied via parseInlineTaskText.
+ *
+ * Capture-first surfaces (topbar `+`, ⌘⇧I, mobile `+`, email-to-inbox) live
+ * elsewhere and continue to route through capture.parseAndCreate.
+ */
 export function TaskQuickAdd({
   defaultProjectId,
   defaultContextId,
   defaultTagName,
   defaultDueDate,
+  defaultFlagged,
   placeholder = "Add a task — Enter to save, ⌘⏎ to open inspector",
 }: TaskQuickAddProps): React.ReactElement {
   const [value, setValue] = React.useState("");
@@ -32,14 +45,19 @@ export function TaskQuickAdd({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
 
-  const tags = trpc.tags.list.useQuery({ limit: 500 }, { enabled: !!defaultTagName });
+  // Tag/context/project resolution: we look up by name client-side and
+  // drop unknowns silently (CR rule 8.4 — no auto-create from inline syntax).
+  const tagsQuery = trpc.tags.list.useQuery({ limit: 500 });
+  const contextsQuery = trpc.contexts.list.useQuery();
+  const projectsQuery = trpc.projects.list.useQuery({});
 
-  const parseAndCreate = trpc.capture.parseAndCreate.useMutation({
+  const createTask = trpc.tasks.create.useMutation({
     onSettled: () => {
       utils.tasks.list.invalidate();
       utils.tasks.counts.invalidate();
       utils.tags.list.invalidate();
       utils.contexts.list.invalidate();
+      utils.projects.list.invalidate();
     },
   });
 
@@ -79,22 +97,50 @@ export function TaskQuickAdd({
 
     if (!txt) return;
 
-    const contextIdOverrides: string[] = defaultContextId ? [defaultContextId] : [];
-    const tagIdOverrides: string[] = [];
+    // ── Inline parsing (CR §3.2.1, §3.2.4) ──────────────────────────────
+    const parsed = parseInlineTaskText(txt);
 
-    if (defaultTagName && tags.data) {
-      const t = tags.data.find((x) => x.name === defaultTagName.toLowerCase());
-      if (t) tagIdOverrides.push(t.id);
+    // ── Resolve tag NAMES → IDs (existing tags only; unknowns dropped) ──
+    const tagNameSet = new Set(parsed.tags.map((n) => n.toLowerCase()));
+    if (defaultTagName) tagNameSet.add(defaultTagName.toLowerCase());
+    const resolvedTagIds: string[] = [];
+    for (const tag of tagsQuery.data ?? []) {
+      if (tagNameSet.has(tag.name.toLowerCase())) resolvedTagIds.push(tag.id);
     }
 
+    // ── Resolve context NAMES → IDs ─────────────────────────────────────
+    const resolvedContextIds: string[] = [];
+    const ctxNameSet = new Set(parsed.contexts.map((n) => n.toLowerCase()));
+    for (const ctx of contextsQuery.data ?? []) {
+      if (ctxNameSet.has(ctx.name.toLowerCase())) resolvedContextIds.push(ctx.id);
+    }
+    if (defaultContextId && !resolvedContextIds.includes(defaultContextId)) {
+      resolvedContextIds.push(defaultContextId);
+    }
+
+    // ── Resolve project TITLE → id (case-insensitive exact; unknown dropped) ──
+    let resolvedProjectId: string | null | undefined = defaultProjectId ?? undefined;
+    if (parsed.project_title) {
+      const wanted = parsed.project_title.toLowerCase();
+      const hit = (projectsQuery.data ?? []).find(
+        (p: { id: string; title: string }) => p.title.toLowerCase() === wanted,
+      );
+      if (hit) resolvedProjectId = hit.id;
+      // If the title doesn't match anything, silently drop it per CR §3.2.4 / 8.4.
+    }
+
+    // ── View-default due date, parsed phrase wins (CR rule 8.8) ─────────
+    const dueDate =
+      parsed.due_date ?? (defaultDueDate ? new Date(defaultDueDate) : undefined);
+
     try {
-      await parseAndCreate.mutateAsync({
-        raw_text: txt,
-        source: "quick_add",
-        project_id_override: defaultProjectId ?? undefined,
-        context_id_overrides: contextIdOverrides.length > 0 ? contextIdOverrides : undefined,
-        tag_id_overrides: tagIdOverrides.length > 0 ? tagIdOverrides : undefined,
-        due_date_override: defaultDueDate,
+      await createTask.mutateAsync({
+        title: parsed.title || txt,
+        project_id: resolvedProjectId,
+        context_ids: resolvedContextIds.length > 0 ? resolvedContextIds : undefined,
+        tag_ids: resolvedTagIds.length > 0 ? resolvedTagIds : undefined,
+        due_date: dueDate ?? undefined,
+        flagged: defaultFlagged || undefined,
       });
 
       setValue("");
@@ -142,7 +188,10 @@ export function TaskQuickAdd({
           </button>
         </div>
       )}
-      <div className="flex items-center gap-2 px-3 py-2">
+      <div
+        className="flex items-center gap-2 px-3 py-2"
+        title="Creates a task with this view's defaults — does not enter the Capture inbox"
+      >
         <Plus size={14} className="text-text-tertiary" aria-hidden />
         <input
           ref={inputRef}
