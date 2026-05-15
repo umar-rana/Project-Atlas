@@ -98,6 +98,12 @@ export function PreferencesSection({ initialUser }: { initialUser: User }) {
     currency_symbol: user.currency_symbol ?? "₨",
     language: user.language ?? "ur",
   });
+  // CR §3.4.5 — Default time for date-only items. Lives alongside the
+  // locale fields but is a separate state because LocaleSettings doesn't
+  // carry it (it's not strictly a locale; it's a task-domain default).
+  const [localDefaultEventTime, setLocalDefaultEventTime] = useState<string>(
+    (user as { default_event_time?: string }).default_event_time ?? "09:00",
+  );
 
   const [showCustom, setShowCustom] = useState(serverPreset === "custom");
   const [saved, setSaved] = useState<string | null>(null);
@@ -113,6 +119,9 @@ export function PreferencesSection({ initialUser }: { initialUser: User }) {
       currency_symbol: user.currency_symbol ?? "₨",
       language: user.language ?? "ur",
     });
+    setLocalDefaultEventTime(
+      (user as { default_event_time?: string }).default_event_time ?? "09:00",
+    );
     setShowCustom(serverPreset === "custom");
   }, [
     serverPreset,
@@ -122,6 +131,8 @@ export function PreferencesSection({ initialUser }: { initialUser: User }) {
     user.currency_code,
     user.currency_symbol,
     user.language,
+    (user as { default_event_time?: string }).default_event_time,
+    user,
   ]);
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -176,11 +187,19 @@ export function PreferencesSection({ initialUser }: { initialUser: User }) {
       setLocaleError("Currency symbol must be 5 characters or fewer.");
       return;
     }
+    // CR §3.4.5 — validate the default event time before submit. The
+    // server also validates, but a friendly client-side check produces
+    // a better error message.
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(localDefaultEventTime)) {
+      setLocaleError("Default time for date-only items must be HH:MM (24h, e.g. 09:00).");
+      return;
+    }
     setLocaleError(null);
     updateLocale.mutate({
       preset: "custom",
       date_format: localLocale.date_format,
       time_format: localLocale.time_format as "12h" | "24h",
+      default_event_time: localDefaultEventTime,
       number_format: localLocale.number_format,
       currency_code: code,
       currency_symbol: symbol,
@@ -294,6 +313,25 @@ export function PreferencesSection({ initialUser }: { initialUser: User }) {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="default-event-time"
+                  className="mb-1 block font-ui text-xs font-medium text-text-secondary"
+                >
+                  Default time for date-only items
+                </label>
+                <input
+                  id="default-event-time"
+                  type="time"
+                  value={localDefaultEventTime}
+                  onChange={(e) => setLocalDefaultEventTime(e.target.value)}
+                  className="w-full rounded-md border border-border-default bg-surface-overlay px-3 py-2 font-ui text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border-focus"
+                />
+                <p className="mt-1 font-ui text-2xs text-text-tertiary">
+                  When you add a task with only a date (no specific time), this time will be used if
+                  you later enable &ldquo;Include time&rdquo; on that task.
+                </p>
               </div>
             </div>
             <div>

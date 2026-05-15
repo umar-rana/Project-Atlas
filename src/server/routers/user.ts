@@ -59,6 +59,11 @@ export const userRouter = router({
         timezone: z.string().optional(),
         date_format: z.string().optional(),
         time_format: z.enum(["12h", "24h"]).optional(),
+        /** CR §3.4.5 — HH:MM (24h). Seeded into the time picker when the user toggles "include time" on a date-only task. */
+        default_event_time: z
+          .string()
+          .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM in 24h format")
+          .optional(),
         week_start: z.enum(["sunday", "monday"]).optional(),
         theme: z.enum(["dark", "light", "system"]).optional(),
         tasks_default_review_interval_days: z.number().int().min(1).max(365).nullable().optional(),
@@ -161,6 +166,11 @@ export const userRouter = router({
           preset: z.literal("custom"),
           date_format: z.enum(DATE_FORMAT_OPTIONS as [string, ...string[]]).optional(),
           time_format: z.enum(["12h", "24h"]).optional(),
+          /** CR §3.4.5 — HH:MM (24h). Seeded into the disposition forms' time picker when the user toggles "include time" on a date-only task. */
+          default_event_time: z
+            .string()
+            .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:MM in 24h format")
+            .optional(),
           number_format: z
             .enum(NUMBER_FORMAT_OPTIONS.map((o) => o.value) as [string, ...string[]])
             .optional(),
@@ -204,6 +214,7 @@ export const userRouter = router({
           preset: "custom";
           date_format?: string;
           time_format?: string;
+          default_event_time?: string;
           number_format?: string;
           currency_code?: string;
           currency_symbol?: string;
@@ -212,6 +223,7 @@ export const userRouter = router({
         data = { locale_preset: "custom" };
         if (customInput.date_format) data.date_format = customInput.date_format;
         if (customInput.time_format) data.time_format = customInput.time_format;
+        if (customInput.default_event_time) data.default_event_time = customInput.default_event_time;
         if (customInput.number_format) data.number_format = customInput.number_format;
         if (customInput.currency_code) data.currency_code = customInput.currency_code;
         if (customInput.currency_symbol) data.currency_symbol = customInput.currency_symbol;
