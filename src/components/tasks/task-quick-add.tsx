@@ -7,6 +7,7 @@ import { toast } from "@/lib/toast";
 import { TemplatePicker } from "@/components/task-templates/template-picker";
 import type { TemplateFields } from "@/components/task-templates/template-picker";
 import { parseInlineTaskText } from "@/lib/parsing/inline-task-parser";
+import { useTasksStore } from "@/lib/tasks/store";
 
 interface PendingTemplate {
   id: string;
@@ -44,6 +45,7 @@ export function TaskQuickAdd({
   const [pendingTemplate, setPendingTemplate] = React.useState<PendingTemplate | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
+  const setSelectedTaskId = useTasksStore((s) => s.setSelectedTaskId);
 
   // Tag/context/project resolution: we look up by name client-side and
   // drop unknowns silently (CR rule 8.4 — no auto-create from inline syntax).
@@ -63,7 +65,7 @@ export function TaskQuickAdd({
 
   const instantiateTemplate = trpc.taskTemplates.instantiate.useMutation();
 
-  async function submit() {
+  async function submit(openInspector: boolean = false) {
     const txt = value.trim();
 
     if (pendingTemplate) {
@@ -71,7 +73,7 @@ export function TaskQuickAdd({
       const contextIds = defaultContextId ? [defaultContextId] : fields.context_ids;
       const tagIds = fields.tag_ids;
       try {
-        await instantiateTemplate.mutateAsync({
+        const created = await instantiateTemplate.mutateAsync({
           id,
           overrides: {
             title: txt || fields.title,
@@ -87,6 +89,12 @@ export function TaskQuickAdd({
         setValue("");
         setPendingTemplate(null);
         inputRef.current?.focus();
+        // CR §3.2.2 — ⌘+Enter opens the inspector for refinement after
+        // the task has already been created. The task is always saved;
+        // the inspector is just refinement.
+        if (openInspector && created?.id) {
+          setSelectedTaskId(created.id);
+        }
       } catch (err) {
         toast.error(
           (err as { message?: string })?.message ?? "Could not create task from template",
@@ -134,7 +142,7 @@ export function TaskQuickAdd({
       parsed.due_date ?? (defaultDueDate ? new Date(defaultDueDate) : undefined);
 
     try {
-      await createTask.mutateAsync({
+      const created = await createTask.mutateAsync({
         title: parsed.title || txt,
         project_id: resolvedProjectId,
         context_ids: resolvedContextIds.length > 0 ? resolvedContextIds : undefined,
@@ -145,6 +153,11 @@ export function TaskQuickAdd({
 
       setValue("");
       inputRef.current?.focus();
+      // CR §3.2.2 — ⌘+Enter opens the inspector for refinement after
+      // the task has already been created.
+      if (openInspector && created?.id) {
+        setSelectedTaskId(created.id);
+      }
     } catch (err) {
       toast.error((err as { message?: string })?.message ?? "Could not add task");
     }
@@ -153,7 +166,10 @@ export function TaskQuickAdd({
   function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      void submit();
+      // ⌘+Enter (mac) / Ctrl+Enter (win/linux) creates the task AND
+      // opens the inspector. Plain Enter just creates.
+      const openInspector = e.metaKey || e.ctrlKey;
+      void submit(openInspector);
     }
     if (e.key === "Escape" && pendingTemplate) {
       setPendingTemplate(null);
