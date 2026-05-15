@@ -3,7 +3,6 @@
 import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
 import { cn } from "@/lib/utils";
-import { Hint } from "@/components/ui/hint";
 
 interface ParserProposal {
   title?: string;
@@ -86,21 +85,11 @@ export function DispositionNoteForm({
     });
   }
 
-  function submitDefaults() {
-    const defaultTitle = deriveTitle(proposal, rawText);
-    mut.mutate({
-      capture_id: captureId,
-      title: defaultTitle,
-      purpose: "note",
-      project_id: undefined,
-    });
-  }
-
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      submitDefaults();
-    } else if (e.key === "Enter" && !e.shiftKey) {
+    // CR DR-3 / rule 8.7: Enter and ⌘+Enter both commit the visible form
+    // state. The previous ⌘+Enter "Defaults" shortcut bypassed the form
+    // and silently discarded user edits — removed.
+    if (e.key === "Enter" && !e.shiftKey) {
       const target = e.target as HTMLElement;
       if (target.tagName !== "TEXTAREA" && target.tagName !== "SELECT") {
         e.preventDefault();
@@ -181,27 +170,14 @@ export function DispositionNoteForm({
         >
           Cancel
         </button>
-        <div className="flex gap-2">
-          <Hint label="⌘↵ Accept parser defaults">
-            <button
-              type="button"
-              onClick={submitDefaults}
-              disabled={mut.isPending}
-              className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
-              aria-label="⌘↵ Accept parser defaults"
-            >
-              ⌘↵ Defaults
-            </button>
-          </Hint>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={mut.isPending || !title.trim()}
-            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
-          >
-            {mut.isPending ? "Creating…" : "Create Note ↵"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={mut.isPending || !title.trim()}
+          className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+        >
+          {mut.isPending ? "Creating…" : "Create Note ↵"}
+        </button>
       </div>
     </div>
   );

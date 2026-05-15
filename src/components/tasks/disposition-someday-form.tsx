@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
-import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 
 interface ParserProposal {
@@ -107,21 +106,11 @@ export function DispositionSomedayForm({
     });
   }
 
-  function submitDefaults() {
-    const defaultTitle = deriveTitle(proposal, rawText);
-    mut.mutate({
-      capture_id: captureId,
-      title: defaultTitle,
-      tag_ids: [],
-      someday_review_date: new Date(addDays(nextCycleDays)).toISOString(),
-    });
-  }
-
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      submitDefaults();
-    } else if (e.key === "Enter" && !e.shiftKey) {
+    // CR DR-3 / rule 8.7: Enter and ⌘+Enter both commit the visible form
+    // state. Previous ⌘+Enter "Defaults" shortcut removed (silently
+    // discarded user edits).
+    if (e.key === "Enter" && !e.shiftKey) {
       const target = e.target as HTMLElement;
       if (target.tagName !== "TEXTAREA" && target.tagName !== "SELECT") {
         e.preventDefault();
@@ -223,27 +212,14 @@ export function DispositionSomedayForm({
         >
           Cancel
         </button>
-        <div className="flex gap-2">
-          <Hint label="⌘↵ Accept defaults">
-            <button
-              type="button"
-              onClick={submitDefaults}
-              disabled={mut.isPending}
-              className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
-              aria-label="⌘↵ Accept defaults"
-            >
-              ⌘↵ Defaults
-            </button>
-          </Hint>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={mut.isPending || !title.trim()}
-            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
-          >
-            {mut.isPending ? "Creating…" : "Add to Someday ↵"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={mut.isPending || !title.trim()}
+          className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+        >
+          {mut.isPending ? "Creating…" : "Add to Someday ↵"}
+        </button>
       </div>
     </div>
   );
