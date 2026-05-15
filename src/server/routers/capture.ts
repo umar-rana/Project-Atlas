@@ -66,71 +66,131 @@ export const captureRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      let projectId: string | null = null;
-      if (input.project_hint) {
-        const proj = await db.project.findFirst({
-          where: userOwnedActive(ctx.user, {
-            title: { equals: input.project_hint, mode: "insensitive" as const },
-          }),
-          select: { id: true },
-        });
-        projectId = proj?.id ?? null;
+      // Project hint, tags, and contexts are independent lookups — fan them
+      // out in parallel instead of running sequentially. Tags and contexts
+      // also each batch their per-name findFirst calls into a single bulk
+      // query, then create only the names that don't already exist (audit
+      // perf-3). Old code: 1 + N + M sequential round trips. New: ~2.
+
+      const projectHintQuery: Promise<string | null> = input.project_hint
+        ? db.project
+            .findFirst({
+              where: userOwnedActive(ctx.user, {
+                title: { equals: input.project_hint, mode: "insensitive" as const },
+              }),
+              select: { id: true },
+            })
+            .then((p) => p?.id ?? null)
+        : Promise.resolve(null);
+
+      // Tags are stored lowercase-trimmed (see existing create at this site
+      // and tags.ts). A single `name: { in: lowerNames }` lookup is enough.
+      const lowerTagNames = Array.from(
+        new Set(
+          input.tags
+            .map((t) => t.toLowerCase().trim())
+            .filter((s): s is string => s.length > 0),
+        ),
+      );
+      const tagsBulkQuery: Promise<Map<string, string>> = lowerTagNames.length
+        ? db.tag
+            .findMany({
+              where: userOwnedActive(ctx.user, { name: { in: lowerTagNames } }),
+              select: { id: true, name: true },
+            })
+            .then((rows) => new Map(rows.map((r) => [r.name, r.id])))
+        : Promise.resolve(new Map<string, string>());
+
+      // Contexts are stored case-preserved but matched case-insensitively.
+      // The OR-of-equals-insensitive bulk lookup is one round trip and
+      // collapses to indexed user_id + post-filter.
+      const trimmedCtxNames = Array.from(
+        new Set(input.contexts.map((c) => c.trim()).filter((s) => s.length > 0)),
+      );
+      const ctxBulkQuery: Promise<Map<string, string>> = trimmedCtxNames.length
+        ? db.context
+            .findMany({
+              where: userOwnedActive(ctx.user, {
+                OR: trimmedCtxNames.map((n) => ({
+                  name: { equals: n, mode: "insensitive" as const },
+                })),
+              }),
+              select: { id: true, name: true },
+            })
+            .then((rows) => new Map(rows.map((r) => [r.name.toLowerCase(), r.id])))
+        : Promise.resolve(new Map<string, string>());
+
+      const [projectId, existingTagsByName, existingCtxByLowered] = await Promise.all([
+        projectHintQuery,
+        tagsBulkQuery,
+        ctxBulkQuery,
+      ]);
+
+      // Create the names we didn't find. Parallelize creates; on a unique
+      // constraint race, fall back to a re-fetch.
+      const missingTagNames = lowerTagNames.filter((n) => !existingTagsByName.has(n));
+      const createdTags = await Promise.all(
+        missingTagNames.map(async (name) => {
+          try {
+            const created = await db.tag.create({
+              data: { id: newId(), user_id: ctx.user.id, name },
+              select: { id: true, name: true },
+            });
+            return created;
+          } catch {
+            const refetched = await db.tag.findFirst({
+              where: userOwnedActive(ctx.user, { name }),
+              select: { id: true, name: true },
+            });
+            return refetched;
+          }
+        }),
+      );
+      for (const t of createdTags) {
+        if (t) existingTagsByName.set(t.name, t.id);
       }
 
-      const resolvedTagIds: string[] = [];
-      for (const tagName of input.tags) {
-        const lower = tagName.toLowerCase().trim();
-        if (!lower) continue;
-        let tag = await db.tag.findFirst({
-          where: userOwnedActive(ctx.user, { name: lower }),
-          select: { id: true },
-        });
-        if (!tag) {
+      const missingCtxNames = trimmedCtxNames.filter(
+        (n) => !existingCtxByLowered.has(n.toLowerCase()),
+      );
+      const createdCtx = await Promise.all(
+        missingCtxNames.map(async (name) => {
           try {
-            tag = await db.tag.create({
-              data: { id: newId(), user_id: ctx.user.id, name: lower },
-              select: { id: true },
+            const created = await db.context.create({
+              data: { id: newId(), user_id: ctx.user.id, name },
+              select: { id: true, name: true },
             });
+            return created;
           } catch {
-            // Concurrent creation race — re-fetch
-            tag = await db.tag.findFirst({
-              where: userOwnedActive(ctx.user, { name: lower }),
-              select: { id: true },
+            const refetched = await db.context.findFirst({
+              where: userOwnedActive(ctx.user, {
+                name: { equals: name, mode: "insensitive" as const },
+              }),
+              select: { id: true, name: true },
             });
+            return refetched;
           }
-        }
-        if (tag) resolvedTagIds.push(tag.id);
+        }),
+      );
+      for (const c of createdCtx) {
+        if (c) existingCtxByLowered.set(c.name.toLowerCase(), c.id);
+      }
+
+      // Preserve input order in the resolved id arrays.
+      const resolvedTagIds: string[] = [];
+      for (const raw of input.tags) {
+        const lower = raw.toLowerCase().trim();
+        if (!lower) continue;
+        const id = existingTagsByName.get(lower);
+        if (id) resolvedTagIds.push(id);
       }
 
       const resolvedContextIds: string[] = [];
-      for (const ctxName of input.contexts) {
-        const trimmed = ctxName.trim();
+      for (const raw of input.contexts) {
+        const trimmed = raw.trim();
         if (!trimmed) continue;
-        let ctxRow = await db.context.findFirst({
-          where: userOwnedActive(ctx.user, {
-            name: { equals: trimmed, mode: "insensitive" as const },
-          }),
-          select: { id: true },
-        });
-        if (!ctxRow) {
-          try {
-            ctxRow = await db.context.create({
-              data: { id: newId(), user_id: ctx.user.id, name: trimmed },
-              select: { id: true },
-            });
-          } catch {
-            // Concurrent creation race — re-fetch
-            ctxRow = await db.context.findFirst({
-              where: {
-                user_id: ctx.user.id,
-                name: { equals: trimmed, mode: "insensitive" },
-                deleted_at: null,
-              },
-              select: { id: true },
-            });
-          }
-        }
-        if (ctxRow) resolvedContextIds.push(ctxRow.id);
+        const id = existingCtxByLowered.get(trimmed.toLowerCase());
+        if (id) resolvedContextIds.push(id);
       }
 
       const taskId = newId();
