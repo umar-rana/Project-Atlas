@@ -244,3 +244,45 @@ describe("parseDateWithChrono — edge cases", () => {
     expect(dayOf(result.due_date!)).toBe("2026-05-05");
   });
 });
+
+describe("Tier 1 — due_date_has_time flag (CR Capture Processing Refinement §3.4)", () => {
+  it("'tomorrow at 3pm' marks the date as time-bearing", () => {
+    const r = runTier1("call dentist tomorrow at 3pm", opts);
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(true);
+  });
+
+  it("'tomorrow' alone (no time) keeps has_time false", () => {
+    // Note: quick-add catches "tomorrow" before chrono. Quick-add tokens
+    // are date-only by definition.
+    const r = runTier1("call dentist tomorrow", opts);
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(false);
+  });
+
+  it("'submit report by Friday' has no explicit time — has_time false", () => {
+    const r = runTier1("submit report by Friday", opts);
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(false);
+  });
+
+  it("'team meeting tomorrow at noon' marks has_time true", () => {
+    const r = runTier1("team meeting tomorrow at noon", opts);
+    expect(r.due_date).toBeDefined();
+    expect(r.due_date_has_time).toBe(true);
+  });
+
+  it("'tonight' is treated as time-bearing", () => {
+    const r = runTier1("call mom tonight", opts);
+    expect(r.due_date).toBeDefined();
+    // chrono may mark hour certain itself, OR our fallback recognizes
+    // "tonight" — either path produces a time-bearing result.
+    expect(r.due_date_has_time).toBe(true);
+  });
+
+  it("date-less captures don't carry a has_time flag", () => {
+    const r = runTier1("just a random thought", opts);
+    expect(r.due_date).toBeUndefined();
+    expect(r.due_date_has_time).toBeUndefined();
+  });
+});

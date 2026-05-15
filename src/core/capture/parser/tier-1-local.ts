@@ -71,7 +71,10 @@ function extractEntitiesWithNlp(text: string): string[] {
   }
 }
 
-function parseDateWithChrono(text: string, timezone: string): { date?: Date; remaining: string } {
+function parseDateWithChrono(
+  text: string,
+  timezone: string,
+): { date?: Date; hasTime?: boolean; remaining: string } {
   try {
     const ref = new Date();
     const parsed = chrono.parse(text, ref, { forwardDate: true });
@@ -83,19 +86,30 @@ function parseDateWithChrono(text: string, timezone: string): { date?: Date; rem
     const date = best.start.date();
     if (!date || isNaN(date.getTime())) return { remaining: text };
 
+    // CR §3.2.4 / rule 8.10 — `isCertain("hour")` is the source of truth
+    // for whether the user actually specified a time-of-day. Phrases like
+    // "tonight" / "this evening" are treated as time-bearing (chrono
+    // typically marks them certain), while bare dates ("tomorrow") are not.
+    let hasTime = best.start.isCertain("hour");
     let hour = best.start.get("hour");
     const minute = best.start.get("minute") ?? 0;
+    const text_lower = text.toLowerCase();
 
-    if (!best.start.isCertain("hour")) {
-      const text_lower = text.toLowerCase();
+    if (!hasTime) {
+      // Apply a sensible fallback hour so the stored datetime renders
+      // reasonably if any consumer ignores the has_time flag. The flag
+      // remains false — display logic MUST gate on it (rule 8.11).
       if (text_lower.includes("morning")) {
         hour = 9;
+        hasTime = true;
       } else if (text_lower.includes("afternoon")) {
         hour = 14;
+        hasTime = true;
       } else if (text_lower.includes("evening") || text_lower.includes("tonight")) {
         hour = 18;
+        hasTime = true;
       } else {
-        hour = 17;
+        hour = 17; // EOD anchor for bare dates (no time-of-day surfaced).
       }
       date.setHours(hour, minute, 0, 0);
     }
@@ -105,7 +119,7 @@ function parseDateWithChrono(text: string, timezone: string): { date?: Date; rem
       .trim();
 
     void timezone;
-    return { date, remaining };
+    return { date, hasTime, remaining };
   } catch {
     return { remaining: text };
   }
@@ -128,12 +142,17 @@ export function runTier1(
 
   let workingText = quick.title;
 
+  // Quick-add date tokens (today / tomorrow / next monday) are date-only
+  // by definition — has_time stays false. Chrono may still find an
+  // explicit time-of-day in the remaining text below.
   let due_date: Date | undefined = quick.due_date ? setEodIfMidnight(quick.due_date) : undefined;
+  let due_date_has_time = false;
 
   if (!due_date) {
     const chronoResult = parseDateWithChrono(workingText, options.userTimezone);
     if (chronoResult.date) {
       due_date = chronoResult.date;
+      due_date_has_time = chronoResult.hasTime ?? false;
       workingText = chronoResult.remaining;
     }
   }
@@ -165,6 +184,7 @@ export function runTier1(
     tags: quick.tags,
     contexts: allContexts,
     due_date,
+    due_date_has_time: due_date ? due_date_has_time : undefined,
     project_hint: resolvedProject,
     person_refs: personRefs,
     entity_refs: entityRefs,

@@ -24,7 +24,11 @@ interface AiParseResult {
   project_name?: string | null;
   person_refs?: string[];
   due_date?: string | null;
+  due_date_has_time?: boolean | null;
   defer_date?: string | null;
+  defer_date_has_time?: boolean | null;
+  follow_up_date?: string | null;
+  follow_up_date_has_time?: boolean | null;
   estimated_minutes?: number | null;
   flagged?: boolean;
   confidence?: number | null;
@@ -58,8 +62,32 @@ function mergeWithTier1(
   availableProjectNames: string[],
   availableTagNames: string[],
 ): Omit<ParsedCapture, "parse_tier" | "local_confidence" | "basic_parse"> {
-  const due_date = ai.due_date ? new Date(ai.due_date) : tier1.due_date;
-  const defer_date = ai.defer_date ? new Date(ai.defer_date) : tier1.defer_date;
+  // Date+time merging (CR rule 8.3 — Tier 2 enhances; rule 8.10 — don't
+  // invent times). When the AI produced a date, trust its has_time flag
+  // (defaulting to false if it forgot — never to true). When Tier 1's
+  // date wins, carry Tier 1's flag with it.
+  const aiDueDate = ai.due_date ? new Date(ai.due_date) : undefined;
+  const aiDeferDate = ai.defer_date ? new Date(ai.defer_date) : undefined;
+  const aiFollowUpDate = ai.follow_up_date ? new Date(ai.follow_up_date) : undefined;
+
+  const due_date = aiDueDate && !isNaN(aiDueDate.getTime()) ? aiDueDate : tier1.due_date;
+  const due_date_has_time =
+    aiDueDate && !isNaN(aiDueDate.getTime())
+      ? ai.due_date_has_time === true
+      : tier1.due_date_has_time;
+
+  const defer_date = aiDeferDate && !isNaN(aiDeferDate.getTime()) ? aiDeferDate : tier1.defer_date;
+  const defer_date_has_time =
+    aiDeferDate && !isNaN(aiDeferDate.getTime())
+      ? ai.defer_date_has_time === true
+      : tier1.defer_date_has_time;
+
+  const follow_up_date =
+    aiFollowUpDate && !isNaN(aiFollowUpDate.getTime()) ? aiFollowUpDate : tier1.follow_up_date;
+  const follow_up_date_has_time =
+    aiFollowUpDate && !isNaN(aiFollowUpDate.getTime())
+      ? ai.follow_up_date_has_time === true
+      : tier1.follow_up_date_has_time;
 
   const normalizedAvailableTags = new Set(availableTagNames.map((t) => t.toLowerCase()));
   const normalizedAvailableContexts = availableContextNames.map((c) => ({
@@ -142,7 +170,17 @@ function mergeWithTier1(
     tags,
     contexts,
     due_date: due_date && !isNaN(due_date.getTime()) ? due_date : undefined,
+    due_date_has_time:
+      due_date && !isNaN(due_date.getTime()) ? (due_date_has_time ?? false) : undefined,
     defer_date: defer_date && !isNaN(defer_date.getTime()) ? defer_date : undefined,
+    defer_date_has_time:
+      defer_date && !isNaN(defer_date.getTime()) ? (defer_date_has_time ?? false) : undefined,
+    follow_up_date:
+      follow_up_date && !isNaN(follow_up_date.getTime()) ? follow_up_date : undefined,
+    follow_up_date_has_time:
+      follow_up_date && !isNaN(follow_up_date.getTime())
+        ? (follow_up_date_has_time ?? false)
+        : undefined,
     project_hint,
     person_refs,
     entity_refs: tier1.entity_refs,
@@ -183,6 +221,13 @@ export async function runTier2(
     tags: tier1.tags.length > 0 ? tier1.tags : undefined,
     contexts: tier1.contexts.length > 0 ? tier1.contexts : undefined,
     due_date: tier1.due_date?.toISOString(),
+    due_date_has_time: tier1.due_date ? (tier1.due_date_has_time ?? false) : undefined,
+    defer_date: tier1.defer_date?.toISOString(),
+    defer_date_has_time: tier1.defer_date ? (tier1.defer_date_has_time ?? false) : undefined,
+    follow_up_date: tier1.follow_up_date?.toISOString(),
+    follow_up_date_has_time: tier1.follow_up_date
+      ? (tier1.follow_up_date_has_time ?? false)
+      : undefined,
     project_hint: tier1.project_hint,
     person_refs: tier1.person_refs.length > 0 ? tier1.person_refs : undefined,
     proposed_disposition: tier1.proposed_disposition,
