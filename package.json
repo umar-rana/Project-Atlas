@@ -2,6 +2,9 @@
   "name": "atlas",
   "version": "0.1.0",
   "private": true,
+  "overrides": {
+    "esbuild": "^0.25.0"
+  },
   "scripts": {
     "predev": "node scripts/ensure-deps-fresh.mjs && node scripts/kill-stale-next.mjs",
     "dev": "next dev -H 0.0.0.0 -p 5000",
@@ -136,8 +139,8 @@
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitejs/plugin-react": "^5.2.0",
+    "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.5.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.16",
@@ -151,6 +154,6 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "vitest": "^2.1.9"
+    "vitest": "^4.1.5"
   }
 }
