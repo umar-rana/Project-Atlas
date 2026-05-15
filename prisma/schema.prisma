@@ -29,6 +29,7 @@ model User {
   date_format             String    @default("DD/MM/YYYY")
   number_format           String    @default("1,234.56")
   time_format             String    @default("12h")
+  default_event_time      String    @default("09:00") // HH:mm, used when user enables "include time" on a date-only task
   week_start              String    @default("monday")
   theme                   String    @default("dark")
   tasks_prefs             Json?
@@ -702,7 +703,9 @@ model Task {
   status      String    @default("active") // active | completed | dropped
   flagged     Boolean   @default(false)
   defer_date  DateTime? @db.Timestamptz
+  defer_date_has_time Boolean @default(false)
   due_date    DateTime? @db.Timestamptz
+  due_date_has_time Boolean @default(false)
   completed_at DateTime? @db.Timestamptz
   estimated_minutes Int?
   position    Decimal   @default(0) @db.Decimal(20, 10)
@@ -725,6 +728,7 @@ model Task {
   delegated_to_text      String?
   delegated_to_person_id String?   @db.Uuid
   follow_up_date         DateTime? @db.Timestamptz
+  follow_up_date_has_time Boolean  @default(false)
   migration_note         String?
 
   deleted_at  DateTime? @db.Timestamptz
