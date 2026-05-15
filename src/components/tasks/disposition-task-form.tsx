@@ -103,6 +103,10 @@ export function DispositionTaskForm({
   }, [proposal, rawText, projects.data, tags.data, contexts.data]);
 
   const mut = trpc.capture.processToTask.useMutation({
+    // CP-1: suppress the global MutationCache.onError toast — our local
+    // onError shows a more specific message and we don't want both stacking
+    // (see trpc-provider.tsx for the global handler).
+    meta: { suppressGlobalError: true },
     onSuccess: () => {
       utils.capture.listInbox.invalidate();
       utils.tasks.list.invalidate();

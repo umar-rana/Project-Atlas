@@ -48,7 +48,11 @@ export function handleTrpcError(error: unknown): string {
     const code = error.data?.code as string | undefined;
 
     if (code && code in CODE_MESSAGES) {
-      if (code === "BAD_REQUEST" || code === "NOT_FOUND") {
+      // For codes that carry an actionable server-side message, prefer
+      // that over the generic fallback. CONFLICT was added in CP-1 so
+      // disposition processing surfaces "This capture has already been
+      // processed" instead of the vague "conflicts with existing data".
+      if (code === "BAD_REQUEST" || code === "NOT_FOUND" || code === "CONFLICT") {
         const msg = error.message;
         if (msg && !isJsonParseError(msg) && msg.length < 200) {
           return msg;
