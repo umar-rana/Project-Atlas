@@ -22,7 +22,7 @@ import { TaskRowQuickActions } from "./task-row-quick-actions";
 import { Hint } from "@/components/ui/hint";
 import { colorDotClass } from "./folder-tree-node";
 import { useLocale } from "@/core/locale/hooks";
-import { formatDate } from "@/core/locale/formatters";
+import { formatDate, formatTime } from "@/core/locale/formatters";
 import type { LocaleSettings } from "@/core/locale/formatters";
 
 interface TaskListItemProps {
@@ -48,11 +48,19 @@ function dueColorClass(due: Date | null): string {
   return "text-text-tertiary";
 }
 
-function dueLabel(due: Date | null, locale: LocaleSettings): string | null {
+function dueLabel(
+  due: Date | null,
+  locale: LocaleSettings,
+  hasTime: boolean,
+): string | null {
   if (!due) return null;
-  if (isToday(due)) return "Today";
-  if (isTomorrow(due)) return "Tomorrow";
-  return formatDate(due, locale);
+  let base: string;
+  if (isToday(due)) base = "Today";
+  else if (isTomorrow(due)) base = "Tomorrow";
+  else base = formatDate(due, locale);
+  if (!hasTime) return base;
+  const t = formatTime(due, locale);
+  return t ? `${base} at ${t}` : base;
 }
 
 function TaskListItemImpl({
@@ -436,7 +444,7 @@ function TaskListItemImpl({
           )}
           {due ? (
             <span className={cn("shrink-0 font-ui text-2xs tabular-nums", dueColorClass(due))}>
-              {dueLabel(due, locale)}
+              {dueLabel(due, locale, task.due_date_has_time === true)}
             </span>
           ) : null}
           {!inTrash && !isCapture && (

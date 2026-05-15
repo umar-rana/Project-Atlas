@@ -125,7 +125,11 @@ export interface TaskRow {
   project_id: string | null;
   parent_id: string | null;
   defer_date: Date | string | null;
+  defer_date_has_time?: boolean;
   due_date: Date | string | null;
+  due_date_has_time?: boolean;
+  follow_up_date?: Date | string | null;
+  follow_up_date_has_time?: boolean;
   estimated_minutes: number | null;
   contexts: { context: { id: string; name: string } }[];
   tags: { tag: { id: string; name: string; color: string | null } }[];

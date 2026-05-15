@@ -598,6 +598,12 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                   update.mutate({
                     id: taskData.id,
                     defer_date: e.target.value ? new Date(e.target.value) : null,
+                    // CP-6: this is a date-only input. If the previous value
+                    // was time-bearing, reset the flag so display stays
+                    // consistent with what the user just typed. A future PR
+                    // can swap this for DateTimePicker if time-of-day edits
+                    // need to land in the inspector.
+                    defer_date_has_time: false,
                   })
                 }
                 disabled={inTrash}
@@ -615,6 +621,9 @@ export function TaskInspector({ taskId, inTrash }: TaskInspectorProps): React.Re
                   update.mutate({
                     id: taskData.id,
                     due_date: e.target.value ? new Date(e.target.value) : null,
+                    // CP-6: see defer_date note above. Inspector's date input
+                    // is intentionally date-only for now.
+                    due_date_has_time: false,
                   })
                 }
                 disabled={inTrash}
