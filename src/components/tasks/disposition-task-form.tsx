@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { trpc } from "@/lib/trpc/client";
-import { Hint } from "@/components/ui/hint";
 import { cn } from "@/lib/utils";
 
 interface ParserProposal {
@@ -133,48 +132,12 @@ export function DispositionTaskForm({
     });
   }
 
-  function submitDefaults() {
-    const defaultTitle = deriveTitle(proposal, rawText);
-    if (!defaultTitle) return;
-    let defaultProjectId: string | undefined;
-    if (proposal?.project_hint && projects.data) {
-      const match = projects.data.find(
-        (p) => p.title.toLowerCase() === (proposal.project_hint ?? "").toLowerCase(),
-      );
-      defaultProjectId = match?.id;
-    }
-    let defaultTagIds: string[] = [];
-    if (proposal?.tags && tags.data) {
-      defaultTagIds = proposal.tags
-        .map((tName) => tags.data.find((t) => t.name === tName.toLowerCase())?.id)
-        .filter((id): id is string => !!id);
-    }
-    let defaultContextIds: string[] = [];
-    if (proposal?.contexts && contexts.data) {
-      defaultContextIds = proposal.contexts
-        .map((cName) => contexts.data.find((c) => c.name.toLowerCase() === cName.toLowerCase())?.id)
-        .filter((id): id is string => !!id);
-    }
-    mut.mutate({
-      capture_id: captureId,
-      title: defaultTitle,
-      notes: (proposal?.proposed_body ?? proposal?.notes) || undefined,
-      project_id: defaultProjectId,
-      context_ids: defaultContextIds,
-      tag_ids: defaultTagIds,
-      due_date: proposal?.due_date ?? undefined,
-      defer_date: proposal?.defer_date ?? undefined,
-      estimated_minutes:
-        proposal?.estimated_minutes != null ? proposal.estimated_minutes : undefined,
-      flagged: proposal?.flagged ?? false,
-    });
-  }
-
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      submitDefaults();
-    } else if (e.key === "Enter" && !e.shiftKey) {
+    // CR §3.6 / rule 8.7 — both Enter and ⌘+Enter commit the VISIBLE form
+    // state. Previously ⌘+Enter bypassed the form and sent parser-proposal
+    // values directly, which silently discarded any edits the user had
+    // made. Removed: see DR-3.
+    if (e.key === "Enter" && !e.shiftKey) {
       const target = e.target as HTMLElement;
       if (target.tagName !== "TEXTAREA") {
         e.preventDefault();
@@ -340,27 +303,14 @@ export function DispositionTaskForm({
         >
           Cancel
         </button>
-        <div className="flex gap-2">
-          <Hint label="⌘↵ Accept parser defaults">
-            <button
-              type="button"
-              onClick={submitDefaults}
-              disabled={mut.isPending}
-              className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
-              aria-label="⌘↵ Accept parser defaults"
-            >
-              ⌘↵ Defaults
-            </button>
-          </Hint>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={mut.isPending || !title.trim()}
-            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
-          >
-            {mut.isPending ? "Creating…" : "Create Task ↵"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={mut.isPending || !title.trim()}
+          className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+        >
+          {mut.isPending ? "Creating…" : "Create Task ↵"}
+        </button>
       </div>
     </div>
   );

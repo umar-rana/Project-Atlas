@@ -90,19 +90,11 @@ export function DispositionWaitingForForm({
     });
   }
 
-  function submitDefaults() {
-    const defaultTitle = deriveTitle(proposal, rawText);
-    mut.mutate({
-      capture_id: captureId,
-      title: defaultTitle,
-    });
-  }
-
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      submitDefaults();
-    } else if (e.key === "Enter" && !e.shiftKey) {
+    // CR DR-3 / rule 8.7: Enter and ⌘+Enter both commit the visible form
+    // state. Previous ⌘+Enter "Defaults" shortcut removed (silently
+    // discarded user edits).
+    if (e.key === "Enter" && !e.shiftKey) {
       const target = e.target as HTMLElement;
       if (target.tagName !== "TEXTAREA") {
         e.preventDefault();
@@ -171,24 +163,14 @@ export function DispositionWaitingForForm({
         >
           Cancel
         </button>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={submitDefaults}
-            disabled={mut.isPending}
-            className="rounded-md border border-border-default px-3 py-1.5 font-ui text-sm text-text-secondary hover:bg-surface-hover disabled:opacity-50"
-          >
-            ⌘↵ Defaults
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={mut.isPending || !title.trim()}
-            className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
-          >
-            {mut.isPending ? "Creating…" : "Add to Waiting For ↵"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={mut.isPending || !title.trim()}
+          className="rounded-md bg-accent-primary px-3 py-1.5 font-ui text-sm font-medium text-text-on-accent hover:bg-accent-primary-hover disabled:opacity-50"
+        >
+          {mut.isPending ? "Creating…" : "Add to Waiting For ↵"}
+        </button>
       </div>
     </div>
   );
