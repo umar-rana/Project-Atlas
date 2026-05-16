@@ -8,6 +8,7 @@
   "scripts": {
     "predev": "node scripts/ensure-deps-fresh.mjs && node scripts/kill-stale-next.mjs",
     "dev": "next dev -H 0.0.0.0 -p 5000",
+    "postinstall": "prisma generate",
     "build": "next build",
     "analyze": "ANALYZE=true next build",
     "start": "next start -H 0.0.0.0 -p 5000",
